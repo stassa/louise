@@ -1,0 +1,3 @@
+# Place output files in this directory.
+# Ignore all but this file.
+!.gitignore
