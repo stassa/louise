@@ -3,7 +3,6 @@
 		 ,learn/5
 		 ,projected_metasubs/4
 		 ,projected_metasubs/3
-		 ,determinations/5
 		 ,metasubstitutions/5
 		 ,encapsulated_problem/5
 		 ,encapsulated_bk/2
@@ -45,6 +44,7 @@ learn(T,Ps):-
 learn(Pos,Neg,BK,MS,Ps):-
 	metasubstitutions(Pos,Neg,BK,MS,Ms)
 	,projected_metasubs(Ms,Pos,BK,Ms_)
+	%,reduction_report(Ms_)
 	,program_reduction(Ms_,Rs,_)
 	,ord_subtract(Rs,Pos,Rs_)
 	,examples_target(Pos,T)
@@ -107,54 +107,6 @@ projected_metasubs(Ds,BK,Us):-
 		 )
 		,Us_s)
 	,append(BK_, Us_s, Us).
-
-
-
-%!	determinations(+Pos,+Neg,+BK,+Metarules,-Determinations) is det.
-%
-%	Collect a list of determinations of a target predicate.
-%
-determinations(Pos,Neg,BK,MS,Ds):-
-	metasubstitutions(Pos,Neg,BK,MS,Ss)
-	,findall(S_
-		,(member(S,Ss)
-		 ,S =.. [m,_M|As]
-		 ,S_ =.. [d|As]
-		 )
-		,Ds).
-
-
-
-%!	bottom_program(+Pos,+Neg,+BK,+Metarules,-Program) is det.
-%
-%	Construct a bottom Program for a MIL problem.
-%
-%	The bottom Program for a MIL problem is the most specific
-%	program that entails a set of examples, given a set of
-%	background definitions.
-%
-%	@tbd Work in progress.
-%
-bottom_program(Pos,Neg,BK,MS,:-Ps_):-
-% Bottom program as a definite goal where literals are expanded
-% metasubstitutions.
-	metasubstitutions(Pos,Neg,BK,MS,Ss)
-	,findall(B
-		,(member(S,Ss)
-		 ,metarule_projection(S,_H:-B)
-		 )
-		,Bs)
-	,once(list_tree(Bs,Ps_)).
-
-bottom_program_(Pos,Neg,BK,MS,Ps):-
-% Bottom program as a list of metasubs.
-	metasubstitutions(Pos,Neg,BK,MS,Ss)
-	,findall(S_
-		,(member(S,Ss)
-		 ,S =.. [m,_M|As]
-		 ,S_ =.. [m|As]
-		 )
-		,Ps).
 
 
 
