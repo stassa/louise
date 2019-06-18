@@ -1,4 +1,5 @@
 :-module(configuration, [experiment_file/2
+			,metarule/2
 			,metarule/3
 			,metarule/4
 			,metarule_language/2
@@ -10,6 +11,11 @@
 :-dynamic m/1
          ,m/2
          ,m/3.
+
+% Allows experiment files to define their own, special metarules.
+:-multifile metarule/2
+           ,metarule/3
+           ,metarule/4.
 
 %!	experiment_file(?Path,?Module) is semidet.
 %
@@ -27,9 +33,14 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %	time being this doesn't seem to be necessary but a complete
 %	representation will need to include constraints.
 %
+metarule(unit,P):- m(P,_X,_Y).
+metarule(projection,P,Q):- m(P,X,X), m(Q,X).
 metarule(identity,P,Q):- m(P,X,Y), m(Q,X,Y).
-metarule(chain,P,Q,R):- m(P,X,Y),m(Q,X,Z),m(R,Z,Y).
-metarule(tailrec,P,Q,P):-m(P,X,Y),m(Q,X,Z),m(P,Z,Y).
+metarule(inverse,P,Q):- m(P,X,Y), m(Q,Y,X).
+metarule(chain,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
+metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
+metarule(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
+metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
 
 
 %!	metarule_language(?Min,?Max) is semidet.
