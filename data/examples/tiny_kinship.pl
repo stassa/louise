@@ -21,9 +21,9 @@ Includes examples for ancestor/2, father/2, grandfather/2 and male/2.
 
 % Background knowledge declarations
 background_knowledge(ancestor/2,[father/2,mother/2,parent/2]).
-background_knowledge(grandparent/2,[parent/2,mother/2,father/2]).
+background_knowledge(grandparent/2,[father/2,mother/2,parent/2]).
 background_knowledge(grandfather/2,[father/2,mother/2,parent/2]).
-background_knowledge(grandmother/2,[mother/2,parent/2]).
+background_knowledge(grandmother/2,[father/2,mother/2,parent/2]).
 background_knowledge(parent/2,[father/2,mother/2]).
 background_knowledge(father/2,[parent/2,male/1]).
 background_knowledge(mother/2,[parent/2,female/1]).
@@ -36,8 +36,6 @@ metarules(grandparent/2,[chain]).
 metarules(grandfather/2,[chain]).
 metarules(grandmother/2,[chain]).
 metarules(parent/2,[identity]).
-% projection metarule is currently undefined
-% Louise can not yet learn hypotheses with constants anyway.
 metarules(father/2,[chain,projection]).
 metarules(mother/2,[chain,projection]).
 metarules(male/2,[identity,projection]).
