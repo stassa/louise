@@ -41,6 +41,7 @@ metarule(chain,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
 metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
 metarule(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
 metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
+metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
 
 
 %!	metarule_language(?Min,?Max) is semidet.
