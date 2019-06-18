@@ -46,9 +46,10 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,projected_metasubs(Ms,Pos,BK,Ms_)
 	%,reduction_report(Ms_)
 	,program_reduction(Ms_,Rs,_)
-	,ord_subtract(Rs,Pos,Rs_)
 	,examples_target(Pos,T)
-	,excapsulated_clauses(T,Rs_,Ps).
+	,excapsulated_clauses(T,Rs,Ps_1)
+	,subtract(Ps_1,Pos,Ps_2)
+	,subtract(Ps_2,BK,Ps).
 
 
 
