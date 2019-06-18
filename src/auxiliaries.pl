@@ -1,4 +1,5 @@
-:-module(auxiliaries, [assert_program/3
+:-module(auxiliaries, [initialise_experiment/0
+		      ,assert_program/3
 		      ,erase_program_clauses/1
 		      ,experiment_data/5
 		      ,print_clauses/1
@@ -7,6 +8,17 @@
 
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
+
+
+%!	initialise_experiment is det.
+%
+%	Load and initialise the current experiment file.
+%
+initialise_experiment:-
+	configuration:experiment_file(P,_M)
+	,user:use_module(P).
+
+
 
 %!	assert_program(+Module,+Program,-Clause_References) is det.
 %
