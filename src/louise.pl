@@ -2,7 +2,6 @@
 		 ,learn/2
 		 ,learn/5
 		 ,projected_metasubs/4
-		 ,projected_metasubs/3
 		 ,metasubstitutions/5
 		 ,encapsulated_problem/5
 		 ,encapsulated_bk/2
@@ -42,8 +41,11 @@ learn(T,Ps):-
 %	Learn a Progam from a MIL problem.
 %
 learn(Pos,Neg,BK,MS,Ps):-
-	metasubstitutions(Pos,Neg,BK,MS,Ms)
-	,projected_metasubs(Ms,Pos,BK,Ms_)
+	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,write_program(Pos_,Neg_,BK_,MS_,Ss,Refs)
+	,metasubstitutions(Pos_,Neg_,BK_,MS_,Ms)
+	,projected_metasubs(Ms,Pos_,BK_,Ms_)
+	,erase_program_clauses(Refs)
 	%,reduction_report(Ms_)
 	,program_reduction(Ms_,Rs,_)
 	,examples_target(Pos,T)
@@ -52,62 +54,43 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,subtract(Ps_2,BK,Ps).
 
 
+%!	write_program(+Pos,+Neg,+BK,+MS,+PS,-Refs) is det.
+%
+%	Write an encapsulated program to the dynamic database.
+%
+write_program(Pos,Neg,BK,MS,Ss,Rs):-
+	findall(Rs_i
+		,(member(P, [Pos,Neg,BK,MS,Ss])
+		 ,assert_program(user,P,Rs_i)
+		 )
+		,Rs_)
+	,flatten(Rs_,Rs).
+
+
 
 %!	projected_metasubs(+Metasubstitutions,+Pos,+BK,-Projected) is det.
 %
 %	Project a list of Metasubstitutions onto fitting metarules.
 %
-%	As projected_metasubs/3 but only projects metasubstitutions that
-%	correspond to clauses that are correct with respect to the
-%	positive examples in Pos.
+%	Only projects metasubstitutions that correspond to clauses that
+%	are correct with respect to the positive examples in Pos.
 %
-projected_metasubs(Ds,Pos,BK,Us):-
-	encapsulated_bk(BK,BK_)
-	,encapsulated_clauses(Pos,Pos_)
-	,assert_program(user,BK_,Rs_BK)
-	,assert_program(user,Pos_,Rs_Pos)
-	,setof(H:-B
-		,D^Ds^B_^(member(D,Ds)
-			 ,metarule_projection(D,H:-B)
+projected_metasubs(Ss,Pos,BK,Us):-
+	setof(H:-B
+		,S^Ss^B_^(member(S,Ss)
+			 ,metarule_projection(S,H:-B)
 			 ,copy_term(B,B_)
 			 ,user:call(B_)
 			 ,numbervars(B)
 		 )
 		,Us_)
-	,erase_program_clauses(Rs_BK)
-	,erase_program_clauses(Rs_Pos)
 	,findall(C_
 		,(member(C,Us_)
 		 ,varnumbers(C,C_)
 		 )
 		,Us_s)
-	,append(BK_,Pos_,Ps)
+	,append(BK,Pos,Ps)
 	,append(Ps, Us_s, Us).
-
-
-
-%!	projected_metasubs(+Metasubstitutions,+BK,-Projected) is det.
-%
-%	Project a list of Metasubstitutions onto fitting metarules.
-%
-projected_metasubs(Ds,BK,Us):-
-	encapsulated_bk(BK,BK_)
-	,assert_program(user,BK_,Rs)
-	,setof(H:-B
-		,D^Ds^B_^(member(D,Ds)
-			 ,metarule_projection(D,H:-B)
-			 ,copy_term(B,B_)
-			 ,user:call(B_)
-			 ,numbervars(B)
-		 )
-		,Us_)
-	,erase_program_clauses(Rs)
-	,findall(C_
-		,(member(C,Us_)
-		 ,varnumbers(C,C_)
-		 )
-		,Us_s)
-	,append(BK_, Us_s, Us).
 
 
 
@@ -116,25 +99,22 @@ projected_metasubs(Ds,BK,Us):-
 %
 %	Collect all correct Metasubstitutions.
 %
-metasubstitutions(Pos,Neg,BK,MS,Ss):-
-	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,Es)
-	,assert_program(user,Es,Rs)
-	,setof(H
+metasubstitutions(Pos,Neg,_BK,MS,Ss):-
+	setof(H
 	      ,M^MS^Ep^Pos^(member(M,MS)
-			   ,member(Ep,Pos_)
+			   ,member(Ep,Pos)
 			   ,metasubstitution(Ep,M,H)
 			   )
 	      ,Ss_Pos)
 	,setof(H
-	      ,Ss_Pos^En^Neg_^M^
+	      ,Ss_Pos^En^Neg^M^
 	       (member(H,Ss_Pos)
-	       ,\+((member(En,Neg_)
+	       ,\+((member(En,Neg)
 		   ,metasubstitution(En,M,H)
 		   )
 		  )
 	       )
-	      ,Ss)
-	,erase_program_clauses(Rs).
+	      ,Ss).
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
@@ -149,10 +129,11 @@ metasubstitutions(Pos,Neg,BK,MS,Ss):-
 %
 metasubstitution(:-E,M,H):-
 	!
-	,encapsulated_metarule(M,(H:-(_Ps,(E,Ls))))
+	,M= (H:-(Ps,(E,Ls)))
+	,encapsulated_metarule(_Id,(H:-(Ps,(E,Ls))))
 	,user:call(Ls).
 metasubstitution(E,M,H):-
-	encapsulated_metarule(M,(H:-(_Ps,(E,Ls))))
+	M =(H:-(_Ps,(E,Ls)))
 	,user:call(Ls).
 
 
@@ -176,8 +157,12 @@ metasubstitution(E,M,H):-
 %
 %	@tbd Encapsulated forms need documentation.
 %
+%	@tbd Currently this is only used for debugging.
+%	encapsulated_problem/7 is actually used to encapsulate a MIL
+%	problem for processing.
+%
 encapsulated_problem(Pos,Neg,BK,MS,Ps):-
-	encapsulated_problem(Pos,Neg,BK,MS,_Pos_,_Neg_,Ps).
+	encapsulated_problem(Pos,Neg,BK,MS,_,_,Ps).
 
 %!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Enc_Pos,-Enc_Neg,-Enc)
 %!	is det.
@@ -197,6 +182,23 @@ encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,Ps):-
 	,append(Ss,Es,Ps_1)
 	,append(Ps_1,BK_,Ps_2)
 	,append(Ps_2,MS_,Ps).
+
+
+%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Pos_,-Neg_,-BK_,-MS_,-PS)
+%!	is det.
+%
+%	Encapsualte a MIL problem.
+%
+%	Unlike encapsulated_problem/7 this returns the encapsulated
+%	positive and negative examples, BK metarules and predicate
+%	signature separately, rather than in one lump list.
+%
+encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss):-
+	encapsulated_bk(BK,BK_)
+	,encapsulated_metarules(MS,MS_)
+	,encapsulated_clauses(Pos,Pos_)
+	,encapsulated_clauses(Neg,Neg_)
+	,predicate_signature(Pos,BK,Ss).
 
 
 
