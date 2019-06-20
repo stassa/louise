@@ -6,7 +6,7 @@
 		 ,encapsulated_bk/2
 		 ,encapsulated_clauses/2
 		 ,predicate_signature/3
-		 ,encapsulated_metarules/2
+		 ,expanded_metarules/2
 		 ,metarule_expansion/2
 		 ,excapsulated_clauses/3
 		 ]).
@@ -160,7 +160,7 @@ metasubstitution(E,M,H):-
 %
 encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss):-
 	encapsulated_bk(BK,BK_)
-	,encapsulated_metarules(MS,MS_)
+	,expanded_metarules(MS,MS_)
 	,encapsulated_clauses(Pos,Pos_)
 	,encapsulated_clauses(Neg,Neg_)
 	,predicate_signature(Pos,BK,Ss).
@@ -270,7 +270,7 @@ examples_target([E|_Es],F/A):-
 
 
 
-%!	encapsulated_metarules(+Ids,-Encapsulated) is det.
+%!	expanded_metarules(+Ids,-Encapsulated) is det.
 %
 %	Encapsulate a set of metarules.
 %
@@ -283,14 +283,14 @@ examples_target([E|_Es],F/A):-
 %	If Ids is a free variable, it is bound to a list of the names of
 %	all Metarules known to the system.
 %
-encapsulated_metarules(Ids,Ms):-
+expanded_metarules(Ids,Ms):-
 	var(Ids)
 	,!
 	,findall(Id-M
 	       ,metarule_expansion(Id,M)
 	       ,Ids_Ms)
 	,pairs_keys_values(Ids_Ms,Ids,Ms).
-encapsulated_metarules(Ids,Ms):-
+expanded_metarules(Ids,Ms):-
 	is_list(Ids)
 	,findall(M
 	       ,(member(Id,Ids)
