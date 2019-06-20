@@ -7,7 +7,6 @@
 		 ,encapsulated_clauses/2
 		 ,predicate_signature/3
 		 ,encapsulated_metarules/2
-		 ,named_metarules/2
 		 ,metarule_expansion/2
 		 ,excapsulated_clauses/3
 		 ]).
@@ -275,14 +274,30 @@ examples_target([E|_Es],F/A):-
 %
 %	Encapsulate a set of metarules.
 %
-encapsulated_metarules(Ids,Es):-
-	named_metarules(Ids,Ms)
-	,findall(H_:-B
-		,(member(H:-B,Ms)
-		 ,H =.. [metarule|As]
-		 ,H_ =.. [m|As]
-		 )
-		,Es).
+%	Metarules is a list of metarule definitions to be expanded by
+%	metarule_expansion/2.
+%
+%	If Ids is a list of metarule names, only definitions of the
+%	named metarules are bound to Metarules.
+%
+%	If Ids is a free variable, it is bound to a list of the names of
+%	all Metarules known to the system.
+%
+encapsulated_metarules(Ids,Ms):-
+	var(Ids)
+	,!
+	,findall(Id-M
+	       ,encapsulated_metarule(Id,M)
+	       ,Ids_Ms)
+	,pairs_keys_values(Ids_Ms,Ids,Ms).
+encapsulated_metarules(Ids,Ms):-
+	is_list(Ids)
+	,findall(M
+	       ,(member(Id,Ids)
+		,encapsulated_metarule(Id,M)
+		)
+	       ,Ms).
+
 
 
 %!	encapsulated_metarule(+Id,-Encapsulated) is det.
@@ -293,36 +308,6 @@ encapsulated_metarule(Id,H_:-B):-
 	metarule_expansion(Id,H:-B)
 	,H =.. [metarule|As]
 	,H_ =.. [m|As].
-
-
-
-%!	named_metarules(?Ids,-Metarules) is det.
-%
-%	Collect the definitions of all Metarules named in Ids.
-%
-%	Metarules is a list of metarule definitions expanded by
-%	metarule_expansion/2.
-%
-%	If Ids is a list of metarule names, only definitions of the
-%	named metarules are bound to Metarules.
-%
-%	If Ids is a free variable, it is bound to a list of the names of
-%	all Metarules known to the system.
-%
-named_metarules(Ids,Ms):-
-	var(Ids)
-	,!
-	,findall(Id-M
-	       ,metarule_expansion(Id,M)
-	       ,Ids_Ms)
-	,pairs_keys_values(Ids_Ms,Ids,Ms).
-named_metarules(Ids,Ms):-
-	is_list(Ids)
-	,findall(M
-	       ,(member(Id,Ids)
-		,metarule_expansion(Id,M)
-		)
-	       ,Ms).
 
 
 
