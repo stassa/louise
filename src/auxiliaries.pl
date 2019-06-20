@@ -1,4 +1,5 @@
-:-module(auxiliaries, [initialise_experiment/0
+:-module(auxiliaries, [list_mil_problem/1
+		      ,initialise_experiment/0
 		      ,assert_program/3
 		      ,erase_program_clauses/1
 		      ,experiment_data/5
@@ -8,6 +9,62 @@
 
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
+
+
+%!	list_mil_problem(+Target) is det.
+%
+%	List the elements of a MIL problem.
+%
+%	Target is the symbol and arity of the target predicate in the
+%	MIL problem to be listed.
+%
+list_mil_problem(T):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,format_underlined('Positive examples')
+	,print_clauses(Pos)
+	,nl
+	,format_underlined('Negative examples')
+	,print_clauses(Neg)
+	,nl
+	,format_underlined('Bakcground knowledge')
+	,forall(member(P,BK)
+	       ,(program(P,user,Ps)
+		,format('~w:~n',[P])
+		,print_clauses(Ps)
+		,format('~n',[])
+		)
+	       )
+	,format_underlined('Metarules')
+	,forall(member(Id,MS)
+	       ,(configuration:current_predicate(metarule,H)
+		,H =.. [metarule,Id|_]
+		,clause(H, B)
+		,print_clauses([H:-B])
+		)
+	       ).
+
+
+%!	format_underlined(+Atom) is det.
+%
+%	Print an atom and underline it.
+%
+format_underlined(A):-
+	atom_underline(A,A_)
+	,format('~w~n',[A])
+	,format('~w~n',[A_]).
+
+
+%!	atom_underline(+Atom,-Underlined) is det.
+%
+%	Create an Underline for an Atom.
+%
+atom_underline(A,A_):-
+	atom_length(A, N)
+	,findall(-
+		,between(1,N,_)
+		,Ds)
+	,atomic_list_concat(Ds,A_).
+
 
 
 %!	initialise_experiment is det.
