@@ -131,9 +131,11 @@ metasubstitution(:-E,M,H):-
 	!
 	,M= (H:-(Ps,(E,Ls)))
 	,encapsulated_metarule(_Id,(H:-(Ps,(E,Ls))))
+	,user:call(Ps)
 	,user:call(Ls).
 metasubstitution(E,M,H):-
-	M =(H:-(_Ps,(E,Ls)))
+	M =(H:-(Ps,(E,Ls)))
+	,user:call(Ps)
 	,user:call(Ls).
 
 
@@ -334,7 +336,7 @@ encapsulated_metarule(Id,H_:-B):-
 %
 %	Collect the definitions of all Metarules named in Ids.
 %
-%	Metarules is a list ofmetarule definitions expanded by
+%	Metarules is a list of metarule definitions expanded by
 %	metarule_expansion/2.
 %
 %	If Ids is a list of metarule names, only definitions of the
