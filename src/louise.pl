@@ -324,9 +324,7 @@ encapsulated_metarule(Id,H_:-B):-
 %	terms that are not predicate symbols, but hypothesis constants.
 %
 metarule_expansion(Id,Mh:-(Es_,Mb)):-
-	configuration:metarule_language(Min,Max)
-	,between(Min,Max,N)
-	,length(Ps,N)
+	configuration:current_predicate(metarule,Mh)
 	,Mh =.. [metarule,Id|Ps]
 	,clause(Mh,Mb)
 	,maplist(existential_variables,Ps,Ps_)
