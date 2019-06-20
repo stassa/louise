@@ -3,7 +3,6 @@
 		 ,learn/5
 		 ,projected_metasubs/4
 		 ,metasubstitutions/5
-		 ,encapsulated_problem/5
 		 ,encapsulated_bk/2
 		 ,encapsulated_clauses/2
 		 ,predicate_signature/3
@@ -140,10 +139,10 @@ metasubstitution(E,M,H):-
 
 
 
-%!	encapsulated_problem(+Pos,+Neg,+BK,+Metarules,-Encapsulated) is
-%!	det.
+%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Pos_,-Neg_,-BK_,-MS_,-PS)
+%!	is det.
 %
-%	Encapsulate a MIL problem.
+%	Encapsualte a MIL problem.
 %
 %	Pos and Neg are lists of example atoms; Pos are negative
 %	examples and Neg are negative examples, of the form :-E, where
@@ -154,46 +153,11 @@ metasubstitution(E,M,H):-
 %	Metarules is a list of constants, the names of metarules in the
 %	problem.
 %
-%	Encapsulated is an encapsulation of the BK definitions, Positive
-%	and negative examples and Metarules.
+%	Pos_, Neg_, BK_ and MS_ are encapsulation of the positive and
+%	negative examples, BK definitions, and Metarules, respectively.
+%	PS is an encapsulation of the predicate singature.
 %
 %	@tbd Encapsulated forms need documentation.
-%
-%	@tbd Currently this is only used for debugging.
-%	encapsulated_problem/7 is actually used to encapsulate a MIL
-%	problem for processing.
-%
-encapsulated_problem(Pos,Neg,BK,MS,Ps):-
-	encapsulated_problem(Pos,Neg,BK,MS,_,_,Ps).
-
-%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Enc_Pos,-Enc_Neg,-Enc)
-%!	is det.
-%
-%	Business end of encapsulated_problem/5.
-%
-%	As encapsulated_problem/5 but also returns encapsulated positive
-%	and negative examples, in Enc_Pos and Enc_Neg.
-%
-encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,Ps):-
-	encapsulated_bk(BK,BK_)
-	,encapsulated_metarules(MS,MS_)
-	,encapsulated_clauses(Pos,Pos_)
-	,encapsulated_clauses(Neg,Neg_)
-	,predicate_signature(Pos,BK,Ss)
-	,append(Pos_,Neg_,Es)
-	,append(Ss,Es,Ps_1)
-	,append(Ps_1,BK_,Ps_2)
-	,append(Ps_2,MS_,Ps).
-
-
-%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Pos_,-Neg_,-BK_,-MS_,-PS)
-%!	is det.
-%
-%	Encapsualte a MIL problem.
-%
-%	Unlike encapsulated_problem/7 this returns the encapsulated
-%	positive and negative examples, BK metarules and predicate
-%	signature separately, rather than in one lump list.
 %
 encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss):-
 	encapsulated_bk(BK,BK_)

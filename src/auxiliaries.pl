@@ -1,4 +1,5 @@
-:-module(auxiliaries, [list_mil_problem/1
+:-module(auxiliaries, [list_encapsulated_problem/1
+		      ,list_mil_problem/1
 		      ,initialise_experiment/0
 		      ,assert_program/3
 		      ,erase_program_clauses/1
@@ -9,6 +10,42 @@
 
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
+
+
+%!	list_encapsulated_problem(+Target) is det.
+%
+%	Pretty-print the encapsulation of a MIL problem.
+%
+%	Target is the symbol and arity of the target predicate in the
+%	encapsulated MIL problem to be listed.
+%
+list_encapsulated_problem(T):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,predicate_signature(Pos,BK,Ss)
+	,format_underlined('Predicate signature')
+	,print_clauses(Ss)
+	,nl
+	,encapsulated_clauses(Pos,Pos_)
+	,format_underlined('Positive examples')
+	,print_clauses(Pos_)
+	,nl
+	,encapsulated_clauses(Neg,Neg_)
+	,format_underlined('Negative examples')
+	,print_clauses(Neg_)
+	,nl
+	,encapsulated_bk(BK,BK_)
+	,encapsulated_metarules(MS,MS_)
+	,format_underlined('Background knowledge')
+	,forall(member(P,BK_)
+	       ,print_clauses(P)
+	       )
+	,nl
+	,format_underlined('Metarules')
+	,forall(member(M,MS_)
+	       ,(print_clauses(M)
+		)
+	       ).
+
 
 
 %!	list_mil_problem(+Target) is det.
@@ -26,7 +63,7 @@ list_mil_problem(T):-
 	,format_underlined('Negative examples')
 	,print_clauses(Neg)
 	,nl
-	,format_underlined('Bakcground knowledge')
+	,format_underlined('Background knowledge')
 	,forall(member(P,BK)
 	       ,(program(P,user,Ps)
 		,format('~w:~n',[P])
