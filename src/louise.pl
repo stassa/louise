@@ -128,7 +128,7 @@ metasubstitutions(Pos,Neg,_BK,MS,Ss):-
 metasubstitution(:-E,M,H):-
 	!
 	,M= (H:-(Ps,(E,Ls)))
-	,encapsulated_metarule(_Id,(H:-(Ps,(E,Ls))))
+	,metarule_expansion(_Id,(H:-(Ps,(E,Ls))))
 	,user:call(Ps)
 	,user:call(Ls).
 metasubstitution(E,M,H):-
@@ -287,27 +287,16 @@ encapsulated_metarules(Ids,Ms):-
 	var(Ids)
 	,!
 	,findall(Id-M
-	       ,encapsulated_metarule(Id,M)
+	       ,metarule_expansion(Id,M)
 	       ,Ids_Ms)
 	,pairs_keys_values(Ids_Ms,Ids,Ms).
 encapsulated_metarules(Ids,Ms):-
 	is_list(Ids)
 	,findall(M
 	       ,(member(Id,Ids)
-		,encapsulated_metarule(Id,M)
+		,metarule_expansion(Id,M)
 		)
 	       ,Ms).
-
-
-
-%!	encapsulated_metarule(+Id,-Encapsulated) is det.
-%
-%	Encapsulate a metarule.
-%
-encapsulated_metarule(Id,H_:-B):-
-	metarule_expansion(Id,H:-B)
-	,H =.. [metarule|As]
-	,H_ =.. [m|As].
 
 
 
@@ -323,9 +312,10 @@ encapsulated_metarule(Id,H_:-B):-
 %	@tbd This will not allow the use of existentially quantified
 %	terms that are not predicate symbols, but hypothesis constants.
 %
-metarule_expansion(Id,Mh:-(Es_,Mb)):-
+metarule_expansion(Id,Mh_:-(Es_,Mb)):-
 	configuration:current_predicate(metarule,Mh)
 	,Mh =.. [metarule,Id|Ps]
+	,Mh_ =.. [m,Id|Ps]
 	,clause(Mh,Mb)
 	,maplist(existential_variables,Ps,Ps_)
 	,once(list_tree(Ps_,Es_)).
