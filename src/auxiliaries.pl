@@ -1,4 +1,5 @@
-:-module(auxiliaries, [list_encapsulated_problem/1
+:-module(auxiliaries, [known_metarules/1
+		      ,list_encapsulated_problem/1
 		      ,list_mil_problem/1
 		      ,initialise_experiment/0
 		      ,assert_program/3
@@ -10,6 +11,20 @@
 
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
+
+
+%!	known_metarules(-Ids) is det.
+%
+%	Collect the Ids of metarules known to the system.
+%
+known_metarules(Ids):-
+	findall(Id
+	       ,(configuration:current_predicate(metarule, H)
+		,H =.. [metarule,Id|_]
+		,clause(H,_B)
+		)
+	       ,Ids).
+
 
 
 %!	list_encapsulated_problem(+Target) is det.
