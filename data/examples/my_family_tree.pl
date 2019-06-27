@@ -54,70 +54,68 @@
 			 ,sisters_brothers_daughter/2
 			 ]).
 
-% Background knowledge declarations
-background_knowledge(grandfather/2,[father/2
-				   ,mother/2
-				   ,male/1
-				   ,female/1
-				   ,parent/2
-				   ,child/2
-				   ,grandparent/2
-				   ,great_grandparent/2
-				   ,great_uncle/2
-				   ,son/2
-				   ,daughter/2
-				   ,grandfather/2
-				   ,grandmother/2
-				   ,husband/2
-				   ,wife/2
-				   ,brother/2
-				   ,sister/2
-				   ,uncle_paternal/2
-				   ,father_of_mother/2
-				   ,aunt_paternal/2
-				   ,mother_of_mother/2
-				   ,uncle_maternal_maamaa/2
-				   ,wife_of_maamaa/2
-				   ,son_of_maamaa/2
-				   ,daughter_of_maamaa/2
-				   ,husband_of_daughter/2
-				   ,father_of_wife/2
-				   ,mother_of_wife/2
-				   ,sons_wife/2
-				   ,father_of_sons_wife/2
-				   ,mother_of_sons_wife/2
-				   ,daughters_husband/2
-				   ,father_of_daughters_husband/2
-				   ,mother_of_daughters_husband/2
-				   ,fathers_sister_buwa/2
-				   ,husband_of_buwa/2
-				   ,daughter_of_buwa/2
-				   ,son_of_buwa/2
-				   ,brothers_sister/2
-				   ,brothers_sisters_son/2
-				   ,brothers_brother/2
-				   ,brothers_brothers_son/2
-				   ,brothers_sisters_daughter/2
-				   ,brothers_brothers_daughter/2
-				   ,sisters_sister/2
-				   ,sisters_sisters_son/2
-				   ,sisters_sisters_daughter/2
-				   ,sisters_brother/2
-				   ,sisters_brothers_son/2
-				   ,sisters_brothers_daughter/2
-				 ]).
+% Names of all background predicates defined in this file.
+background_knowledge([father/2
+		     ,mother/2
+		     ,male/1
+		     ,female/1
+		     ,parent/2
+		     ,child/2
+		     ,grandparent/2
+		     ,great_grandparent/2
+		     ,great_uncle/2
+		     ,son/2
+		     ,daughter/2
+		     ,grandfather/2
+		     ,grandmother/2
+		     ,husband/2
+		     ,wife/2
+		     ,brother/2
+		     ,sister/2
+		     ,uncle_paternal/2
+		     ,father_of_mother/2
+		     ,aunt_paternal/2
+		     ,mother_of_mother/2
+		     ,uncle_maternal_maamaa/2
+		     ,wife_of_maamaa/2
+		     ,son_of_maamaa/2
+		     ,daughter_of_maamaa/2
+		     ,husband_of_daughter/2
+		     ,father_of_wife/2
+		     ,mother_of_wife/2
+		     ,sons_wife/2
+		     ,father_of_sons_wife/2
+		     ,mother_of_sons_wife/2
+		     ,daughters_husband/2
+		     ,father_of_daughters_husband/2
+		     ,mother_of_daughters_husband/2
+		     ,fathers_sister_buwa/2
+		     ,husband_of_buwa/2
+		     ,daughter_of_buwa/2
+		     ,son_of_buwa/2
+		     ,brothers_sister/2
+		     ,brothers_sisters_son/2
+		     ,brothers_brother/2
+		     ,brothers_brothers_son/2
+		     ,brothers_sisters_daughter/2
+		     ,brothers_brothers_daughter/2
+		     ,sisters_sister/2
+		     ,sisters_sisters_son/2
+		     ,sisters_sisters_daughter/2
+		     ,sisters_brother/2
+		     ,sisters_brothers_son/2
+		     ,sisters_brothers_daughter/2
+		     ]).
 
-% Background knowledge generator for every relation other than
-% grandfather/2. The effect of this is that every relation is assigned
-% every other relation as BK.
+% Background knowledge generator for every relation. The effect of this
+% is that every relation is assigned every other relation as BK.
 background_knowledge(Relation,BK):-
 	  nonvar(Relation)
-	  ,Relation \= grandfather/2
-	  ,background_knowledge(grandfather/2,BK).
+	  ,background_knowledge(BK).
 
 
 % Metarule declarations. Similar to BK, every releation is assigned
-% every metarule.
+% every metarule, except for exceptions defined first.
 metarules(_,Ids):-
 	  known_metarules(Ids).
 
@@ -133,15 +131,17 @@ positive_example(Relation/Arity, Example):-
 	  ,functor(Example,Relation,Arity)
 	  ,Example.
 
+
 % Generator for negative examples of any relation. These are examples of
 % every other relation that is not the target relation, and such that
 % the target relation does not "cover" the individuals in the example.
 negative_example(Relation/Arity, Instance_):-
-	  (   var(Relation)
-	  ->  background_knowledge(Relation/Arity,_)
-	  ;   true
-	  )
-	  ,background_knowledge(Relation_1/Arity,_)
+	  background_knowledge(BK)
+	  ,(   var(Relation)
+	   ->  member(Relation, BK)
+	   ;   true
+	   )
+	  ,member(Relation_1/Arity,BK)
 	  ,Relation_1 \= Relation
 	  ,functor(Instance,Relation_1,Arity)
 	  ,Instance
