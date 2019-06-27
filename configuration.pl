@@ -22,6 +22,7 @@
 %	The Path and Module name of an experiment file.
 %
 experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
+%experiment_file('data/examples/my_family_tree.pl',my_family_tree).
 
 
 %!	metarule(?Id,?P,?Q) is semidet.
