@@ -218,8 +218,8 @@ experiment_data(T,Pos,Neg,BK,MS):-
 	,findall(:-En
 		,M:negative_example(T,En)
 		,Neg)
-	,M:background_knowledge(T,BK)
-	,M:metarules(T,MS).
+	,once(M:background_knowledge(T,BK))
+	,once(M:metarules(T,MS)).
 
 
 
