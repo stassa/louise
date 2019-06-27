@@ -47,9 +47,7 @@ learn(Pos,Neg,BK,MS,Ps):-
 	%,reduction_report(Ms_)
 	,program_reduction(Ms_,Rs,_)
 	,examples_target(Pos,T)
-	,excapsulated_clauses(T,Rs,Ps_1)
-	,subtract(Ps_1,Pos,Ps_2)
-	,subtract(Ps_2,BK,Ps).
+	,excapsulated_clauses(T,Rs,Ps).
 
 
 %!	write_program(+Pos,+Neg,+BK,+MS,+PS,-Refs) is det.
