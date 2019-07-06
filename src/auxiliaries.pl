@@ -234,10 +234,12 @@ experiment_data(T,Pos,Neg,BK,MS):-
 	,user:use_module(P)
 	,findall(Ep
 		,M:positive_example(T,Ep)
-		,Pos)
+		,Pos_)
+	,sort(Pos_, Pos)
 	,findall(:-En
 		,M:negative_example(T,En)
-		,Neg)
+		,Neg_)
+	,sort(Neg_, Neg)
 	,once(M:background_knowledge(T,BK))
 	,once(M:metarules(T,MS)).
 
