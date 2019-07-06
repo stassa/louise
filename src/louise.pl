@@ -44,8 +44,10 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,metasubstitutions(Pos_,Neg_,BK_,MS_,Ms)
 	,projected_metasubs(Ms,Pos_,BK_,Ms_)
 	,erase_program_clauses(Refs)
-	%,reduction_report(Ms_)
-	,program_reduction(Ms_,Rs,_)
+	,append(Ss,Ms_,Ps_1)
+	,append(Ps_1,MS_,Ps_2)
+	%,reduction_report(Ps_2)
+	,program_reduction(Ps_2,Rs,_)
 	,examples_target(Pos,T)
 	,excapsulated_clauses(T,Rs,Ps).
 
@@ -102,6 +104,10 @@ metasubstitutions(Pos,Neg,_BK,MS,Ss):-
 			   ,metasubstitution(Ep,M,H)
 			   )
 	      ,Ss_Pos)
+	%,writeln('Generalisation')
+	%,print_clauses(Ss_Pos)
+	%,length(Ss_Pos, N)
+	%,writeln('Length':N)
 	,setof(H
 	      ,Ss_Pos^En^Neg^M^
 	       (member(H,Ss_Pos)
@@ -110,7 +116,13 @@ metasubstitutions(Pos,Neg,_BK,MS,Ss):-
 		   )
 		  )
 	       )
-	      ,Ss).
+	      ,Ss)
+	%,writeln('\nSpecialisation')
+	%,print_clauses(Ss)
+	%,length(Ss, M)
+	%,writeln('Length':M)
+	%,nl
+	.
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
