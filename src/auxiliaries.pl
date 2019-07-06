@@ -1,4 +1,5 @@
 :-module(auxiliaries, [known_metarules/1
+		      ,list_top_program/1
 		      ,list_encapsulated_problem/1
 		      ,list_mil_problem/1
 		      ,initialise_experiment/0
@@ -24,6 +25,17 @@ known_metarules(Ids):-
 		,clause(H,_B)
 		)
 	       ,Ids).
+
+
+
+%!	list_top_program(+Target) is det.
+%
+%	Pretty-print the Top program for a Target predicate.
+%
+list_top_program(T):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,top_program(Pos,Neg,BK,MS,Ts)
+	,print_clauses(Ts).
 
 
 

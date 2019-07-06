@@ -1,6 +1,7 @@
 :-module(louise, [learn/1
 		 ,learn/2
 		 ,learn/5
+		 ,top_program/5
 		 ,projected_metasubs/4
 		 ,metasubstitutions/5
 		 ,encapsulated_bk/2
@@ -50,6 +51,25 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,program_reduction(Ps_2,Rs,_)
 	,examples_target(Pos,T)
 	,excapsulated_clauses(T,Rs,Ps).
+
+
+
+%!	top_program(+Pos,+Neg,+BK,+Metarules,-Top) is det.
+%
+%	Construct the Top program for a MIL problem.
+%
+%	Currently only used for diagnostic purposes.
+%
+top_program(Pos,Neg,BK,MS,Ts):-
+	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,write_program(Pos_,Neg_,BK_,MS_,Ss,Refs)
+	,metasubstitutions(Pos_,Neg_,BK_,MS_,Ms)
+	,projected_metasubs(Ms,Pos_,BK_,Ms_)
+	,erase_program_clauses(Refs)
+	,examples_target(Pos,T)
+	,subtract(Ms_,Pos_,Cs)
+	,excapsulated_clauses(T,Cs,Ts).
+
 
 
 %!	write_program(+Pos,+Neg,+BK,+MS,+PS,-Refs) is det.
