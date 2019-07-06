@@ -138,6 +138,14 @@ assert_program(M,Ps,Rs):-
 
 assert_program(_,[],Rs,Rs):-
 	!.
+assert_program(M,[A|P],Acc,Bind):-
+	clause(M:A,true)
+	,!
+	,assert_program(M,P,Acc,Bind).
+assert_program(M,[H:-B|P],Acc,Bind):-
+	clause(M:H,B)
+	,!
+	,assert_program(M,P,Acc,Bind).
 assert_program(M,[C|P],Acc,Bind):-
 	assert(M:C,Ref)
 	,assert_program(M,P,[Ref|Acc],Bind).
