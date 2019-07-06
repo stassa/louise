@@ -108,7 +108,15 @@ background_knowledge([father/2
 		     ]).
 
 % Background knowledge generator for every relation. The effect of this
-% is that every relation is assigned every other relation as BK.
+% is that every relation is assigned every other relation as BK, except
+% of course for any exceptions, defined first.
+background_knowledge(grandfather/2,BK_):-
+% We remove grandfather/2 from its BK because it's defined as the male
+% grandfather and we don't want clauses of precon in the output for
+% comparison with Thelma, where only chain clauses are needed.
+	  !
+	  ,background_knowledge(BK)
+	  ,select(grandfather/2,BK,BK_).
 background_knowledge(Relation,BK):-
 	  nonvar(Relation)
 	  ,background_knowledge(BK).
@@ -116,6 +124,8 @@ background_knowledge(Relation,BK):-
 
 % Metarule declarations. Similar to BK, every releation is assigned
 % every metarule, except for exceptions defined first.
+metarules(grandfather/2,[chain]):-
+	  !.
 metarules(_,Ids):-
 	  known_metarules(Ids).
 
