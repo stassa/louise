@@ -5,12 +5,17 @@
 			,metarule_language/2
 			]).
 
+:-user:use_module(src(experiment_file)).
 :-reexport(lib(program_reduction/reduction_configuration)).
 
 % Body literals of H(2,2) metarules.
 :-dynamic m/1
          ,m/2
          ,m/3.
+
+:-multifile m/1
+           ,m/2
+	   ,m/3.
 
 % Allows experiment files to define their own, special metarules.
 :-multifile metarule/2
@@ -79,3 +84,10 @@ metarule(tailrec,[P,Q],[X,Y,Z]):-m(P,X,Y),m(Q,X,Z),m(P,Z,Y).
 %
 %:-experiment_file(P,_)
 %  ,edit(P).
+
+% This line ensures the experiment file set in the configuration option
+% experiment_file/2 is always updated when the configuration module is
+% changed and reloaded. Don't remove it.
+%
+% DO NOT REMOVE THIS LINE!
+:-experiment_file:reload.
