@@ -21,8 +21,9 @@
 %
 %	The Path and Module name of an experiment file.
 %
-experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
-%experiment_file('data/examples/my_family_tree.pl',my_family_tree).
+experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
+%experiment_file('data/examples/kinship/my_family_tree.pl',my_family_tree).
+%experiment_file('data/examples/kinship/kinship.pl',kinship).
 
 
 %!	metarule(?Id,?P,?Q) is semidet.
@@ -70,3 +71,11 @@ metarule(chain,[P,Q,R],[X,Y,Z]):- m(P,X,Y),m(Q,X,Z),m(R,Z,Y).
 metarule(identity,[P,Q],[X,Y]):- m(P,X,Y), m(Q,X,Y).
 metarule(tailrec,[P,Q],[X,Y,Z]):-m(P,X,Y),m(Q,X,Z),m(P,Z,Y).
 */
+
+% Loads the current experiment file in the Swi-Prolog IDE when the
+% configuration is changed.
+%
+% It is perfectly safe to remove this directive.
+%
+%:-experiment_file(P,_)
+%  ,edit(P).
