@@ -298,12 +298,13 @@ The third step in Louise's learning procedure is the reduction of the Top
 program and the MIL problem by Gordon Plotkin's program reduction algorithm,
 from his doctoral thesis (see references at end).
 
-This step does not have an explicit listing predicate as the previous two steps.
-For illustrative purposes, the following is an example of the reduction of the
-Top program, along with the encapsulated MIL problem, for `ancestor/2`
+The reduction step, too, can be inspected by a call to the predicate
+`list_top_program_reduction/1`. 
+
+The following is a listing of the reduction step for `ancestor/2`:
 
 ```
-?- learn(ancestor/2).
+?- list_top_program_reduction(ancestor/2).
 Program clauses:
 ----------------
 s(ancestor)
@@ -378,9 +379,9 @@ m(ancestor,A,B):-m(mother,A,C),m(ancestor,C,B)
 m(ancestor,A,B):-m(parent,A,C),m(ancestor,C,B)
 ```
 
-The step in Louise's learning procedure is the unfolding and excapsulation of
-the reduced Top program as a set of definite clauses. The result of this step is
-output directly by the learning predicates, `learn/[1,2,5]` and so this step,
+The last step in Louise's learning procedure is the unfolding and excapsulation
+of the reduced Top program as a set of definite clauses. The result of this step
+is output directly by the learning predicates, `learn/[1,2,5]` and so this step,
 too, has no explicit listing predicate.
 
 More detailed information about Louise's learning procedure is soon to follow.

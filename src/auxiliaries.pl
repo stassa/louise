@@ -1,5 +1,6 @@
 :-module(auxiliaries, [learning_targets/1
 		      ,known_metarules/1
+		      ,list_top_program_reduction/1
 		      ,list_top_program/1
 		      ,list_encapsulated_problem/1
 		      ,list_mil_problem/1
@@ -43,6 +44,23 @@ known_metarules(Ids):-
 		,clause(H,_B)
 		)
 	       ,Ids).
+
+
+
+%!	list_top_program_reduction(+Target) is det.
+%
+%	List the top-program reduction step for a learning Target.
+%
+list_top_program_reduction(T):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,louise:encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,louise:write_program(Pos_,Neg_,BK_,MS_,Ss,Refs)
+	,metasubstitutions(Pos_,Neg_,BK_,MS_,Ms)
+	,projected_metasubs(Ms,Pos_,BK_,Ms_)
+	,erase_program_clauses(Refs)
+	,append(Ss,Ms_,Ps_1)
+	,append(Ps_1,MS_,Ps_2)
+	,reduction_report(Ps_2).
 
 
 
