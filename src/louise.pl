@@ -77,25 +77,49 @@ write_program(Pos,Neg,BK,MS,Ss,Rs):-
 %	Collect all correct Metasubstitutions in a MIL problem.
 %
 top_program(Pos,Neg,_BK,MS,Ss):-
+	generalise(Pos,MS,Ss_Pos)
+	,specialise(Ss_Pos,Neg,Ss).
+
+
+%!	generalise(+Positive,+Metarules,-Generalised) is det.
+%
+%	Generalisation step of Top program construction.
+%
+%	Generalises a set of Positive examples by finding each
+%	metasubstitution of a metarule that entails a positive example.
+%
+generalise(Pos,MS,Ss_Pos):-
 	setof(H
-	      ,M^MS^Ep^Pos^(member(M,MS)
-			   ,member(Ep,Pos)
-			   ,metasubstitution(Ep,M,H)
-			   )
-	      ,Ss_Pos)
+	     ,M^MS^Ep^Pos^(member(M,MS)
+			  ,member(Ep,Pos)
+			  ,metasubstitution(Ep,M,H)
+			  )
+	     ,Ss_Pos)
 	%,writeln('Generalisation')
 	%,print_clauses(Ss_Pos)
 	%,length(Ss_Pos, N)
 	%,writeln('Length':N)
-	,setof(H
-	      ,Ss_Pos^En^Neg^M^
-	       (member(H,Ss_Pos)
-	       ,\+((member(En,Neg)
-		   ,metasubstitution(En,M,H)
-		   )
+	.
+
+
+%!	specialise(+Genearlised,+Negatives,-Specialised) is det.
+%
+%	Specialisation step of Top program construction.
+%
+%	Specialises a set of metasubstitutions generalising the positive
+%	examples against the Negative examples by discarding each
+%	metasubstitution that entails a negative example.
+%
+specialise(Ss_Pos,Neg,Ss_Neg):-
+	setof(H
+	     ,Ss_Pos^En^Neg^M^
+	      (member(H,Ss_Pos)
+	      ,\+((member(En,Neg)
+		  ,metasubstitution(En,M,H)
 		  )
-	       )
-	      ,Ss)
+		 )
+	      )
+	     ,Ss_Neg)
 	%,writeln('\nSpecialisation')
 	%,print_clauses(Ss)
 	%,length(Ss, M)
