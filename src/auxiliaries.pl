@@ -2,6 +2,7 @@
 		      ,known_metarules/1
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
+		      ,list_top_program/2
 		      ,list_encapsulated_problem/1
 		      ,list_mil_problem/1
 		      ,initialise_experiment/0
@@ -64,11 +65,53 @@ list_top_program_reduction(T):-
 %
 %	Pretty-print the Top program for a Target predicate.
 %
+%	Same as list_top_program(Target, true).
+%
 list_top_program(T):-
+	list_top_program(T,true).
+
+
+
+%!	list_top_program(+Target, +Unfold) is det.
+%
+%	Pretty-print the Top program for a Target predicate.
+%
+%	Unfold is one of [true,false]. If true, the Top program is
+%	unfolded into a list of definite clauses before printing.
+%	Otherwise it is printed as a list of metasubstitutions.
+%
+list_top_program(T,U):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,louise:encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
-	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ts)
-	,print_clauses(Ts).
+	,louise:write_program(Pos_,Neg_,BK_,MS_,Ss,Refs)
+	,louise:generalise(Pos_,MS_,Ss_Pos)
+	,write_and_count('Generalisation:',Ss_Pos,U)
+	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)
+	,nl
+	,write_and_count('Specialisation:',Ss_Neg,U)
+	,erase_program_clauses(Refs).
+
+
+%!	write_and_count(+Message,+Metasubs,+Unfold) is det.
+%
+%	Auxiliary to list_top_program/2.
+%
+%	Pretty-print a set of Metasubs, its cardinality and a Message.
+%	Unfold is a boolean inherited from list_top_program/2,
+%	determining whether the Top program is unfolded to a list of
+%	definite clauses before printing.
+%
+write_and_count(Msg,Cs,U):-
+	(   U = true
+	->  louise:unfolded_metasubs(Cs, Cs_)
+	;   U = false
+	->  Cs_ = Cs
+	% Else fail silently to flumox the user. Nyahahaha!
+	)
+	,length(Cs_, N)
+	,format_underlined(Msg)
+	,print_clauses(Cs_)
+	,format('Length:~w~n',[N]).
 
 
 

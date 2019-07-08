@@ -285,18 +285,59 @@ examples given the background knowledge and metarules in a MIL problem.
 
 The Top program can be inspected with a call to `list_top_program/1`.
 
-The following is a listing of the Top program constructed for `ancestor/2`:
+The following is a listing of the Top program constructed for `grandfather/2`,
+unlike in the previous examples, where we are listing `ancestor/2` results. The
+top program for ancestor/2 does not change between the two construction steps
+(at least not with the data in `tiny_kinship.pl` and so is not very illustrative
+of the top program construction process:
 
 ```
-?- list_top_program(ancestor/2).
-m(ancestor,A,B):-m(ancestor,A,B).
-m(ancestor,A,B):-m(father,A,B).
-m(ancestor,A,B):-m(mother,A,B).
-m(ancestor,A,B):-m(parent,A,B).
-m(ancestor,A,B):-m(ancestor,A,C),m(ancestor,C,B).
-m(ancestor,A,B):-m(father,A,C),m(ancestor,C,B).
-m(ancestor,A,B):-m(mother,A,C),m(ancestor,C,B).
-m(ancestor,A,B):-m(parent,A,C),m(ancestor,C,B).
+?- list_top_program(grandfather/2).
+Generalisation:
+---------------
+m(grandfather,A,B):-m(father,A,C),m(father,C,B).
+m(grandfather,A,B):-m(father,A,C),m(mother,C,B).
+m(grandfather,A,B):-m(father,A,C),m(parent,C,B).
+m(grandfather,A,B):-m(parent,A,C),m(father,C,B).
+m(grandfather,A,B):-m(parent,A,C),m(mother,C,B).
+m(grandfather,A,B):-m(parent,A,C),m(parent,C,B).
+Length:6
+
+Specialisation:
+---------------
+m(grandfather,A,B):-m(father,A,C),m(father,C,B).
+m(grandfather,A,B):-m(father,A,C),m(mother,C,B).
+m(grandfather,A,B):-m(father,A,C),m(parent,C,B).
+Length:3
+true.
+```
+
+The top program construction actually creates a set of _metasubstitutions_ of
+the existentially quantified variables in metarules. These are unfolded to a set
+of definite clauses before being handed to the Top program reduction step.
+
+`list_top_program/1` outputs the unfolded set, but the pre-unfolding set of
+metasubstitutions can still be inspected with a call to `list_top_program/2`,
+with the second paramter (the "unfold" paramter) set to "true", as follows:
+
+```
+?- list_top_program(grandfather/2, true).
+Generalisation:
+---------------
+m(grandfather,A,B):-m(father,A,C),m(father,C,B).
+m(grandfather,A,B):-m(father,A,C),m(mother,C,B).
+m(grandfather,A,B):-m(father,A,C),m(parent,C,B).
+m(grandfather,A,B):-m(parent,A,C),m(father,C,B).
+m(grandfather,A,B):-m(parent,A,C),m(mother,C,B).
+m(grandfather,A,B):-m(parent,A,C),m(parent,C,B).
+Length:6
+
+Specialisation:
+---------------
+m(grandfather,A,B):-m(father,A,C),m(father,C,B).
+m(grandfather,A,B):-m(father,A,C),m(mother,C,B).
+m(grandfather,A,B):-m(father,A,C),m(parent,C,B).
+Length:3
 true.
 ```
 

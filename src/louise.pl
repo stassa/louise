@@ -94,15 +94,10 @@ generalise(Pos,MS,Ss_Pos):-
 			  ,member(Ep,Pos)
 			  ,metasubstitution(Ep,M,H)
 			  )
-	     ,Ss_Pos)
-	%,writeln('Generalisation')
-	%,print_clauses(Ss_Pos)
-	%,length(Ss_Pos, N)
-	%,writeln('Length':N)
-	.
+	     ,Ss_Pos).
 
 
-%!	specialise(+Genearlised,+Negatives,-Specialised) is det.
+%!	specialise(+Generalised,+Negatives,-Specialised) is det.
 %
 %	Specialisation step of Top program construction.
 %
@@ -119,13 +114,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 		  )
 		 )
 	      )
-	     ,Ss_Neg)
-	%,writeln('\nSpecialisation')
-	%,print_clauses(Ss)
-	%,length(Ss, M)
-	%,writeln('Length':M)
-	%,nl
-	.
+	     ,Ss_Neg).
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
