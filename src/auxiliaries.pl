@@ -1,4 +1,5 @@
-:-module(auxiliaries, [known_metarules/1
+:-module(auxiliaries, [learning_targets/1
+		      ,known_metarules/1
 		      ,list_top_program/1
 		      ,list_encapsulated_problem/1
 		      ,list_mil_problem/1
@@ -12,6 +13,23 @@
 
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
+
+
+%!	learning_targets(+Targets) is det.
+%
+%	Collect learning Targets defined in an experiment file.
+%
+%	Targets is the list of predicate symbols and arities of each of
+%	the target predicates that have background knowledge
+%	declarations in background/2 clauses in the current experiment
+%	file.
+%
+learning_targets(Ts):-
+	initialise_experiment
+	,findall(T
+		,background_knowledge(T, _BK)
+		,Ts).
+
 
 
 %!	known_metarules(-Ids) is det.
