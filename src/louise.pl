@@ -1,8 +1,8 @@
 :-module(louise, [learn/1
 		 ,learn/2
 		 ,learn/5
-		 ,top_program/5
-		 ,projected_metasubs/4
+		 ,top_program/6
+		 ,projected_metasubs/2
 		 ,metasubstitutions/5
 		 ,encapsulated_bk/2
 		 ,encapsulated_clauses/2
@@ -41,34 +41,24 @@ learn(T,Ps):-
 %
 learn(Pos,Neg,BK,MS,Ps):-
 	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
-	,write_program(Pos_,Neg_,BK_,MS_,Ss,Refs)
-	,metasubstitutions(Pos_,Neg_,BK_,MS_,Ms)
-	,projected_metasubs(Ms,Pos_,BK_,Ms_)
-	,erase_program_clauses(Refs)
-	,append(Ss,Ms_,Ps_1)
-	,append(Ps_1,MS_,Ps_2)
-	,reduction_report(Ps_2)
-	,program_reduction(Ps_2,Rs,_)
+	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
+	,flatten([Ss,Pos_,BK_,Ms,MS_],Ps_)
+	%,reduction_report(Ps_)
+	,program_reduction(Ps_,Rs,_)
 	,examples_target(Pos,T)
 	,excapsulated_clauses(T,Rs,Ps).
 
 
 
-%!	top_program(+Pos,+Neg,+BK,+Metarules,-Top) is det.
+%!	top_program(+Pos,+Neg,+BK,+Metarules,+Signature,-Top) is det.
 %
 %	Construct the Top program for a MIL problem.
 %
-%	Currently only used for diagnostic purposes.
-%
-top_program(Pos,Neg,BK,MS,Ts):-
-	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
-	,write_program(Pos_,Neg_,BK_,MS_,Ss,Refs)
-	,metasubstitutions(Pos_,Neg_,BK_,MS_,Ms)
-	,projected_metasubs(Ms,Pos_,BK_,Ms_)
-	,erase_program_clauses(Refs)
-	,subtract(Ms_,Pos_,Cs_1)
-	,subtract(Cs_1,BK_,Ts).
-
+top_program(Pos,Neg,BK,MS,Ss,Ts):-
+	write_program(Pos,Neg,BK,MS,Ss,Refs)
+	,metasubstitutions(Pos,Neg,BK,MS,Ms)
+	,projected_metasubs(Ms,Ts)
+	,erase_program_clauses(Refs).
 
 
 %!	write_program(+Pos,+Neg,+BK,+MS,+PS,-Refs) is det.
@@ -85,14 +75,14 @@ write_program(Pos,Neg,BK,MS,Ss,Rs):-
 
 
 
-%!	projected_metasubs(+Metasubstitutions,+Pos,+BK,-Projected) is det.
+%!	projected_metasubs(+Metasubstitutions,-Projected) is det.
 %
 %	Project a list of Metasubstitutions onto fitting metarules.
 %
 %	Only projects metasubstitutions that correspond to clauses that
 %	are correct with respect to the positive examples in Pos.
 %
-projected_metasubs(Ss,Pos,BK,Us):-
+projected_metasubs(Ss,Ms):-
 	setof(H:-B
 		,S^Ss^B_^(member(S,Ss)
 			 ,metarule_projection(S,H:-B)
@@ -100,14 +90,12 @@ projected_metasubs(Ss,Pos,BK,Us):-
 			 ,user:call(B_)
 			 ,numbervars(B)
 		 )
-		,Us_)
+		,Ms_)
 	,findall(C_
-		,(member(C,Us_)
+		,(member(C,Ms_)
 		 ,varnumbers(C,C_)
 		 )
-		,Us_s)
-	,append(BK,Pos,Ps)
-	,append(Ps, Us_s, Us).
+		,Ms).
 
 
 

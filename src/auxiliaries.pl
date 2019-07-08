@@ -54,13 +54,9 @@ known_metarules(Ids):-
 list_top_program_reduction(T):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,louise:encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
-	,louise:write_program(Pos_,Neg_,BK_,MS_,Ss,Refs)
-	,metasubstitutions(Pos_,Neg_,BK_,MS_,Ms)
-	,projected_metasubs(Ms,Pos_,BK_,Ms_)
-	,erase_program_clauses(Refs)
-	,append(Ss,Ms_,Ps_1)
-	,append(Ps_1,MS_,Ps_2)
-	,reduction_report(Ps_2).
+	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
+	,flatten([Ss,Pos_,BK_,Ms,MS_],Ps_)
+	,reduction_report(Ps_).
 
 
 
@@ -70,7 +66,8 @@ list_top_program_reduction(T):-
 %
 list_top_program(T):-
 	experiment_data(T,Pos,Neg,BK,MS)
-	,top_program(Pos,Neg,BK,MS,Ts)
+	,louise:encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ts)
 	,print_clauses(Ts).
 
 
