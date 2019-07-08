@@ -43,7 +43,6 @@ learn(Pos,Neg,BK,MS,Ps):-
 	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
 	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
 	,flatten([Ss,Pos_,BK_,Ms,MS_],Ps_)
-	%,reduction_report(Ps_)
 	,program_reduction(Ps_,Rs,_)
 	,examples_target(Pos,T)
 	,excapsulated_clauses(T,Rs,Ps).
