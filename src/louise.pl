@@ -2,8 +2,6 @@
 		 ,learn/2
 		 ,learn/5
 		 ,top_program/6
-		 ,projected_metasubs/2
-		 ,top_program/5
 		 ,encapsulated_bk/2
 		 ,encapsulated_clauses/2
 		 ,predicate_signature/3
@@ -56,7 +54,7 @@ learn(Pos,Neg,BK,MS,Ps):-
 top_program(Pos,Neg,BK,MS,Ss,Ts):-
 	write_program(Pos,Neg,BK,MS,Ss,Refs)
 	,top_program(Pos,Neg,BK,MS,Ms)
-	,projected_metasubs(Ms,Ts)
+	,unfolded_metasubs(Ms,Ts)
 	,erase_program_clauses(Refs).
 
 
@@ -71,31 +69,6 @@ write_program(Pos,Neg,BK,MS,Ss,Rs):-
 		 )
 		,Rs_)
 	,flatten(Rs_,Rs).
-
-
-
-%!	projected_metasubs(+Metasubstitutions,-Projected) is det.
-%
-%	Project a list of Metasubstitutions onto fitting metarules.
-%
-%	Only projects metasubstitutions that correspond to clauses that
-%	are correct with respect to the positive examples in Pos.
-%
-projected_metasubs(Ss,Ms):-
-	setof(H:-B
-		,S^Ss^B_^(member(S,Ss)
-			 ,metarule_projection(S,H:-B)
-			 ,copy_term(B,B_)
-			 ,user:call(B_)
-			 ,numbervars(B)
-		 )
-		,Ms_)
-	,findall(C_
-		,(member(C,Ms_)
-		 ,varnumbers(C,C_)
-		 )
-		,Ms).
-
 
 
 %!	top_program(+Positive,+Negative,+BK,+Metarules,-Metasubstitutions)
@@ -131,7 +104,6 @@ top_program(Pos,Neg,_BK,MS,Ss):-
 	.
 
 
-
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
 %!	nondet.
 %
@@ -152,6 +124,29 @@ metasubstitution(E,M,H):-
 	M =(H:-(Ps,(E,Ls)))
 	,user:call(Ps)
 	,user:call(Ls).
+
+
+%!	unfolded_metasubs(+Metasubstitutions,-Unfolded) is det.
+%
+%	Project a list of Metasubstitutions onto fitting metarules.
+%
+%	The list of Metasubstitutions is normally the specialised Top
+%	program.
+%
+unfolded_metasubs(Ss,Ms):-
+	setof(H:-B
+		,S^Ss^B_^(member(S,Ss)
+			 ,metarule_projection(S,H:-B)
+			 ,copy_term(B,B_)
+			 ,user:call(B_)
+			 ,numbervars(B)
+		 )
+		,Ms_)
+	,findall(C_
+		,(member(C,Ms_)
+		 ,varnumbers(C,C_)
+		 )
+		,Ms).
 
 
 
