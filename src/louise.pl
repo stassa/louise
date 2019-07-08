@@ -47,7 +47,7 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,erase_program_clauses(Refs)
 	,append(Ss,Ms_,Ps_1)
 	,append(Ps_1,MS_,Ps_2)
-	%,reduction_report(Ps_2)
+	,reduction_report(Ps_2)
 	,program_reduction(Ps_2,Rs,_)
 	,examples_target(Pos,T)
 	,excapsulated_clauses(T,Rs,Ps).
@@ -66,9 +66,8 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,metasubstitutions(Pos_,Neg_,BK_,MS_,Ms)
 	,projected_metasubs(Ms,Pos_,BK_,Ms_)
 	,erase_program_clauses(Refs)
-	,examples_target(Pos,T)
-	,subtract(Ms_,Pos_,Cs)
-	,excapsulated_clauses(T,Cs,Ts).
+	,subtract(Ms_,Pos_,Cs_1)
+	,subtract(Cs_1,BK_,Ts).
 
 
 
@@ -255,6 +254,20 @@ encapsulated_clause(:-(L),Acc,C):-
 	,L_ =.. [m|[F|As]]
 	,reverse([:-L_|Acc],Ls)
 	,once(list_tree(Ls,C)).
+/*encapsulated_clause(H:-B,[],H:-B):-
+	predicate_property(H,built_in)
+	,!.
+encapsulated_clause((L,Ls),Acc,C_):-
+	predicate_property(L,built_in)
+	,!
+	,encapsulated_clause(Ls,[L,Acc],C_).
+encapsulated_clause(L,Acc,(H:-Bs)):-
+	L \= (_,_)
+	,predicate_property(L,built_in)
+	,!
+	,reverse([L|Acc], Ls)
+	,once(list_tree(Ls,(H,Bs))).
+*/
 encapsulated_clause(L:-Ls,Acc,C_):-
 % Definite clause; L is the head literal.
 	!

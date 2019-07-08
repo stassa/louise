@@ -289,14 +289,14 @@ The following is a listing of the Top program constructed for `ancestor/2`:
 
 ```
 ?- list_top_program(ancestor/2).
-ancestor(A,B):-ancestor(A,B).
-ancestor(A,B):-father(A,B).
-ancestor(A,B):-mother(A,B).
-ancestor(A,B):-parent(A,B).
-ancestor(A,B):-ancestor(A,C),ancestor(C,B).
-ancestor(A,B):-father(A,C),ancestor(C,B).
-ancestor(A,B):-mother(A,C),ancestor(C,B).
-ancestor(A,B):-parent(A,C),ancestor(C,B).
+m(ancestor,A,B):-m(ancestor,A,B).
+m(ancestor,A,B):-m(father,A,B).
+m(ancestor,A,B):-m(mother,A,B).
+m(ancestor,A,B):-m(parent,A,B).
+m(ancestor,A,B):-m(ancestor,A,C),m(ancestor,C,B).
+m(ancestor,A,B):-m(father,A,C),m(ancestor,C,B).
+m(ancestor,A,B):-m(mother,A,C),m(ancestor,C,B).
+m(ancestor,A,B):-m(parent,A,C),m(ancestor,C,B).
 true.
 ```
 
