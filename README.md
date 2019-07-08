@@ -379,6 +379,12 @@ m(ancestor,A,B):-m(mother,A,C),m(ancestor,C,B)
 m(ancestor,A,B):-m(parent,A,C),m(ancestor,C,B)
 ```
 
+Note that, in order to list the reduction of the Top program,
+`list_top_program_reduction/1` must first construct the Top program, and then
+reduce it. Therefore, calling this listing predicate entails actually training
+Louise. This means that, if training must take a long time, so will the listing
+of the Top program reduction.
+
 The last step in Louise's learning procedure is the unfolding and excapsulation
 of the reduced Top program as a set of definite clauses. The result of this step
 is output directly by the learning predicates, `learn/[1,2,5]` and so this step,
