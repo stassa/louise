@@ -52,19 +52,22 @@ learn(Pos,Neg,BK,MS,Ps):-
 %	Construct the Top program for a MIL problem.
 %
 top_program(Pos,Neg,BK,MS,Ss,Ts):-
-	write_program(Pos,Neg,BK,MS,Ss,Refs)
+	write_program(Pos,BK,MS,Ss,Refs)
 	,top_program(Pos,Neg,BK,MS,Ms)
 	,unfolded_metasubs(Ms,Ts)
 	,erase_program_clauses(Refs).
 
 
-%!	write_program(+Pos,+Neg,+BK,+MS,+PS,-Refs) is det.
+%!	write_program(+Pos,+BK,+MS,+PS,-Refs) is det.
 %
 %	Write an encapsulated program to the dynamic database.
 %
-write_program(Pos,Neg,BK,MS,Ss,Rs):-
+%	@tbd The negative examples don't need to be written to the
+%	dynamic database.
+%
+write_program(Pos,BK,MS,Ss,Rs):-
 	findall(Rs_i
-		,(member(P, [Pos,Neg,BK,MS,Ss])
+		,(member(P, [Pos,BK,MS,Ss])
 		 ,assert_program(user,P,Rs_i)
 		 )
 		,Rs_)
@@ -95,6 +98,23 @@ generalise(Pos,MS,Ss_Pos):-
 			  ,metasubstitution(Ep,M,H)
 			  )
 	     ,Ss_Pos).
+
+/* Alternative version- only resolves metarules, without taking into
+%  account the examples except to bind the symbol of the target predicate.
+%  This one is a tiny bit faster but the one above is currently the one
+%  in the technical report on Louise.
+
+generalise(Pos,MS,Ss_Pos):-
+	Pos = [E|_Es]
+	,E =.. [m,T|_As]
+	,setof(M
+	     ,M^B^MS^N^T^Ps^
+	       (member(M:-B,MS)
+		     ,M =.. [m,N,T|Ps]
+		     ,call(M)
+		     )
+	     ,Ss_Pos).
+*/
 
 
 %!	specialise(+Generalised,+Negatives,-Specialised) is det.

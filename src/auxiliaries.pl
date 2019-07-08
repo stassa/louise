@@ -83,7 +83,7 @@ list_top_program(T):-
 list_top_program(T,U):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,louise:encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
-	,louise:write_program(Pos_,Neg_,BK_,MS_,Ss,Refs)
+	,louise:write_program(Pos_,BK_,MS_,Ss,Refs)
 	,louise:generalise(Pos_,MS_,Ss_Pos)
 	,write_and_count('Generalisation:',Ss_Pos,U)
 	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)
