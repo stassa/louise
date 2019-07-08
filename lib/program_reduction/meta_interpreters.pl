@@ -81,6 +81,16 @@ solve_to_depth(M, (L1), Di, D, G, R):-
 %	clause/2. Guard is the term used to keep track of this number
 %	using non-backtrackable, destructive assignment.
 %
+guarded_clause(M:L1,true,G,R):-
+% Attempting to call clause/2 on a built-in raise errors.
+% So, we hand over to Prolog and let it do its thing.
+	predicate_property(L1, built_in)
+	,!
+	,call(M:L1)
+	,arg(1, G, I)
+	,I < R
+	,succ(I, I_)
+	,nb_setarg(1, G, I_).
 guarded_clause(M:L1, B, G, R):-
 	clause(M:L1, B)
 	,arg(1, G, I)

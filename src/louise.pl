@@ -270,20 +270,22 @@ encapsulated_clause(:-(L),Acc,C):-
 	,L_ =.. [m|[F|As]]
 	,reverse([:-L_|Acc],Ls)
 	,once(list_tree(Ls,C)).
-/*encapsulated_clause(H:-B,[],H:-B):-
+encapsulated_clause(H:-B,[],H:-B):-
+% Definite clause; H is the head of a built-in predicate.
 	predicate_property(H,built_in)
 	,!.
 encapsulated_clause((L,Ls),Acc,C_):-
+% Definite clause; L is an atom of a built-in predicate.
 	predicate_property(L,built_in)
 	,!
 	,encapsulated_clause(Ls,[L,Acc],C_).
 encapsulated_clause(L,Acc,(H:-Bs)):-
+% Definite clause; L is an atom of a built-in predicate.
 	L \= (_,_)
 	,predicate_property(L,built_in)
 	,!
 	,reverse([L|Acc], Ls)
 	,once(list_tree(Ls,(H,Bs))).
-*/
 encapsulated_clause(L:-Ls,Acc,C_):-
 % Definite clause; L is the head literal.
 	!
