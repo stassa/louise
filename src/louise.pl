@@ -3,7 +3,7 @@
 		 ,learn/5
 		 ,top_program/6
 		 ,projected_metasubs/2
-		 ,metasubstitutions/5
+		 ,top_program/5
 		 ,encapsulated_bk/2
 		 ,encapsulated_clauses/2
 		 ,predicate_signature/3
@@ -55,7 +55,7 @@ learn(Pos,Neg,BK,MS,Ps):-
 %
 top_program(Pos,Neg,BK,MS,Ss,Ts):-
 	write_program(Pos,Neg,BK,MS,Ss,Refs)
-	,metasubstitutions(Pos,Neg,BK,MS,Ms)
+	,top_program(Pos,Neg,BK,MS,Ms)
 	,projected_metasubs(Ms,Ts)
 	,erase_program_clauses(Refs).
 
@@ -98,12 +98,12 @@ projected_metasubs(Ss,Ms):-
 
 
 
-%!	metasubstitutions(+Positive,+Negative,+BK,+Metarules,-Metasubstitutions)
-%!	is det.
+%!	top_program(+Positive,+Negative,+BK,+Metarules,-Metasubstitutions)
+%	is det.
 %
-%	Collect all correct Metasubstitutions.
+%	Collect all correct Metasubstitutions in a MIL problem.
 %
-metasubstitutions(Pos,Neg,_BK,MS,Ss):-
+top_program(Pos,Neg,_BK,MS,Ss):-
 	setof(H
 	      ,M^MS^Ep^Pos^(member(M,MS)
 			   ,member(Ep,Pos)
@@ -129,6 +129,7 @@ metasubstitutions(Pos,Neg,_BK,MS,Ss):-
 	%,writeln('Length':M)
 	%,nl
 	.
+
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
