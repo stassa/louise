@@ -156,6 +156,8 @@ Louise's learning algorithm proceeds in the following steps:
 Steps 1 and 2 can be listed for debugging. Step 4 is the output of the learning
 procedure. Step 3 does not have an explicit listing predicate.
 
+### Listing the MIL problem
+
 A MIL problem consists of a set of examples, background knowledge and metarules.
 In Louise, those are defined in an experiment file as described in a previous
 section. The MIL problem for a learning target can be inspected with a call to
@@ -212,6 +214,8 @@ metarule(tailrec,A,B,A):-m(A,C,D),m(B,C,E),m(A,E,D).
 metarule(identity,A,B):-m(A,C,D),m(B,C,D).
 true.
 ```
+
+### Listing the Encapsulation of a MIL problem.
 
 The first step in Louise's learning procedure transforms a MIL problem into an
 _encapsulated_ representation. The encapsulation of a MIL problem can be
@@ -273,6 +277,8 @@ m(identity,A,B):-(s(A),s(B)),m(A,C,D),m(B,C,D).
 true.
 ```
 
+### Listing the Top program for a MIL problem
+
 The second step in Louise's learning procedure constructs the _Top prorgam_, the
 most general program that entails each positive example and none of the negative
 examples given the background knowledge and metarules in a MIL problem.
@@ -293,6 +299,8 @@ ancestor(A,B):-mother(A,C),ancestor(C,B).
 ancestor(A,B):-parent(A,C),ancestor(C,B).
 true.
 ```
+
+### Listing the reduced Top program
 
 The third step in Louise's learning procedure is the reduction of the Top
 program and the MIL problem by Gordon Plotkin's program reduction algorithm,
@@ -384,6 +392,8 @@ Note that, in order to list the reduction of the Top program,
 reduce it. Therefore, calling this listing predicate entails actually training
 Louise. This means that, if training must take a long time, so will the listing
 of the Top program reduction.
+
+### Listing the learned hypothesis
 
 The last step in Louise's learning procedure is the unfolding and excapsulation
 of the reduced Top program as a set of definite clauses. The result of this step
