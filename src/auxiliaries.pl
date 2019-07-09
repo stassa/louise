@@ -52,6 +52,9 @@ known_metarules(Ids):-
 %
 %	List the top-program reduction step for a learning Target.
 %
+%	@tbd: This does no feedbacksies. So you only see the first step
+%	of the reduction.
+%
 list_top_program_reduction(T):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,louise:encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)

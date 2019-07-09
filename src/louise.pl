@@ -40,10 +40,41 @@ learn(T,Ps):-
 learn(Pos,Neg,BK,MS,Ps):-
 	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
 	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
-	,flatten([Ss,Pos_,BK_,Ms,MS_],Ps_)
-	,program_reduction(Ps_,Rs,_)
+	,reduced_top_program(Pos_,BK_,MS_,Ss,Ms,Rs)
 	,examples_target(Pos,T)
 	,excapsulated_clauses(T,Rs,Ps).
+
+
+%!	reduced_top_program(+Pos,+BK,+Metarules,+Sig,+Program,-Reduced)
+%!	is det.
+%
+%	Recursively reduce the Top Program.
+%
+reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
+	flatten([Ss,Pos,BK,Ps,MS],Fs_)
+	,program_reduction(Fs_,Rs_,_)
+	%,length(Fs_,M)
+	,length(Rs_,N)
+	%,format('Initial reduction: ~w to ~w~n',[M,N])
+	,reduced_top_program_(N,Rs_,BK,MS,Ss,Rs).
+
+%!	reduced_top_program_(+N,+Prog,+BK,+Metarules,+Sig,-Reduced) is
+%!	det.
+%
+%	Business end of reduced_top_program/6
+%
+%	Recursively reduces the Top Program, by feeding back the result
+%	of each call to program_reduction/2 to itself, a process known
+%	as "doing feedbacksies".
+%
+reduced_top_program_(N,Ps,BK,MS,Ss,Bind):-
+	program_reduction(Ps,Rs,_)
+	,length(Rs, M)
+	%,format('New reduction: ~w to ~w~n',[N,M])
+	,M < N
+	,!
+	,reduced_top_program_(M,Rs,BK,MS,Ss,Bind).
+reduced_top_program_(_,Rs,_BK,_MS,_Ss,Rs).
 
 
 

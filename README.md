@@ -434,6 +434,12 @@ reduce it. Therefore, calling this listing predicate entails actually training
 Louise. This means that, if training must take a long time, so will the listing
 of the Top program reduction.
 
+Additionally, Louise reduces the Top program recursively, by feeding back the
+reduction to Plotkin's algorithm until the size of the reduction stops changing.
+`list_top_program_reduction/1` currently performs only the _first_ step of this
+process. This means the reduction listed by `list_top_program_reduction/1` might
+simultaneously be faster and larger than the result obtained with `learn/1`.
+
 ### Listing the learned hypothesis
 
 The last step in Louise's learning procedure is the unfolding and excapsulation
