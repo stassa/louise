@@ -2,7 +2,16 @@
 		  ,metarules/2
 		  ,positive_example/2
 		  ,negative_example/2
+		  ,grandparent/2
+		  ,grandfather/2
+		  ,grandmother/2
 		  ,parent/2
+		  ,married/2
+		  ,aunt/2
+		  ,uncle/2
+		  ,cousin/2
+		  ,nephew/2
+		  ,niece/2
 		  ,child/2
 		  ,son/2
 		  ,daughter/2
@@ -15,9 +24,28 @@
 		  ]).
 
 
-%configuration:metarule(postcorn,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,X).
+/* For experiments with Louise, when learning blood_relative/2, set:
+   derivation_depth(9).
+   resolutions(250_000).
 
-background_knowledge(blood_relative/2,[parent/2
+Derivation depth is a bit more forgiving, but a high number of
+resolutions is needed to get the best reduction results in the minimum
+amount of time. Actually, 250,000 are not sufficient to fully reduce the
+learned hypothesis- there is still some redundancy left. To be honest, I
+don't know how high resolutions/1 should go to fully reduce the theory.
+Bit of a weakness of the procedure there :/
+
+*/
+
+background_knowledge(blood_relative/2,[%grandparent/2
+				      grandfather/2
+				      ,grandmother/2
+				      ,parent/2
+				      ,aunt/2
+				      ,uncle/2
+				      ,cousin/2
+				      ,nephew/2
+				      ,niece/2
 				      ,child/2
 				      ,son/2
 				      ,daughter/2
@@ -29,7 +57,15 @@ background_knowledge(blood_relative/2,[parent/2
 				      ,female/1
 				      ]).
 
-background_knowledge(relative/2,[parent/2
+background_knowledge(relative/2,[grandfather/2
+				,grandmother/2
+				,parent/2
+				,married/2
+				,aunt/2
+				,uncle/2
+				,cousin/2
+				,nephew/2
+				,niece/2
 				,child/2
 				,son/2
 				,daughter/2
@@ -43,7 +79,7 @@ background_knowledge(relative/2,[parent/2
 
 
 metarules(blood_relative/2,[identity]).
-metarules(relative/2,[chain]).
+metarules(relative/2,[identity,inverse,chain]).
 
 positive_example(blood_relative/2,blood_relative(X,Y)):-
 	blood_relative(X,Y).
@@ -52,7 +88,9 @@ positive_example(relative/2,relative(X,Y)):-
 
 negative_example(blood_relative/2,_):-
 	fail.
-negative_example(relative/2,_):-
+negative_example(relative/2,relative(X,Y)):-
+	blood_relative(X,Y).
+negative_example_(relative/2,_):-
 	fail.
 
 % Target theory for relative/2.
@@ -61,11 +99,23 @@ negative_example(relative/2,_):-
 relative(X,Y):-
 	blood_relative(X,Z)
 	,blood_relative(Z,Y)
-	,\+ blood_relative(X,Y).
+	,X \= Y
+	,\+ blood_relative(X,Y)
+	,\+ blood_relative(Y,X).
+
 
 % Target theory for blood relative/2.
 % This one's unreduced, actually.
+% The reduction step throws some clauses out.
+blood_relative(X,Y):- grandparent(X,Y).
+blood_relative(X,Y):- grandfather(X,Y).
+blood_relative(X,Y):- grandmother(X,Y).
 blood_relative(X,Y):- parent(X,Y).
+blood_relative(X,Y):- aunt(X,Y).
+blood_relative(X,Y):- uncle(X,Y).
+blood_relative(X,Y):- cousin(X,Y).
+blood_relative(X,Y):- nephew(X,Y).
+blood_relative(X,Y):- niece(X,Y).
 blood_relative(X,Y):- child(X,Y).
 blood_relative(X,Y):- son(X,Y).
 blood_relative(X,Y):- daughter(X,Y).
@@ -74,8 +124,21 @@ blood_relative(X,Y):- sister(X,Y).
 blood_relative(X,Y):- father(X,Y).
 blood_relative(X,Y):- mother(X,Y).
 
+% BK definitions - blood relations
+grandparent(X,Y):- grandfather(X,Y).
+grandparent(X,Y):- grandmother(X,Y).
+grandfather(X,Y):- father(X,Z), parent(Z,Y).
+grandmother(X,Y):- mother(X,Z), parent(Z,Y).
 parent(X,Y):- father(X,Y).
 parent(X,Y):- mother(X,Y).
+aunt(X,Y):- sister(X,Z),parent(Z,Y).
+uncle(X,Y):- brother(X,Z),parent(Z,Y).
+cousin(X,Y):-child(X,Z),aunt(Z,Y).
+cousin(X,Y):-child(X,Z),uncle(Z,Y).
+nephew(X,Y):- male(X),aunt(Y,X).
+nephew(X,Y):- male(X),uncle(Y,X).
+niece(X,Y):- female(X),aunt(Y,X).
+niece(X,Y):- female(X),uncle(Y,X).
 child(X,Y):- son(X,Y).
 child(X,Y):- daughter(X,Y).
 son(X,Y):- male(X),parent(Y,X).
@@ -124,20 +187,17 @@ female(ada).
 female(efi).
 female(stassa).
 
-/*father(stathis, kostas).
-father(stefanos, dora).
-father(kostas, stassa).
-
-mother(alexandra, kostas).
-mother(paraskevi, dora).
-mother(dora, stassa).
-
-male(stathis).
-male(stefanos).
-male(kostas).
-
-female(dora).
-female(stassa).
-female(alexandra).
-female(paraskevi).
-*/
+% BK definitions - not blood relations.
+married(akis,efi).
+married(kostas,theodora).
+married(miltos,ada).
+married(stathis,alexandra).
+married(stefanos,voula).
+married(vassilis,gioula).
+% Extensional reflexion of the "married" relation
+married(ada,miltos).
+married(alexandra,stathis).
+married(efi,akis).
+married(gioula,vassilis).
+married(theodora,kostas).
+married(voula,stefanos).
