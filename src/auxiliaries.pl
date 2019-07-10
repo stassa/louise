@@ -6,6 +6,7 @@
 		      ,list_encapsulated_problem/1
 		      ,list_mil_problem/1
 		      ,initialise_experiment/0
+		      ,cleanup_experiment/0
 		      ,assert_program/3
 		      ,erase_program_clauses/1
 		      ,experiment_data/5
@@ -217,6 +218,23 @@ atom_underline(A,A_):-
 initialise_experiment:-
 	configuration:experiment_file(P,_M)
 	,user:use_module(P).
+
+
+
+%!	cleanup_experiment is det.
+%
+%	Clean up after a learning session.
+%
+%	Currently this only removes clauses of m/n asserted to the
+%	dynamic database.
+%
+%	Remember to run initialise_experiment/0 after this one to
+%	re-load any necessary clauses.
+%
+cleanup_experiment:-
+	forall(user:current_predicate(m,H)
+	      ,user:retractall(H)
+	      ).
 
 
 
