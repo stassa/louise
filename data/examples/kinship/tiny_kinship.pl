@@ -154,12 +154,13 @@ wife(X,Y):-
 
 child(X,Y):-
 	parent(Y,X).
-/*child(X,Y):-
+/*
+child(X,Y):-
 	son(X,Y).
 child(X,Y):-
 	daughter(X,Y).
-Causes learning child with son/2, daughter/2 and identity to go
-infinite!
+%Causes learning child with son/2, daughter/2 and identity to go
+%infinite!
 */
 
 son(X,Y):-
