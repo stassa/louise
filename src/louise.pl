@@ -38,10 +38,14 @@ learn(T,Ps):-
 %	Learn a Progam from a MIL problem.
 %
 learn(Pos,Neg,BK,MS,Ps):-
-	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	debug(learn,'Encapsulating problem',[])
+	,encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,debug(learn,'Constructing Top program',[])
 	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
+	,debug(learn,'Reducing Top program',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ss,Ms,Rs)
 	,examples_target(Pos,T)
+	,debug(learn,'Excapsulating problem',[])
 	,excapsulated_clauses(T,Rs,Ps).
 
 
@@ -53,9 +57,9 @@ learn(Pos,Neg,BK,MS,Ps):-
 reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 	flatten([Ss,Pos,BK,Ps,MS],Fs_)
 	,program_reduction(Fs_,Rs_,_)
-	%,length(Fs_,M)
+	,length(Fs_,M)
 	,length(Rs_,N)
-	%,format('Initial reduction: ~w to ~w~n',[M,N])
+	,debug(reduction,'Initial reduction: ~w to ~w',[M,N])
 	,reduced_top_program_(N,Rs_,BK,MS,Ss,Rs).
 
 %!	reduced_top_program_(+N,+Prog,+BK,+Metarules,+Sig,-Reduced) is
@@ -70,7 +74,7 @@ reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 reduced_top_program_(N,Ps,BK,MS,Ss,Bind):-
 	program_reduction(Ps,Rs,_)
 	,length(Rs, M)
-	%,format('New reduction: ~w to ~w~n',[N,M])
+	,debug(reduction,'New reduction: ~w to ~w',[N,M])
 	,M < N
 	,!
 	,reduced_top_program_(M,Rs,BK,MS,Ss,Bind).

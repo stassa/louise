@@ -2,6 +2,7 @@
 			,metarule/2
 			,metarule/3
 			,metarule/4
+			,metarule/5
 			,metarule_language/2
 			]).
 
@@ -11,16 +12,27 @@
 % Body literals of H(2,2) metarules.
 :-dynamic m/1
          ,m/2
-         ,m/3.
+         ,m/3
+	 ,m/4
+	 ,m/5.
 
 :-multifile m/1
            ,m/2
-	   ,m/3.
+	   ,m/3
+	   ,m/4
+	   ,m/5.
 
 % Allows experiment files to define their own, special metarules.
 :-multifile metarule/2
            ,metarule/3
-           ,metarule/4.
+           ,metarule/4
+	   ,metarule/5.
+
+/* Debug levels */
+%:-debug(depth). % Debug number of clauses and invented predicates.
+:-debug(learn). % Debug learning steps.
+%:-debug(top). % Debug Top program construction.
+:-debug(reduction). % Debug Top program construction.
 
 %!	experiment_file(?Path,?Module) is semidet.
 %
@@ -49,6 +61,7 @@ metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
 metarule(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
 metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
 metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
+metarule(long_chain_3,P,Q,R,S):- m(P,X,Y),m(Q,X,Z),m(R,Z,V),m(S,V,Y).
 
 
 %!	metarule_language(?Min,?Max) is semidet.
