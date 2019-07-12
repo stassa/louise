@@ -1,4 +1,7 @@
-:-module(louise, [learn/1
+:-module(louise, [learn_episodic/1
+		 ,learn_episodic/2
+		 ,learn_episodic/5
+		 ,learn/1
 		 ,learn/2
 		 ,learn/5
 		 ,top_program/6
@@ -11,6 +14,103 @@
 		 ]).
 
 :-use_module(configuration).
+
+
+%!	learn_episodic(+Target) is det.
+%
+%	Learn a definition of a Target in successive episodes.
+%
+learn_episodic(T):-
+	learn_episodic(T,Ps)
+	,print_clauses(Ps).
+
+
+
+%!	learn_episodic(+Target,-Definition) is det.
+%
+%	Learn a Definition of a Target in successive episodes.
+%
+learn_episodic(T,Ps):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,learn_episodic(Pos,Neg,BK,MS,Ps).
+
+
+
+%!	learn_episodic(+Pos,+Neg,+BK,+Metarules,-Program) is det.
+%
+%	Learn a Program over successive episodes.
+%
+%	Base predicate for episodic learning. Program is learned in
+%	successive episodes where the learned hypothesis is added to the
+%	BK and learning begins all over again.
+%
+learn_episodic(Pos,Neg,BK,MS,Ps):-
+	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,learning_episode(Pos_,Neg_,BK_,MS_,Ss,Ps_1)
+	,examples_target(Pos,T)
+	,learned_hypothesis(T,Ps_1,Es_1)
+	,length(Es_1,N)
+	,learn_episodic(T,N,Pos_,Neg_,BK_,MS_,Ss,Es_1,Ps_k)
+	,excapsulated_clauses(T,Ps_k,Ps).
+
+
+%!	learned_hypothesis(+Target,+Program,-Hypothesis) is det.
+%
+%	Collect the clauses of a learned Hypothesis.
+%
+%	Helper to separate a learned hypothesis from the rest of a
+%	reduced program, so that it can be added to the background
+%	knowledge for a subsequent learning episode.
+%
+learned_hypothesis(T/A,Ps,Hs):-
+	findall(H:-B
+	       ,(member(H:-B,Ps)
+		,H =.. [m,T|As]
+		,length(As,A)
+		)
+	       ,Hs).
+
+
+%!	learn_episodic(+Target,+N,+Pos,+Neg,+BK,+Meta,+Sig,+Acc,-Bind)
+%!	is det.
+%
+%	Business end of learn_episodic/5.
+%
+%	Recursively learns a hypothesis with background knowledge
+%	including the hypothesis learned in the previous recursion step.
+%
+%	Recursion stops when the length of the learned hypothesis does
+%	not change from one recursion step to the next.
+%
+learn_episodic(T/A,N,Pos,Neg,BK,MS,Ss,Es_i,Bind):-
+	append(BK,Es_i,BK_)
+	,learning_episode(Pos,Neg,BK_,MS,Ss,Ps)
+	,learned_hypothesis(T/A,Ps,Es_j)
+	,length(Es_j,M)
+	,M > N
+	,!
+	,learn_episodic(T/A,M,Pos,Neg,BK_,MS,Ss,Es_j,Bind).
+learn_episodic(_T,_M,_Pos,_Neg,_BK,_MS,_Ss,Ps,Ps).
+
+
+%!	learning_episode(+Pos,+Neg,+BK,+Ms,+Sig,-Episode) is det.
+%
+%	Process one learning episode.
+%
+%	One learning episode consists of constructing the Top program
+%	and then reducing it.
+%
+%	@tbd This could replace the two calls to top_program/6 and
+%	reduced_top_program/6 in learn/5, so as to add the recursion
+%	depth limit test in here. Just in case.
+%
+learning_episode(Pos,Neg,BK,MS,Ss,Es):-
+	configuration:recursion_depth_limit(episodic_learning,L)
+	,G = top_program(Pos,Neg,BK,MS,Ss,Ms)
+	,call_with_depth_limit(G,L,Rs)
+	,Rs \= depth_limit_exceeded
+	,reduced_top_program(Pos,BK,MS,Ss,Ms,Es).
+
 
 
 %!	learn(+Target) is det.
@@ -60,7 +160,10 @@ reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 	,length(Fs_,M)
 	,length(Rs_,N)
 	,debug(reduction,'Initial reduction: ~w to ~w',[M,N])
-	,reduced_top_program_(N,Rs_,BK,MS,Ss,Rs).
+	,reduced_top_program_(N,Rs_,BK,MS,Ss,Rs)
+	% program_reduction module leaves behind garbage
+	% in program module. Why?
+	,cleanup_experiment.
 
 %!	reduced_top_program_(+N,+Prog,+BK,+Metarules,+Sig,-Reduced) is
 %!	det.

@@ -4,6 +4,7 @@
 			,metarule/4
 			,metarule/5
 			,metarule_language/2
+			,recursion_depth_limit/2
 			]).
 
 :-user:use_module(src(experiment_file)).
@@ -33,6 +34,7 @@
 :-debug(learn). % Debug learning steps.
 %:-debug(top). % Debug Top program construction.
 :-debug(reduction). % Debug Top program construction.
+%:-debug(episodic). % Debug episodic learning.
 
 %!	experiment_file(?Path,?Module) is semidet.
 %
@@ -41,6 +43,7 @@
 experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/kinship/my_family_tree.pl',my_family_tree).
 %experiment_file('data/examples/kinship/kinship.pl',kinship).
+%experiment_file('data/examples/grammars/anbn.pl',anbn).
 
 
 %!	metarule(?Id,?P,?Q) is semidet.
@@ -72,6 +75,22 @@ metarule(long_chain_3,P,Q,R,S):- m(P,X,Y),m(Q,X,Z),m(R,Z,V),m(S,V,Y).
 %	louise:metarule_expansion/2.
 %
 metarule_language(1,3).
+
+
+%!	recursion_depth_limit(?Purpose,?Limit) is semidet.
+%
+%	Recursion depth Limit for the given Purpose.
+%
+%	Limit is an integer, which is passed as
+%	the second argument to call_with_depth_limit/3 in order to
+%	limit recursion in the listed Purpose.
+%
+%	Known purposes are as follows:
+%
+%	* episodic_learning: Limits recursion during Top program
+%	construction in episodic learning.
+%
+recursion_depth_limit(episodic_learning,100).
 
 
 /* % Alternative defintiion of metarule/n.
