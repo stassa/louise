@@ -9,13 +9,9 @@
 /** <module> Experiment file for a^nb^n grammar.
 */
 
-% This is not picked up if I define it here. I'll need to fix that.
-% That _too_.
-% metarule(long_chain_3,P,Q,R,S):- m(P,X,Y),m(Q,X,Z),m(R,Z,V),m(S,V,Y).
-
 background_knowledge('S'/2,['A'/2,'B'/2]).
 
-metarules('S'/2,[long_chain_3,chain]).
+metarules('S'/2,[chain]).
 
 positive_example('S'/2,E):-
 	member(E, ['S'([a,b],[])

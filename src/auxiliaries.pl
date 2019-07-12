@@ -127,7 +127,8 @@ write_and_count(Msg,Cs,U):-
 %	encapsulated MIL problem to be listed.
 %
 list_encapsulated_problem(T):-
-	experiment_data(T,Pos,Neg,BK,MS)
+	configuration:extend_metarules(E)
+	,experiment_data(T,Pos,Neg,BK,MS)
 	,predicate_signature(Pos,BK,Ss)
 	,format_underlined('Predicate signature')
 	,print_clauses(Ss)
@@ -141,7 +142,10 @@ list_encapsulated_problem(T):-
 	,print_clauses(Neg_)
 	,nl
 	,encapsulated_bk(BK,BK_)
-	,expanded_metarules(MS,MS_)
+	,(   E == true
+	 ->  extended_metarules(MS,MS_)
+	 ;   expanded_metarules(MS,MS_)
+	 )
 	,format_underlined('Background knowledge')
 	,forall(member(P,BK_)
 	       ,print_clauses(P)

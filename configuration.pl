@@ -1,4 +1,5 @@
 :-module(configuration, [experiment_file/2
+			,extend_metarules/1
 			,metarule/2
 			,metarule/3
 			,metarule/4
@@ -24,6 +25,8 @@
 	   ,m/5.
 
 % Allows experiment files to define their own, special metarules.
+% BUG: Actually, this doesn't work- module quantifiers, again.
+% Needs fixing.
 :-multifile metarule/2
            ,metarule/3
            ,metarule/4
@@ -46,6 +49,13 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/grammars/anbn.pl',anbn).
 
 
+%!	extend_metarules(?Bool) is semidet.
+%
+%	Whether to extend the metarules in a MIL problem.
+%
+extend_metarules(true).
+
+
 %!	metarule(?Id,?P,?Q) is semidet.
 %!	metarule(?Id,?P,?Q,?R) is semidet.
 %
@@ -64,7 +74,6 @@ metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
 metarule(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
 metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
 metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
-metarule(long_chain_3,P,Q,R,S):- m(P,X,Y),m(Q,X,Z),m(R,Z,V),m(S,V,Y).
 
 
 %!	metarule_language(?Min,?Max) is semidet.

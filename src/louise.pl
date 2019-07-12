@@ -10,6 +10,8 @@
 		 ,predicate_signature/3
 		 ,expanded_metarules/2
 		 ,metarule_expansion/2
+		 ,extended_metarules/2
+		 ,metarule_extension/3
 		 ,excapsulated_clauses/3
 		 ]).
 
@@ -342,8 +344,12 @@ unfolded_metasubs(Ss,Ms):-
 %	@tbd Encapsulated forms need documentation.
 %
 encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss):-
-	encapsulated_bk(BK,BK_)
-	,expanded_metarules(MS,MS_)
+	configuration:extend_metarules(E)
+	,encapsulated_bk(BK,BK_)
+	,(   E == true
+	 ->  extended_metarules(MS, MS_)
+	 ;   expanded_metarules(MS,MS_)
+	 )
 	,encapsulated_clauses(Pos,Pos_)
 	,encapsulated_clauses(Neg,Neg_)
 	,predicate_signature(Pos,BK,Ss).
@@ -536,7 +542,146 @@ existential_variables(Ls,L_):-
 metarule_projection(S,H:-B):-
 	S =.. [m,Id|Ps]
 	,Mh =.. [metarule,Id|Ps]
-	,clause(Mh,(H,B)).
+	,clause(Mh,(H,B))
+	,!.
+metarule_projection(S,H:-B):-
+% Expanded metarules don't have metarule/n heads!
+% They're only in the database as m/n clauses.
+	S =.. [m,_Id|_Ps]
+	,clause(S,Ls)
+	,literals_clause(Ls,(H,B)).
+
+
+%!	literals_clause(+Literals,-Clause) is det.
+%
+%	Remove signature from an expended metarule body.
+%
+%	The signature terms of extended metarules are not conveniently
+%	wrapped in ()'s and so they're fiddlier to get rid of than for
+%	ordinary metarules. This handles the necessary fiddling.
+%
+literals_clause((L,Ls),(L,Ls)):-
+	L \= s(_)
+	,!.
+literals_clause((s(_),Ls),C):-
+	literals_clause(Ls, C).
+
+
+
+%!	extended_metarules(+Metarules,-Extended) is det.
+%
+%	Extend a set of Metarules.
+%
+%	@tbd This is an expensive predicate. First, it collects lists of
+%	metarules, two expanded metarules and their extension, as
+%	key-value pairs, where the keys are the names of the metarules;
+%	then, it flattens this list and sorts it to remove elements with
+%	duplicate keys; finally, it splits the resulting sorted list to
+%	keys and values lists and returns the values. The reason for all
+%	this is the usual problem with sorting definite clauses with
+%	variables: terms that are identical up to renaming of variables
+%	appear different to sort/4 because of the "age" of variables
+%	(when they were created). Rather than implementing a sorting
+%	procedure that ignores variable age, it's much simpler to do
+%	what is done here. The high cost is mitigated by the fact that
+%	this predicate only needs to be called once at the start of
+%	learning.
+%
+extended_metarules(MS,Es):-
+	findall([M1-M1_,M2-M2_,N-M]
+	       ,(member(M1,MS)
+		,member(M2,MS)
+		,metarule_expansion(M1,M1_)
+		,metarule_expansion(M2,M2_)
+		,metarule_extension(M1_,M2_,M)
+		,M = (H:-_B)
+		,H =.. [m,N|_As]
+		)
+	       ,Es_)
+	,flatten(Es_,Es_f)
+	,sort(1,@<,Es_f,Es_s)
+	,pairs_keys_values(Es_s,_Ns,Es).
+
+
+
+%!	metarule_extension(+Metarule1,+Metarule2,-Metarule3) is det.
+%
+%	Extend two metarules by unfolding them on each other.
+%
+%	Exending two metarules results in a new metarule with the head
+%	literal of the first metarule and the body literals of both
+%	minus the literal used to unfold one metarule on the other.
+%
+%	Unfolding two metarules involves unifying the last body literal
+%	of one metarule with the head literal of the second metarule and
+%	then concatenating their body literals minus the body literal
+%	unified with the head literal of the second metarule.
+%
+metarule_extension((M1:-Ss1,B1),(M2:-Ss2,B2),(M3:-Ss3,B3)):-
+	metasubs_extension(M1,M2,M3)
+	,unfold(B1,B2,B3)
+	,signature_extension(Ss1,Ss2,Ss3).
+
+
+%!	metasubs_extension(+Metasub1,+Metasub2,+Metasub3) is det.
+%
+%	Create a metasubstitution for a metarule extension.
+%
+metasubs_extension(M1,M2,M3):-
+	M1 =.. [m,N1|Ps1]
+	,M2 =.. [m,N2|Ps2]
+	,atomic_list_concat([N1,N2],'_',N3)
+	,list_merge(Ps1,Ps2,Ps3)
+	,M3 =.. [m,N3|Ps3].
+
+
+%!	list_merge(+Xs,+Ys,-Zs) is det.
+%
+%	Merge two lists.
+%
+%	Merging here means that we discard the element at the end of the
+%	first list, the element at the start of the second list, and
+%	append the remaining elements of the two lists.
+%
+list_merge([_],[_|Xs],Xs).
+list_merge([X|Xs],Ys,[X|Zs]):-
+	list_merge(Xs,Ys,Zs).
+
+
+%!	signature_extension(+Sig1, +Sig2, -Sig3) is det.
+%
+%	Construct the signature of a metarule extension.
+%
+signature_extension(Ss1,(_,Ss2),Ss3):-
+	tree_merge(Ss1,Ss2,Ss3).
+
+
+%!	tree_merge(+Xs,+Ys,-Zs) is det.
+%
+%	Tree version of merge/3.
+%
+%	Used to merge (in the sense of merge/3) the signature terms in
+%	two metarules extending each other.
+%
+tree_merge((X,Xs),Ys,(X,Zs)):-
+	!
+	,tree_merge(Xs,Ys,Zs).
+tree_merge((L),Xs,Xs):-
+	L \== (_,_).
+
+
+%!	unfold(+Tree1,+Tree2,-Unfolded) is det.
+%
+%	Unfold two trees on one another.
+%
+%	Unfolding here means that we find the last literal of Tree1, the
+%	first literal of Tree2, unify them and return the concatenation
+%	of remaining literals in both trees.
+%
+unfold((X,Xs),Ys,(X,Zs)):-
+	unfold(Xs,Ys,Zs).
+unfold((X),(X,Xs),Xs):-
+	X \== (_,_).
 
 
 
