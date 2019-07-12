@@ -233,7 +233,11 @@ initialise_experiment:-
 %
 cleanup_experiment:-
 	forall(user:current_predicate(m,H)
-	      ,user:retractall(H)
+	      ,(user:retractall(H)
+	       % Clauses in program module are asserted
+	       % by predicates in program_reduction module
+	       ,program:retractall(H)
+	       )
 	      ).
 
 
