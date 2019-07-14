@@ -156,6 +156,38 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,excapsulated_clauses(T,Rs,Ps).
 
 
+%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Pos_,-Neg_,-BK_,-MS_,-PS)
+%!	is det.
+%
+%	Encapsualte a MIL problem.
+%
+%	Pos and Neg are lists of example atoms; Pos are negative
+%	examples and Neg are negative examples, of the form :-E, where
+%	E an atom.
+%
+%	BK is a list of predicate symbols and arities of BK predicates.
+%
+%	Metarules is a list of constants, the names of metarules in the
+%	problem.
+%
+%	Pos_, Neg_, BK_ and MS_ are encapsulation of the positive and
+%	negative examples, BK definitions, and Metarules, respectively.
+%	PS is an encapsulation of the predicate singature.
+%
+%	@tbd Encapsulated forms need documentation.
+%
+encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss):-
+	configuration:extend_metarules(E)
+	,encapsulated_bk(BK,BK_)
+	,(   E == true
+	 ->  extended_metarules(MS, MS_)
+	 ;   expanded_metarules(MS,MS_)
+	 )
+	,encapsulated_clauses(Pos,Pos_)
+	,encapsulated_clauses(Neg,Neg_)
+	,predicate_signature(Pos,BK,Ss).
+
+
 
 %!	top_program(+Pos,+Neg,+BK,+Metarules,+Signature,-Top) is det.
 %
@@ -290,39 +322,6 @@ unfolded_metasubs(Ss,Ms):-
 		 ,varnumbers(C,C_)
 		 )
 		,Ms).
-
-
-
-%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Pos_,-Neg_,-BK_,-MS_,-PS)
-%!	is det.
-%
-%	Encapsualte a MIL problem.
-%
-%	Pos and Neg are lists of example atoms; Pos are negative
-%	examples and Neg are negative examples, of the form :-E, where
-%	E an atom.
-%
-%	BK is a list of predicate symbols and arities of BK predicates.
-%
-%	Metarules is a list of constants, the names of metarules in the
-%	problem.
-%
-%	Pos_, Neg_, BK_ and MS_ are encapsulation of the positive and
-%	negative examples, BK definitions, and Metarules, respectively.
-%	PS is an encapsulation of the predicate singature.
-%
-%	@tbd Encapsulated forms need documentation.
-%
-encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss):-
-	configuration:extend_metarules(E)
-	,encapsulated_bk(BK,BK_)
-	,(   E == true
-	 ->  extended_metarules(MS, MS_)
-	 ;   expanded_metarules(MS,MS_)
-	 )
-	,encapsulated_clauses(Pos,Pos_)
-	,encapsulated_clauses(Neg,Neg_)
-	,predicate_signature(Pos,BK,Ss).
 
 
 
