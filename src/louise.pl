@@ -47,7 +47,9 @@ learn_episodic(T,Ps):-
 %	BK and learning begins all over again.
 %
 learn_episodic(Pos,Neg,BK,MS,Ps):-
-	encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	debug(episodic,'Encapsulating problem',[])
+	,encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,debug(episodic,'Learning first episode',[])
 	,learning_episode(Pos_,Neg_,BK_,MS_,Ss,Ps_1)
 	,examples_target(Pos,T)
 	,learned_hypothesis(T,Ps_1,Es_1)
@@ -86,6 +88,7 @@ learned_hypothesis(T/A,Ps,Hs):-
 %
 learn_episodic(T/A,N,Pos,Neg,BK,MS,Ss,Es_i,Bind):-
 	append(BK,Es_i,BK_)
+	,debug(episodic,'Learning new episode',[])
 	,learning_episode(Pos,Neg,BK_,MS,Ss,Ps)
 	,learned_hypothesis(T/A,Ps,Es_j)
 	,length(Es_j,M)
@@ -108,9 +111,11 @@ learn_episodic(_T,_M,_Pos,_Neg,_BK,_MS,_Ss,Ps,Ps).
 %
 learning_episode(Pos,Neg,BK,MS,Ss,Es):-
 	configuration:recursion_depth_limit(episodic_learning,L)
+	,debug(episodic,'Constructing Top program',[])
 	,G = top_program(Pos,Neg,BK,MS,Ss,Ms)
 	,call_with_depth_limit(G,L,Rs)
 	,Rs \= depth_limit_exceeded
+	,debug(episodic,'Reducing Top program',[])
 	,reduced_top_program(Pos,BK,MS,Ss,Ms,Es).
 
 
