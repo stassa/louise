@@ -86,12 +86,10 @@ positive_example(blood_relative/2,blood_relative(X,Y)):-
 positive_example(relative/2,relative(X,Y)):-
 	relative(X,Y).
 
-negative_example(blood_relative/2,_):-
-	fail.
+negative_example(blood_relative/2,blood_relative(X,Y)):-
+	relative(X,Y).
 negative_example(relative/2,relative(X,Y)):-
 	blood_relative(X,Y).
-negative_example_(relative/2,_):-
-	fail.
 
 % Target theory for relative/2.
 % A relative is a blood relative of a blood relative who is not him- or
