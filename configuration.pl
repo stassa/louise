@@ -1,4 +1,5 @@
-:-module(configuration, [experiment_file/2
+:-module(configuration, [derivation_depth/1
+			,experiment_file/2
 			,extend_metarules/1
 			,metarule/2
 			,metarule/3
@@ -6,10 +7,12 @@
 			,metarule/5
 			,metarule_language/2
 			,recursion_depth_limit/2
+			,resolutions/1
 			]).
 
 :-user:use_module(src(experiment_file)).
-:-reexport(lib(program_reduction/reduction_configuration)).
+:-reexport(lib(program_reduction/reduction_configuration), except([derivation_depth/1
+								  ,resolutions/1])).
 
 % Body literals of H(2,2) metarules.
 :-dynamic m/1
@@ -34,10 +37,27 @@
 
 /* Debug levels */
 %:-debug(depth). % Debug number of clauses and invented predicates.
-:-debug(learn). % Debug learning steps.
+%:-debug(learn). % Debug learning steps.
 %:-debug(top). % Debug Top program construction.
-:-debug(reduction). % Debug Top program construction.
+%:-debug(reduction). % Debug Top program construction.
 %:-debug(episodic). % Debug episodic learning.
+
+
+%!	derivation_depth(?Depth) is semidet.
+%
+%	Maximum depth of derivation branches.
+%
+%	Used in program_reduction module with solve_to_depth/3 and
+%	solve_to_limit/4 meta-interpreters.
+%
+%derivation_depth(3).
+%derivation_depth(5).
+%derivation_depth(8).
+derivation_depth(9).
+%derivation_depth(10).
+%derivation_depth(20).
+%derivation_depth(5000).
+
 
 %!	experiment_file(?Path,?Module) is semidet.
 %
@@ -53,7 +73,7 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %
 %	Whether to extend the metarules in a MIL problem.
 %
-extend_metarules(true).
+extend_metarules(false).
 
 
 %!	metarule(?Id,?P,?Q) is semidet.
@@ -100,6 +120,21 @@ metarule_language(1,3).
 %	construction in episodic learning.
 %
 recursion_depth_limit(episodic_learning,100).
+
+
+%!	resolutions(?Resolutions) is semidet.
+%
+%	Maximum number of resolutions.
+%
+%	Used with solve_to_depth/3.
+%
+%resolutions(5_500_000).
+%resolutions(20_500_000).
+%resolutions(250_000).
+%resolutions(10_000).
+resolutions(5000).
+%resolutions(1000).
+%resolutions(15).
 
 
 /* % Alternative defintiion of metarule/n.
