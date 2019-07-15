@@ -5,6 +5,7 @@
 		 ,learn/2
 		 ,learn/5
 		 ,top_program/6
+		 ,reduced_top_program/6
 		 ]).
 
 :-use_module(configuration).
