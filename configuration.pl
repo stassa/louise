@@ -136,23 +136,6 @@ resolutions(5000).
 %resolutions(1000).
 %resolutions(15).
 
-
-/* % Alternative defintiion of metarule/n.
-% This one is more convenient in some ways but less readable I think.
-
-%!	metarule(?Id,?Existential,?Universal) is semidet.
-%
-%	An encapsulated metarule.
-%
-%	@tbd This representation does not define constraints. For the
-%	time being this doesn't seem to be necessary but a complete
-%	representation will need to include constraints.
-%
-metarule(chain,[P,Q,R],[X,Y,Z]):- m(P,X,Y),m(Q,X,Z),m(R,Z,Y).
-metarule(identity,[P,Q],[X,Y]):- m(P,X,Y), m(Q,X,Y).
-metarule(tailrec,[P,Q],[X,Y,Z]):-m(P,X,Y),m(Q,X,Z),m(P,Z,Y).
-*/
-
 % Loads the current experiment file in the Swi-Prolog IDE when the
 % configuration is changed.
 %
