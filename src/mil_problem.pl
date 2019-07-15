@@ -262,6 +262,10 @@ predicate_signature(Es,BK,[s(T)|Ps]):-
 %	Extract the symbol and arity from Examples of a Target.
 %
 examples_target([E|_Es],F/A):-
+	E =.. [m,F|As]
+	,!
+	,length(As,A).
+examples_target([E|_Es],F/A):-
 	functor(E,F,A).
 
 
