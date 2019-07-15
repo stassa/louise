@@ -68,6 +68,7 @@ metarule_expansion(Id,Mh_:-(Es_,Mb)):-
 	,maplist(existential_variables,Ps,Ps_)
 	,once(list_tree(Ps_,Es_)).
 
+
 %!	existential_variables(+Variable, -Encapsulated) is det.
 %
 %	Encapsulate an existentially quantified Variable in a metarule.
@@ -367,7 +368,6 @@ unfolded_metasubs(Ss,Ms):-
 		,S^Ss^B_^(member(S,Ss)
 			 ,metarule_projection(S,H:-B)
 			 ,copy_term(B,B_)
-			 ,user:call(B_)
 			 ,numbervars(B)
 		 )
 		,Ms_)
@@ -389,7 +389,7 @@ metarule_projection(S,H:-B):-
 	,clause(Mh,(H,B))
 	,!.
 metarule_projection(S,H:-B):-
-% Expanded metarules don't have metarule/n heads!
+% Extended metarules don't have metarule/n heads!
 % They're only in the database as m/n clauses.
 	S =.. [m,_Id|_Ps]
 	,clause(S,Ls)
