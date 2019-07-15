@@ -126,13 +126,35 @@ learn_episodic(_T,_M,_Pos,_Neg,_BK,_MS,_Ss,Ps,Ps).
 %	depth limit test in here. Just in case.
 %
 learning_episode(Pos,Neg,BK,MS,Ss,Es):-
-	configuration:recursion_depth_limit(episodic_learning,L)
+	configuration:theorem_prover(TP)
+	,configuration:recursion_depth_limit(episodic_learning,L)
 	,debug(episodic,'Constructing Top program',[])
 	,G = top_program(Pos,Neg,BK,MS,Ss,Ms)
-	,call_with_depth_limit(G,L,Rs)
-	,Rs \= depth_limit_exceeded
+	,recursion_guard(G,L,TP)
 	,debug(episodic,'Reducing Top program',[])
 	,reduced_top_program(Pos,BK,MS,Ss,Ms,Es).
+
+
+%!	recursion_guard(+Goal,+Time_Limit,+Theorem_Prover) is det.
+%
+%	Call Goal guarding for infinite recursion.
+%
+%	Time_Limit is passed to call_with_depth_limit/3 if necessary.
+%
+%	Theorem_Prover is the current value of the configuration option
+%	theorem_prover/1. If this is "resolution" then Depth_Limit is
+%	used with call_with_depth_limit/3. If theorem_prover/1 is set to
+%	"tp" there is no reason to guard against recursion her: the TP
+%	operator is guaranteed to terminate. At least it is, given a
+%	definite datalog program.
+%
+recursion_guard(G,L,resolution):-
+	!
+	,call_with_depth_limit(G,L,Rs)
+	,Rs \= depth_limit_exceeded.
+recursion_guard(G,_L,tp):-
+% TP operator is already recursion-safe.
+	call(G).
 
 
 
@@ -420,7 +442,7 @@ reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 	configuration:recursive_reduction(false)
 	,flatten([Ss,Pos,BK,Ps,MS],Fs_)
-	,time(program_reduction(Fs_,Rs,_))
+	,program_reduction(Fs_,Rs,_)
 	,cleanup_experiment.
 
 
@@ -557,9 +579,7 @@ lfp(_Ps,_Is,Ts,Ts).
 %	implementations that can be applied beyond this.
 %
 tp([],_Is,Ts,Ts):-
-	!
-	%,sort(Ts_,Ts)
-	.
+	!.
 tp([C|Ps],Is,Acc,Bind):-
 	copy_term(C,C_)
 	,clause_head_body(C_,H,B)
