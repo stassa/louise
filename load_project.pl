@@ -16,6 +16,7 @@ edit_files:-
 	configuration:experiment_file(P,_)
 	,edit(project_root(load_project))
 	,edit(project_root(configuration))
+	,edit(src(mil_problem))
 	,edit(src(louise))
 	,edit(src(auxiliaries))
 	,edit(P)

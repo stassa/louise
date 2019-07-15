@@ -16,6 +16,7 @@
 
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
+:-use_module(src(mil_problem)).
 
 
 %!	learning_targets(+Targets) is det.
@@ -58,7 +59,7 @@ known_metarules(Ids):-
 %
 list_top_program_reduction(T):-
 	experiment_data(T,Pos,Neg,BK,MS)
-	,louise:encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
 	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
 	,flatten([Ss,Pos_,BK_,Ms,MS_],Ps_)
 	,reduction_report(Ps_).
@@ -86,7 +87,7 @@ list_top_program(T):-
 %
 list_top_program(T,U):-
 	experiment_data(T,Pos,Neg,BK,MS)
-	,louise:encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
 	,louise:write_program(Pos_,BK_,MS_,Ss,Refs)
 	,louise:generalise(Pos_,MS_,Ss_Pos)
 	,write_and_count('Generalisation:',Ss_Pos,U)
