@@ -266,10 +266,26 @@ metasubstitution(E,M,H):-
 %!	reduced_top_program(+Pos,+BK,+Metarules,+Sig,+Program,-Reduced)
 %!	is det.
 %
-%	Recursively reduce the Top Program.
+%	Reduce the Top Program.
+%
+%	Clauses are selected according to the value of the configuration
+%	option recursive_reduction/1. If this is set to true, the Top
+%	program is reduced recursively, by passing the output of each
+%	reduction step to the next, as input. If recursive_reduction/1
+%	is set to false a single reduction step is performed.
+%
+%	Recursive reduction is useful when the Top program is large, or
+%	recursive, and a large number of resolution steps are required
+%	to reduce it effectively. In such cases, recursive reduction can
+%	result in a stronger reduction of the Top program (i.e. result
+%	in fewer redundant clauses in the learned hypothesis) in a
+%	shorter amount of time, without increasing the number of
+%	resolution steps in the program reduction meta-interpreter.
 %
 reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
-	flatten([Ss,Pos,BK,Ps,MS],Fs_)
+	configuration:recursive_reduction(true)
+	,!
+	,flatten([Ss,Pos,BK,Ps,MS],Fs_)
 	,program_reduction(Fs_,Rs_,_)
 	,length(Fs_,M)
 	,length(Rs_,N)
@@ -278,6 +294,12 @@ reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 	% program_reduction module leaves behind garbage
 	% in program module. Why?
 	,cleanup_experiment.
+reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
+	configuration:recursive_reduction(false)
+	,flatten([Ss,Pos,BK,Ps,MS],Fs_)
+	,time(program_reduction(Fs_,Rs,_))
+	,cleanup_experiment.
+
 
 %!	reduced_top_program_(+N,+Prog,+BK,+Metarules,+Sig,-Reduced) is
 %!	det.

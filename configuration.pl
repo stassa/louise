@@ -7,6 +7,7 @@
 			,metarule/5
 			,metarule_language/2
 			,recursion_depth_limit/2
+			,recursive_reduction/1
 			,resolutions/1
 			]).
 
@@ -122,6 +123,27 @@ metarule_language(1,3).
 recursion_depth_limit(episodic_learning,100).
 
 
+%!	recursive_reduction(?Bool) is semidet.
+%
+%	Whether to reduce the Top program recursively or not.
+%
+%	Setting Bool to true enables recursie reduction of the Top
+%	program. Recursive reduction means that the result of each
+%	reduction step is given as input to the reduction algorithm in
+%	the next step (also known as "doing the feedbacksies").
+%
+%	Recursive reduction can result in a stronger reduction in less
+%	time, with a lower setting for resolutions/1 (in fact, the same
+%	amount of reduction can take less time exactly because the
+%	resolutions/1 setting can be set to a lower value).
+%
+%	Recursive reduction is more useful when the Top program is large
+%	and many resolution steps are required to remove all redundancy
+%	from it.
+%
+recursive_reduction(true).
+
+
 %!	resolutions(?Resolutions) is semidet.
 %
 %	Maximum number of resolutions.
@@ -135,6 +157,7 @@ recursion_depth_limit(episodic_learning,100).
 resolutions(5000).
 %resolutions(1000).
 %resolutions(15).
+
 
 % Loads the current experiment file in the Swi-Prolog IDE when the
 % configuration is changed.
