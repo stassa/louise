@@ -42,7 +42,7 @@ learn_episodic(T,Ps):-
 %
 learn_episodic(Pos,Neg,BK,MS,Ps):-
 	debug(episodic,'Encapsulating problem',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss])
 	,debug(episodic,'Learning first episode',[])
 	,learning_episode(Pos_,Neg_,BK_,MS_,Ss,Ps_1)
 	,examples_target(Pos,T)
@@ -140,7 +140,7 @@ learn(T,Ps):-
 %
 learn(Pos,Neg,BK,MS,Ps):-
 	debug(learn,'Encapsulating problem',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss])
 	,debug(learn,'Constructing Top program',[])
 	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
 	,debug(learn,'Reducing Top program',[])

@@ -2,7 +2,7 @@
 		      ,metarule_expansion/2
 		      ,extended_metarules/2
 		      ,metarule_extension/3
-		      ,encapsulated_problem/9
+		      ,encapsulated_problem/5
 		      ,encapsulated_bk/2
 		      ,predicate_signature/3
 		      ,examples_target/2
@@ -196,27 +196,28 @@ unfold((X),(X,Xs),Xs):-
 
 
 
-%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Pos_,-Neg_,-BK_,-MS_,-PS)
+%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Ps)
 %!	is det.
 %
 %	Encapsualte a MIL problem.
 %
-%	Pos and Neg are lists of example atoms; Pos are negative
-%	examples and Neg are negative examples, of the form :-E, where
-%	E an atom.
+%	Pos and Neg are lists of example atoms; Pos are positive
+%	examples and Neg are negative examples, of the form :-E, where E
+%	an atom.
 %
 %	BK is a list of predicate symbols and arities of BK predicates.
 %
 %	Metarules is a list of constants, the names of metarules in the
 %	problem.
 %
-%	Pos_, Neg_, BK_ and MS_ are encapsulation of the positive and
-%	negative examples, BK definitions, and Metarules, respectively.
-%	PS is an encapsulation of the predicate singature.
+%	Ps is a list [Pos_, Neg_, BK_, MS_, Ss] where elements are the
+%	encapsulations of the positive and negative examples, BK
+%	definitions, and Metarules, and the predicate signature,
+%	respectively.
 %
 %	@tbd Encapsulated forms need documentation.
 %
-encapsulated_problem(Pos,Neg,BK,MS,Pos_,Neg_,BK_,MS_,Ss):-
+encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss]):-
 	configuration:extend_metarules(E)
 	,encapsulated_bk(BK,BK_)
 	,(   E == true
