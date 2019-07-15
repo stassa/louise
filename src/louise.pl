@@ -6,6 +6,8 @@
 		 ,learn/5
 		 ,top_program/6
 		 ,reduced_top_program/6
+		 ,lfp_query/4
+		 ,lfp_query/3
 		 ,lfp/2
 		 ]).
 
@@ -28,8 +30,27 @@ learn_episodic(T):-
 %	Learn a Definition of a Target in successive episodes.
 %
 learn_episodic(T,Ps):-
-	experiment_data(T,Pos,Neg,BK,MS)
+	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
 	,learn_episodic(Pos,Neg,BK,MS,Ps).
+
+
+%!	tp_safe_experiment_data(+Target,-Pos,-Neg,-BK,-MS) is det.
+%
+%	Ensure experiment data is safe for TP operator predicates.
+%
+%	Basically just removes the ":-" in front of the negative
+%	examples, since they are not recognised by the Top program
+%	construction predicates that use a TP operator.
+%
+tp_safe_experiment_data(T,Pos,Neg_,BK,MS):-
+	configuration:theorem_prover(TP)
+	,experiment_data(T,Pos,Neg,BK,MS)
+	,(   TP == tp
+	 ->  setof(E
+		  ,Neg^member((:-E),Neg)
+		  ,Neg_)
+	 ;   Neg_ = Neg
+	 ).
 
 
 
@@ -130,7 +151,7 @@ learn(T):-
 %	Learn a definition of a Target predicate.
 %
 learn(T,Ps):-
-	experiment_data(T,Pos,Neg,BK,MS)
+	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
 	,learn(Pos,Neg,BK,MS,Ps).
 
 
@@ -185,14 +206,12 @@ top_program(Pos,Neg,BK,MS,Ss,Ts):-
 	,erase_program_clauses(Refs).
 top_program(Pos,Neg,BK,MS,Ss,Ts):-
 	configuration:theorem_prover(tp)
-	,configuration:experiment_file(_,M)
 	,examples_target(Pos,T)
-	,M:metarules(T,IDs)
-	,flatten([Ss,Pos,BK,MS],Ps)
-	,generalise(T,Ps,IDs,Ts_Pos)
+	,bind_target(MS,T,MS_)
+	,flatten([Ss,Pos,BK],Ps)
+	,generalise(MS_,Ps,Is,Ts_Pos)
 	,unfolded_metasubs(Ts_Pos,Ts_Pos_)
-	,specialise(Ts_Pos_,Ps,Neg,Ts).
-
+	,specialise(Ts_Pos_,Is,Neg,Ts).
 
 
 %!	write_program(+Pos,+BK,+MS,+PS,-Refs) is det.
@@ -296,39 +315,70 @@ metasubstitution(E,M,H):-
 	,user:call(Ls).
 
 
-%!	generalise(+Target,+Program,+Metarule_Ids,-Generalised) is det.
+%!	bind_target(+Metarules,+Target,-Bound) is det.
+%
+%	Bind the Target's symbol to the heads of Metarules.
+%
+%	Small optimisation to ensure that lefp/2 only considers
+%	metasubstitutions where the target predicate is the first
+%	predicate symbol, rather than all possible metasubstitutions.
+%
+bind_target(MS,T/_A,MS_):-
+	findall(H:-B
+	       ,(member(H:-B, MS)
+		,H =.. [m,_Id,T|_Ps]
+		)
+	       ,MS_).
+
+
+%!	generalise(+Metarules,+Program,-Model,-Generalised) is
+%!	det.
 %
 %	Top program generalisation step with TP operator.
 %
-generalise(T/_A,Ps,IDs,Ts_Pos):-
-	lfp(Ps,Ts)
-	,setof(M
-	      ,Ts^Id^Es^IDs^(member(M, Ts)
-			    ,M =.. [m,Id,T|Es]
-			    ,memberchk(Id, IDs)
-			    )
-	      ,Ts_Pos)
+%	Metarules is the set of metarules in the problem, expanded and
+%	with the first predicate symbol in their head bound to the
+%	symbol of the target predicate, as returned by bind_target/3.
+%
+%	Program is a flat list of the predicate signature and the
+%	encapsulation of the positive examples and background knowledge.
+%
+%	Model is the least Herbrand model of Program. This is passed to
+%	specialise/4 to avoid duplicating work (specifically, the work
+%	of building this one up again).
+%
+%	@tbd This is just a thin wrapper around lfp_query/4 now. Still,
+%	keep it around - makes it clear this is a distinct step in the
+%	construction of the Top program.
+%
+generalise(MS,Ps,Is,Ts_Pos):-
+	lfp_query(MS,Ps,Is,Ts_Pos)
 	%,writeln('Top program - generalise:')
-	%,print_clauses(Ss_Pos)
+	%,print_clauses(Ts_Pos)
+	%,nl
+	%,writeln('Top program - Interpretation')
+	%,print_clauses(Is)
 	%,nl
 	.
 
 
-%!	specialise(+Generalised,+Program,+Negatives,-Specialised) is
+%!	specialise(+Generalised,+Model,+Negatives,-Specialised) is
 %!	det.
 %
 %	Top program specialisation step with TP operator.
 %
+%	Generalised is the result of generalise/4. Model is the least
+%	Herbrand model of the predicate signature, positive examples and
+%	background knowledge, calculated during execution
+%	of generalise/4.
+%
 specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
-	setof(E
-	     ,Neg^member((:-E),Neg)
-	     ,Neg_)
-	,setof(H:-B
-	      ,Ts_Pos^Ps^As^Neg_^(member(H:-B,Ts_Pos)
-				 ,lfp([H:-B|Ps],As)
-				 ,ord_intersection(As, Neg_, [])
-				 )
-	      ,Ts_Neg)
+	findall(H:-B
+		,(member(H:-B,Ts_Pos)
+		 ,lfp_query([H:-B],Ps,As)
+		 ,ord_intersection(As, Neg, [])
+		 )
+		,Ts_Neg)
 	%,writeln('Top program - specialise:')
 	%,print_clauses(Ts_Neg)
 	%,nl
@@ -391,6 +441,78 @@ reduced_top_program_(N,Ps,BK,MS,Ss,Bind):-
 	,!
 	,reduced_top_program_(M,Rs,BK,MS,Ss,Bind).
 reduced_top_program_(_,Rs,_BK,_MS,_Ss,Rs).
+
+
+
+%!	lfp_query(+Query,+Program,-Interpretation,-Result) is det.
+%
+%	Answer a Query in the context of a Program.
+%
+%	First the least Herbrand Model of Program is calculated (by a
+%	call to lfp/2), then the least Herbrand Model of Query is
+%	calculated in the context of the resulting Interpretation,
+%	yielding Result.
+%
+%	Result is constructed so as to exclude all the
+%	atoms already in the Interpretation (even though strictly
+%	speaking, the atoms in the Interpretation itself are in the
+%	least Herbrand model of the Query given the Interpretation).
+%
+%	Use this predicate to separate the consequences of one program,
+%	the Query, from another, the intended Interpretation.
+%
+lfp_query(Qs,Ps,Is,Rs):-
+	lfp(Ps,Is)
+	,lfp_query(Qs,Is,Rs).
+
+
+
+%!	lfp_query(+Query,+Interpretation,-Result) is det.
+%
+%	Answer a Query in the context of an Interpreation.
+%
+%	As lfp_query/3 but does not calculate an Interpretation from an
+%	input program, instead taking an already caculated
+%	Interpretation as input.
+%
+lfp_query(Qs,Is,Rs):-
+	lfp_query_(Qs,Is,[],Rs).
+
+
+%!	lfp_query(+Query,+Int_Acc,+Res_Acc,-Result) is det.
+%
+%	Business end of lfp_query/4.
+%
+lfp_query_(Ps,Is_i,Rs_i,Bind_Rs):-
+	tp_query(Ps,Is_i,Is_k,Rs_i,Rs_k)
+	,Rs_i \= Rs_k
+	,!
+	,lfp_query_(Ps,Is_k,Rs_k,Bind_Rs).
+lfp_query_(_Ps,_Is,Ts,Ts).
+
+
+%!	tp_query(+Query,+Int_Acc,-Interpretation,+Res_Acc,-Result) is
+%!	det.
+%
+%	TP operator for lfp_query_/4.
+%
+%	Differs from bog-standard TP operator implementation (as in
+%	tp/4) in that it binds the Result of Query separatly from the
+%	Interpretation (which is itself updated with any new
+%	consequences of Query.
+%
+tp_query([],Is,Is,Ts,Ts):-
+	!.
+tp_query([C|Ps],Is_Acc,Is_Bind,Rs_Acc,Rs_Bind):-
+	copy_term(C,C_)
+	,clause_head_body(C_,H,B)
+	,model_subset(B,Is_Acc)
+	,\+ memberchk(H,Is_Acc)
+	%,\+ memberchk(H,Rs_Acc) %?
+	,!
+	,tp_query(Ps,[H|Is_Acc],Is_Bind,[H|Rs_Acc],Rs_Bind).
+tp_query([_C|Ps],Is_Acc,Is_Bind,Rs_Acc,Rs_Bind):-
+	tp_query(Ps,Is_Acc,Is_Bind,Rs_Acc,Rs_Bind).
 
 
 
@@ -462,14 +584,17 @@ clause_head_body(H,H,true).
 %
 %	True if Literal is in Model
 %
-model_subset(true,_Ms).
+model_subset(true,_Ms):-
+	!.
 model_subset((L), Ms):-
 % L is a single literal
 	L \= (_,_)
+	,!
 	,member(L, Ms).
 model_subset((L,Ls), Ms):-
 % L is a set of literals
 	L \= (_,_)
+	,!
 	,member(L, Ms)
 	,model_subset(Ls,Ms).
 model_subset((L,Ls), Ms):-
