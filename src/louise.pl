@@ -185,8 +185,9 @@ top_program(Pos,Neg,BK,MS,Ss,Ts):-
 	,erase_program_clauses(Refs).
 top_program(Pos,Neg,BK,MS,Ss,Ts):-
 	configuration:theorem_prover(tp)
+	,configuration:experiment_file(_,M)
 	,examples_target(Pos,T)
-	,metarules(T,IDs)
+	,M:metarules(T,IDs)
 	,flatten([Ss,Pos,BK,MS],Ps)
 	,generalise(T,Ps,IDs,Ts_Pos)
 	,unfolded_metasubs(Ts_Pos,Ts_Pos_)
