@@ -9,6 +9,7 @@
 			,recursion_depth_limit/2
 			,recursive_reduction/1
 			,resolutions/1
+			,theorem_prover/1
 			]).
 
 :-user:use_module(src(experiment_file)).
@@ -159,6 +160,39 @@ resolutions(5000).
 %resolutions(15).
 
 
+%!	theorem_prover(?Algorithm) is semidet.
+%
+%	Theorem proving Algorithm to use in Top program construction.
+%
+%	Algorithm is one of: [resolution, tp].
+%
+%	With option resolution, the Top program is constructed in a
+%	top-down manner, using SLD resolution.
+%
+%	With option tp, the Top program is constructed in a bottom-up
+%	manner, using a TP operator.
+%
+%	Option resolution is faster because it hands off to the Prolog
+%	interpreter. On the other hand, it can get lost in recursion,
+%	especially when a problem has left-recursions (although this
+%	doesn't quite seem to happen in practice).
+%
+%	Option tp is slower because it's implemented in Prolog and it's
+%	not terribly optimised either. The trade-off is that it's
+%	guaranteed to terminate and runs in polynomial time, at least
+%	for definite programs (but then, there are no guarantees outside
+%	of definite programs).
+%
+%	More impotantly, option tp can be used to enable predicate
+%	invention, although this is not yet implemented.
+%
+%	Note also that the TP operator only works for datalog definite
+%	programs.
+%
+theorem_prover(resolution).
+%theorem_prover(tp).
+
+
 % Loads the current experiment file in the Swi-Prolog IDE when the
 % configuration is changed.
 %
@@ -166,6 +200,7 @@ resolutions(5000).
 %
 %:-experiment_file(P,_)
 %  ,edit(P).
+
 
 % This line ensures the experiment file set in the configuration option
 % experiment_file/2 is always updated when the configuration module is

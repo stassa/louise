@@ -6,6 +6,7 @@
 		 ,learn/5
 		 ,top_program/6
 		 ,reduced_top_program/6
+		 ,lfp/2
 		 ]).
 
 :-use_module(configuration).
@@ -155,11 +156,42 @@ learn(Pos,Neg,BK,MS,Ps):-
 %
 %	Construct the Top program for a MIL problem.
 %
+%	Clauses are selected according to the configuration setting
+%	theorem_prover/1.
+%
+%	If theorem_prover/1 is set to "resolution", Top program
+%	construction is performed in a top-down manner using SLD
+%	resolution to decide entailment, which is faster (because it
+%	hands off to the Prolog interpreter), but not guaranteed to
+%	terminate (for example, it may go infinite given the
+%	left-recursive nature of encapsulated metarules).
+%
+%	If the value of theorem_prover/1 is "tp", Top program
+%	construction is performed in a bottom-up manner, using a TP
+%	operator. This is slower (because it's implemented in Prolog)
+%	but it's guaranteed to terminate. Note also that the TP operator
+%	only works for datalog definite programs.
+%
+%	@bug Top program specialisation using the TP operator is still a
+%	work in progress and may not fully eliminate too-general
+%	metasubstitutions.
+%
 top_program(Pos,Neg,BK,MS,Ss,Ts):-
-	write_program(Pos,BK,MS,Ss,Refs)
+	configuration:theorem_prover(resolution)
+	,!
+	,write_program(Pos,BK,MS,Ss,Refs)
 	,top_program(Pos,Neg,BK,MS,Ms)
 	,unfolded_metasubs(Ms,Ts)
 	,erase_program_clauses(Refs).
+top_program(Pos,Neg,BK,MS,Ss,Ts):-
+	configuration:theorem_prover(tp)
+	,examples_target(Pos,T)
+	,metarules(T,IDs)
+	,flatten([Ss,Pos,BK,MS],Ps)
+	,generalise(T,Ps,IDs,Ts_Pos)
+	,unfolded_metasubs(Ts_Pos,Ts_Pos_)
+	,specialise(Ts_Pos_,Ps,Neg,Ts).
+
 
 
 %!	write_program(+Pos,+BK,+MS,+PS,-Refs) is det.
@@ -179,7 +211,7 @@ write_program(Pos,BK,MS,Ss,Rs):-
 
 
 %!	top_program(+Positive,+Negative,+BK,+Metarules,-Metasubstitutions)
-%	is det.
+%!	is det.
 %
 %	Collect all correct Metasubstitutions in a MIL problem.
 %
@@ -263,6 +295,45 @@ metasubstitution(E,M,H):-
 	,user:call(Ls).
 
 
+%!	generalise(+Target,+Program,+Metarule_Ids,-Generalised) is det.
+%
+%	Top program generalisation step with TP operator.
+%
+generalise(T/_A,Ps,IDs,Ts_Pos):-
+	lfp(Ps,Ts)
+	,setof(M
+	      ,Ts^Id^Es^IDs^(member(M, Ts)
+			    ,M =.. [m,Id,T|Es]
+			    ,memberchk(Id, IDs)
+			    )
+	      ,Ts_Pos)
+	%,writeln('Top program - generalise:')
+	%,print_clauses(Ss_Pos)
+	%,nl
+	.
+
+
+%!	specialise(+Generalised,+Program,+Negatives,-Specialised) is
+%!	det.
+%
+%	Top program specialisation step with TP operator.
+%
+specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
+	setof(E
+	     ,Neg^member((:-E),Neg)
+	     ,Neg_)
+	,setof(H:-B
+	      ,Ts_Pos^Ps^As^Neg_^(member(H:-B,Ts_Pos)
+				 ,lfp([H:-B|Ps],As)
+				 ,ord_intersection(As, Neg_, [])
+				 )
+	      ,Ts_Neg)
+	%,writeln('Top program - specialise:')
+	%,print_clauses(Ts_Neg)
+	%,nl
+	.
+
+
 
 %!	reduced_top_program(+Pos,+BK,+Metarules,+Sig,+Program,-Reduced)
 %!	is det.
@@ -319,3 +390,89 @@ reduced_top_program_(N,Ps,BK,MS,Ss,Bind):-
 	,!
 	,reduced_top_program_(M,Rs,BK,MS,Ss,Bind).
 reduced_top_program_(_,Rs,_BK,_MS,_Ss,Rs).
+
+
+
+%!	lfp(+Program,-LFP) is det.
+%
+%	Calculates the Least Fixed Point of a Program.
+%
+%	The LFP of a Progam is its Least Herbrand Model.
+%
+lfp(Ps,Ts):-
+	lfp(Ps,[],[],Ts).
+
+
+%!	lftp(+Program,+Interpretation,+Acc,-Bind) is det.
+%
+%	Business end of lfp/2. Recursively calculates the Least Fixed
+%	Point of a Program under an Interpretation. In each recursive
+%	step the LFP of the program calculated in this step is added to
+%	the current Interpretation, until the Interpretation stops
+%	changing.
+%
+lfp(Ps,Is,Ts_i,Bind):-
+	tp(Ps,Is,Ts_i,Ts_k)
+	,Ts_i \= Ts_k
+	,!
+	,lfp(Ps,Ts_k,Ts_k,Bind).
+lfp(_Ps,_Is,Ts,Ts).
+
+
+%!	tp(+Program,+Interpretation,+Acc,-TP) is det.
+%
+%	Implements a TP operator.
+%
+%	The TP operator is an example of bottom-up programming. It
+%	calculates the immediate consequences of a set of premises. In
+%	logic programming, the premises are the Program and the
+%	consequences are the set of atoms entailed by the Program.
+%
+%	This implementation employs a small optimisation in that an atom
+%	is added to the accumulator of immediate consequences only if it
+%	is not already in the accumulator. Apparently, there are still
+%	implementations that can be applied beyond this.
+%
+tp([],_Is,Ts,Ts):-
+	!
+	%,sort(Ts_,Ts)
+	.
+tp([C|Ps],Is,Acc,Bind):-
+	copy_term(C,C_)
+	,clause_head_body(C_,H,B)
+	,model_subset(B,Is)
+	,\+ memberchk(H,Acc)
+	,!
+	,tp(Ps,Is,[H|Acc],Bind).
+tp([_C|Ps],Is,Acc,Bind):-
+	tp(Ps,Is,Acc,Bind).
+
+
+%!	clause_head_body(+Clause,-Head,-Body) is det.
+%
+%	Head and Body literals of a Clause.
+%
+clause_head_body(H:-B,H,B):-
+	!.
+clause_head_body(H,H,true).
+
+
+%!	model_subset(+Literal,+Model) is det.
+%
+%	True if Literal is in Model
+%
+model_subset(true,_Ms).
+model_subset((L), Ms):-
+% L is a single literal
+	L \= (_,_)
+	,member(L, Ms).
+model_subset((L,Ls), Ms):-
+% L is a set of literals
+	L \= (_,_)
+	,member(L, Ms)
+	,model_subset(Ls,Ms).
+model_subset((L,Ls), Ms):-
+% L is a set of literals enclosed in parentheses.
+	L = (_,_)
+	,model_subset(L, Ms)
+	,model_subset(Ls,Ms).
