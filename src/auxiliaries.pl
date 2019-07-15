@@ -30,8 +30,9 @@
 %
 learning_targets(Ts):-
 	initialise_experiment
+	,experiment_file(_P, M)
 	,findall(T
-		,background_knowledge(T, _BK)
+		,M:background_knowledge(T, _BK)
 		,Ts).
 
 
