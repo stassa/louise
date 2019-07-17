@@ -77,17 +77,50 @@ background_knowledge(relative/2,[grandfather/2
 				,female/1
 				]).
 
+background_knowledge(unrelated/2,[grandfather/2
+				,grandmother/2
+				,parent/2
+				,married/2
+				,aunt/2
+				,uncle/2
+				,cousin/2
+				,nephew/2
+				,niece/2
+				,child/2
+				,son/2
+				,daughter/2
+				,brother/2
+				,sister/2
+				,father/2
+				,mother/2
+				,male/1
+				,female/1
+				]).
+
 
 metarules(blood_relative/2,[identity]).
 metarules(relative/2,[identity,inverse,chain]).
+metarules(unrelated/2,[identity,inverse,chain]).
 
 positive_example(blood_relative/2,blood_relative(X,Y)):-
 	blood_relative(X,Y).
 positive_example(relative/2,E):-
 	ground_relative(Rs)
 	,member(E,Rs).
+positive_example(unrelated/2,unrelated(X,Y)):-
+	unrelated(X,Y).
 
 negative_example(blood_relative/2,blood_relative(X,Y)):-
+	unrelated(X,Y).
+negative_example(relative/2,relative(X,Y)):-
+	blood_relative(X,Y).
+negative_example(unrelated/2,unrelated(X,Y)):-
+	blood_relative(X,Y).
+
+
+% Target theory for unrelated/2. Also used to generate negative examples
+% for blood_relative/2.
+unrelated(X,Y):-
 	individual(X)
 	,individual(Y)
 	,\+ blood_relative(X,Y)
@@ -95,8 +128,6 @@ negative_example(blood_relative/2,blood_relative(X,Y)):-
 	,\+ (blood_relative(X,Z)
 	    ,blood_relative(Z,Y)
 	    ).
-negative_example(relative/2,relative(X,Y)):-
-	blood_relative(X,Y).
 
 individual(X):-
 	male(X).
@@ -126,8 +157,6 @@ ground_relative(Ls):-
 
 
 % Target theory for blood relative/2.
-% This one's unreduced, actually.
-% The reduction step throws some clauses out.
 blood_relative(X,Y):- grandparent(X,Y).
 blood_relative(X,Y):- grandfather(X,Y).
 blood_relative(X,Y):- grandmother(X,Y).
@@ -164,10 +193,10 @@ child(X,Y):- son(X,Y).
 child(X,Y):- daughter(X,Y).
 son(X,Y):- male(X),parent(Y,X).
 daughter(X,Y):- female(X),parent(Y,X).
-%brother(X,Y):- son(X,Z), parent(Z,Y), X \= Y.
-%sister(X,Y):- daughter(X,Z), parent(Z,Y), X \= Y.
-brother(X,Y):- son(X,Z), parent(Z,Y), distinct(X,Y).
-sister(X,Y):- daughter(X,Z), parent(Z,Y), distinct(X,Y).
+brother(X,Y):- son(X,Z), parent(Z,Y), X \= Y.
+sister(X,Y):- daughter(X,Z), parent(Z,Y), X \= Y.
+%brother(X,Y):- son(X,Z), parent(Z,Y), distinct(X,Y).
+%sister(X,Y):- daughter(X,Z), parent(Z,Y), distinct(X,Y).
 
 %/*
 father(stathis, kostas).
