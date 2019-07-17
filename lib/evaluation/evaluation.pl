@@ -1,11 +1,133 @@
-:-module(evaluation, [print_confusion_matrix/2
+:-module(evaluation, [list_results/3
 		     ,print_evaluation/2
-		     ,evaluation/5]).
+		     ,print_confusion_matrix/2
+		     ,print_metrics/2
+		     ,evaluation/5
+		     ,false_positives/3
+		     ,false_negatives/3
+		     ,true_positives/3
+		     ,true_negatives/3
+		     ]).
 
 :-use_module(configuration).
 
 /** <module> Evaluation metrics for experiment results.
 */
+
+%!	list_results(+Target,+Program,+Results) is det.
+%
+%	List True/False Positives/Negative atoms of Program.
+%
+%	Results is either a list of one or more of the constants
+%	[pp,nn,np,pn], or the constant "all". Their meaning is as
+%	follows:
+%	* pp: Print true positive atoms
+%	* nn: Print true negative atoms
+%	* np: Print false positive atoms
+%	* pn: Print false negative atoms
+%	* all: Print all atoms.
+%
+list_results(T,Ps,Rs):-
+	experiment_data(T,Pos,Neg,BK,_MS)
+	,findall(E,member(:-E,Neg),Neg_1)
+	,ground_background(T,BK,BK_)
+	,lfp_query(Ps,BK_,_Is,As)
+	,maplist(sort,[As,Pos,Neg_1],[As_,Pos_,Neg_])
+	,false_positives(As_,Neg_,NP)
+	,length(NP,NP_n)
+	,false_negatives(As_,Pos_,PN)
+	,length(PN,PN_n)
+	,true_positives(As_,Pos_,PP)
+	,length(PP,PP_n)
+	,true_negatives(As_,Neg_,NN)
+	,length(NN,NN_n)
+	,(   Rs == all
+	 ->  Rs_ = [pp,nn,np,pn]
+	 ;   Rs_ = Rs
+	 )
+	% Yeah, I know.
+	,(   memberchk(pp,Rs_)
+	 ->  format('\nTrue positives: ~w~n',[PP_n])
+	    ,print_clauses(PP)
+	 ;   true
+	 )
+	,(   memberchk(nn,Rs_)
+	 ->  format('\nTrue negatives: ~w~n',[NN_n])
+	    ,print_clauses(NN)
+	 ;   true
+	 )
+	,(   memberchk(np,Rs_)
+	 ->  format('False positives: ~w~n',[NP_n])
+	    ,print_clauses(NP)
+	 ;   true
+	 )
+	,(   memberchk(pn,Rs_)
+	 ->  format('\nFalse negatives: ~w~n',[PN_n])
+	    ,print_clauses(PN)
+	 ;   true
+	 ).
+
+
+
+%!	print_evaluation(+Target,+Program) is det.
+%
+%	Print evaluation metrics of a learned Program.
+%
+print_evaluation(T,Ps):-
+% Calling background_knowledge/2 is not the recommended way to get the
+% BK But experiment_data/5 is already called later and can be expensive
+% for large datasets.
+	experiment_file(_P,M)
+	,M:background_knowledge(T,BK)
+	,ground_background(T,BK,BK_)
+	/*,findall(H:-B,member(H:-B,Ps),Ps_)*/
+	,lfp_query(Ps,BK_,_Is,As)
+	,print_clauses(Ps)
+	,clause_count(Ps,N,D,U)
+	,nl
+	,format('Hypothesis size:  ~w~n',[N])
+	,format('Definite clauses: ~w~n',[D])
+	,format('Unit clauses:	  ~w~n',[U])
+	,nl
+	,print_confusion_matrix(T,As).
+
+
+%!	ground_background(+Target,+BK,-Ground) is det.
+%
+%	Collect ground BK atoms.
+%
+%	Also remove from the BK atoms of the learning Target. That's to
+%	allow lfp_query/4 to succeed if the learning Target is also a
+%	predicate in the BK (more precisely, if it is a determinant of
+%	another BK predicate).
+%
+ground_background(F/A,BK,BK_):-
+	program(BK,user,Ps)
+	,lfp(Ps,As)
+	,findall(At
+		,(member(At,As)
+		 ,\+ functor(At,F,A)
+		 )
+		,BK_).
+
+
+%!	clause_count(+Hypothesis,-Size,-Definite,-Unit) is det.
+%
+%	Count the clauses in a hypothesis.
+%
+%	Size is the number of all clauses in Hypothesis. Definite is the
+%	number of Definite clauses in Hypothesis and Unit the number of
+%	unit clauses in Hypothesis.
+%
+clause_count(Ps,N,D,U):-
+	findall(H:-B
+	       ,member(H:-B,Ps)
+	       ,Ds)
+	,length(Ps,N)
+	,length(Ds,D)
+	,U is N - D.
+
+
 
 
 %!	format_confusion_matrix(+Target,+Result) is det.
@@ -108,11 +230,11 @@ format_confusion_matrix([PP,PN,NP,NN]
 
 
 
-%!	print_evaluation(+Target,-Results) is det.
+%!	print_metrics(+Target,-Results) is det.
 %
-%	Print a simple listing of the evaluation of Results.
+%	Print a simple listing of evaluation metrics.
 %
-print_evaluation(T,Rs):-
+print_metrics(T,Rs):-
 	configuration:decimal_places(P)
 	,evaluation(T,Rs,[_P,_N],[_PP,_NN,_NP,_PN],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC])
 	,format('ACC: ~*f~n',[P,ACC])
@@ -132,7 +254,8 @@ print_evaluation(T,Rs):-
 %
 evaluation(T,Rs,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
 	experiment_data(T,Pos,Neg,_BK,_MS)
-	,maplist(sort,[Rs,Pos,Neg],[Rs_,Pos_,Neg_])
+	,findall(E,member(:-E,Neg),Neg_1)
+	,maplist(sort,[Rs,Pos,Neg_1],[Rs_,Pos_,Neg_])
 	,length(Pos_,P)
 	,length(Neg_,N)
 	,true_positives(Rs_,Pos,PP)
@@ -208,7 +331,8 @@ pre(Rs,PP,PRE):-
 fsc(PRE,REC,FSC):-
 	P is PRE * REC
 	,S is PRE + REC
-	,FSC is 2 * (P / S).
+	,safe_division(P,S,D)
+	,FSC is 2 * D.
 
 
 %!	false_positives(+Results,+Negative,-NP) is det.
@@ -286,4 +410,17 @@ total(Xs,Ys,S):-
 ratio(Xs,Ys,R):-
 	length(Xs,N)
 	,length(Ys,M)
-	,R is N / M.
+	,safe_division(N,M,R).
+
+
+%!	safe_division(+A,+B,-C) is det.
+%
+%	Avoid dividing by zero.
+%
+%	If the denominator of a division os 0, return C, else do the
+%	division.
+%
+safe_division(A,0,A):-
+	!.
+safe_division(A,B,C):-
+	C is A / B.
