@@ -57,63 +57,37 @@ background_knowledge(blood_relative/2,[%grandparent/2
 				      ,female/1
 				      ]).
 
-background_knowledge(relative/2,[grandfather/2
-				,grandmother/2
-				,parent/2
-				,married/2
-				,aunt/2
-				,uncle/2
-				,cousin/2
-				,nephew/2
-				,niece/2
-				,child/2
-				,son/2
-				,daughter/2
-				,brother/2
-				,sister/2
-				,father/2
-				,mother/2
-				,male/1
-				,female/1
-				]).
-
 background_knowledge(unrelated/2,[grandfather/2
-				,grandmother/2
-				,parent/2
-				,married/2
-				,aunt/2
-				,uncle/2
-				,cousin/2
-				,nephew/2
-				,niece/2
-				,child/2
-				,son/2
-				,daughter/2
-				,brother/2
-				,sister/2
-				,father/2
-				,mother/2
-				,male/1
-				,female/1
-				]).
+				 ,grandmother/2
+				 ,parent/2
+				 ,married/2
+				 ,aunt/2
+				 ,uncle/2
+				 ,cousin/2
+				 ,nephew/2
+				 ,niece/2
+				 ,child/2
+				 ,son/2
+				 ,daughter/2
+				 ,brother/2
+				 ,sister/2
+				 ,father/2
+				 ,mother/2
+				 ,male/1
+				 ,female/1
+				 ]).
 
 
 metarules(blood_relative/2,[identity]).
-metarules(relative/2,[identity,inverse,chain]).
 metarules(unrelated/2,[identity,inverse,chain]).
 
 positive_example(blood_relative/2,blood_relative(X,Y)):-
 	blood_relative(X,Y).
-positive_example(relative/2,E):-
-	ground_relative(Rs)
-	,member(E,Rs).
 positive_example(unrelated/2,unrelated(X,Y)):-
 	unrelated(X,Y).
 
 negative_example(blood_relative/2,blood_relative(X,Y)):-
 	unrelated(X,Y).
-negative_example(relative/2,relative(X,Y)):-
-	blood_relative(X,Y).
 negative_example(unrelated/2,unrelated(X,Y)):-
 	blood_relative(X,Y).
 
@@ -135,28 +109,8 @@ individual(X):-
 	female(X).
 
 
-% Target theory for relative/2.
-% A relative is related by marriage to a blood relative
-% or is a relative of a relative.
-relative(X,Y):- married(X,Y).
-relative(X,Y):- blood_relative(X,Z), married(Z,Y).
-relative(X,Y):- married(X,Z),blood_relative(Z,Y).
-relative(X,Y):- relative(X,Z), relative(Z,Y).
-
-% Ground atoms of relative/2 obtained by bottom-up evaluation to avoid
-% infinite recursion because of the left-recursive definition of
-% relative/2.
-ground_relative(Ls):-
-	findall(blood_relative(X,Y)
-	       ,blood_relative(X,Y)
-	       ,Pos)
-	,program(married/2,kinship,Ms)
-	,append(Ms,Pos,Ps)
-	,program(relative/2,kinship,Rs)
-	,lfp_query(Rs,Ps,_Is,Ls).
-
-
-% Target theory for blood relative/2.
+% Target theory for blood relative/2. Also used to generate negative
+% examples for unrelated/2.
 blood_relative(X,Y):- grandparent(X,Y).
 blood_relative(X,Y):- grandfather(X,Y).
 blood_relative(X,Y):- grandmother(X,Y).
