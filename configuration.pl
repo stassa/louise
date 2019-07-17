@@ -5,7 +5,6 @@
 			,metarule/3
 			,metarule/4
 			,metarule/5
-			,metarule_language/2
 			,recursion_depth_limit/2
 			,recursive_reduction/1
 			,resolutions/1
@@ -99,18 +98,6 @@ metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
 metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
 
 
-%!	metarule_language(?Min,?Max) is semidet.
-%
-%	The minimume and maximum number of body literals in metarules.
-%
-%	Used to constraint the search for metarules in
-%	louise:metarule_expansion/2.
-%
-%	@tbd Is this used anywyere?
-%
-metarule_language(1,3).
-
-
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
 %
 %	Recursion depth Limit for the given Purpose.
@@ -145,7 +132,7 @@ recursion_depth_limit(episodic_learning,100).
 %	and many resolution steps are required to remove all redundancy
 %	from it.
 %
-recursive_reduction(true).
+recursive_reduction(false).
 
 
 %!	resolutions(?Resolutions) is semidet.
@@ -154,10 +141,12 @@ recursive_reduction(true).
 %
 %	Used with solve_to_depth/3.
 %
+%resolutions(500_000_000_000).
 %resolutions(20_500_000).
 %resolutions(10_500_000).
 %resolutions(5_500_000).
 %resolutions(250_000).
+%resolutions(30_000).
 %resolutions(10_000).
 resolutions(5000).
 %resolutions(1000).
