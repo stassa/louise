@@ -466,6 +466,7 @@ reduced_top_program_(_,Rs,_BK,_MS,_Ss,Rs).
 
 
 
+
 %!	lfp_query(+Query,+Program,-Interpretation,-Result) is det.
 %
 %	Answer a Query in the context of a Program.
@@ -591,13 +592,13 @@ tp([_C|Ps],Is,Acc,Bind):-
 	tp(Ps,Is,Acc,Bind).
 
 
-%!	clause_head_body(+Clause,-Head,-Body) is det.
+%!	clause_head_body(+Clause,-Head,-Body) is nondet.
 %
 %	Head and Body literals of a Clause.
 %
-clause_head_body(H:-B,H,B):-
-	!.
-clause_head_body(H,H,true).
+clause_head_body(H:-B,H,B).
+clause_head_body(H,H,true):-
+	H \= (_:-_).
 
 
 %!	model_subset(+Literal,+Model) is det.
