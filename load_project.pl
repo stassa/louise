@@ -11,6 +11,7 @@ user:file_search_path(output, project_root(output)).
 :-use_module(configuration).
 :-use_module(src(louise)).
 :-use_module(src(auxiliaries)).
+:-use_module(lib(evaluation/evaluation)).
 
 edit_files:-
 	configuration:experiment_file(P,_)

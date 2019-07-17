@@ -15,6 +15,7 @@
 :-user:use_module(src(experiment_file)).
 :-reexport(lib(program_reduction/reduction_configuration), except([derivation_depth/1
 								  ,resolutions/1])).
+:-reexport(lib(evaluation/evaluation_configuration)).
 
 % Body literals of H(2,2) metarules.
 :-dynamic m/1
@@ -105,6 +106,8 @@ metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
 %	Used to constraint the search for metarules in
 %	louise:metarule_expansion/2.
 %
+%	@tbd Is this used anywyere?
+%
 metarule_language(1,3).
 
 
@@ -151,8 +154,9 @@ recursive_reduction(true).
 %
 %	Used with solve_to_depth/3.
 %
-%resolutions(5_500_000).
 %resolutions(20_500_000).
+%resolutions(10_500_000).
+%resolutions(5_500_000).
 %resolutions(250_000).
 %resolutions(10_000).
 resolutions(5000).
