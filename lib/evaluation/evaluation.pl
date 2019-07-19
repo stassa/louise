@@ -10,9 +10,29 @@
 		     ]).
 
 :-use_module(configuration).
+:-use_module(src(auxiliaries)).
 
 /** <module> Evaluation metrics for experiment results.
 */
+
+%!	convert_examples(+Pos,+Neg,-Converted_Pos,-Converted_Neg) is
+%!	det.
+%
+%	Convert examples to their original representation.
+%
+%	Negative xamples are reprsented in Louise as definite goal
+%	clauses, :-A. The predicates in this module expect negative
+%	examples to be unit clauses (with no negative literals). This
+%	predicate handles the transformation for Thelma.
+%
+%	@tbd This library is shared with Thelma, that declares its own
+%	convert_examples/4 version according to its own internal
+%	representation of examples. Hence the inclusion of Pos, i.e. the
+%	list of positive examples, alongside the negatives.
+%
+convert_examples(Pos,Neg,Pos,Neg_):-
+	findall(E,member(:-E,Neg),Neg_).
+
 
 %!	list_results(+Target,+Program,+Results) is det.
 %
@@ -29,10 +49,10 @@
 %
 list_results(T,Ps,Rs):-
 	experiment_data(T,Pos,Neg,BK,_MS)
-	,findall(E,member(:-E,Neg),Neg_1)
+	,convert_examples(Pos,Neg,Pos_c,Neg_c)
 	,ground_background(T,BK,BK_)
 	,lfp_query(Ps,BK_,_Is,As)
-	,maplist(sort,[As,Pos,Neg_1],[As_,Pos_,Neg_])
+	,maplist(sort,[As,Pos_c,Neg_c],[As_,Pos_,Neg_])
 	,false_positives(As_,Neg_,NP)
 	,length(NP,NP_n)
 	,false_negatives(As_,Pos_,PN)
@@ -57,7 +77,7 @@ list_results(T,Ps,Rs):-
 	 ;   true
 	 )
 	,(   memberchk(np,Rs_)
-	 ->  format('False positives: ~w~n',[NP_n])
+	 ->  format('\nFalse positives: ~w~n',[NP_n])
 	    ,print_clauses(NP)
 	 ;   true
 	 )
@@ -254,14 +274,13 @@ print_metrics(T,Rs):-
 %
 evaluation(T,Rs,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
 	experiment_data(T,Pos,Neg,_BK,_MS)
-	,findall(E,member(:-E,Neg),Neg_1)
-	,maplist(sort,[Rs,Pos,Neg_1],[Rs_,Pos_,Neg_])
-	,length(Pos_,P)
-	,length(Neg_,N)
-	,true_positives(Rs_,Pos,PP)
-	,true_negatives(Rs_,Neg,NN)
-	,false_positives(Rs_,Neg,NP)
-	,false_negatives(Rs_,Pos,PN)
+	,convert_examples(Pos,Neg,Pos_c,Neg_c)
+	,maplist(sort,[Rs,Pos_c,Neg_c],[Rs_,Pos_,Neg_])
+	,maplist(length,[Pos_,Neg_],[P,N])
+	,true_positives(Rs_,Pos_,PP)
+	,true_negatives(Rs_,Neg_,NN)
+	,false_positives(Rs_,Neg_,NP)
+	,false_negatives(Rs_,Pos_,PN)
 	,maplist(length,[PP,NN,NP,PN],[PP_,NN_,NP_,PN_])
 	,acc(PP,NN,Pos_,Neg_,ACC)
 	,err(ACC,ERR)
