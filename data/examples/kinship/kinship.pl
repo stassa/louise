@@ -6,7 +6,6 @@
 		  ,grandfather/2
 		  ,grandmother/2
 		  ,parent/2
-		  ,married/2
 		  ,aunt/2
 		  ,uncle/2
 		  ,cousin/2
@@ -60,7 +59,6 @@ background_knowledge(blood_relative/2,[grandparent/2
 background_knowledge(unrelated/2,[grandfather/2
 				 ,grandmother/2
 				 ,parent/2
-				 ,married/2
 				 ,aunt/2
 				 ,uncle/2
 				 ,cousin/2
@@ -98,11 +96,7 @@ unrelated(X,Y):-
 	individual(X)
 	,individual(Y)
 	,\+ blood_relative(X,Y)
-	,\+ blood_relative(Y,X)
-	%,\+ (blood_relative(X,Z)
-	%    ,blood_relative(Z,Y)
-	%    )
-	.
+	,\+ blood_relative(Y,X).
 
 individual(X):-
 	male(X).
@@ -209,18 +203,3 @@ female(gioula).
 female(ada).
 female(efi).
 female(stassa).
-
-% BK definitions - not blood relations.
-married(akis,efi).
-married(kostas,theodora).
-married(miltos,ada).
-married(stathis,alexandra).
-married(stefanos,voula).
-married(vassilis,gioula).
-% Extensional reflexion of the "married" relation
-married(ada,miltos).
-married(alexandra,stathis).
-married(efi,akis).
-married(gioula,vassilis).
-married(theodora,kostas).
-married(voula,stefanos).
