@@ -44,8 +44,19 @@ Bit of a weakness of the procedure there :/
    ================================================================================
 */
 
-% Comment out to disable debugging.
-:-debug(learning_rate).
+% Comment out to disable logging to file.
+%:-debug(learning_rate).
+
+% Uncomment to log debug outputs to a file. Note that debug messages to
+% the console cease entirely and progress can't be tracked easily.
+% Change mode from "write" to "append" to avoid clobbering earlier logs.
+%
+:-open('learning_rate.log',write,S,[alias('learning_rate')])
+ ,debug(learning_rate>S).
+
+% Uncomment to allow tracking progresss while logging to file.
+:-debug(progress).
+
 
 %!	debug_learning_rate(+Target) is det.
 %
@@ -55,8 +66,28 @@ Bit of a weakness of the procedure there :/
 %
 debug_learning_rate(T):-
 	learning_rate(T,Rs)
-	,forall(member(N-S,Rs)
-	       ,format('Clauses: ~w Time: ~4f~n',[N,S])).
+	,Rs \= []
+	%,print_evals(T, Rs)
+	,forall(member(r(_Ps,N,S),Rs)
+	       ,debug(learning_rate,'Clauses: ~w Time: ~4f',[N,S])
+	       )
+	% Close debug stream if open
+	,(   is_stream(learning_rate)
+	->   close(learning_rate)
+	 ;   true
+	 ).
+
+
+%!	print_evals(+Target,+Results) is det.
+%
+%	Print Results evaluations to the console.
+%
+print_evals(T,Rs):-
+	forall(member(r(Ps,_N,_S),Rs)
+	      ,(print_evaluation(T,Ps)
+	       )
+	       )
+	,nl.
 
 
 %!	learning_rate(+Target,-Results) is det.
@@ -81,7 +112,7 @@ learning_rate(T,Rs):-
 	program(T,kinship,Ts)
 	,experiment_data(T,_,Neg,_BK,MS)
 	,learning_rate([],Ts,Neg,MS,[],Rs_)
-	,findall(N-S
+	,findall(r(Ps,N,S)
 		,(member(S-Ps,Rs_)
 		 ,length(Ps,N)
 		 )
@@ -96,14 +127,24 @@ learning_rate(Ts_i,[],_Neg,_MS,Acc,Rs):-
 	Ts_i \= []
 	,reverse(Acc,Rs)
 	,!.
-learning_rate(Ts_i,[C|Ts],Neg,MS,Acc,Bind):-
-	theory_examples_bk([C|Ts_i],Pos,BK)
+learning_rate(Ts_i,Ts,Neg,MS,Acc,Bind):-
+	random_select(C,Ts,Ts_)
+	,theory_examples_bk([C|Ts_i],Pos,BK)
+	,length([C|Ts_i],L)
+	,debug(progress,'Processing step ~w',[L])
+	,debug(learning_rate,'Target theory:', [])
+	,debug_clauses(learning_rate,[C|Ts_i])
+	,debug(learning_rate,'BK:~w', [BK])
+	,length(Pos, N)
+	,debug(learning_rate,'Positive examples:~w', [N])
 	,G = learn(Pos,Neg,BK,MS,Ps)
 	,timing(G,T)
 	,!
-	,length(Ps,N)
-	,debug(learning_rate,'Learned a ~w-clause hypothesis.',[N])
-	,learning_rate([C|Ts_i],Ts,Neg,MS,[T-Ps|Acc],Bind).
+	,length(Ps,M)
+	,debug(learning_rate,'Learned a ~w-clause hypothesis.',[M])
+	,debug_clauses(learning_rate,Ps)
+	,debug(learning_rate,'',[])
+	,learning_rate([C|Ts_i],Ts_,Neg,MS,[T-Ps|Acc],Bind).
 learning_rate(Ts_i,_Ts,Neg,MS,Acc,Bind):-
 	length(Ts_i,N)
 	,debug(learning_rate,'Learning failed after ~w clauses.',[N])
