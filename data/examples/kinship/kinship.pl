@@ -107,6 +107,7 @@ learning_rates(K,T,Rs):-
 	findall(Rs_
 	       ,(between(1,K,I)
 		,debug(progress,'Cycle ~w of ~w',[I,K])
+		,debug(learning_rate,'Cycle ~w of ~w',[I,K])
 		,learning_rate(T,Rs_i)
 		,findall(J-S
 			,nth1(J,Rs_i,r(_Ps,_N,S))
