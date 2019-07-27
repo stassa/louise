@@ -21,8 +21,10 @@
 		  ,male/1
 		  ,female/1
 		  ,married/2
-		  ,learning_rate/2
+		  ,debug_learning_rates/2
+		  ,learning_rates/3
 		  ,debug_learning_rate/1
+		  ,learning_rate/2
 		  ]).
 
 
@@ -40,9 +42,19 @@ Bit of a weakness of the procedure there :/
 */
 
 /* ================================================================================
-   EXPERIMENT PREDICATES
+   EXPERIMENT LOGGING
    ================================================================================
 */
+
+%!	close_log(+Alias) is det.
+%
+%	Close the log file with the given Alias if it exists.
+%
+close_log(A):-
+	(   is_stream(A)
+	->  close(learning_rate)
+	;   true
+	) .
 
 % Comment out to disable logging to file.
 %:-debug(learning_rate).
@@ -51,11 +63,57 @@ Bit of a weakness of the procedure there :/
 % the console cease entirely and progress can't be tracked easily.
 % Change mode from "write" to "append" to avoid clobbering earlier logs.
 %
-:-open('learning_rate.log',write,S,[alias('learning_rate')])
- ,debug(learning_rate>S).
+:- close_log(learning_rate)
+  ,open('logs/learning_rate.log',write,S,[alias(learning_rate)])
+  ,debug(learning_rate>S).
 
 % Uncomment to allow tracking progresss while logging to file.
 :-debug(progress).
+
+
+
+/* ================================================================================
+   EXPERIMENT PREDICATES
+   ================================================================================
+*/
+
+%!	debug_learning_rates(+K,+Target) is det.
+%
+%	Debug results of K learning rate experiment cycles.
+%
+%	Prints results of the experiment to the console.
+%
+debug_learning_rates(K,T):-
+	learning_rates(K,T,Rs)
+	,Rs \= []
+	,pairs_averages(Rs,As)
+	,pairs_sd(Rs,As,SDs)
+	,debug(learning_rate,'Theory size and training times (sec.) for ~w cycles.',[K])
+	,debug(learning_rate,'|Th| Training time (mean) Training Time (SD)',[])
+	,forall(nth1(I,As,A_i)
+	       ,(nth1(I,SDs,Sd_i)
+		,debug(learning_rate,'~2|~`0t~d~2+ ~3+~4f~20+ ~2t~4f~20t',[I,A_i,Sd_i])
+		)
+	       )
+	,close_log(learning_rate).
+
+
+
+%!	learning_rates(+K,+Target,-Results) is det.
+%
+%	Repeat a learning rate experiment K times.
+%
+learning_rates(K,T,Rs):-
+	findall(Rs_
+	       ,(between(1,K,I)
+		,debug(progress,'Cycle ~w of ~w',[I,K])
+		,learning_rate(T,Rs_i)
+		,findall(J-S
+			,nth1(J,Rs_i,r(_Ps,_N,S))
+			,Rs_)
+		)
+	       ,Rs).
+
 
 
 %!	debug_learning_rate(+Target) is det.
@@ -71,11 +129,7 @@ debug_learning_rate(T):-
 	,forall(member(r(_Ps,N,S),Rs)
 	       ,debug(learning_rate,'Clauses: ~w Time: ~4f',[N,S])
 	       )
-	% Close debug stream if open
-	,(   is_stream(learning_rate)
-	->   close(learning_rate)
-	 ;   true
-	 ).
+	,close_log(learning_rate).
 
 
 %!	print_evals(+Target,+Results) is det.
@@ -88,6 +142,7 @@ print_evals(T,Rs):-
 	       )
 	       )
 	,nl.
+
 
 
 %!	learning_rate(+Target,-Results) is det.
