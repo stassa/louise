@@ -1,13 +1,17 @@
-Louise - efficient Meta-Interpretive Learning of large programs
-===============================================================
+Louise - polynomial-time Meta-Interpretive Learning
+===================================================
 
-Louise is an new Meta-Interpretive Learning (MIL) system that is efficient
-enough to learn large programs, in particular, programs too large to be learned
-by current MIL learners like [Metagol].
+Louise is a Meta-Interpretive Learning (MIL) system based on a polynomial-time
+learning algorithm. Louise is efficient enough to learn programs that are too
+large to be larned by current MIL learners like [Metagol].
 
 Meta-Interpretive Learning is a new paradigm for Inductive Logic Programming
-(ILP). See the reference section for pubications on MIL. Publications on Louise
-are coming soon.
+(ILP). ILP algorithms learn logic programs from examples and background
+knowledge. The examples and background knowledge are also defined as logic
+programs. In MIL, a set of clause templates, called _metarules_ are also used to
+direct the search for hypotheses. See the reference section for pubications on
+MIL. Publications on Louise are coming soon. An example of learning with Louise
+follows in the next section.
 
 Example of Use
 --------------
@@ -31,7 +35,7 @@ Louise and the examples, background knowledge and metarules defined in
 
    Edit `configuration.pl` in the Swi-Prolog editor (or your favourite text
    editor) and make sure the name of the current experiment file is set to
-   `anbn.pl`:
+   `tiny_kinship.pl`:
    
    ```prolog
    experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
@@ -57,12 +61,11 @@ Louise and the examples, background knowledge and metarules defined in
    knowledge, metarules and examples defined for that target in
    'tiny\_kinship.pl'.
 
-
 Structure of the experiment file
 --------------------------------
 
 Louise expects the background knowledge, metarules and positive and negative
-examples for a learning target to be defined in an _experiment file_ a Prolgo
+examples for a learning target to be defined in an _experiment file_ a Prolog
 module file with a specific structure.
 
 An experiment file is a module that must export _at least_ the following set of
@@ -80,9 +83,12 @@ predicates are defined for `ancestor/2`:
 
 ```
 background_knowledge(ancestor/2,[father/2,mother/2,parent/2]).
+
 metarules(ancestor/2,[tailrec,identity]).
+
 positive_example(ancestor/2,ancestor(A,B)):-
 	ancestor(A,B).
+
 negative_example(ancestor/2,ancestor(A,B)):-
 	ancestor(B,A).
 ```
@@ -95,13 +101,13 @@ interface predicates above must be declared.
 
 Additionally, the definitions of each of the background knowledge predicates
 listed in a `background_knowledge/2` clause, the metarules named in a
-metarules/2 clause and any predicates used by `positive_examples/2` and
-`negative_examples/2` must be accessible to the module user. 
+metarules/2 clause and any predicates used by `positive_example/2` and
+`negative_example/2` must be accessible to the module `user`. 
 
 For small experiments, it will be most convenient to define background
 predicates in the experiment file itself and add them to that module's
 export-list. Larger experiments can import additional files into the experiment
-file, or directly into module user.
+file, or directly into module `user`.
 
 For example, in the `tiny_kinship.pl` experiment file, the following background
 knowledge predicates are defined, along with the target theory for `ancestor/2`
@@ -114,9 +120,9 @@ ancestor(X,Y):-
 	parent(X,Z)
 	,ancestor(Z,Y).
 
-parent(X, Y):-
+parent(X,Y):-
 	father(X,Y).
-parent(X, Y):-
+parent(X,Y):-
 	mother(X,Y).
 
 father(stathis, kostas).
@@ -128,12 +134,12 @@ mother(paraskevi, dora).
 mother(dora, stassa).
 ```
 
-The metarules for `ancestor/2`, _tailrec_ and _identity_ are defined in the
-configuration file, along with other common metarules that are useful for
-learning many different targets.
+The metarules declared for `ancestor/2`, _tailrec_ and _identity_, are defined
+in the configuration file, `configuration.pl`, along with other common metarules
+that are useful for learning many different targets.
 
-If special metarules are required, they can be defined in an experiment, with a
-module qualifier for the configuration module. This is done as follows:
+If special metarules are required, they can be defined in an experiment file,
+with a module qualifier for the configuration module. This is done as follows:
 
 ```
 configuration:metarule(postcorn,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,X).
@@ -142,27 +148,27 @@ configuration:metarule(postcorn,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,X).
 More detailed information about experiment files will follow. For the time
 being, the examples provided in louise/examples can be inspected for help.
 
-
 Inspecting the steps of Louise's learning procedure
 ---------------------------------------------------
 
 Louise's learning algorithm proceeds in the following steps:
 
-1. Encapsulation of the MIL problem
-2. Construction of the Top prorgam
-3. Reduction of the Top program
-4. Unfolding and excapsulation of the reduced Top program.
+  1. Encapsulation of the MIL problem.
+  2. Construction of the Top prorgam.
+  3. Reduction of the Top program.
+  4. Unfolding and excapsulation of the reduced Top program.
 
-Steps 1 and 2 can be listed for debugging. Step 4 is the output of the learning
-procedure. Step 3 does not have an explicit listing predicate.
+Steps 1, 2 and 3 can be listed for debugging. Step 4 is the output of the
+learning procedure.
 
 ### Listing the MIL problem
 
-A MIL problem consists of a set of examples, background knowledge and metarules.
-In Louise, those are defined in an experiment file as described in a previous
-section. The MIL problem for a learning target can be inspected with a call to
-the predicate `list_mil_problem/1`. The following is a listing of the MIL
-problem for `ancestor/2` defined in `tiny_kinship.pl`:
+A MIL problem consists of sets of positive and negative examples, definitions of
+background knowledge predicates and a set of metarules. In Louise, those are
+defined in an experiment file as described in a previous section. The MIL
+problem for a learning target can be inspected with a call to the predicate
+`list_mil_problem/1`. The following is a listing of the MIL problem for
+`ancestor/2` defined in `tiny_kinship.pl`:
 
 ```
 ?- list_mil_problem(ancestor/2).
@@ -219,7 +225,7 @@ true.
 
 The first step in Louise's learning procedure transforms a MIL problem into an
 _encapsulated_ representation. The encapsulation of a MIL problem can be
-inspected with a cll to the predicate `list_encapsulated_problem/1` 
+inspected with a call to the predicate `list_encapsulated_problem/1` 
 
 An example of listing the encapsulated MIL problem for `ancestor/2` is as
 follows:
@@ -277,19 +283,25 @@ m(identity,A,B):-(s(A),s(B)),m(A,C,D),m(B,C,D).
 true.
 ```
 
+In an encapsulated MIL problem, each literal `L(t_1,...,t_n)` in the examples,
+background knowledge and metarules is replaced with a literal
+`m(L,t_1,...,t_n)`. Encapsulation of the MIL problem allows simple and efficient
+construction and reduction of the Top program.
+
 ### Listing the Top program for a MIL problem
 
 The second step in Louise's learning procedure constructs the _Top prorgam_, the
 most general program that entails each positive example and none of the negative
-examples given the background knowledge and metarules in a MIL problem.
+examples given the background knowledge and metarules in a MIL problem. Each
+clause in a correct hypothesis is also a clause in the Top program.
 
 The Top program can be inspected with a call to `list_top_program/1`.
 
-The following is a listing of the Top program constructed for `grandfather/2`,
-unlike in the previous examples, where we are listing `ancestor/2` results. The
-top program for ancestor/2 does not change between the two construction steps
-(at least not with the data in `tiny_kinship.pl` and so is not very illustrative
-of the top program construction process:
+The following is a listing of the Top program constructed for `grandfather/2`
+(the Top program for `ancestor/2`, that we used as an example until now, does
+not change between the two construction steps -at least not with the data in
+`tiny_kinship.pl`- and so is not very illustrative of the Top program
+construction procedure).
 
 ```
 ?- list_top_program(grandfather/2).
@@ -318,25 +330,25 @@ of definite clauses before being handed to the Top program reduction step.
 
 `list_top_program/1` outputs the unfolded set, but the pre-unfolding set of
 metasubstitutions can still be inspected with a call to `list_top_program/2`,
-with the second paramter (the "unfold" paramter) set to "true", as follows:
+with the second parameter (the "unfold" paramter) set to "false", as follows:
 
 ```
-?- list_top_program(grandfather/2, true).
+?- list_top_program(grandfather/2, false).
 Generalisation:
 ---------------
-m(grandfather,A,B):-m(father,A,C),m(father,C,B).
-m(grandfather,A,B):-m(father,A,C),m(mother,C,B).
-m(grandfather,A,B):-m(father,A,C),m(parent,C,B).
-m(grandfather,A,B):-m(parent,A,C),m(father,C,B).
-m(grandfather,A,B):-m(parent,A,C),m(mother,C,B).
-m(grandfather,A,B):-m(parent,A,C),m(parent,C,B).
+m(chain,grandfather,father,father).
+m(chain,grandfather,father,mother).
+m(chain,grandfather,father,parent).
+m(chain,grandfather,parent,father).
+m(chain,grandfather,parent,mother).
+m(chain,grandfather,parent,parent).
 Length:6
 
 Specialisation:
 ---------------
-m(grandfather,A,B):-m(father,A,C),m(father,C,B).
-m(grandfather,A,B):-m(father,A,C),m(mother,C,B).
-m(grandfather,A,B):-m(father,A,C),m(parent,C,B).
+m(chain,grandfather,father,father).
+m(chain,grandfather,father,mother).
+m(chain,grandfather,father,parent).
 Length:3
 true.
 ```
@@ -344,8 +356,8 @@ true.
 ### Listing the reduced Top program
 
 The third step in Louise's learning procedure is the reduction of the Top
-program and the MIL problem by Gordon Plotkin's program reduction algorithm,
-from his doctoral thesis (see references at end).
+program along with the MIL problem by application of Gordon Plotkin's program
+reduction algorithm from his doctoral thesis (see references at end).
 
 The reduction step, too, can be inspected by a call to the predicate
 `list_top_program_reduction/1`. 
@@ -429,23 +441,27 @@ m(ancestor,A,B):-m(parent,A,C),m(ancestor,C,B)
 ```
 
 Note that, in order to list the reduction of the Top program,
-`list_top_program_reduction/1` must first construct the Top program, and then
+`list_top_program_reduction/1` must first construct the Top program and then
 reduce it. Therefore, calling this listing predicate entails actually training
 Louise. This means that, if training must take a long time, so will the listing
-of the Top program reduction.
+of the Top program reduction. To clarify, what is likely to take a long time is
+the _reduction_ step.
 
-Additionally, Louise reduces the Top program recursively, by feeding back the
+Optionally, Louise can reduce the Top program recursively, by feeding back each
 reduction to Plotkin's algorithm until the size of the reduction stops changing.
 `list_top_program_reduction/1` currently performs only the _first_ step of this
 process. This means the reduction listed by `list_top_program_reduction/1` might
-simultaneously be faster and larger than the result obtained with `learn/1`.
+simultaneously be faster and weaker (in the sense of leaving more redundant
+clauses in the learned hypothesis) than the result obtained with a call to
+`learn/1` etc.
 
 ### Listing the learned hypothesis
 
-The last step in Louise's learning procedure is the unfolding and excapsulation
-of the reduced Top program as a set of definite clauses. The result of this step
-is output directly by the learning predicates, `learn/[1,2,5]` and so this step,
-too, has no explicit listing predicate.
+The last step in Louise's learning procedure is the _excapsulation_ of the
+reduced Top program. Excapsulation is the opposite process of encapsulation. The
+result of excapsulation is a set of definite clauses output directly by the
+learning predicates, `learn/[1,2,5]`. Therefore this step has no explicit
+listing predicate.
 
 More detailed information about Louise's learning procedure is soon to follow.
 
