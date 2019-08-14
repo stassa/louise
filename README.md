@@ -87,7 +87,7 @@ negative_example/2
 For example, in `tiny_kinship.pl` the following clauses of the interface
 predicates are defined for `ancestor/2`:
 
-```
+```prolog
 background_knowledge(ancestor/2,[father/2,mother/2,parent/2]).
 
 metarules(ancestor/2,[tailrec,identity]).
@@ -119,7 +119,7 @@ For example, in the `tiny_kinship.pl` experiment file, the following background
 knowledge predicates are defined, along with the target theory for `ancestor/2`
 that is used to generate positive and negative examples:
 
-```
+```prolog
 ancestor(X,Y):-
 	parent(X,Y).
 ancestor(X,Y):-
@@ -147,7 +147,7 @@ that are useful for learning many different targets.
 If special metarules are required, they can be defined in an experiment file,
 with a module qualifier for the configuration module. This is done as follows:
 
-```
+```prolog
 configuration:metarule(postcorn,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,X).
 ```
 
@@ -176,7 +176,7 @@ problem for a learning target can be inspected with a call to the predicate
 `list_mil_problem/1`. The following is a listing of the MIL problem for
 `ancestor/2` defined in `tiny_kinship.pl`:
 
-```
+```prolog
 ?- list_mil_problem(ancestor/2).
 Positive examples
 -----------------
@@ -236,7 +236,7 @@ inspected with a call to the predicate `list_encapsulated_problem/1`
 An example of listing the encapsulated MIL problem for `ancestor/2` is as
 follows:
 
-```
+```prolog
 ?- list_encapsulated_problem(ancestor/2).
 Predicate signature
 -------------------
@@ -309,7 +309,7 @@ not change between the two construction steps -at least not with the data in
 `tiny_kinship.pl`- and so is not very illustrative of the Top program
 construction procedure).
 
-```
+```prolog
 ?- list_top_program(grandfather/2).
 Generalisation:
 ---------------
@@ -338,7 +338,7 @@ of definite clauses before being handed to the Top program reduction step.
 metasubstitutions can still be inspected with a call to `list_top_program/2`,
 with the second parameter (the "unfold" paramter) set to "false", as follows:
 
-```
+```prolog
 ?- list_top_program(grandfather/2, false).
 Generalisation:
 ---------------
@@ -370,7 +370,7 @@ The reduction step, too, can be inspected by a call to the predicate
 
 The following is a listing of the reduction step for `ancestor/2`:
 
-```
+```prolog
 ?- list_top_program_reduction(ancestor/2).
 Program clauses:
 ----------------
