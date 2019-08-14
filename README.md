@@ -16,60 +16,66 @@ follows in the next section.
 Example of Use
 --------------
 
+In this section, we assume you have cloned this project into a directory called
+`louise`, the root directory of the project.
+
 The following is an example showing how to learn the "ancestor" relation using
-Louise and the examples, background knowledge and metarules defined in
-`examples/tiny_kinship.pl`.
+Louise with the examples, background knowledge and metarules defined in the
+_experiment file_ `louise/examples/tiny_kinship.pl`.
 
 
-1. Consult the project's load file to load the project:
-   
-   ```prolog
-   ?- [load_project].
-   ```
+ 1. Consult the project's load file to load the project.
+    
+    ```prolog
+    ?- [load_project].
+    ```
+ 
+    This should start the Swi-Prolog IDE and open the project source files in the
+    editor, including `configuration.pl` used in the next step. It should also start
+    the documentation server and open this README file in your browser.
+ 
+ 2. Edit the project's configuration file to select an experiment file.
 
-   This should start the Swi-Prolog IDE and open the project source files in the
-   editor, including `configuration.pl` used in the next step. It should also start
-   the documentation server and open this README file in your browser.
+    Edit `louise/configuration.pl` in the Swi-Prolog editor (or your favourite
+    text editor) and make sure the name of the current experiment file is set to
+    `tiny_kinship.pl`:
+    
+    ```prolog
+    experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
+    ```
+ 
+ 3. Recompile the project.
+ 
+    ```prolog
+    ?- make.
+    ```
+ 
+ 4. Run a query to train Louise on one of the learning targets
+    defined in the chosen experiment file.
 
-2. Edit the project's configuration file to select an experiment file:
-
-   Edit `configuration.pl` in the Swi-Prolog editor (or your favourite text
-   editor) and make sure the name of the current experiment file is set to
-   `tiny_kinship.pl`:
-   
-   ```prolog
-   experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
-   ```
-
-3. Recompile the project:
-
-   ```prolog
-   ?- make.
-   ```
-
-4. Run a query to train Louise on ancestor/2, one of the learning targets
-   defined in the chosen experiment file:
-
-   ```
-   ?- learn(ancestor/2).
-   ancestor(A,B):-parent(A,B).
-   ancestor(A,B):-ancestor(A,C),ancestor(C,B).
-   true.
-   ```
-
-   Louise learns a recursive hypothesis of ancestor/2 from the background
-   knowledge, metarules and examples defined for that target in
-   'tiny\_kinship.pl'.
+    `ancestor/2` is one of the learning targets defined in `tiny_kinship.pl`:
+ 
+    ```
+    ?- learn(ancestor/2).
+    ancestor(A,B):-parent(A,B).
+    ancestor(A,B):-ancestor(A,C),ancestor(C,B).
+    true.
+    ```
+ 
+    Louise learns a recursive hypothesis of `ancestor/2` from the examples,
+    background knowledge and metarules defined for `ancestor/2` in
+    'tiny_kinship.pl'.
 
 Structure of the experiment file
 --------------------------------
 
 Louise expects the background knowledge, metarules and positive and negative
-examples for a learning target to be defined in an _experiment file_ a Prolog
-module file with a specific structure.
+examples for a learning target to be defined in an _experiment file_. This is a
+Prolog module file with a specific public interface.
 
-An experiment file is a module that must export _at least_ the following set of
-Prolog predicates, which we will call the _experiment file interface_:
+An experiment file is a module that must export at least the following set of
+Prolog predicates, which we will call the experiment file _interface
+predicates_:
 
 ```
 background_knowledge/2
@@ -97,21 +103,21 @@ For convenience, a single experiment file may hold the training data for more
 than one learning target. 
 
 For each learning target in an experiment file, a clause of each of the
-interface predicates above must be declared.
+interface predicates must be declared.
 
 Additionally, the definitions of each of the background knowledge predicates
 listed in a `background_knowledge/2` clause, the metarules named in a
-metarules/2 clause and any predicates used by `positive_example/2` and
+`metarules/2` clause and any predicates used by `positive_example/2` and
 `negative_example/2` must be accessible to the module `user`. 
 
 For small experiments, it will be most convenient to define background
-predicates in the experiment file itself and add them to that module's
-export-list. Larger experiments can import additional files into the experiment
-file, or directly into module `user`.
+predicates in the experiment file itself and add them to the export-list of the
+experiment file module. Larger experiments can import additional files into the
+experiment file, or directly into module `user`.
 
 For example, in the `tiny_kinship.pl` experiment file, the following background
 knowledge predicates are defined, along with the target theory for `ancestor/2`
-that is used to geenrate positive and negative examples:
+that is used to generate positive and negative examples:
 
 ```
 ancestor(X,Y):-
