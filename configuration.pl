@@ -16,6 +16,7 @@
 								  ,resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
 
+
 % Body literals of H(2,2) metarules.
 :-dynamic m/1
          ,m/2
@@ -66,9 +67,10 @@ derivation_depth(9).
 %	The Path and Module name of an experiment file.
 %
 experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
+%experiment_file('data/examples/grammars/anbn.pl',anbn).
+%experiment_file('data/examples/abduced.pl',abduced).
 %experiment_file('data/examples/kinship/my_family_tree.pl',my_family_tree).
 %experiment_file('data/examples/kinship/kinship.pl',kinship).
-%experiment_file('data/examples/grammars/anbn.pl',anbn).
 
 
 %!	extend_metarules(?Bool) is semidet.
@@ -87,6 +89,7 @@ extend_metarules(false).
 %	time being this doesn't seem to be necessary but a complete
 %	representation will need to include constraints.
 %
+metarule(abduce,P,X,Y):- m(P,X,Y).
 metarule(unit,P):- m(P,_X,_Y).
 metarule(projection,P,Q):- m(P,X,X), m(Q,X).
 metarule(identity,P,Q):- m(P,X,Y), m(Q,X,Y).
@@ -149,7 +152,6 @@ recursive_reduction(false).
 %resolutions(30_000).
 %resolutions(10_000).
 resolutions(5000).
-%resolutions(1000).
 %resolutions(15).
 
 

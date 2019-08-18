@@ -65,8 +65,46 @@ metarule_expansion(Id,Mh_:-(Es_,Mb)):-
 	,Mh =.. [metarule,Id|Ps]
 	,Mh_ =.. [m,Id|Ps]
 	,clause(Mh,Mb)
-	,maplist(existential_variables,Ps,Ps_)
+	,second_order_vars((Mh:-Mb),Ss)
+	,maplist(existential_variables,Ss,Ps_)
 	,once(list_tree(Ps_,Es_)).
+
+
+%!	second_order_vars(+Metarule,-Variables) is det.
+%
+%	Collect the second-order Variables in a metarule.
+%
+%	The motivation for this predicate is to allow metarules like
+%	abduce that have existentially quantified _first-order_
+%	variables. These must not end up in the predicate signature
+%	literals in the expanded metarule, or processing will fail (in
+%	particular, it fails during calls to metasubstitution/3,
+%	because that predicate calls the predicate signature literals-
+%	a call that fails if the predicate signature literals aren't
+%	actually wrapping second-order variables). This predicate
+%	makes sure that only the existentially quantified second-order
+%	Variables in Metarule are returned.
+%
+second_order_vars(M,Ss):-
+	second_order_vars(M,[],Ss).
+
+%!	second_order_vars(+Metarule,+Acc,-Variables) is det.
+%
+%	Business end of second_order_vars/2.
+%
+second_order_vars(_H:-B,Acc,Bind):-
+	!
+	,second_order_vars(B,Acc,Bind).
+second_order_vars((L1,Ls),Acc,Bind):-
+	!
+	,L1 =.. [m,P|_]
+	,second_order_vars(Ls,[P|Acc],Bind).
+second_order_vars((L1),Acc,Ss):-
+	L1 =.. [m,P|_]
+	,!
+	,reverse([P|Acc],Ss).
+second_order_vars(true,Acc,Ss):-
+	reverse(Acc,Ss).
 
 
 %!	existential_variables(+Variable, -Encapsulated) is det.
@@ -364,9 +402,9 @@ encapsulated_clause(L,Acc,(H:-Bs)):-
 %	program.
 %
 unfolded_metasubs(Ss,Ms):-
-	findall(H:-B
+	findall(P
 		,(member(S,Ss)
-		 ,metarule_projection(S,H:-B)
+		 ,metarule_projection(S,P)
 		 )
 		,Ms).
 

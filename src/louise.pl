@@ -327,14 +327,28 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %
 metasubstitution(:-E,M,H):-
 	!
-	,M= (H:-(Ps,(E,Ls)))
+	,bind_head_literal(E,M,(H:-(Ps,(E,Ls))))
 	,metarule_expansion(_Id,(H:-(Ps,(E,Ls))))
 	,user:call(Ps)
 	,user:call(Ls).
 metasubstitution(E,M,H):-
-	M =(H:-(Ps,(E,Ls)))
+	bind_head_literal(E,M,(H:-(Ps,(E,Ls))))
 	,user:call(Ps)
 	,user:call(Ls).
+
+
+%!	bind_head_literal(+Example,+Metarule,-Head) is det.
+%
+%	Bind an Example to the encapsulated Head literal of a Metarule.
+%
+%	Abstracts the complex patterns of binding examples to the heads
+%	of metarules with and without body literals.
+%
+bind_head_literal(E,M,(H:-(Ps,(E,Ls)))):-
+	M = (H:-(Ps,(E,Ls)))
+	,!.
+bind_head_literal(E,M,(H:-(Ps,(E,true)))):-
+	M = (H:-(Ps,E)).
 
 
 %!	bind_target(+Metarules,+Target,-Bound) is det.
