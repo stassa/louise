@@ -364,16 +364,9 @@ encapsulated_clause(L,Acc,(H:-Bs)):-
 %	program.
 %
 unfolded_metasubs(Ss,Ms):-
-	setof(H:-B
-		,S^Ss^B_^(member(S,Ss)
-			 ,metarule_projection(S,H:-B)
-			 ,copy_term(B,B_)
-			 ,numbervars(B)
-		 )
-		,Ms_)
-	,findall(C_
-		,(member(C,Ms_)
-		 ,varnumbers(C,C_)
+	findall(H:-B
+		,(member(S,Ss)
+		 ,metarule_projection(S,H:-B)
 		 )
 		,Ms).
 
