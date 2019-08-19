@@ -60,12 +60,18 @@ expanded_metarules(Ids,Ms):-
 %	@tbd This will not allow the use of existentially quantified
 %	terms that are not predicate symbols, but hypothesis constants.
 %
-metarule_expansion(Id,Mh_:-(Es_,Mb)):-
+%	@tbd In line 5 of this predicate strip_module/3 is called to
+%	allow metarules defined in experiment files to be used without
+%	stumbling over complicated patterns of module qualifiers (which
+%	will be different in their head and body literals).
+%
+metarule_expansion(Id,Mh_:-(Es_,Mb_)):-
 	configuration:current_predicate(metarule,Mh)
 	,Mh =.. [metarule,Id|Ps]
 	,Mh_ =.. [m,Id|Ps]
 	,clause(Mh,Mb)
-	,second_order_vars((Mh:-Mb),Ss)
+	,strip_module(Mb,_M,Mb_)
+	,second_order_vars((Mh:-Mb_),Ss)
 	,maplist(existential_variables,Ss,Ps_)
 	,once(list_tree(Ps_,Es_)).
 
