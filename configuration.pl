@@ -69,6 +69,7 @@ derivation_depth(9).
 experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/grammars/anbn.pl',anbn).
 %experiment_file('data/examples/abduced.pl',abduced).
+%experiment_file('data/examples/special_metarules.pl',special_metarules).
 %experiment_file('data/examples/kinship/my_family_tree.pl',my_family_tree).
 %experiment_file('data/examples/kinship/kinship.pl',kinship).
 
