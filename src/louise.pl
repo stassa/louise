@@ -50,7 +50,11 @@ tp_safe_experiment_data(T,Pos,Neg_,BK,MS):-
 		  ,Neg^member((:-E),Neg)
 		  ,Neg_)
 	 ;   Neg_ = Neg
-	 ).
+	 )
+	,!.
+tp_safe_experiment_data(T,Pos,[],BK,MS):-
+% If there are no negative examples there's nothing to sanitise.
+	experiment_data(T,Pos,[],BK,MS).
 
 
 
