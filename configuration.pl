@@ -72,6 +72,7 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/special_metarules.pl',special_metarules).
 %experiment_file('data/examples/kinship/my_family_tree.pl',my_family_tree).
 %experiment_file('data/examples/kinship/kinship.pl',kinship).
+%experiment_file('data/mtg/mtg_fragment.pl',mtg_fragment).
 
 
 %!	extend_metarules(?Bool) is semidet.
@@ -153,7 +154,9 @@ recursive_reduction(false).
 %resolutions(30_000).
 %resolutions(10_000).
 resolutions(5000).
+%resolutions(100).
 %resolutions(15).
+%resolutions(0).
 
 
 %!	theorem_prover(?Algorithm) is semidet.
