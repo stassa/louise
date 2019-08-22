@@ -546,9 +546,10 @@ tp_query([],Is,Is,Ts,Ts):-
 	!.
 tp_query([C|Ps],Is_Acc,Is_Bind,Rs_Acc,Rs_Bind):-
 	copy_term(C,C_)
+	,copy_term(Is_Acc,Is_Acc_)
 	,clause_head_body(C_,H,B)
-	,model_subset(B,Is_Acc)
-	,\+ memberchk(H,Is_Acc)
+	,model_subset(B,Is_Acc_)
+	,\+ memberchk(H,Is_Acc_)
 	%,\+ memberchk(H,Rs_Acc) %?
 	,!
 	,tp_query(Ps,[H|Is_Acc],Is_Bind,[H|Rs_Acc],Rs_Bind).
