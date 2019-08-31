@@ -366,7 +366,7 @@ encapsulated_clause((L,Ls),Acc,C_):-
 % Definite clause; L is an atom of a built-in predicate.
 	predicate_property(L,built_in)
 	,!
-	,encapsulated_clause(Ls,[L,Acc],C_).
+	,encapsulated_clause(Ls,[L|Acc],C_).
 encapsulated_clause(L,Acc,(H:-Bs)):-
 % Definite clause; L is an atom of a built-in predicate.
 	L \= (_,_)
