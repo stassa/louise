@@ -15,6 +15,7 @@
 :-reexport(lib(program_reduction/reduction_configuration), except([derivation_depth/1
 								  ,resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
+:-reexport(lib/sampling/sampling_configuration).
 
 
 % Body literals of H(2,2) metarules.
@@ -70,9 +71,8 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/grammars/anbn.pl',anbn).
 %experiment_file('data/examples/abduced.pl',abduced).
 %experiment_file('data/examples/special_metarules.pl',special_metarules).
-%experiment_file('data/examples/kinship/my_family_tree.pl',my_family_tree).
-%experiment_file('data/examples/kinship/kinship.pl',kinship).
 %experiment_file('data/mtg/mtg_fragment.pl',mtg_fragment).
+%experiment_file('data/examples/kinship/kinship.pl',kinship).
 
 
 %!	extend_metarules(?Bool) is semidet.
@@ -150,6 +150,7 @@ recursive_reduction(false).
 %resolutions(20_500_000).
 %resolutions(10_500_000).
 %resolutions(5_500_000).
+%resolutions(500_000).
 %resolutions(250_000).
 %resolutions(30_000).
 %resolutions(10_000).
