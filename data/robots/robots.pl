@@ -3,7 +3,7 @@
 		 ,positive_example/2
 		 ,negative_example/2
 		 ,experiment/2
-		 ,list_problem_world/0
+		 ,list_problem_world/1
 		  %,stay/2
 		 ,at_goal/1
 		 ,move_right/2
@@ -82,6 +82,8 @@ experiment(1,Rs):-
 	experiment_world(World)
 	,world_dimensions(W,H)
 	,start_logging
+	,list_problem_world(robots)
+	,nl(robots)
 	,exp1(World,W,H,10,10,Rs)
 	,debug(robots,'Results:',[])
 	,debug(robots,'~w',[Rs])
@@ -112,16 +114,19 @@ exp1(World,W,H,K,N,Rs):-
 			       ,'Problem ~w of ~w in step ~w'
 			       ,[N_,N,K_])
 			 ,random_member(P,Ps)
-			 %,debug(robots,'~w',[P])
 			 ,flush_output
 			 ,render_problem(P)
-			 ,learn([P],[],BK,MS,Hs)
-			 ,Hs \= []
-			 ,Hs \= [P]
-			 ,length(Hs, H_N)
-			 ,debug(robots,'Learned ~w clauses',[H_N])
-			 ,debug_clauses(robots,Hs)
-			 ,debug(robots,'',[])
+			 ,(   learn([P],[],BK,MS,Hs)
+			     ,Hs \= []
+			     ,Hs \= [P]
+			  ->  length(Hs, H_N)
+			     ,debug(robots,'Learned ~w clauses',[H_N])
+			     ,debug_clauses(robots,Hs)
+			     ,debug(robots,'',[])
+			  ;   debug(robots,'Failed to learn a hypothesis.',[])
+			     ,debug(robots,'',[])
+			     ,fail
+			 )
 			 )
 			,HS)
 		,length(HS,C)
@@ -161,7 +166,7 @@ world_dimensions(1,1).
 %	experiment world.
 %
 %training_sample(0.000001).
-training_sample(0.0000001).
+training_sample(0.001).
 
 
 %!	problems(+World,+Width,+Height,+Sample,-Problems) is det.
@@ -177,17 +182,17 @@ problems(World,W,H,S,Ps):-
 	,p_list_samples(S,Ps_,Ps).
 
 
-%!	list_problem_world is det.
+%!	list_problem_world(+Stream) is det.
 %
 %	List the parameters of problem world construction.
 %
-list_problem_world:-
+list_problem_world(St):-
 	experiment_world(World)
 	,world_dimensions(W,H)
 	,training_sample(S)
-	,format('World: ~w~n', [World])
-	,format('Dimensions: ~w x ~w~n', [W,H])
-	,format('Training sample: ~w~n', [S])
+	,format(St,'World: ~w~n', [World])
+	,format(St,'Dimensions: ~w x ~w~n', [W,H])
+	,format(St,'Training sample: ~w~n', [S])
 	,problems(World,W,H,1.0,Ps)
 	,length(Ps, N)
 	,(   float(S)
@@ -196,8 +201,8 @@ list_problem_world:-
 	->   S_ is S/100
 	    ,M is max(1, integer(S_ * N))
 	 )
-	,format('Problems: ~D~n', [N])
-	,format('Sampled: ~D~n', [M]).
+	,format(St,'Problems: ~D~n', [N])
+	,format(St,'Sampled: ~D~n', [M]).
 
 
 % ========================================
@@ -210,6 +215,7 @@ list_problem_world:-
 configuration:metarule(ground_identity,P,Q,X,Y):- m(P,X,Y), m(Q,X,Y).
 configuration:metarule(ground_chain,P,Q,R,X,Y,Z):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
 configuration:metarule(postcon,P,Q,R,X,Y):- m(P,X,Y), m(Q,X,Y), m(R,Y).
+configuration:metarule(unit_identity,P,Q):- m(P,X,_Y), m(Q,X).
 
 background_knowledge(move/2, [%stay/2
 			      at_goal/1
@@ -222,15 +228,9 @@ background_knowledge(move/2, [%stay/2
 			     ]).
 
 %metarules(move/2,[identity,chain,precon,postcon]).
-metarules(move/2,[identity,chain,precon]).
+%metarules(move/2,[identity,chain,precon]).
 %metarules(move/2,[ground_identity,ground_chain,ground_postcon]).
-metarules_(move/2,[identity
-		 ,chain
-		 ,postcon
-		 ,projection
-		 ,ground_identity
-		 ,ground_chain
-		 ,ground_postcon]).
+metarules(move/2,[unit_identity,chain,postcon,projection]).
 
 positive_example(move/2,E):-
 	experiment_world(World)
