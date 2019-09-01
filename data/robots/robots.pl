@@ -10,6 +10,14 @@
 		 ,move_left/2
 		 ,move_up/2
 		 ,move_down/2
+		 ,move_right_twice/2
+		 ,move_left_twice/2
+		 ,move_up_twice/2
+		 ,move_down_twice/2
+		 ,move_right_then_up/2
+		 ,move_right_then_down/2
+		 ,move_left_then_up/2
+		 ,move_left_then_down/2
 		 ,move/5
 		 ,within_limits/2
 		 ]).
@@ -82,6 +90,7 @@ experiment(1,Rs):-
 	experiment_world(World)
 	,world_dimensions(W,H)
 	,start_logging
+	,list_problem(robots)
 	,list_problem_world(robots)
 	,nl(robots)
 	,exp1(World,W,H,10,10,Rs)
@@ -205,6 +214,18 @@ list_problem_world(St):-
 	,format(St,'Sampled: ~D~n', [M]).
 
 
+
+%!	list_problem(+Stream) is det.
+%
+%	List BK and metarules used in a robot experiment.
+%
+list_problem(St):-
+	background_knowledge(move/2,BK)
+	,metarules(move/2,MS)
+	,format(St,'Background knowledge: ~w~n',[BK])
+	,format(St,'Metarules: ~w~n',[MS]).
+
+
 % ========================================
 % MIL Problem
 % ========================================
@@ -223,6 +244,14 @@ background_knowledge(move/2, [%stay/2
 			     ,move_left/2
 			     ,move_up/2
 			     ,move_down/2
+			     ,move_right_twice/2
+			     ,move_left_twice/2
+			     ,move_up_twice/2
+			     ,move_down_twice/2
+			     ,move_right_then_up/2
+			     ,move_right_then_down/2
+			     ,move_left_then_up/2
+			     ,move_left_then_down/2
 			     ,move/5
 			     ,within_limits/2
 			     ]).
@@ -254,6 +283,10 @@ negative_example(move/2,_):-
 %
 at_goal([G,G,W-H]):-
 	ground([G,G,W-H]).
+
+
+% ========================================
+% Primitive actions
 
 
 %!	stay(+State, -New) is det.
@@ -318,6 +351,85 @@ move_down(Ss,_Gs):-
 move_down([R,G,W-H],[R_new,G,W-H]):-
 	!
 	,move(R,-,0/1,W-H,R_new).
+
+
+% ========================================
+% Compound actions - double moves
+
+%!	move_right_twice(+State,-New) is det.
+%
+%	Repeat a move_right/2 action twice.
+%
+move_right_twice(Ss,Gs):-
+	move_right(Ss,Ss_2)
+	,move_right(Ss_2,Gs).
+
+
+%!	move_left_twice(+State,-New) is det.
+%
+%	Repeat a move_left/2 action twice.
+%
+move_left_twice(Ss,Gs):-
+	move_left(Ss,Ss_2)
+	,move_left(Ss_2,Gs).
+
+
+%!	move_up_twice(+State,-New) is det.
+%
+%	Repeat a move_up/2 action twice.
+%
+move_up_twice(Ss,Gs):-
+	move_up(Ss,Ss_2)
+	,move_up(Ss_2,Gs).
+
+
+%!	move_down_twice(+State,-New) is det.
+%
+%	Repeat a move_down/2 action twice.
+%
+move_down_twice(Ss,Gs):-
+	move_down(Ss,Ss_2)
+	,move_down(Ss_2,Gs).
+
+
+% ========================================
+% Compound actions - moves at an angle
+
+%!	move_right_then_up(+State, -New) is det.
+%
+%	Combine	a move to the right with a move upwards.
+%
+move_right_then_up(Ss,Gs):-
+	move_right(Ss,Ss_2)
+	,move_up(Ss_2,Gs).
+
+
+%!	move_right_then_down(+State,-New) is det.
+%
+%	Combine	a move to the right with a move downwards.
+%
+move_right_then_down(Ss,Gs):-
+	move_right(Ss,Ss_2)
+	,move_down(Ss_2,Gs).
+
+
+%!	move_left_then_up(+State, -New) is det.
+%
+%	Combine	a move to the left with a move upwards.
+%
+move_left_then_up(Ss,Gs):-
+	move_left(Ss,Ss_2)
+	,move_up(Ss_2,Gs).
+
+
+%!	move_left_then_down(+State,-New) is det.
+%
+%	Combine	a move to the left with a move downwards.
+%
+move_left_then_down(Ss,Gs):-
+	move_left(Ss,Ss_2)
+	,move_down(Ss_2,Gs).
+
 
 
 %!	move(+Point,+Delta,+Distance,+Limits,-End) is det.

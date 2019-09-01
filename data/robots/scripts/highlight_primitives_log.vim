@@ -1,6 +1,6 @@
 Hclear *
-Highlight 25 \(World:\|Training sample:\|Sampled:\).*
-Highlight 22 \(Dimensions:\|Problems:\).*
+Highlight 25 \(Background knowledge:\|World:\|Training sample:\|Sampled:\).*
+Highlight 22 \(Metarules:\|Dimensions:\|Problems:\).*
 Highlight 54 % Step.*
 Highlight 6 \(Starting\|Goal\) state:
 Highlight 2 \[.*\]
