@@ -2,7 +2,7 @@
 		 ,metarules/2
 		 ,positive_example/2
 		 ,negative_example/2
-		 ,experiment/2
+		 ,experiment/4
 		 ,list_problem_world/1
 		  %,stay/2
 		 ,at_goal/1
@@ -18,6 +18,10 @@
 		 ,move_right_then_down/2
 		 ,move_left_then_up/2
 		 ,move_left_then_down/2
+		 ,move_up_then_right/2
+		 ,move_up_then_left/2
+		 ,move_down_then_right/2
+		 ,move_down_then_left/2
 		 ,move/5
 		 ,within_limits/2
 		 ]).
@@ -71,7 +75,6 @@ start_logging:-
 	,atom_concat(robots_3,T,Bn)
 	,atom_concat(Bn,'.log',Fn)
 	,atom_concat('logs/robots/',Fn,P)
-	% ,open('logs/robots_3.log',write,S,[alias(robots)])
 	,open(P,write,S,[alias(robots)])
 	,debug(robots>S).
 
@@ -86,17 +89,24 @@ start_logging:-
 % Experiment code
 % ========================================
 
-experiment(1,Rs):-
+%!	experiment(+Name,+Steps,+Problems,-Results) is det.
+%
+%	Run the Name'd experiment.
+%
+experiment(1,K,J,Rs):-
 	experiment_world(World)
 	,world_dimensions(W,H)
 	,start_logging
 	,list_problem(robots)
 	,list_problem_world(robots)
+	,debug(robots,'Steps: ~w',[K])
+	,debug(robots,'Problems: ~w',[J])
 	,nl(robots)
-	,exp1(World,W,H,10,10,Rs)
+	,exp1(World,W,H,K,J,Rs)
 	,debug(robots,'Results:',[])
 	,debug(robots,'~w',[Rs])
 	,close_log(robots).
+
 
 %!	exp1(+World,+Width,+Height,+Steps,+Problems,-Results) is
 %!	det.
@@ -164,7 +174,7 @@ experiment_world(empty_world).
 %
 %	Used to generate examples for robot navigation plans.
 %
-world_dimensions(1,1).
+world_dimensions(8,8).
 
 
 %!	training_sample(?Sample) is semidet.
@@ -174,8 +184,8 @@ world_dimensions(1,1).
 %	Used to select a subset of all grids generated in the current
 %	experiment world.
 %
-%training_sample(0.000001).
-training_sample(0.001).
+%training_sample(0.00000000000001).
+training_sample(0.2).
 
 
 %!	problems(+World,+Width,+Height,+Sample,-Problems) is det.
@@ -239,19 +249,26 @@ configuration:metarule(postcon,P,Q,R,X,Y):- m(P,X,Y), m(Q,X,Y), m(R,Y).
 configuration:metarule(unit_identity,P,Q):- m(P,X,_Y), m(Q,X).
 
 background_knowledge(move/2, [%stay/2
+			      % Primitives
 			      at_goal/1
 			     ,move_right/2
 			     ,move_left/2
 			     ,move_up/2
 			     ,move_down/2
-			     ,move_right_twice/2
+			      % Composites- double moves
+			    /* ,move_right_twice/2
 			     ,move_left_twice/2
 			     ,move_up_twice/2
 			     ,move_down_twice/2
+			      % Composites - angled moves
 			     ,move_right_then_up/2
 			     ,move_right_then_down/2
 			     ,move_left_then_up/2
 			     ,move_left_then_down/2
+			     ,move_up_then_right/2
+			     ,move_up_then_left/2
+			     ,move_down_then_right/2
+			     ,move_down_then_left/2*/
 			     ,move/5
 			     ,within_limits/2
 			     ]).
@@ -429,6 +446,42 @@ move_left_then_up(Ss,Gs):-
 move_left_then_down(Ss,Gs):-
 	move_left(Ss,Ss_2)
 	,move_down(Ss_2,Gs).
+
+
+%!	move_up_then_right(+State, -New) is det.
+%
+%	Combine	a move upwards with a move to the right.
+%
+move_up_then_right(Ss,Gs):-
+	move_up(Ss,Ss_2)
+	,move_right(Ss_2,Gs).
+
+
+%!	move_up_then_left(+State, -New) is det.
+%
+%	Combine	a move to the left with a move upwards.
+%
+move_up_then_left(Ss,Gs):-
+	move_up(Ss,Ss_2)
+	,move_left(Ss_2,Gs).
+
+
+%!	move_down_then_right(+State, -New) is det.
+%
+%	Combine	a move downwards with a move to the right.
+%
+move_down_then_right(Ss,Gs):-
+	move_down(Ss,Ss_2)
+	,move_right(Ss_2,Gs).
+
+
+%!	move_down_then_left(+State, -New) is det.
+%
+%	Combine	a move to the left with a move downwards.
+%
+move_down_then_left(Ss,Gs):-
+	move_down(Ss,Ss_2)
+	,move_left(Ss_2,Gs).
 
 
 
