@@ -7,6 +7,7 @@
 			,metarule/5
 			,recursion_depth_limit/2
 			,recursive_reduction/1
+			,reduction/1
 			,resolutions/1
 			,theorem_prover/1
 			]).
@@ -73,6 +74,7 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/special_metarules.pl',special_metarules).
 %experiment_file('data/mtg/mtg_fragment.pl',mtg_fragment).
 %experiment_file('data/examples/kinship/kinship.pl',kinship).
+%experiment_file('data/robots/robots.pl',robots).
 
 
 %!	extend_metarules(?Bool) is semidet.
@@ -138,6 +140,20 @@ recursion_depth_limit(episodic_learning,100).
 %	from it.
 %
 recursive_reduction(false).
+
+
+%!	reduction(?Method) is semidet.
+%
+%	Select a Method for Top program reduction.
+%
+%	One of:
+%	* plotkins: discard logically redundant clauses by application
+%	of Plotkin's program reduction.
+%	* subhypothesis: select one hypothesis entailed by the Top
+%	program.
+%
+reduction(plotkins).
+%reduction(subhypothesis).
 
 
 %!	resolutions(?Resolutions) is semidet.

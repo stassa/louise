@@ -446,6 +446,12 @@ specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
 %	resolution steps in the program reduction meta-interpreter.
 %
 reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
+	configuration:reduction(subhypothesis)
+	,!
+	,write_program(Pos,BK,MS,Ss,Refs)
+	,subhypothesis(Pos,Ps,Rs)
+	,erase_program_clauses(Refs).
+reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 	configuration:recursive_reduction(true)
 	,!
 	,flatten([Ss,Pos,BK,Ps,MS],Fs_)
@@ -462,6 +468,49 @@ reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 	,flatten([Ss,Pos,BK,Ps,MS],Fs_)
 	,program_reduction(Fs_,Rs,_)
 	,cleanup_experiment.
+
+
+%!	subhypothesis(+Positive,+Top,-Subhypothesis) is det.
+%
+%	Select a subset of clauses of the Top program.
+%
+%	Subhypothesis is a sub-set of the clauses in the Top program
+%	that entails each positive example (and none of the negatives).
+%
+subhypothesis(Pos, Ps, Hs):-
+	subhypothesis(Pos, Ps, [], Hs).
+
+%!	subhypothesis(+Positives,+Top,+Acc,-Subhypothesis) is det.
+%
+%	Business end of subhypothesis/3.
+%
+subhypothesis([],_Ps,Acc,Hs):-
+	sort(Acc,Hs)
+	,!.
+subhypothesis(Pos,[C|Ps],Acc,Bind):-
+	tautology(C)
+	,!
+	,subhypothesis(Pos,Ps,Acc,Bind).
+subhypothesis([E|Pos],Ps,Acc,Bind):-
+	member(C,Ps)
+	,copy_term(C,E:-B)
+	,user:call(B)
+	,!
+	,subhypothesis(Pos,Ps,[C|Acc],Bind).
+subhypothesis([_E|Pos],Ps,Acc,Bind):-
+	subhypothesis(Pos,Ps,Acc,Bind).
+
+
+%!	tautology(?Clause) is semidet.
+%
+%	True when Clause is a tautology.
+%
+%	Well, this is a bit of a misnomer. This predicate is true when a
+%	clause is of the form L:-L, i.e. when it's made up of the same
+%	literal as both head and body. True test for tautologies takes a
+%	bit more work, I reckon.
+%
+tautology((L:-L)).
 
 
 %!	reduced_top_program_(+N,+Prog,+BK,+Metarules,+Sig,-Reduced) is
