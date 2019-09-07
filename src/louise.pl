@@ -9,6 +9,7 @@
 		 ,lfp_query/4
 		 ,lfp_query/3
 		 ,lfp/2
+		 ,selected_subhypothesis/5
 		 ]).
 
 :-use_module(configuration).
@@ -470,49 +471,6 @@ reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 	,cleanup_experiment.
 
 
-%!	subhypothesis(+Positive,+Top,-Subhypothesis) is det.
-%
-%	Select a subset of clauses of the Top program.
-%
-%	Subhypothesis is a sub-set of the clauses in the Top program
-%	that entails each positive example (and none of the negatives).
-%
-subhypothesis(Pos, Ps, Hs):-
-	subhypothesis(Pos, Ps, [], Hs).
-
-%!	subhypothesis(+Positives,+Top,+Acc,-Subhypothesis) is det.
-%
-%	Business end of subhypothesis/3.
-%
-subhypothesis([],_Ps,Acc,Hs):-
-	sort(Acc,Hs)
-	,!.
-subhypothesis(Pos,[C|Ps],Acc,Bind):-
-	tautology(C)
-	,!
-	,subhypothesis(Pos,Ps,Acc,Bind).
-subhypothesis([E|Pos],Ps,Acc,Bind):-
-	member(C,Ps)
-	,copy_term(C,E:-B)
-	,user:call(B)
-	,!
-	,subhypothesis(Pos,Ps,[C|Acc],Bind).
-subhypothesis([_E|Pos],Ps,Acc,Bind):-
-	subhypothesis(Pos,Ps,Acc,Bind).
-
-
-%!	tautology(?Clause) is semidet.
-%
-%	True when Clause is a tautology.
-%
-%	Well, this is a bit of a misnomer. This predicate is true when a
-%	clause is of the form L:-L, i.e. when it's made up of the same
-%	literal as both head and body. True test for tautologies takes a
-%	bit more work, I reckon.
-%
-tautology((L:-L)).
-
-
 %!	reduced_top_program_(+N,+Prog,+BK,+Metarules,+Sig,-Reduced) is
 %!	det.
 %
@@ -691,3 +649,68 @@ model_subset((L,Ls), Ms):-
 	L = (_,_)
 	,model_subset(L, Ms)
 	,model_subset(Ls,Ms).
+
+
+
+%!	selected_subhypothesis(+Pos,+BK,+MS,+Sig,+Prog,-Sub) is det.
+%
+%	Select a correct sub-hypothesis from a set of clauses.
+%
+selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
+	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,MS_,Ss])
+	,encapsulated_clauses(Ps, Ps_)
+	,write_program(Pos_,BK_,MS_,Ss,Refs)
+	,subhypothesis(Pos_,Ps_,Hs_)
+	,erase_program_clauses(Refs)
+	,examples_target(Pos_,T)
+	,excapsulated_clauses(T,Hs_,Hs).
+
+
+%!	subhypothesis(+Positive,+Top,-Subhypothesis) is det.
+%
+%	Select a subset of clauses of the Top program.
+%
+%	Subhypothesis is a sub-set of the clauses in the Top program
+%	that entails each positive example (and none of the negatives).
+%
+subhypothesis(Pos, Ps, Hs):-
+	sort(Ps, Ps_s)
+	,ord_subtract(Ps_s,Pos,Ps_r)
+	,random_permutation(Ps_r, Ps_)
+	,subhypothesis(Pos, Ps_, [], Hs).
+
+%!	subhypothesis(+Positives,+Top,+Acc,-Subhypothesis) is det.
+%
+%	Business end of subhypothesis/3.
+%
+subhypothesis([],_Ps,Acc,Hs):-
+	sort(Acc,Hs)
+	,!.
+subhypothesis(Pos,[C|Ps],Acc,Bind):-
+	tautology(C)
+	,!
+	,subhypothesis(Pos,Ps,Acc,Bind).
+subhypothesis([E|Pos],Ps,Acc,Bind):-
+	member(C,Ps)
+	,C \= E
+	,(   copy_term(C,E:-B)
+	 ->  user:call(B)
+	 ;   C =.. [F|_]
+	    ,F \= ':-' %So, a fact
+	 )
+	,!
+	,subhypothesis(Pos,Ps,[C|Acc],Bind).
+subhypothesis([_E|Pos],Ps,Acc,Bind):-
+	subhypothesis(Pos,Ps,Acc,Bind).
+
+
+%!	tautology(?Clause) is semidet.
+%
+%	True when Clause is a tautology.
+%
+%	@tbd Well, this is a bit of a misnomer. This predicate is true
+%	when a clause is of the form L:-L, i.e. when it's made up of the
+%	same literal as both head and body. True test for tautologies
+%	takes a bit more work, I reckon.
+%
+tautology((L:-L)).
