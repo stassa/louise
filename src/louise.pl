@@ -676,8 +676,8 @@ selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
 subhypothesis(Pos,Ps,Hs):-
 	sort(Ps, Ps_s)
 	,ord_subtract(Ps_s,Pos,Ps_r)
-	%,random_permutation(Ps_r, Ps_)
-	,subhypothesis(Ps_r, Pos, [], [], Hs).
+	,random_permutation(Ps_r, Ps_)
+	,subhypothesis(Ps_, Pos, [], [], Hs).
 
 %!	subhypothesis(+Overhypothesis,+Positives,+Entailed,+Acc,-Subhypothesis)
 %!	is det.
@@ -694,6 +694,7 @@ subhypothesis(_,[],_,Acc,Hs):-
 	reverse(Acc,Hs)
 	,!.
 subhypothesis([],_,_Ps,Acc,Hs):-
+% This should not really be allowed. This needs fixin.
 	reverse(Acc,Hs)
 	,!.
 subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
@@ -705,14 +706,6 @@ subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
 	,entails(C,E)
 	,! % Cut member/2 choicepoint
 	,subhypothesis(Ps,Pos,Es,Acc,Bind).
-/*subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
-	entailed_by(C,Pos,[],Pos_,Es,Es_)
-	,sort(Es,Es_)
-	,sort(Es_,Es_new)
-	,ord_subtract(Es_new,Es,[])
-	,!
-	,subhypothesis(Ps,Pos_,Es,Acc,Bind).
-*/
 subhypothesis([C|Ps], Pos, Es, Acc, Bind):-
 	entailed_by(C,Pos,[],Pos_,Es,Es_)
 	,Pos_ \= Pos
