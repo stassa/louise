@@ -673,35 +673,92 @@ selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
 %	Subhypothesis is a sub-set of the clauses in the Top program
 %	that entails each positive example (and none of the negatives).
 %
-subhypothesis(Pos, Ps, Hs):-
+subhypothesis(Pos,Ps,Hs):-
 	sort(Ps, Ps_s)
 	,ord_subtract(Ps_s,Pos,Ps_r)
-	,random_permutation(Ps_r, Ps_)
-	,subhypothesis(Pos, Ps_, [], Hs).
+	%,random_permutation(Ps_r, Ps_)
+	,subhypothesis(Ps_r, Pos, [], [], Hs).
 
-%!	subhypothesis(+Positives,+Top,+Acc,-Subhypothesis) is det.
+%!	subhypothesis(+Overhypothesis,+Positives,+Entailed,+Acc,-Subhypothesis)
+%!	is det.
 %
 %	Business end of subhypothesis/3.
 %
-subhypothesis([],_Ps,Acc,Hs):-
-	sort(Acc,Hs)
+%	Positives is the set of positive training examples. Entailed is
+%	the accumulator of examples entailed by the Subhypothesis
+%	constructed so-far.
+%
+%	@tbd This needs documentation of the algorithm implemented.
+%
+subhypothesis(_,[],_,Acc,Hs):-
+	reverse(Acc,Hs)
 	,!.
-subhypothesis(Pos,[C|Ps],Acc,Bind):-
+subhypothesis([],_,_Ps,Acc,Hs):-
+	reverse(Acc,Hs)
+	,!.
+subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
 	tautology(C)
 	,!
-	,subhypothesis(Pos,Ps,Acc,Bind).
-subhypothesis([E|Pos],Ps,Acc,Bind):-
-	member(C,Ps)
-	,C \= E
+	,subhypothesis(Ps,Pos,Es,Acc,Bind).
+subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
+	member(E,Es)
+	,entails(C,E)
+	,! % Cut member/2 choicepoint
+	,subhypothesis(Ps,Pos,Es,Acc,Bind).
+/*subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
+	entailed_by(C,Pos,[],Pos_,Es,Es_)
+	,sort(Es,Es_)
+	,sort(Es_,Es_new)
+	,ord_subtract(Es_new,Es,[])
+	,!
+	,subhypothesis(Ps,Pos_,Es,Acc,Bind).
+*/
+subhypothesis([C|Ps], Pos, Es, Acc, Bind):-
+	entailed_by(C,Pos,[],Pos_,Es,Es_)
+	,Pos_ \= Pos
+	,subhypothesis(Ps,Pos_,Es_,[C|Acc],Bind).
+
+
+%!	entailed_by(+Clause,+Examples,+Acc_1,+Ex_New,+Acc_2,-Entailed)
+%!	is det.
+%
+%	Find all Examples entailed by a Clause.
+%
+%	Acc_1 is the accumulator of positive examples _not_ entailed by
+%	Clause, or any of the clauses in the sub-hypothesis constructed
+%	by subhypothesis/5.
+%
+%	Acc_2 is the accumulator of positive examples entailed so-far by
+%	the sub-hypothesis constructed in subhypothesis/5.
+%
+entailed_by(_C,[],Pos,Pos,Es,Es):-
+	!.
+entailed_by(C,[E|Pos],Pos_Acc,Pos_Bind,Es_Acc,Es_Bind):-
+	entails(C,E)
+	,!
+	,entailed_by(C,Pos,Pos_Acc,Pos_Bind,[E|Es_Acc],Es_Bind).
+entailed_by(C,[E|Pos],Pos_Acc,Pos_Bind,Es_Acc,Es_Bind):-
+	entailed_by(C,Pos,[E|Pos_Acc],Pos_Bind,Es_Acc,Es_Bind).
+
+
+%!	entails(+Clause,+Example) is det.
+%
+%	True when Clause entails Example.
+%
+%	Entailment is decided by binding Example to the head of Clause
+%	and calling the body of Clause.
+%
+%	The encapsulated MIL problem is in the dynamic database so if
+%	the call succeeds Clause entails Example with respect to the
+%	background knowledge in the MIL problem.
+%
+entails(C,E):-
+	C \= E
 	,(   copy_term(C,E:-B)
 	 ->  user:call(B)
 	 ;   C =.. [F|_]
 	    ,F \= ':-' %So, a fact
-	 )
-	,!
-	,subhypothesis(Pos,Ps,[C|Acc],Bind).
-subhypothesis([_E|Pos],Ps,Acc,Bind):-
-	subhypothesis(Pos,Ps,Acc,Bind).
+	 ).
 
 
 %!	tautology(?Clause) is semidet.
@@ -713,4 +770,7 @@ subhypothesis([_E|Pos],Ps,Acc,Bind):-
 %	same literal as both head and body. True test for tautologies
 %	takes a bit more work, I reckon.
 %
-tautology((L:-L)).
+tautology(C):-
+	copy_term(C, H:-B)
+	,numbervars(H:-B)
+	,H = B.
