@@ -1,4 +1,8 @@
-:-module(evaluation, [list_results/3
+:-module(evaluation, [train_and_test/5
+		     ,train_and_test/6
+		     ,train_test_print/3
+		     ,train_test_print/7
+		     ,list_results/3
 		     ,list_results/6
 		     ,print_evaluation/2
 		     ,print_evaluation/5
@@ -20,6 +24,141 @@
 
 /** <module> Evaluation metrics for experiment results.
 */
+
+
+%!	train_and_test(+Target,+Sample,-Program,+Metric,-Value) is det.
+%
+%	Learn a Program and evaluate it by the requested Metric.
+%
+%	This version obtains the MIL problem (examples, BK and
+%	metarules) from the current experiment file.
+%
+%	Sample is the size of the training partition for each of the
+%	positive and negative examples, as a float between 0 and 1.0 or
+%	as an integer. The testing partition is the complement of Sample
+%	with respect to the entire set of positive or negative examples.
+%
+%	Metric is one of: [acc, err, fpr, fnr, tpr, tnr, pre, fsc],
+%	corresponding to the metrics calculated by evaluation/6.
+%
+%	Value is the value of the corresponding metric, computed by
+%	evaluating Program on the testing partition selected according
+%	to Sample.
+%
+train_and_test(T,S,Ps,M,V):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V).
+
+
+
+%!	train_and_test(+Target,+Sample,+Pos,+Neg,+BK,+MS,-Prog,+Metric,-Val)
+%!	is det.
+%
+%	Learn a hypothesis and print out evaluation results.
+%
+%	Sample is the size of the training partition for each of the
+%	positive and negative examples, as a float between 0 and 1.0 or
+%	as an integer. The testing partition is the complement of Sample
+%	with respect to the entire set of positive or negative examples.
+%
+%	Pos, Neg, BK and MS are the example atoms, background knowledge
+%	symbols and arities and metarule names of a MIL problem.
+%
+%	Prog is the program learned from the given MIL problem.
+%
+%	Metric is one of: [acc, err, fpr, fnr, tpr, tnr, pre, fsc],
+%	corresponding to the metrics calculated by evaluation/6.
+%
+%	Val is the value of the corresponding metric, computed by
+%	evaluating Prog on the testing partition selected according to
+%	Sample.
+%
+train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
+	train_test_splits(S,Pos,Pos_Train,Pos_Test)
+	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
+	,learn(Pos_Train,Neg_Train,BK,MS,Ps)
+	,program_results(T,Ps,BK,Rs)
+	,evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
+	,metric(M,Cs,V).
+
+
+
+%!	train_test_print(+Target,+Sample,+Program) is det.
+%
+%	Print evaluation metrics of a learned Program.
+%
+%	Program is evaluated in the context of a MIL problem (examples
+%	and background knowledge) obtained from the current experiment
+%	file.
+%
+train_test_print(T,S,Ps):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,train_test_print(T,S,Pos,Neg,BK,MS,Ps).
+
+
+
+%!	train_test_print(+Target,+Sample,+Pos,+Neg,+BK,+Metarules,+Program)
+%!	is det.
+%
+%	Print evaluation metrics of a learned Program.
+%
+train_test_print(T,S,Pos,Neg,BK,MS,Ps):-
+	train_test_splits(S,Pos,Pos_Train,Pos_Test)
+	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
+	,learn(Pos_Train,Neg_Train,BK,MS,Ps)
+	,program_results(T,Ps,BK,Rs)
+	,print_clauses(Ps)
+	,clause_count(Ps,N,D,U)
+	,nl
+	,format('Hypothesis size:  ~w~n',[N])
+	,format('Definite clauses: ~w~n',[D])
+	,format('Unit clauses:	  ~w~n',[U])
+	,nl
+	,print_confusion_matrix(Rs,Pos_Test,Neg_Test).
+
+
+%!	train_test_splits(+Size,+Examples,-Training,-Testing) is det.
+%
+%	Split a set of Examples to Training and Testing partitions.
+%
+%	Raises error if Size is equal to 1.0 or 0.0.
+%
+train_test_splits(P,_Es,_Train,_Test):-
+	P >= 1.0
+	,throw('The size of the testing partition must be more than 0!').
+train_test_splits(P,_Es,_Train,_Test):-
+	P =< 0.0
+	,throw('The size of the training partition must be more than 0!').
+train_test_splits(_P,[],[],[]):-
+% An example set may be empty- but it better be the negative examples!
+	!.
+train_test_splits(P,Es,Train,Test):-
+	float(P)
+	,!
+	,p_list_partitions(P,Es,Train,Test).
+train_test_splits(K,Es,Train,Test):-
+	integer(K)
+	,p_list_partitions(K,Es,Train,Test).
+
+
+%!	metric(?Metric,?Metrics,?Value) is det.
+%
+%	Obtain a Value for the given Metric in a list of Metrics.
+%
+%	Metrics is the last argument of evaluation/6. Metric is one of:
+%	[acc, err, fpr, fnr, tpr, tnr, pre, fsc]. Value is the value in
+%	Metrics corresponding to Metric.
+%
+metric(acc,[ACC,_ERR,_FPR,_FNR,_TPR,_TNR,_PRE,_FSC],ACC).
+metric(err,[_ACC,ERR,_FPR,_FNR,_TPR,_TNR,_PRE,_FSC],ERR).
+metric(fpr,[_ACC,_ERR,FPR,_FNR,_TPR,_TNR,_PRE,_FSC],FPR).
+metric(fnr,[_ACC,_ERR,_FPR,FNR,_TPR,_TNR,_PRE,_FSC],FNR).
+metric(tpr,[_ACC,_ERR,_FPR,_FNR,TPR,_TNR,_PRE,_FSC],TPR).
+metric(tnr,[_ACC,_ERR,_FPR,_FNR,_TPR,TNR,_PRE,_FSC],TNR).
+metric(pre,[_ACC,_ERR,_FPR,_FNR,_TPR,_TNR,PRE,_FSC],PRE).
+metric(fsc,[_ACC,_ERR,_FPR,_FNR,_TPR,_TNR,_PRE,FSC],FSC).
+
+
 
 %!	convert_examples(+Pos,+Neg,-Converted_Pos,-Converted_Neg) is
 %!	det.
@@ -143,7 +282,6 @@ print_evaluation(T,Ps,Pos,Neg,BK):-
 	,format('Unit clauses:	  ~w~n',[U])
 	,nl
 	,print_confusion_matrix(Rs,Pos,Neg).
-
 
 
 %!	program_results(+Target,+Program,+BK,-Results) is det.
@@ -329,7 +467,7 @@ print_metrics(T,Ps,Pos,Neg,BK):-
 
 
 
-%!	evaluation(+Results,+Pos,+Neg,+Results,-Totals,+Base,-Calculated)
+%!	evaluation(+Results,+Pos,+Neg,-Totals,+Base,-Calculated)
 %!	is det.
 %
 %	Business end of evaluation/5
