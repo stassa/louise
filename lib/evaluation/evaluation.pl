@@ -1,7 +1,7 @@
 :-module(evaluation, [list_results/3
 		     ,list_results/6
 		     ,print_evaluation/2
-		     ,print_evaluation/3
+		     ,print_evaluation/5
 		     ,print_metrics/2
 		     ,print_metrics/5
 		     ,false_positives/3
@@ -119,24 +119,22 @@ list_results(T,Ps,Pos,Neg,BK,Rs):-
 %
 %	Print evaluation metrics of a learned Program.
 %
-%	Program is evaluated in the context of background knowledge
-%	obtained from the current experiment file.
+%	Program is evaluated in the context of a MIL problem (examples
+%	and background knowledge) obtained from the current experiment
+%	file.
 %
 print_evaluation(T,Ps):-
-% Calling background_knowledge/2 is not the recommended way to get the
-% BK But experiment_data/5 is already called later and can be expensive
-% for large datasets.
-	experiment_file(_P,M)
-	,M:background_knowledge(T,BK)
-	,print_evaluation(T,Ps,BK).
+	experiment_data(T,Pos,Neg,BK,_MS)
+	,print_evaluation(T,Ps,Pos,Neg,BK).
 
 
-%!	print_evaluation(+Target,+Program,+BK) is det.
+
+%!	print_evaluation(+Target,+Program,+Pos,+Neg,+BK) is det.
 %
 %	Print evaluation metrics of a learned Program.
 %
-print_evaluation(T,Ps,BK):-
-	program_results(T,Ps,BK,As)
+print_evaluation(T,Ps,Pos,Neg,BK):-
+	program_results(T,Ps,BK,Rs)
 	,print_clauses(Ps)
 	,clause_count(Ps,N,D,U)
 	,nl
@@ -144,7 +142,8 @@ print_evaluation(T,Ps,BK):-
 	,format('Definite clauses: ~w~n',[D])
 	,format('Unit clauses:	  ~w~n',[U])
 	,nl
-	,print_confusion_matrix(T,As).
+	,print_confusion_matrix(Rs,Pos,Neg).
+
 
 
 %!	program_results(+Target,+Program,+BK,-Results) is det.
@@ -196,14 +195,13 @@ clause_count(Ps,N,D,U):-
 	,U is N - D.
 
 
-
-
-%!	format_confusion_matrix(+Target,+Results) is det.
+%!	print_confusion_matrix(+Results,+Pos,+Neg) is det.
 %
 %	Print a confusion matrix for a set of learning Results.
 %
-print_confusion_matrix(T,Rs):-
-	evaluation(T,Rs,[P,N],[PP,NN,NP,PN],[ACC,ERR,FPR,FNR,TPR,_TNR,PRE,FSC])
+print_confusion_matrix(Rs,Pos,Neg):-
+	evaluation(Rs,Pos,Neg
+		  ,[P,N],[PP,NN,NP,PN],[ACC,ERR,FPR,FNR,TPR,_TNR,PRE,FSC])
 	,PPNP is PP + NP
 	,PNNN is PN + NN
 	,S is P + N
@@ -329,23 +327,6 @@ print_metrics(T,Ps,Pos,Neg,BK):-
 	,format('SPE: ~*f~n',[P,TNR])
 	,format('FSC: ~*f~n',[P,FSC]).
 
-
-
-%!	evaluation(+Target,+Results,-Totals,+Base,-Calculated) is det.
-%
-%	Evaluate a set of Results according to a learning Target.
-%
-%	Results are evaluated in the context of a positive and negative
-%	examples obtained from the current experiment file.
-%
-evaluation(T,Rs,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
-	experiment_data(T,Pos,Neg,_BK,_MS)
-	,evaluation(Rs
-		   ,Pos
-		   ,Neg
-		   ,[P,N]
-		   ,[PP_,NN_,NP_,PN_]
-		   ,[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]).
 
 
 %!	evaluation(+Results,+Pos,+Neg,+Results,-Totals,+Base,-Calculated)
