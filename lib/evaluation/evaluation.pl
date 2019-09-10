@@ -31,7 +31,12 @@
 %	list of positive examples, alongside the negatives.
 %
 convert_examples(Pos,Neg,Pos,Neg_):-
-	findall(E,member(:-E,Neg),Neg_).
+	configuration:learner(louise)
+	,!
+	,G = findall(E,member(:-E,Neg),Neg_)
+	,call(G).
+convert_examples(Pos,Neg,Pos,Neg):-
+	configuration:learner(thelma).
 
 
 %!	list_results(+Target,+Program,+Results) is det.
@@ -49,7 +54,14 @@ convert_examples(Pos,Neg,Pos,Neg_):-
 %
 list_results(T,Ps,Rs):-
 	experiment_data(T,Pos,Neg,BK,_MS)
-	,convert_examples(Pos,Neg,Pos_c,Neg_c)
+	,list_results(T,Ps,Pos,Neg,BK,Rs).
+
+%!	list_results(+Target,+Program,+Pos,+Neg,+BK,+Results) is det.
+%
+%	Business end of list_results/3.
+%
+list_results(T,Ps,Pos,Neg,BK,Rs):-
+	convert_examples(Pos,Neg,Pos_c,Neg_c)
 	,ground_background(T,BK,BK_)
 	,lfp_query(Ps,BK_,_Is,As)
 	,maplist(sort,[As,Pos_c,Neg_c],[As_,Pos_,Neg_])
