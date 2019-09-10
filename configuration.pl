@@ -1,6 +1,7 @@
 :-module(configuration, [derivation_depth/1
 			,experiment_file/2
 			,extend_metarules/1
+			,learner/1
 			,metarule/2
 			,metarule/3
 			,metarule/4
@@ -82,6 +83,21 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %	Whether to extend the metarules in a MIL problem.
 %
 extend_metarules(false).
+
+
+%!	learner(?Name) is semidet.
+%
+%	Name of the learning system this configuration is for.
+%
+%	Name is one of [louise,thelma].
+%
+%	Used to switch context between Louise and Thelma, where this is
+%	needed. The typical use case is when experiment code must check
+%	the values of configuration options that are particular to one
+%	or the other system (e.g. resolutions/1 is not present in
+%	Thelma etc).
+%
+learner(louise).
 
 
 %!	metarule(?Id,?P,?Q) is semidet.
