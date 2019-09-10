@@ -78,8 +78,7 @@ list_results(T,Ps,Rs):-
 %
 list_results(T,Ps,Pos,Neg,BK,Rs):-
 	convert_examples(Pos,Neg,Pos_c,Neg_c)
-	,ground_background(T,BK,BK_)
-	,lfp_query(Ps,BK_,_Is,As)
+	,program_results(T,Ps,BK,As)
 	,maplist(sort,[As,Pos_c,Neg_c],[As_,Pos_,Neg_])
 	,false_positives(As_,Neg_,NP)
 	,length(NP,NP_n)
@@ -127,9 +126,7 @@ print_evaluation(T,Ps):-
 % for large datasets.
 	experiment_file(_P,M)
 	,M:background_knowledge(T,BK)
-	,ground_background(T,BK,BK_)
-	/*,findall(H:-B,member(H:-B,Ps),Ps_)*/
-	,lfp_query(Ps,BK_,_Is,As)
+	,program_results(T,Ps,BK,As)
 	,print_clauses(Ps)
 	,clause_count(Ps,N,D,U)
 	,nl
@@ -138,6 +135,19 @@ print_evaluation(T,Ps):-
 	,format('Unit clauses:	  ~w~n',[U])
 	,nl
 	,print_confusion_matrix(T,As).
+
+
+%!	program_results(+Target,+Program,+BK,-Results) is det.
+%
+%	Collect Results of a learned Program.
+%
+%	Program is a learned hypothesis. Results is a list of atoms that
+%	are immediate consequences of the Program with respect to the
+%	background knowledge, BK.
+%
+program_results(T,Ps,BK,Rs):-
+	ground_background(T,BK,BK_)
+	,lfp_query(Ps,BK_,_Is,Rs).
 
 
 %!	ground_background(+Target,+BK,-Ground) is det.
@@ -178,9 +188,9 @@ clause_count(Ps,N,D,U):-
 
 
 
-%!	format_confusion_matrix(+Target,+Result) is det.
+%!	format_confusion_matrix(+Target,+Results) is det.
 %
-%	Print a confusion matrix for a learning Result.
+%	Print a confusion matrix for a set of learning Results.
 %
 print_confusion_matrix(T,Rs):-
 	evaluation(T,Rs,[P,N],[PP,NN,NP,PN],[ACC,ERR,FPR,FNR,TPR,_TNR,PRE,FSC])
@@ -307,23 +317,10 @@ print_metrics(T,Ps,Pos,Neg,BK):-
 	,format('FSC: ~*f~n',[P,FSC]).
 
 
-%!	program_results(+Target,+Program,+BK,-Results) is det.
-%
-%	Collect Results of a learned Program.
-%
-%	Program is a learned hypothesis. Results is a list of atoms that
-%	are immediate consequences of the Program with respect to the
-%	background knowledge, BK.
-%
-program_results(T,Ps,BK,Rs):-
-	ground_background(T,BK,BK_)
-	,lfp_query(Ps,BK_,_Is,Rs).
-
-
 
 %!	evaluation(+Target,+Results,-Totals,+Base,-Calculated) is det.
 %
-%	Evaluate a Result according to the learning Target.
+%	Evaluate a set of Results according to a learning Target.
 %
 evaluation(T,Rs,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
 	experiment_data(T,Pos,Neg,_BK,_MS)
@@ -335,12 +332,12 @@ evaluation(T,Rs,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
 		   ,[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]).
 
 
-%!	evaluation(+Target,+Pos,+Neg,+Results,-Totals,+Base,-Calculated)
+%!	evaluation(+Results,+Pos,+Neg,+Results,-Totals,+Base,-Calculated)
 %!	is det.
 %
 %	Business end of evaluation/5
 %
-%	Evaluate a Result according to the Positive and Negative
+%	Evaluate a set of Results according to the Positive and Negative
 %	examplse of the learning Target.
 %
 evaluation(Rs,Pos,Neg
