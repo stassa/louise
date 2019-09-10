@@ -3,7 +3,6 @@
 		     ,print_evaluation/2
 		     ,print_confusion_matrix/2
 		     ,print_metrics/2
-		     ,evaluation/5
 		     ,false_positives/3
 		     ,false_negatives/3
 		     ,true_positives/3
@@ -284,7 +283,8 @@ format_confusion_matrix([PP,PN,NP,NN]
 %
 print_metrics(T,Rs):-
 	configuration:decimal_places(P)
-	,evaluation(T,Rs,[_P,_N],[_PP,_NN,_NP,_PN],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC])
+	,evaluation(T,Rs
+		   ,[_P,_N],[_PP,_NN,_NP,_PN],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC])
 	,format('ACC: ~*f~n',[P,ACC])
 	,format('ERR: ~*f~n',[P,ERR])
 	,format('FPR: ~*f~n',[P,FPR])
@@ -295,14 +295,31 @@ print_metrics(T,Rs):-
 	,format('FSC: ~*f~n',[P,FSC]).
 
 
-
 %!	evaluation(+Target,+Results,-Totals,+Base,-Calculated) is det.
 %
 %	Evaluate a Result according to the learning Target.
 %
 evaluation(T,Rs,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
 	experiment_data(T,Pos,Neg,_BK,_MS)
-	,convert_examples(Pos,Neg,Pos_c,Neg_c)
+	,evaluation(Rs
+		   ,Pos
+		   ,Neg
+		   ,[P,N]
+		   ,[PP_,NN_,NP_,PN_]
+		   ,[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]).
+
+
+%!	evaluation(+Target,+Pos,+Neg,+Results,-Totals,+Base,-Calculated)
+%!	is det.
+%
+%	Business end of evaluation/5
+%
+%	Evaluate a Result according to the Positive and Negative
+%	examplse of the learning Target.
+%
+evaluation(Rs,Pos,Neg
+	  ,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
+	convert_examples(Pos,Neg,Pos_c,Neg_c)
 	,maplist(sort,[Rs,Pos_c,Neg_c],[Rs_,Pos_,Neg_])
 	,maplist(length,[Pos_,Neg_],[P,N])
 	,true_positives(Rs_,Pos_,PP)
