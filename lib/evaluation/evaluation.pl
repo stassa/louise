@@ -1,4 +1,5 @@
 :-module(evaluation, [list_results/3
+		     ,list_results/6
 		     ,print_evaluation/2
 		     ,print_confusion_matrix/2
 		     ,print_metrics/2
@@ -11,6 +12,11 @@
 
 :-use_module(configuration).
 :-use_module(src(auxiliaries)).
+:-learner(L)
+  ,(   L = thelma
+   ->  use_module(lib(tp/tp))
+   ;   true
+   ).
 
 /** <module> Evaluation metrics for experiment results.
 */
@@ -18,17 +24,27 @@
 %!	convert_examples(+Pos,+Neg,-Converted_Pos,-Converted_Neg) is
 %!	det.
 %
-%	Convert examples to their original representation.
+%	Convert examples from a learner's internal representation.
 %
-%	Negative xamples are reprsented in Louise as definite goal
-%	clauses, :-A. The predicates in this module expect negative
-%	examples to be unit clauses (with no negative literals). This
-%	predicate handles the transformation for Thelma.
+%	This predicate handles the necessary transformations from the
+%	internal representation used in the two MIL learners, Thelma and
+%	Louise, to unit clauses.
 %
-%	@tbd This library is shared with Thelma, that declares its own
-%	convert_examples/4 version according to its own internal
-%	representation of examples. Hence the inclusion of Pos, i.e. the
-%	list of positive examples, alongside the negatives.
+%	Examples are represented internally in Louise as definite
+%	clauses: unit clauses for positive examples, and goals, :-A, for
+%	negative examples. In Thelma both positive and negative examples
+%	are represented as lists [P,A1,...,An] of the predicate symbol
+%	and arguments of a unit clause. The predicates in this module
+%	expect both positive and negative examples to be given as unit
+%	clauses (with no negative literals) so some transformation is
+%	required.
+%
+%	@tbd This library is shared between Thelma and Louise, hence the
+%	use of learner/1 to identify the learning system and select the
+%	clause that performs the appropriate transformation.
+%
+%	@tbd It turns out the transformation is only necessary for
+%	Louise, currently.
 %
 convert_examples(Pos,Neg,Pos,Neg_):-
 	configuration:learner(louise)
