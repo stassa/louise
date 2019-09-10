@@ -3,7 +3,7 @@
 		     ,print_evaluation/2
 		     ,print_confusion_matrix/2
 		     ,print_metrics/2
-		     ,print_metrics/3
+		     ,print_metrics/5
 		     ,false_positives/3
 		     ,false_negatives/3
 		     ,true_positives/3
@@ -278,22 +278,23 @@ format_confusion_matrix([PP,PN,NP,NN]
 
 
 
-%!	print_metrics(+Target,+Results) is det.
+%!	print_metrics(+Target,+Program) is det.
 %
 %	Print a simple listing of evaluation metrics.
 %
-print_metrics(T,Rs):-
-	experiment_data(T,Pos,Neg,_BK,_MS)
-	,print_metrics(Rs,Pos,Neg).
+print_metrics(T,Ps):-
+	experiment_data(T,Pos,Neg,BK,_MS)
+	,print_metrics(T,Ps,Pos,Neg,BK).
 
 
 
-%!	print_metrics(+Results,+Pos,+Neg) is det.
+%!	print_metrics(+Target,+Program,+Pos,+Neg,+BK) is det.
 %
 %	Print a simple listing of evaluation metrics.
 %
-print_metrics(Rs,Pos,Neg):-
+print_metrics(T,Ps,Pos,Neg,BK):-
 	configuration:decimal_places(P)
+	,program_results(T,Ps,BK,Rs)
 	,evaluation(Rs,Pos,Neg
 		   ,[_P,_N],[_PP,_NN,_NP,_PN],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC])
 	,format('ACC: ~*f~n',[P,ACC])
@@ -304,6 +305,19 @@ print_metrics(Rs,Pos,Neg):-
 	,format('REC: ~*f~n',[P,TPR])
 	,format('SPE: ~*f~n',[P,TNR])
 	,format('FSC: ~*f~n',[P,FSC]).
+
+
+%!	program_results(+Target,+Program,+BK,-Results) is det.
+%
+%	Collect Results of a learned Program.
+%
+%	Program is a learned hypothesis. Results is a list of atoms that
+%	are immediate consequences of the Program with respect to the
+%	background knowledge, BK.
+%
+program_results(T,Ps,BK,Rs):-
+	ground_background(T,BK,BK_)
+	,lfp_query(Ps,BK_,_Is,Rs).
 
 
 
