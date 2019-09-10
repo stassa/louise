@@ -1,6 +1,7 @@
 :-module(evaluation, [list_results/3
 		     ,list_results/6
 		     ,print_evaluation/2
+		     ,print_evaluation/3
 		     ,print_confusion_matrix/2
 		     ,print_metrics/2
 		     ,print_metrics/5
@@ -115,10 +116,12 @@ list_results(T,Ps,Pos,Neg,BK,Rs):-
 	 ).
 
 
-
 %!	print_evaluation(+Target,+Program) is det.
 %
 %	Print evaluation metrics of a learned Program.
+%
+%	Program is evaluated in the context of background knowledge
+%	obtained from the current experiment file.
 %
 print_evaluation(T,Ps):-
 % Calling background_knowledge/2 is not the recommended way to get the
@@ -126,7 +129,15 @@ print_evaluation(T,Ps):-
 % for large datasets.
 	experiment_file(_P,M)
 	,M:background_knowledge(T,BK)
-	,program_results(T,Ps,BK,As)
+	,print_evaluation(T,Ps,BK).
+
+
+%!	print_evaluation(+Target,+Program,+BK) is det.
+%
+%	Print evaluation metrics of a learned Program.
+%
+print_evaluation(T,Ps,BK):-
+	program_results(T,Ps,BK,As)
 	,print_clauses(Ps)
 	,clause_count(Ps,N,D,U)
 	,nl
@@ -292,6 +303,9 @@ format_confusion_matrix([PP,PN,NP,NN]
 %
 %	Print a simple listing of evaluation metrics.
 %
+%	Program is evaluated in the context of a MIL problem (examples
+%	and BK) obtained from the current experiment file.
+%
 print_metrics(T,Ps):-
 	experiment_data(T,Pos,Neg,BK,_MS)
 	,print_metrics(T,Ps,Pos,Neg,BK).
@@ -321,6 +335,9 @@ print_metrics(T,Ps,Pos,Neg,BK):-
 %!	evaluation(+Target,+Results,-Totals,+Base,-Calculated) is det.
 %
 %	Evaluate a set of Results according to a learning Target.
+%
+%	Results are evaluated in the context of a positive and negative
+%	examples obtained from the current experiment file.
 %
 evaluation(T,Rs,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
 	experiment_data(T,Pos,Neg,_BK,_MS)
