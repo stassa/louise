@@ -1,11 +1,9 @@
 :-module(evaluation, [train_and_test/5
 		     ,train_and_test/6
-		     ,train_test_print/3
-		     ,train_test_print/7
+		     ,print_evaluation/3
+		     ,print_evaluation/7
 		     ,list_results/3
 		     ,list_results/6
-		     ,print_evaluation/2
-		     ,print_evaluation/5
 		     ,print_metrics/2
 		     ,print_metrics/5
 		     ,false_positives/3
@@ -83,7 +81,7 @@ train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
 
 
 
-%!	train_test_print(+Target,+Sample,+Program) is det.
+%!	print_evaluation(+Target,+Sample,+Program) is det.
 %
 %	Print evaluation metrics of a learned Program.
 %
@@ -91,22 +89,30 @@ train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
 %	and background knowledge) obtained from the current experiment
 %	file.
 %
-train_test_print(T,S,Ps):-
+print_evaluation(T,S,Ps):-
 	experiment_data(T,Pos,Neg,BK,MS)
-	,train_test_print(T,S,Pos,Neg,BK,MS,Ps).
+	,print_evaluation(T,S,Pos,Neg,BK,MS,Ps).
 
 
 
-%!	train_test_print(+Target,+Sample,+Pos,+Neg,+BK,+Metarules,+Program)
+%!	print_evaluation(+Target,+Sample,+Pos,+Neg,+BK,+Metarules,+Program)
 %!	is det.
 %
 %	Print evaluation metrics of a learned Program.
 %
-train_test_print(T,S,Pos,Neg,BK,MS,Ps):-
+print_evaluation(T,S,Pos,Neg,BK,MS,Ps):-
 	train_test_splits(S,Pos,Pos_Train,Pos_Test)
 	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
 	,learn(Pos_Train,Neg_Train,BK,MS,Ps)
-	,program_results(T,Ps,BK,Rs)
+	,print_evaluation(T,Ps,Pos_Test,Neg_Test,BK).
+
+
+%!	print_evaluation(+Target,+Program,+Pos,+Neg,+BK) is det.
+%
+%	Print evaluation metrics of a learned Program.
+%
+print_evaluation(T,Ps,Pos,Neg,BK):-
+	program_results(T,Ps,BK,Rs)
 	,print_clauses(Ps)
 	,clause_count(Ps,N,D,U)
 	,nl
@@ -114,7 +120,7 @@ train_test_print(T,S,Pos,Neg,BK,MS,Ps):-
 	,format('Definite clauses: ~w~n',[D])
 	,format('Unit clauses:	  ~w~n',[U])
 	,nl
-	,print_confusion_matrix(Rs,Pos_Test,Neg_Test).
+	,print_confusion_matrix(Rs,Pos,Neg).
 
 
 %!	train_test_splits(+Size,+Examples,-Training,-Testing) is det.
@@ -252,36 +258,6 @@ list_results(T,Ps,Pos,Neg,BK,Rs):-
 	    ,print_clauses(PN)
 	 ;   true
 	 ).
-
-
-%!	print_evaluation(+Target,+Program) is det.
-%
-%	Print evaluation metrics of a learned Program.
-%
-%	Program is evaluated in the context of a MIL problem (examples
-%	and background knowledge) obtained from the current experiment
-%	file.
-%
-print_evaluation(T,Ps):-
-	experiment_data(T,Pos,Neg,BK,_MS)
-	,print_evaluation(T,Ps,Pos,Neg,BK).
-
-
-
-%!	print_evaluation(+Target,+Program,+Pos,+Neg,+BK) is det.
-%
-%	Print evaluation metrics of a learned Program.
-%
-print_evaluation(T,Ps,Pos,Neg,BK):-
-	program_results(T,Ps,BK,Rs)
-	,print_clauses(Ps)
-	,clause_count(Ps,N,D,U)
-	,nl
-	,format('Hypothesis size:  ~w~n',[N])
-	,format('Definite clauses: ~w~n',[D])
-	,format('Unit clauses:	  ~w~n',[U])
-	,nl
-	,print_confusion_matrix(Rs,Pos,Neg).
 
 
 %!	program_results(+Target,+Program,+BK,-Results) is det.
