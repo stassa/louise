@@ -2,7 +2,6 @@
 		     ,list_results/6
 		     ,print_evaluation/2
 		     ,print_evaluation/3
-		     ,print_confusion_matrix/2
 		     ,print_metrics/2
 		     ,print_metrics/5
 		     ,false_positives/3
