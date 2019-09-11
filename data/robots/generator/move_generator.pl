@@ -5,7 +5,12 @@
 			 ,generate_problems/1
 			 ]).
 
-:-use_module(data(robots/world)).
+:- (    configuration:learner(louise)
+   ->	use_module(data(robots/world))
+   ;    configuration:learner(thelma)
+   ->   use_module(data(louise/robots/world))
+   )
+   .
 
 /** <module> Data generator for grid world navigation experiments.
 
@@ -142,8 +147,11 @@ world_dimensions(1,1).
 %
 %	Root Path of generated dataset module file.
 %
-dataset_root_path('data/robots/generator/').
-
+dataset_root_path('data/robots/generator/'):-
+	configuration:learner(louise)
+	,!.
+dataset_root_path('data/louise/robots/generator/'):-
+	configuration:learner(thelma).
 
 % ========================================
 % Dataset writing

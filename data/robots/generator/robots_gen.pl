@@ -4,8 +4,8 @@
 		     ,negative_example/2
 		     ]).
 
-:-user:use_module(world).
-:-user:use_module(render).
+:-user:use_module('../world.pl').
+:-user:use_module('../render.pl').
 :-user:use_module(move_generator).
 :- dataset_file_name(_,Fn)
   ,reexport(Fn).
@@ -14,6 +14,7 @@
          ,m/2.
 
 configuration:metarule(unit_identity,P,Q):- m(P,X,_Y), m(Q,X).
+configuration:metarule(unit_identity, [P,Q], [X,Y], mec(P,X,Y) :- mec(Q,X)).
 
 background_knowledge(move/2, [move_right/2
 			     ,move_left/2
