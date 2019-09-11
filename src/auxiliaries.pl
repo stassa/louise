@@ -13,6 +13,7 @@
 		      ,print_clauses/1
 		      ,debug_clauses/2
 		      ,program/3
+		      ,closure/3
 		      ]).
 
 :-user:use_module(lib(term_utilities/term_utilities)).
@@ -429,3 +430,73 @@ program(Ss,M,Ps):-
 		 )
 		)
 	       ,Ps).
+
+
+
+%!	closure(+Progam_Symbols,+Module,-Closure) is det.
+%
+%	Collect all clauses of a program and its Closure.
+%
+%	As program/3, but also collects the definitions of programs in
+%	the closure of a progam.
+%
+%	Progam_Symbols is a list of predicate symbols and arities, F/A,
+%	of clauses in a program. Closure is the set of definitions of
+%	the Symbols in Program_Symbols, and the definitions of the
+%	programs in the closure of each program in Program_Symbols.
+%
+%	Module is the definition module of each program in Closure, or
+%	a module importing that module. To ensure each program in
+%	Closure is accessible the best thing to do is to export
+%	everything to the user module.
+%
+%	Example
+%	=======
+%	==
+%	?- closure([ancestor/2],user,_Cs),forall(member(P,_Cs),print_clauses(P)).
+%
+%	ancestor(A,B):-parent(A,B).
+%	ancestor(A,B):-parent(A,C),ancestor(C,B).
+%	parent(A,B):-father(A,B).
+%	parent(A,B):-mother(A,B).
+%	father(stathis,kostas).
+%	father(stefanos,dora).
+%	father(kostas,stassa).
+%	mother(alexandra,kostas).
+%	mother(paraskevi,dora).
+%	mother(dora,stassa).
+%	true.
+%	==
+%
+closure(Ss,M,Cs):-
+	closure(Ss,[],_Ps,M,[],Cs_)
+	,reverse(Cs_, Cs).
+
+%!	closure(+Symbols,+Path_Acc,-Path,+Module,+Acc,-Closure) is det.
+%
+%	Business end of closure/3.
+%
+closure([],Ps,Ps,_M,Cs,Cs):-
+	!.
+closure([S|Ss],Ps_Acc,Ps_Bind,M,Acc,Bind):-
+	\+ memberchk(S,Ps_Acc)
+	,!
+	,program(S,M,Cs)
+	,closure(Ss,[S|Ps_Acc],Ps_Acc_,M,[Cs|Acc],Acc_)
+	,program_symbols(Cs,Ss_)
+	,closure(Ss_,Ps_Acc_,Ps_Bind,M,Acc_,Bind).
+closure([_S|Ss],Ps,Ps_Acc,M,Acc,Bind):-
+	closure(Ss,Ps,Ps_Acc,M,Acc,Bind).
+
+
+%!	program_symbols(+Program,-Symbols) is det.
+%
+%	Collect symbols of body literals in a Program.
+%
+program_symbols(Ps,Ss):-
+	clauses_literals(Ps,Ls)
+	,setof(F/A
+	      ,L^Ls^(member(L,Ls)
+		    ,functor(L,F,A)
+		    )
+	      ,Ss).
