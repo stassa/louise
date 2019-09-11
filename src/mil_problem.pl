@@ -280,13 +280,14 @@ encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss]):-
 %	Encapsulate a list of Background definitions.
 %
 encapsulated_bk(BK,BK_flat):-
-	findall(Cs_
-	       ,(member(P, BK)
-		,program(P,user,Cs)
+	closure(BK, user, Ps)
+	,findall(Cs_
+	       ,(member(Cs, Ps)
 		,encapsulated_clauses(Cs,Cs_)
 		)
 	       ,BK_)
 	,flatten(BK_, BK_flat).
+
 
 
 

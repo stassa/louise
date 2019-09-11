@@ -478,6 +478,11 @@ closure(Ss,M,Cs):-
 %
 closure([],Ps,Ps,_M,Cs,Cs):-
 	!.
+closure([F/A|Ss],Ps_Acc,Ps_Bind,M,Acc,Bind):-
+	functor(S,F,A)
+	,predicate_property(S,built_in)
+	,!
+	,closure(Ss,Ps_Acc,Ps_Bind,M,Acc,Bind).
 closure([S|Ss],Ps_Acc,Ps_Bind,M,Acc,Bind):-
 	\+ memberchk(S,Ps_Acc)
 	,!
