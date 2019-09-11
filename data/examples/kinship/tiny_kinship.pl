@@ -25,20 +25,20 @@ Includes examples for ancestor/2, father/2, grandfather/2 and male/2.
 */
 
 % Background knowledge declarations
-background_knowledge(ancestor/2,[father/2,mother/2,parent/2]).
-background_knowledge(grandparent/2,[father/2,mother/2,parent/2]).
-background_knowledge(grandfather/2,[father/2,mother/2,parent/2]).
-% background_knowledge(grandfather/2,[father/2,mother/2,husband/2,grandmother/2,parent/2]).
-background_knowledge(grandmother/2,[father/2,mother/2,parent/2]).
+background_knowledge(ancestor/2,[parent/2]).
+background_knowledge(grandparent/2,[parent/2]).
+%background_knowledge(grandfather/2,[father/2,mother/2,parent/2]).
+ background_knowledge(grandfather/2,[father/2,parent/2,husband/2,grandmother/2]).
+background_knowledge(grandmother/2,[mother/2,parent/2]).
 background_knowledge(parent/2,[father/2,mother/2]).
 background_knowledge(husband/2,[father/2,mother/2]).
 background_knowledge(wife/2,[father/2,mother/2]).
 %background_knowledge(child/2,[father/2,mother/2,parent/2]).
-background_knowledge(child/2,[male/1,female/1,son/2,daughter/2,father/2,mother/2,parent/2]).
-background_knowledge(son/2,[father/2,mother/2,parent/2,child/2,male/1]).
-background_knowledge(daughter/2,[father/2,mother/2,parent/2,child/2,female/1]).
-background_knowledge(father/2,[father/2,mother/2,parent/2,male/1]).
-background_knowledge(mother/2,[father/2,mother/2,parent/2,female/1]).
+background_knowledge(child/2,[son/2,daughter/2]).
+background_knowledge(son/2,[child/2,male/1]).
+background_knowledge(daughter/2,[child/2,female/1]).
+background_knowledge(father/2,[parent/2,male/1]).
+background_knowledge(mother/2,[parent/2,female/1]).
 background_knowledge(male/2,[male/1]).
 background_knowledge(female/2,[female/1]).
 
