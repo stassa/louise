@@ -391,8 +391,8 @@ child(X,Y):- son(X,Y).
 child(X,Y):- daughter(X,Y).
 son(X,Y):- male(X),parent(Y,X).
 daughter(X,Y):- female(X),parent(Y,X).
-brother(X,Y):- son(X,Z), parent(Z,Y).
-sister(X,Y):- daughter(X,Z), parent(Z,Y).
+brother(X,Y):- son(X,Z), parent(Z,Y), X \= Y.
+sister(X,Y):- daughter(X,Z), parent(Z,Y), X \= Y.
 
 father(stathis, kostas).
 father(stathis, gioula).
