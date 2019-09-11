@@ -278,18 +278,20 @@ program_results(T,Ps,BK,Rs):-
 %	Collect ground BK atoms.
 %
 %	Also remove from the BK atoms of the learning Target. That's to
-%	allow lfp_query/4 to succeed if the learning Target is also a
+%	allow lfp/e to succeed if the learning Target is also a
 %	predicate in the BK (more precisely, if it is a determinant of
 %	another BK predicate).
 %
 ground_background(F/A,BK,BK_):-
-	program(BK,user,Ps)
+	closure(BK,user,Cs)
+	,flatten(Cs, Ps)
 	,lfp(Ps,As)
 	,findall(At
 		,(member(At,As)
 		 ,\+ functor(At,F,A)
 		 )
 		,BK_).
+
 
 
 %!	clause_count(+Hypothesis,-Size,-Definite,-Unit) is det.
