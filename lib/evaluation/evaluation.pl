@@ -130,7 +130,8 @@ print_evaluation(T,Ps,Pos,Neg,BK):-
 %	Raises error if Size is equal to 1.0 or 0.0.
 %
 train_test_splits(P,_Es,_Train,_Test):-
-	P >= 1.0
+	float(P)
+	,P >= 1.0
 	,throw('The size of the testing partition must be more than 0!').
 train_test_splits(P,_Es,_Train,_Test):-
 	P =< 0.0
@@ -144,7 +145,7 @@ train_test_splits(P,Es,Train,Test):-
 	,p_list_partitions(P,Es,Train,Test).
 train_test_splits(K,Es,Train,Test):-
 	integer(K)
-	,p_list_partitions(K,Es,Train,Test).
+	,k_list_partitions(K,Es,Train,Test).
 
 
 %!	metric(?Metric,?Metrics,?Value) is det.
