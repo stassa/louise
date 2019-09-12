@@ -17,6 +17,9 @@
 		     ,move_down_then_left/2
 		     ]).
 
+:-user:use_module(lib(sampling/sampling)).
+:-user:use_module(lib(evaluation/evaluation)).
+
 :-user:use_module('../world.pl').
 :-user:use_module('../render.pl').
 :-user:use_module(move_generator).
@@ -166,14 +169,14 @@ background_knowledge(move/2, [% Move primitives
 			     ,move_up_twice/2
 			     ,move_down_twice/2
 			      % Compound actions - angled moves
-			     %,move_right_then_up/2
-			     %,move_right_then_down/2
-			     %,move_left_then_up/2
-			     %,move_left_then_down/2
-			     %,move_up_then_right/2
-			     %,move_up_then_left/2
-			     %,move_down_then_right/2
-			     %,move_down_then_left/2
+			     ,move_right_then_up/2
+			     ,move_right_then_down/2
+			     ,move_left_then_up/2
+			     ,move_left_then_down/2
+			     ,move_up_then_right/2
+			     ,move_up_then_left/2
+			     ,move_down_then_right/2
+			     ,move_down_then_left/2
 			  ]).
 
 
