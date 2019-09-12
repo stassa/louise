@@ -76,8 +76,8 @@ yet.
 %	Used by output/2 and output_nl/0 to decide where to output
 %	rendered states.
 %
-%output_to(console).
-output_to(log).
+output_to(console).
+%output_to(log).
 
 
 %!	render_problem(+Problem) is det.
