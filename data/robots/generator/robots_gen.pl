@@ -68,7 +68,7 @@ debug_timestamp(A):-
 start_logging:-
 	close_log(robots)
 	,debug_timestamp(T)
-	,atom_concat(robots_3,T,Bn)
+	,atom_concat(robots_gen_,T,Bn)
 	,atom_concat(Bn,'.log',Fn)
 	,atom_concat('logs/robots/',Fn,P)
 	,open(P,write,S,[alias(robots)])
