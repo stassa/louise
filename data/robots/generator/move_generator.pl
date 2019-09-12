@@ -5,12 +5,12 @@
 			 ,generate_problems/1
 			 ]).
 
+:-use_module(generator_configuration).
 :- (    configuration:learner(louise)
    ->	use_module(data(robots/world))
    ;    configuration:learner(thelma)
    ->   use_module(data(louise/robots/world))
-   )
-   .
+   ).
 
 /** <module> Data generator for grid world navigation experiments.
 
@@ -121,39 +121,6 @@ M = 12.
 */
 
 % ========================================
-% Generator parameters
-% ========================================
-
-
-%!	experiment_world(?World) is semidet.
-%
-%	Name of the current experiment World.
-%
-%	Use to generate grids for positive examples.
-%
-experiment_world(empty_world).
-
-
-%!	world_dimensions(?Width,?Height) is semidet.
-%
-%	Dimensions of a robot experiment world.
-%
-%	Used to generate examples for robot navigation plans.
-%
-world_dimensions(1,1).
-
-
-%!	dataset_root_path(?Path) is semidet.
-%
-%	Root Path of generated dataset module file.
-%
-dataset_root_path('data/robots/generator/'):-
-	configuration:learner(louise)
-	,!.
-dataset_root_path('data/louise/robots/generator/'):-
-	configuration:learner(thelma).
-
-% ========================================
 % Dataset writing
 % ========================================
 
@@ -189,6 +156,7 @@ write_dataset:-
 	,open(Fn,write,S,[alias(robots_dataset)])
 	,Es = [move_right/2,move_left/2,move_up/2,move_down/2,start/1,end/1]
 	,format(S,':-module(~w, ~w).~n~n' , [Bn,Es])
+	,list_dataset(S,Ps,Ms,Ls)
 	,write_atoms(S,Ps)
 	,nl(S)
 	,write_atoms(S,Ls)
@@ -208,6 +176,21 @@ dataset_file_name(Bn,P):-
 	,atomic_list_concat([Wr,W,H],'_',Bn)
 	,atom_concat(Bn,'.pl',Fn)
 	,atom_concat(R,Fn,P).
+
+
+%!	list_dataset(+Stream,+Tasks,+Moves,+Locations) is det.
+%
+%	Print a dataset's properties to a Stream.
+%
+list_dataset(S,Ps,Ms,Ls):-
+	experiment_world(World)
+	,world_dimensions(W,H)
+	,maplist(length,[Ps,Ms,Ls],[L,M,N])
+	,format(S,'% World: ~w~n', [World])
+	,format(S,'% Dimensions: ~w x ~w~n', [W,H])
+	,format(S,'% Tasks: ~D~n', [L])
+	,format(S,'% Primitive Moves: ~D~n', [M])
+	,format(S,'% Locations: ~D~n~n', [N]).
 
 
 %!	write_atoms(+Stream,+Atoms) is det.
