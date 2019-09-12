@@ -17,9 +17,6 @@
 		     ,move_down_then_left/2
 		     ]).
 
-:-user:use_module(lib(sampling/sampling)).
-:-user:use_module(lib(evaluation/evaluation)).
-
 :-user:use_module('../world.pl').
 :-user:use_module('../render.pl').
 :-user:use_module(move_generator).

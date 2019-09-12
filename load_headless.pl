@@ -10,6 +10,7 @@ user:file_search_path(output, project_root(output)).
 :-use_module(src(louise)).
 :-use_module(src(auxiliaries)).
 :-use_module(lib(evaluation/evaluation)).
+:-use_module(lib(sampling/sampling)).
 
 %:-load_test_files([]).
 %:-run_tests.
