@@ -1,4 +1,5 @@
-:-module(mil_problem, [expanded_metarules/2
+:-module(mil_problem, [metarule_parts/6
+		      ,expanded_metarules/2
 		      ,metarule_expansion/2
 		      ,extended_metarules/2
 		      ,metarule_extension/3
@@ -13,10 +14,108 @@
 		      ]).
 
 :-use_module(configuration).
+:-use_module(lib(term_utilities/term_utilities)).
 
 /** <module> Predicates to transform a MIL problem.
 
 */
+
+%!	metarule_parts(?Metarule,?Id,?Sub,?Sig,?Head,?Body) is nondet.
+%
+%	Extract the parts of a Metarule in the dynamic database.
+%
+%	Metarule is an encapsulated metarule in the dynamic database. It
+%	may be un-expanded, as a clause of metarule/n or expanded, as a
+%	clause of m/n, where n one of the arities of metarule and
+%	expanded metarules in the db.
+%
+%	Id is the ide of Metarule- a name, number, etc atomic id to help
+%	find the metarule in the program database.
+%
+%	Sub is the substitution atom at the head of the encapsulated
+%	metarule.
+%
+%	If Metarule is an expanded metarule, Sig is the "vector" of
+%	signature atoms, (s(P),s(Q),s(R)...) etc at the start of the
+%	metarule. Otherwise, if Metarule is not expanded, sig is the
+%	atom "nil".
+%
+%	Head and Body are the encapsulated head and body literals of the
+%	Metarule, respectively.
+%
+%	Note that either Metarule or Id must be at least partly
+%	instantiated or metarule_parts/6 will fail silently.
+%
+%	Some common use case for metarule_parts/6 is to find the
+%	definition of a metarule, or an expanded metarule, in the
+%	dynamic database; or to bind an example to the Head of a
+%	metarule before proving its Body literals, etc.
+%
+metarule_parts(M,Id,Sub,Sig,H,B):-
+	nonvar(M)
+	,!
+	,M = (Sub:-Es)
+	,clause(Sub, Es)
+	,metarule_id(Sub,Id)
+	,metarule_signature(Sub,Es,Sig)
+	,metarule_head_body(Sig,Es,H,B).
+metarule_parts(M,Id,Sub,Sig,H,B):-
+	configuration:current_predicate(metarule,Sub)
+	,ground(Id)
+	,Sub =.. [_F,Id|_Ps]
+	,clause(Sub,Es)
+	,M = (Sub:-Es)
+	,metarule_id(Sub,Id)
+	,metarule_signature(Sub,Es,Sig)
+	,metarule_head_body(Sig,Es,H,B).
+
+
+%!	metarule_id(+Sub,-Id) is det.
+%
+%	Extract the Id of a metarule in the dynamic db.
+%
+metarule_id(Sub,Id):-
+	Sub =.. [_M,Id|_].
+
+
+%!	metarule_signature(+Sub,+Encapsulated,-Signature) is det.
+%
+%	Extract Signature atoms from an Encapsulated metarule body.
+%
+metarule_signature(Sub,_,nil):-
+	Sub =.. [metarule|_]
+	,!.
+metarule_signature(Sub,(s(P),Es),Sig):-
+	Sub =.. [m|_]
+	,literals_signature(Es,(s(P)),Sig).
+
+
+%!	literals_signature(+Encapsulated,+Acc,-Signature) is det.
+%
+%	Extract the Signature atoms from an Encapsulated metarule.
+%
+literals_signature((s(P),L,_Es),Acc,Sig):-
+	L \= s(_)
+	,!
+	,treeverse((s(P),Acc),Sig).
+literals_signature((s(P),Es),Acc,Bind):-
+	literals_signature(Es,(s(P),Acc),Bind).
+
+
+%!	metarule_head_body(+Sig,+Encapsulated,-Head,-Body) is det.
+%
+%	Extract the Head and Body literals of an Encapsulated metarule.
+%
+metarule_head_body(nil,(H,B),H,B):-
+	!.
+metarule_head_body((S,Sig),(S,Es),H,B):-
+	!
+	,metarule_head_body(Sig,Es,H,B).
+metarule_head_body((s(_)),(s(_),H,B),H,B):-
+	H \= s(_)
+	,!.
+
+
 
 %!	expanded_metarules(+Ids,-Encapsulated) is det.
 %

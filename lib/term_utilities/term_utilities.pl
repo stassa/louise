@@ -10,6 +10,7 @@
 			,clauses_literals/2
 			,clause_literals/2
 			,list_tree/2
+			,treeverse/2
 			]).
 
 /** <modules> Prolog term inspection and manipulation.
@@ -240,3 +241,20 @@ list_tree(Ls, Ts):-
 list_tree((T,Ts)) --> [T], list_tree(Ts).
 list_tree((T:-Ts)) --> [T], list_tree(Ts).
 list_tree(T) --> [T].
+
+
+
+%!	treeverse(+Tree, Eert) is det.
+%
+%	Like reverse/2 but for trees.
+%
+%	Alternatively, a universe of trees. Free hugs. No squares
+%	allowed.
+%
+treeverse((X,Xs),Ys):-
+	treeverse(Xs,(X),Ys).
+
+treeverse((X,Xs),Acc,Bind):-
+	!
+	,treeverse(Xs,(X,Acc),Bind).
+treeverse(X,Ys,(X,Ys)).
