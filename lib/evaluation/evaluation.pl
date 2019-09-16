@@ -13,7 +13,7 @@
 		     ]).
 
 :-use_module(configuration).
-:-use_module(lib(evaluation/evaluation)).
+:-use_module(lib(sampling/sampling)).
 :-use_module(src(auxiliaries)).
 :-learner(L)
   ,(   L = thelma
