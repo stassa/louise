@@ -330,15 +330,15 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	negative example is a ground definite goal (i.e. a clause of the
 %	form :-Example).
 %
-metasubstitution(:-E,M,H):-
+metasubstitution(:-E,M,Sub):-
 	!
-	,bind_head_literal(E,M,(H:-(Ps,(E,Ls))))
-	,metarule_expansion(_Id,(H:-(Ps,(E,Ls))))
-	,user:call(Ps)
+	,bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,metarule_expansion(_Id,(Sub:-(E,Ls)))
+	%,bind_signature(Sub)
 	,user:call(Ls).
-metasubstitution(E,M,H):-
-	bind_head_literal(E,M,(H:-(Ps,(E,Ls))))
-	,user:call(Ps)
+metasubstitution(E,M,Sub):-
+	bind_head_literal(E,M,(Sub:-(E,Ls)))
+	%,bind_signature(Sub)
 	,user:call(Ls).
 
 
@@ -349,11 +349,38 @@ metasubstitution(E,M,H):-
 %	Abstracts the complex patterns of binding examples to the heads
 %	of metarules with and without body literals.
 %
-bind_head_literal(E,M,(H:-(Ps,(E,Ls)))):-
-	M = (H:-(Ps,(E,Ls)))
+bind_head_literal(E,M,(H:-(E,Ls))):-
+	M = (H:-(E,Ls))
 	,!.
-bind_head_literal(E,M,(H:-(Ps,(E,true)))):-
-	M = (H:-(Ps,E)).
+bind_head_literal(E,M,(H:-(E,true))):-
+	M = (H:-E).
+
+
+%!	bind_signature(+Metasubstitution) is det.
+%
+%	Ground an encapsulated Metasubstitution atom.
+%
+%	Metasubstitution is a metasubstitution atom from an encapsulated
+%	metarule, possibly with some variables unbound.
+%
+%	Each existentially quantified variable in Metasubstitution is
+%	bound to predicate symbols in the signature.
+%
+%	@tbd Not used because it borks abduction metarules.
+%
+bind_signature(Sub):-
+	Sub =.. [m,_Id|Ps]
+	,bind_signature_(Ps).
+
+%!	bind_signature_(+Sub) is nondet.
+%
+%	Business end of bind_signature/1.
+%
+bind_signature_([]):-
+	!.
+bind_signature_([P|Ps]):-
+	user:s(P)
+	,bind_signature_(Ps).
 
 
 %!	bind_target(+Metarules,+Target,-Bound) is det.
