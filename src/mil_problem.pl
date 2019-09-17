@@ -396,6 +396,12 @@ unfolded_metasubs(Ss,Ms):-
 %
 %	Project a Metasubstitution onto a fitting metarule.
 %
+%	@tbd This is not strictly necessary and is left behind after
+%	work to remove signature atoms from expanded metarules. The
+%	right way to do this would now be to call metarule_parts/5, but
+%	that will cause problems with extended metarules and
+%	theorem_prover(tp) so it stays for now.
+%
 metarule_projection(S,H:-B):-
 	S =.. [m,Id|Ps]
 	,Mh =.. [metarule,Id|Ps]
@@ -405,26 +411,7 @@ metarule_projection(S,H:-B):-
 % Extended metarules don't have metarule/n heads!
 % They're only in the database as m/n clauses.
 	S =.. [m,_Id|_Ps]
-	,clause(S,Ls)
-	,literals_clause(Ls,(H,B)).
-
-
-%!	literals_clause(+Literals,-Clause) is det.
-%
-%	Remove signature from an expended metarule body.
-%
-%	The signature terms of extended metarules are not conveniently
-%	wrapped in ()'s and so they're fiddlier to get rid of than for
-%	ordinary metarules. This handles the necessary fiddling.
-%
-%	@tbd This operates on the predicate signature that is currently
-%	being removed. Needs more work.
-%
-literals_clause((L,Ls),(L,Ls)):-
-	L \= s(_)
-	,!.
-literals_clause((s(_),Ls),C):-
-	literals_clause(Ls, C).
+	,clause(S,(H,B)).
 
 
 
