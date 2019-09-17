@@ -356,33 +356,6 @@ bind_head_literal(E,M,(H:-(E,true))):-
 	M = (H:-E).
 
 
-%!	bind_signature(+Metasubstitution) is det.
-%
-%	Ground an encapsulated Metasubstitution atom.
-%
-%	Metasubstitution is a metasubstitution atom from an encapsulated
-%	metarule, possibly with some variables unbound.
-%
-%	Each existentially quantified variable in Metasubstitution is
-%	bound to predicate symbols in the signature.
-%
-%	@tbd Not used because it borks abduction metarules.
-%
-bind_signature(Sub):-
-	Sub =.. [m,_Id|Ps]
-	,bind_signature_(Ps).
-
-%!	bind_signature_(+Sub) is nondet.
-%
-%	Business end of bind_signature/1.
-%
-bind_signature_([]):-
-	!.
-bind_signature_([P|Ps]):-
-	user:s(P)
-	,bind_signature_(Ps).
-
-
 %!	bind_target(+Metarules,+Target,-Bound) is det.
 %
 %	Bind the Target's symbol to the heads of Metarules.
