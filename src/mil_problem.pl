@@ -1,11 +1,10 @@
-:-module(mil_problem, [metarule_parts/6
-		      ,expanded_metarules/2
+:-module(mil_problem, [%metarule_parts/6
+		      expanded_metarules/2
 		      ,metarule_expansion/2
 		      ,extended_metarules/2
 		      ,metarule_extension/3
 		      ,encapsulated_problem/5
 		      ,encapsulated_bk/2
-		      ,predicate_signature/3
 		      ,examples_target/2
 		      ,encapsulated_clauses/2
 		      ,unfolded_metasubs/2
@@ -50,6 +49,9 @@
 %	definition of a metarule, or an expanded metarule, in the
 %	dynamic database; or to bind an example to the Head of a
 %	metarule before proving its Body literals, etc.
+%
+%	@deprecated Not used anywhere and there's no more predicate
+%	signature anymore ever.
 %
 metarule_parts(M,Id,Sub,Sig,H,B):-
 	nonvar(M)
@@ -151,76 +153,25 @@ expanded_metarules(Ids,Ms):-
 %
 %	Expand a Metarule with the given Id.
 %
-%	Expansion adds a vector of Prolog terms s(P), s(Q),... s(V) to
-%	the body of the metarule, wrapping the predicate symbols. This
-%	is to constraint the search for bindings of existentially
-%	quantified variables to predicates in the predicate signature.
-%
-%	@tbd This will not allow the use of existentially quantified
-%	terms that are not predicate symbols, but hypothesis constants.
-%
 %	@tbd In line 5 of this predicate strip_module/3 is called to
 %	allow metarules defined in experiment files to be used without
 %	stumbling over complicated patterns of module qualifiers (which
 %	will be different in their head and body literals).
 %
-metarule_expansion(Id,Mh_:-(Es_,Mb_)):-
+%	@tbd After the removeal of signature atoms this predicate now
+%	only changes the metarule/n symbol of metarules declared in the
+%	configuration module and experiment files to m/n (and strips the
+%	module qualifiers from it). In other words, it transforms
+%	metarules from the user-friendly (-er) representation used in
+%	configuration and experiment files to Louise's internal
+%	representation that is more appropriate for learning.
+%
+metarule_expansion(Id,Mh_:-Mb_):-
 	configuration:current_predicate(metarule,Mh)
 	,Mh =.. [metarule,Id|Ps]
 	,Mh_ =.. [m,Id|Ps]
 	,clause(Mh,Mb)
-	,strip_module(Mb,_M,Mb_)
-	,second_order_vars((Mh:-Mb_),Ss)
-	,maplist(existential_variables,Ss,Ps_)
-	,once(list_tree(Ps_,Es_)).
-
-
-%!	second_order_vars(+Metarule,-Variables) is det.
-%
-%	Collect the second-order Variables in a metarule.
-%
-%	The motivation for this predicate is to allow metarules like
-%	abduce that have existentially quantified _first-order_
-%	variables. These must not end up in the predicate signature
-%	literals in the expanded metarule, or processing will fail (in
-%	particular, it fails during calls to metasubstitution/3,
-%	because that predicate calls the predicate signature literals-
-%	a call that fails if the predicate signature literals aren't
-%	actually wrapping second-order variables). This predicate
-%	makes sure that only the existentially quantified second-order
-%	Variables in Metarule are returned.
-%
-second_order_vars(M,Ss):-
-	second_order_vars(M,[],Ss).
-
-%!	second_order_vars(+Metarule,+Acc,-Variables) is det.
-%
-%	Business end of second_order_vars/2.
-%
-second_order_vars(_H:-B,Acc,Bind):-
-	!
-	,second_order_vars(B,Acc,Bind).
-second_order_vars((L1,Ls),Acc,Bind):-
-	!
-	,L1 =.. [m,P|_]
-	,second_order_vars(Ls,[P|Acc],Bind).
-second_order_vars((L1),Acc,Ss):-
-	L1 =.. [m,P|_]
-	,!
-	,reverse([P|Acc],Ss).
-second_order_vars(true,Acc,Ss):-
-	reverse(Acc,Ss).
-
-
-%!	existential_variables(+Variable, -Encapsulated) is det.
-%
-%	Encapsulate an existentially quantified Variable in a metarule.
-%
-%	Wrapper around =../2 to allow it to be passed to maplist/3.
-%
-existential_variables(Ls,L_):-
-	L_ =.. [s,Ls].
-
+	,strip_module(Mb,_M,Mb_).
 
 
 %!	extended_metarules(+Metarules,-Extended) is det.
@@ -272,10 +223,9 @@ extended_metarules(MS,Es):-
 %	then concatenating their body literals minus the body literal
 %	unified with the head literal of the second metarule.
 %
-metarule_extension((M1:-Ss1,B1),(M2:-Ss2,B2),(M3:-Ss3,B3)):-
+metarule_extension((M1:-B1),(M2:-B2),(M3:-B3)):-
 	metasubs_extension(M1,M2,M3)
-	,unfold(B1,B2,B3)
-	,signature_extension(Ss1,Ss2,Ss3).
+	,unfold(B1,B2,B3).
 
 
 %!	metasubs_extension(+Metasub1,+Metasub2,+Metasub3) is det.
@@ -301,28 +251,6 @@ metasubs_extension(M1,M2,M3):-
 list_merge([_],[_|Xs],Xs).
 list_merge([X|Xs],Ys,[X|Zs]):-
 	list_merge(Xs,Ys,Zs).
-
-
-%!	signature_extension(+Sig1, +Sig2, -Sig3) is det.
-%
-%	Construct the signature of a metarule extension.
-%
-signature_extension(Ss1,(_,Ss2),Ss3):-
-	tree_merge(Ss1,Ss2,Ss3).
-
-
-%!	tree_merge(+Xs,+Ys,-Zs) is det.
-%
-%	Tree version of merge/3.
-%
-%	Used to merge (in the sense of merge/3) the signature terms in
-%	two metarules extending each other.
-%
-tree_merge((X,Xs),Ys,(X,Zs)):-
-	!
-	,tree_merge(Xs,Ys,Zs).
-tree_merge((L),Xs,Xs):-
-	L \== (_,_).
 
 
 %!	unfold(+Tree1,+Tree2,-Unfolded) is det.
@@ -354,14 +282,13 @@ unfold((X),(X,Xs),Xs):-
 %	Metarules is a list of constants, the names of metarules in the
 %	problem.
 %
-%	Ps is a list [Pos_, Neg_, BK_, MS_, Ss] where elements are the
+%	Ps is a list [Pos_, Neg_, BK_, MS_] where elements are the
 %	encapsulations of the positive and negative examples, BK
-%	definitions, and Metarules, and the predicate signature,
-%	respectively.
+%	definitions, and Metarules, respectively.
 %
 %	@tbd Encapsulated forms need documentation.
 %
-encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss]):-
+encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
 	configuration:extend_metarules(E)
 	,encapsulated_bk(BK,BK_)
 	,(   E == true
@@ -369,8 +296,7 @@ encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss]):-
 	 ;   expanded_metarules(MS,MS_)
 	 )
 	,encapsulated_clauses(Pos,Pos_)
-	,encapsulated_clauses(Neg,Neg_)
-	,predicate_signature(Pos,BK,Ss).
+	,encapsulated_clauses(Neg,Neg_).
 
 
 
@@ -386,19 +312,6 @@ encapsulated_bk(BK,BK_flat):-
 		)
 	       ,BK_)
 	,flatten(BK_, BK_flat).
-
-
-
-
-%!	predicate_signature(+Examples,+BK,-Signature) is det.
-%
-%	Find the predicate Signature for a problem.
-%
-predicate_signature(Es,BK,[s(T)|Ps]):-
-	findall(s(F)
-	       ,member(F/_,BK)
-	       ,Ps)
-	,examples_target(Es,T/_).
 
 
 
@@ -540,6 +453,9 @@ metarule_projection(S,H:-B):-
 %	The signature terms of extended metarules are not conveniently
 %	wrapped in ()'s and so they're fiddlier to get rid of than for
 %	ordinary metarules. This handles the necessary fiddling.
+%
+%	@tbd This operates on the predicate signature that is currently
+%	being removed. Needs more work.
 %
 literals_clause((L,Ls),(L,Ls)):-
 	L \= s(_)

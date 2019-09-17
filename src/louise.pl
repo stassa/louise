@@ -4,8 +4,8 @@
 		 ,learn/1
 		 ,learn/2
 		 ,learn/5
-		 ,top_program/6
-		 ,reduced_top_program/6
+		 ,top_program/5
+		 ,reduced_top_program/5
 		 ,lfp_query/4
 		 ,lfp_query/3
 		 ,lfp/2
@@ -69,13 +69,13 @@ tp_safe_experiment_data(T,Pos,[],BK,MS):-
 %
 learn_episodic(Pos,Neg,BK,MS,Ps):-
 	debug(episodic,'Encapsulating problem',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss])
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(episodic,'Learning first episode',[])
-	,learning_episode(Pos_,Neg_,BK_,MS_,Ss,Ps_1)
+	,learning_episode(Pos_,Neg_,BK_,MS_,Ps_1)
 	,examples_target(Pos,T)
 	,learned_hypothesis(T,Ps_1,Es_1)
 	,length(Es_1,N)
-	,learn_episodic(T,N,Pos_,Neg_,BK_,MS_,Ss,Es_1,Ps_k)
+	,learn_episodic(T,N,Pos_,Neg_,BK_,MS_,Es_1,Ps_k)
 	,excapsulated_clauses(T,Ps_k,Ps).
 
 
@@ -96,7 +96,7 @@ learned_hypothesis(T/A,Ps,Hs):-
 	       ,Hs).
 
 
-%!	learn_episodic(+Target,+N,+Pos,+Neg,+BK,+Meta,+Sig,+Acc,-Bind)
+%!	learn_episodic(+Target,+N,+Pos,+Neg,+BK,+Meta,+Acc,-Bind)
 %!	is det.
 %
 %	Business end of learn_episodic/5.
@@ -107,19 +107,19 @@ learned_hypothesis(T/A,Ps,Hs):-
 %	Recursion stops when the length of the learned hypothesis does
 %	not change from one recursion step to the next.
 %
-learn_episodic(T/A,N,Pos,Neg,BK,MS,Ss,Es_i,Bind):-
+learn_episodic(T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
 	append(BK,Es_i,BK_)
 	,debug(episodic,'Learning new episode',[])
-	,learning_episode(Pos,Neg,BK_,MS,Ss,Ps)
+	,learning_episode(Pos,Neg,BK_,MS,Ps)
 	,learned_hypothesis(T/A,Ps,Es_j)
 	,length(Es_j,M)
 	,M > N
 	,!
-	,learn_episodic(T/A,M,Pos,Neg,BK_,MS,Ss,Es_j,Bind).
-learn_episodic(_T,_M,_Pos,_Neg,_BK,_MS,_Ss,Ps,Ps).
+	,learn_episodic(T/A,M,Pos,Neg,BK_,MS,Es_j,Bind).
+learn_episodic(_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
 
 
-%!	learning_episode(+Pos,+Neg,+BK,+Ms,+Sig,-Episode) is det.
+%!	learning_episode(+Pos,+Neg,+BK,+Ms,-Episode) is det.
 %
 %	Process one learning episode.
 %
@@ -130,14 +130,14 @@ learn_episodic(_T,_M,_Pos,_Neg,_BK,_MS,_Ss,Ps,Ps).
 %	reduced_top_program/6 in learn/5, so as to add the recursion
 %	depth limit test in here. Just in case.
 %
-learning_episode(Pos,Neg,BK,MS,Ss,Es):-
+learning_episode(Pos,Neg,BK,MS,Es):-
 	configuration:theorem_prover(TP)
 	,configuration:recursion_depth_limit(episodic_learning,L)
 	,debug(episodic,'Constructing Top program',[])
-	,G = top_program(Pos,Neg,BK,MS,Ss,Ms)
+	,G = top_program(Pos,Neg,BK,MS,Ms)
 	,recursion_guard(G,L,TP)
 	,debug(episodic,'Reducing Top program',[])
-	,reduced_top_program(Pos,BK,MS,Ss,Ms,Es).
+	,reduced_top_program(Pos,BK,MS,Ms,Es).
 
 
 %!	recursion_guard(+Goal,+Time_Limit,+Theorem_Prover) is det.
@@ -189,18 +189,18 @@ learn(T,Ps):-
 %
 learn(Pos,Neg,BK,MS,Ps):-
 	debug(learn,'Encapsulating problem',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss])
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program',[])
-	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
+	,top_program(Pos_,Neg_,BK_,MS_,Ms)
 	,debug(learn,'Reducing Top program',[])
-	,reduced_top_program(Pos_,BK_,MS_,Ss,Ms,Rs)
+	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
 	,examples_target(Pos,T)
 	,debug(learn,'Excapsulating problem',[])
 	,excapsulated_clauses(T,Rs,Ps).
 
 
 
-%!	top_program(+Pos,+Neg,+BK,+Metarules,+Signature,-Top) is det.
+%!	top_program(+Pos,+Neg,+BK,+Metarules,-Top) is det.
 %
 %	Construct the Top program for a MIL problem.
 %
@@ -224,18 +224,18 @@ learn(Pos,Neg,BK,MS,Ps):-
 %	work in progress and may not fully eliminate too-general
 %	metasubstitutions.
 %
-top_program(Pos,Neg,BK,MS,Ss,Ts):-
+top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
-	,write_program(Pos,BK,MS,Ss,Refs)
-	,top_program(Pos,Neg,BK,MS,Ms)
+	,write_program(Pos,BK,MS,Refs)
+	,top_program_(Pos,Neg,BK,MS,Ms)
 	,unfolded_metasubs(Ms,Ts)
 	,erase_program_clauses(Refs).
-top_program(Pos,Neg,BK,MS,Ss,Ts):-
+top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(tp)
 	,examples_target(Pos,T)
 	,bind_target(MS,T,MS_)
-	,flatten([Ss,Pos,BK],Ps)
+	,flatten([Pos,BK],Ps)
 	,generalise(MS_,Ps,Is,Ts_Pos)
 	,unfolded_metasubs(Ts_Pos,Ts_Pos_)
 	,specialise(Ts_Pos_,Is,Neg,Ts).
@@ -248,9 +248,9 @@ top_program(Pos,Neg,BK,MS,Ss,Ts):-
 %	@tbd The negative examples don't need to be written to the
 %	dynamic database.
 %
-write_program(Pos,BK,MS,Ss,Rs):-
+write_program(Pos,BK,MS,Rs):-
 	findall(Rs_i
-		,(member(P, [Pos,BK,MS,Ss])
+		,(member(P, [Pos,BK,MS])
 		 ,assert_program(user,P,Rs_i)
 		 )
 		,Rs_)
@@ -262,7 +262,7 @@ write_program(Pos,BK,MS,Ss,Rs):-
 %
 %	Collect all correct Metasubstitutions in a MIL problem.
 %
-top_program(Pos,Neg,_BK,MS,Ss):-
+top_program_(Pos,Neg,_BK,MS,Ss):-
 	generalise(Pos,MS,Ss_Pos)
 	,specialise(Ss_Pos,Neg,Ss).
 
@@ -330,15 +330,13 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	negative example is a ground definite goal (i.e. a clause of the
 %	form :-Example).
 %
-metasubstitution(:-E,M,H):-
+metasubstitution(:-E,M,Sub):-
 	!
-	,bind_head_literal(E,M,(H:-(Ps,(E,Ls))))
-	,metarule_expansion(_Id,(H:-(Ps,(E,Ls))))
-	,user:call(Ps)
+	,bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,metarule_expansion(_Id,(Sub:-(E,Ls)))
 	,user:call(Ls).
-metasubstitution(E,M,H):-
-	bind_head_literal(E,M,(H:-(Ps,(E,Ls))))
-	,user:call(Ps)
+metasubstitution(E,M,Sub):-
+	bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,user:call(Ls).
 
 
@@ -349,11 +347,11 @@ metasubstitution(E,M,H):-
 %	Abstracts the complex patterns of binding examples to the heads
 %	of metarules with and without body literals.
 %
-bind_head_literal(E,M,(H:-(Ps,(E,Ls)))):-
-	M = (H:-(Ps,(E,Ls)))
+bind_head_literal(E,M,(H:-(E,Ls))):-
+	M = (H:-(E,Ls))
 	,!.
-bind_head_literal(E,M,(H:-(Ps,(E,true)))):-
-	M = (H:-(Ps,E)).
+bind_head_literal(E,M,(H:-(E,true))):-
+	M = (H:-E).
 
 
 %!	bind_target(+Metarules,+Target,-Bound) is det.
@@ -381,8 +379,8 @@ bind_target(MS,T/_A,MS_):-
 %	with the first predicate symbol in their head bound to the
 %	symbol of the target predicate, as returned by bind_target/3.
 %
-%	Program is a flat list of the predicate signature and the
-%	encapsulation of the positive examples and background knowledge.
+%	Program is a flat list of the encapsulation of the positive
+%	examples and background knowledge.
 %
 %	Model is the least Herbrand model of Program. This is passed to
 %	specialise/4 to avoid duplicating work (specifically, the work
@@ -409,9 +407,8 @@ generalise(MS,Ps,Is,Ts_Pos):-
 %	Top program specialisation step with TP operator.
 %
 %	Generalised is the result of generalise/4. Model is the least
-%	Herbrand model of the predicate signature, positive examples and
-%	background knowledge, calculated during execution
-%	of generalise/4.
+%	Herbrand model of the positive examples and background
+%	knowledge, calculated during execution of generalise/4.
 %
 specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
 	findall(H:-B
@@ -427,7 +424,7 @@ specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
 
 
 
-%!	reduced_top_program(+Pos,+BK,+Metarules,+Sig,+Program,-Reduced)
+%!	reduced_top_program(+Pos,+BK,+Metarules,+Program,-Reduced)
 %!	is det.
 %
 %	Reduce the Top Program.
@@ -446,32 +443,32 @@ specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
 %	shorter amount of time, without increasing the number of
 %	resolution steps in the program reduction meta-interpreter.
 %
-reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
+reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:reduction(subhypothesis)
 	,!
-	,write_program(Pos,BK,MS,Ss,Refs)
+	,write_program(Pos,BK,MS,Refs)
 	,subhypothesis(Pos,Ps,Rs)
 	,erase_program_clauses(Refs).
-reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
+reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(true)
 	,!
-	,flatten([Ss,Pos,BK,Ps,MS],Fs_)
+	,flatten([Pos,BK,Ps,MS],Fs_)
 	,program_reduction(Fs_,Rs_,_)
 	,length(Fs_,M)
 	,length(Rs_,N)
 	,debug(reduction,'Initial reduction: ~w to ~w',[M,N])
-	,reduced_top_program_(N,Rs_,BK,MS,Ss,Rs)
+	,reduced_top_program_(N,Rs_,BK,MS,Rs)
 	% program_reduction module leaves behind garbage
 	% in program module. Why?
 	,cleanup_experiment.
-reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
+reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(false)
-	,flatten([Ss,Pos,BK,Ps,MS],Fs_)
+	,flatten([Pos,BK,Ps,MS],Fs_)
 	,program_reduction(Fs_,Rs,_)
 	,cleanup_experiment.
 
 
-%!	reduced_top_program_(+N,+Prog,+BK,+Metarules,+Sig,-Reduced) is
+%!	reduced_top_program_(+N,+Prog,+BK,+Metarules,-Reduced) is
 %!	det.
 %
 %	Business end of reduced_top_program/6
@@ -480,15 +477,14 @@ reduced_top_program(Pos,BK,MS,Ss,Ps,Rs):-
 %	of each call to program_reduction/2 to itself, a process known
 %	as "doing feedbacksies".
 %
-reduced_top_program_(N,Ps,BK,MS,Ss,Bind):-
+reduced_top_program_(N,Ps,BK,MS,Bind):-
 	program_reduction(Ps,Rs,_)
 	,length(Rs, M)
 	,debug(reduction,'New reduction: ~w to ~w',[N,M])
 	,M < N
 	,!
-	,reduced_top_program_(M,Rs,BK,MS,Ss,Bind).
-reduced_top_program_(_,Rs,_BK,_MS,_Ss,Rs).
-
+	,reduced_top_program_(M,Rs,BK,MS,Bind).
+reduced_top_program_(_,Rs,_BK,_MS,Rs).
 
 
 
@@ -652,14 +648,14 @@ model_subset((L,Ls), Ms):-
 
 
 
-%!	selected_subhypothesis(+Pos,+BK,+MS,+Sig,+Prog,-Sub) is det.
+%!	selected_subhypothesis(+Pos,+BK,+MS,+Prog,-Sub) is det.
 %
 %	Select a correct sub-hypothesis from a set of clauses.
 %
 selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
-	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,MS_,Ss])
+	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,MS_])
 	,encapsulated_clauses(Ps, Ps_)
-	,write_program(Pos_,BK_,MS_,Ss,Refs)
+	,write_program(Pos_,BK_,MS_,Refs)
 	,subhypothesis(Pos_,Ps_,Hs_)
 	,erase_program_clauses(Refs)
 	,examples_target(Pos_,T)
