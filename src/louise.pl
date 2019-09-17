@@ -333,7 +333,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 metasubstitution(:-E,M,Sub):-
 	!
 	,bind_head_literal(E,M,(Sub:-(E,Ls)))
-	,metarule_expansion(_Id,(Sub:-(E,Ls)))
+	,metarule_parts(_Id,M,Sub,E,Ls)
 	,user:call(Ls).
 metasubstitution(E,M,Sub):-
 	bind_head_literal(E,M,(Sub:-(E,Ls)))
