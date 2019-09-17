@@ -63,9 +63,9 @@ known_metarules(Ids):-
 %
 list_top_program_reduction(T):-
 	experiment_data(T,Pos,Neg,BK,MS)
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss])
-	,top_program(Pos_,Neg_,BK_,MS_,Ss,Ms)
-	,flatten([Ss,Pos_,BK_,Ms,MS_],Ps_)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,top_program(Pos_,Neg_,BK_,MS_,Ms)
+	,flatten([Pos_,BK_,Ms,MS_],Ps_)
 	,reduction_report(Ps_).
 
 
@@ -91,8 +91,8 @@ list_top_program(T):-
 %
 list_top_program(T,U):-
 	experiment_data(T,Pos,Neg,BK,MS)
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss])
-	,louise:write_program(Pos_,BK_,MS_,Ss,Refs)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,louise:write_program(Pos_,BK_,MS_,Refs)
 	,louise:generalise(Pos_,MS_,Ss_Pos)
 	,write_and_count('Generalisation:',Ss_Pos,U)
 	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)
@@ -134,10 +134,6 @@ write_and_count(Msg,Cs,U):-
 list_encapsulated_problem(T):-
 	configuration:extend_metarules(E)
 	,experiment_data(T,Pos,Neg,BK,MS)
-	,predicate_signature(Pos,BK,Ss)
-	,format_underlined('Predicate signature')
-	,print_clauses(Ss)
-	,nl
 	,encapsulated_clauses(Pos,Pos_)
 	,format_underlined('Positive examples')
 	,print_clauses(Pos_)

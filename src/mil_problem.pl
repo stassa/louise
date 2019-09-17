@@ -1,11 +1,10 @@
-:-module(mil_problem, [metarule_parts/6
-		      ,expanded_metarules/2
+:-module(mil_problem, [%metarule_parts/6
+		      expanded_metarules/2
 		      ,metarule_expansion/2
 		      ,extended_metarules/2
 		      ,metarule_extension/3
 		      ,encapsulated_problem/5
 		      ,encapsulated_bk/2
-		      ,predicate_signature/3
 		      ,examples_target/2
 		      ,encapsulated_clauses/2
 		      ,unfolded_metasubs/2
@@ -50,6 +49,9 @@
 %	definition of a metarule, or an expanded metarule, in the
 %	dynamic database; or to bind an example to the Head of a
 %	metarule before proving its Body literals, etc.
+%
+%	@deprecated Not used anywhere and there's no more predicate
+%	signature anymore ever.
 %
 metarule_parts(M,Id,Sub,Sig,H,B):-
 	nonvar(M)
@@ -151,18 +153,18 @@ expanded_metarules(Ids,Ms):-
 %
 %	Expand a Metarule with the given Id.
 %
-%	Expansion adds a vector of Prolog terms s(P), s(Q),... s(V) to
-%	the body of the metarule, wrapping the predicate symbols. This
-%	is to constraint the search for bindings of existentially
-%	quantified variables to predicates in the predicate signature.
-%
-%	@tbd This will not allow the use of existentially quantified
-%	terms that are not predicate symbols, but hypothesis constants.
-%
 %	@tbd In line 5 of this predicate strip_module/3 is called to
 %	allow metarules defined in experiment files to be used without
 %	stumbling over complicated patterns of module qualifiers (which
 %	will be different in their head and body literals).
+%
+%	@tbd After the removeal of signature atoms this predicate now
+%	only changes the metarule/n symbol of metarules declared in the
+%	configuration module and experiment files to m/n (and strips the
+%	module qualifiers from it). In other words, it transforms
+%	metarules from the user-friendly (-er) representation used in
+%	configuration and experiment files to Louise's internal
+%	representation that is more appropriate for learning.
 %
 metarule_expansion(Id,Mh_:-Mb_):-
 	configuration:current_predicate(metarule,Mh)
@@ -280,14 +282,13 @@ unfold((X),(X,Xs),Xs):-
 %	Metarules is a list of constants, the names of metarules in the
 %	problem.
 %
-%	Ps is a list [Pos_, Neg_, BK_, MS_, Ss] where elements are the
+%	Ps is a list [Pos_, Neg_, BK_, MS_] where elements are the
 %	encapsulations of the positive and negative examples, BK
-%	definitions, and Metarules, and the predicate signature,
-%	respectively.
+%	definitions, and Metarules, respectively.
 %
 %	@tbd Encapsulated forms need documentation.
 %
-encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss]):-
+encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
 	configuration:extend_metarules(E)
 	,encapsulated_bk(BK,BK_)
 	,(   E == true
@@ -295,8 +296,7 @@ encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_,Ss]):-
 	 ;   expanded_metarules(MS,MS_)
 	 )
 	,encapsulated_clauses(Pos,Pos_)
-	,encapsulated_clauses(Neg,Neg_)
-	,predicate_signature(Pos,BK,Ss).
+	,encapsulated_clauses(Neg,Neg_).
 
 
 
@@ -312,19 +312,6 @@ encapsulated_bk(BK,BK_flat):-
 		)
 	       ,BK_)
 	,flatten(BK_, BK_flat).
-
-
-
-
-%!	predicate_signature(+Examples,+BK,-Signature) is det.
-%
-%	Find the predicate Signature for a problem.
-%
-predicate_signature(Es,BK,[s(T)|Ps]):-
-	findall(s(F)
-	       ,member(F/_,BK)
-	       ,Ps)
-	,examples_target(Es,T/_).
 
 
 
@@ -466,6 +453,9 @@ metarule_projection(S,H:-B):-
 %	The signature terms of extended metarules are not conveniently
 %	wrapped in ()'s and so they're fiddlier to get rid of than for
 %	ordinary metarules. This handles the necessary fiddling.
+%
+%	@tbd This operates on the predicate signature that is currently
+%	being removed. Needs more work.
 %
 literals_clause((L,Ls),(L,Ls)):-
 	L \= s(_)
