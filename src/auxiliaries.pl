@@ -1,4 +1,6 @@
-:-module(auxiliaries, [learning_targets/1
+:-module(auxiliaries, [write_encapsulated_problem/1
+		      ,write_encapsulated_problem/4
+		      ,learning_targets/1
 		      ,known_metarules/1
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
@@ -20,6 +22,36 @@
 :-user:use_module(lib(program_reduction/program_reduction)).
 :-user:use_module(lib(mathemancy/mathemancy)).
 :-use_module(src(mil_problem)).
+
+
+%!	write_encapsulated_problem(+Target) is det.
+%
+%	Write an encapsulated MIL problem to the dynamic db.
+%
+%	The MIL problem for Target is obtained from the current
+%	experiment file.
+%
+write_encapsulated_problem(T):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,write_encapsulated_problem(Pos,Neg,BK,MS).
+
+
+
+%!	write_encapsulated_problem(+Pos,+Neg,+BK,+Metarules) is det.
+%
+%	Write an encapsulated MIL problem to the dynamic db.
+%
+%	Writes to the dynamic database the encapsulated positive and
+%	negative examples, BK and metarules given as inputs.
+%
+%	Useful for debugging purposes. Remember to call
+%	cleanup_experiment/0 to remove clauses asserted to the dynamic
+%	db.
+write_encapsulated_problem(Pos,Neg,BK,MS):-
+	encapsulated_problem(Pos,Neg,BK,MS,Es)
+	,flatten(Es, Es_)
+	,assert_program(user,Es_,_).
+
 
 
 %!	learning_targets(+Targets) is det.
@@ -143,7 +175,7 @@ list_encapsulated_problem(T):-
 	,print_clauses(Neg_)
 	,nl
 	,encapsulated_bk(BK,BK_)
-	,(   E == true
+	,(   E \== false
 	 ->  extended_metarules(MS,MS_)
 	 ;   expanded_metarules(MS,MS_)
 	 )
