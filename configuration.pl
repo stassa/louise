@@ -79,9 +79,21 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/robots/generator/robots_gen.pl',robots_gen).
 
 
-%!	extend_metarules(?Bool) is semidet.
+%!	extend_metarules(?Extend) is semidet.
 %
-%	Whether to extend the metarules in a MIL problem.
+%	Whether, and how, to extend the metarules in a MIL problem.
+%
+%	If Extend is "false", metarules are not extended. If Extend is a
+%	number, metarules are extended that many times, recursively.
+%
+%	Metarule extension begins with the set of metarules declared for
+%	a MIL problem (in a clause of metarules/2 in an experiment
+%	file). In the first step of recursive extension, each metarule
+%	in the original set is extended by each other metarule in the
+%	set, including itself. In the second and each subsequent step,
+%	the process is repeated with the metarules in the extended set
+%	produced in the previous step. The original metarules are always
+%	in the extended set.
 %
 extend_metarules(false).
 

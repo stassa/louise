@@ -157,7 +157,16 @@ metarule_expansion(Id,Mh_:-Mb_):-
 %	learning.
 %
 extended_metarules(MS,Es):-
-	findall([M1-M1_,M2-M2_,N-M]
+	configuration:extend_metarules(E)
+	,extended_metarules(MS,Es,E).
+
+%!	extended_metarules(+Ids,-Extended,+N) is det.
+%
+%	Business end of extended_metarules/2.
+%
+extended_metarules(MS,Es,1):-
+	!
+	,findall([M1-M1_,M2-M2_,N-M]
 	       ,(member(M1,MS)
 		,member(M2,MS)
 		,metarule_expansion(M1,M1_)
@@ -170,6 +179,43 @@ extended_metarules(MS,Es):-
 	,flatten(Es_,Es_f)
 	,sort(1,@<,Es_f,Es_s)
 	,pairs_keys_values(Es_s,_Ns,Es).
+extended_metarules(MS,Es,N):-
+	integer(N)
+	,!
+	,extended_metarules(MS,Es_1,1)
+	,extended_metarules_(1,N,Es_1,Es_N)
+	,append(Es_1,Es_N,Es_)
+	% Sorting by first argument of first literal
+	% To remove metarules with duplicate names.
+	,sort([1,1],@<,Es_, Es).
+
+
+%!	extended_metarules(+K,+N,+Metarules,-Extended) is det.
+%
+%	Extend a set of Metarules up to N times.
+%
+%	Used by extended_metarules/3 to extend metarules more than once.
+%
+%	K is the current extension counter, initialised to 1 on call.
+%
+extended_metarules_(N,N,Ms,Ms):-
+	!.
+extended_metarules_(I,N,Acc,Bind):-
+	findall(M3
+	       ,(member(M1,Acc)
+		,member(M2,Acc)
+		% Used for debugging.
+		/*,M1 = (H_1:-_)
+		,M2 = (H_2:-_)
+		,H_1 =.. [m,Id_1|_]
+		,H_2 =.. [m,Id_2|_]
+		,format('Extending ~w by ~w~n', [Id_1,Id_2])
+		*/
+		,once(metarule_extension(M1,M2,M3))
+		)
+	       ,Ms_I)
+	,succ(I,I_)
+	,extended_metarules_(I_,N,Ms_I,Bind).
 
 
 
@@ -198,9 +244,78 @@ metarule_extension((M1:-B1),(M2:-B2),(M3:-B3)):-
 metasubs_extension(M1,M2,M3):-
 	M1 =.. [m,N1|Ps1]
 	,M2 =.. [m,N2|Ps2]
-	,atomic_list_concat([N1,N2],'_',N3)
+	,extension_name(N1,N2,N3)
 	,list_merge(Ps1,Ps2,Ps3)
 	,M3 =.. [m,N3|Ps3].
+
+
+%!	extension_name(+Name1,+Name2,-Name) is det.
+%
+%	Compose the Name of a metarule extension.
+%
+extension_name(N1,N2,N3):-
+	atomic_list_concat([N1,N2],'_',C_)
+	,atomic_list_concat(Ns,'_',C_)
+	,once(atoms_counts(Ns,Cs))
+	,atomic_list_concat(Cs,'_',N3).
+
+
+%!	atoms_counts(+Atoms,-Counts) is det.
+%
+%	Count the atomic elements in a metarule name.
+%
+%	Implements run-length encoding of a list of Atoms, but single
+%	atoms are not associated to a count and the list is not an
+%	association list (as in 99 Prolog problems, where "run-length
+%	encoding" comes from). The purpose is to count the number of
+%	consecutive identical atoms (possibly separated by "_") in the
+%	name of a metarule extension, in order to name it something more
+%	concise than "chain_chain_chain_ ... _chain_chain_chain...
+%	_unit" etc.
+%
+atoms_counts([A|As],Cs):-
+	atoms_counts(As,[A],Cs).
+
+%!	atoms_counts(+Atoms,+Acc,-Counts) is det.
+%
+%	Business end of atoms_counts/2.
+%
+atoms_counts([],[A-N],[A,N]).
+% List of single atom
+atoms_counts([],[A],[A]).
+% Single atom.
+
+atoms_counts([],[A-N|Acc],Cs):-
+% No more atoms
+	reverse([N,A|Acc],Cs).
+atoms_counts([],Acc,Cs):-
+	reverse(Acc,Cs).
+atoms_counts([A],[A-N|Acc],Cs):-
+	succ(N,N_)
+	,reverse([N_,A|Acc],Cs).
+
+atoms_counts([A,An|As],[A|Acc],Bind):-
+% If an atom is followed by a number
+% it's an expanded metarule already named by count
+	atom_number(An, N)
+	,atoms_counts(As,[A,N,A|Acc],Bind).
+
+atoms_counts([A|As],[A],Bind):-
+% New atom - already seen
+	atoms_counts(As,[A-2],Bind).
+atoms_counts([A|As],[A|Acc],Bind):-
+	atoms_counts(As,[A-2|Acc],Bind).
+
+atoms_counts([A|As],[A-N|Acc],Bind):-
+% New atom - continued count
+	succ(N,N_)
+	,atoms_counts(As,[A-N_|Acc],Bind).
+atoms_counts([B|As],[A-N|Acc],Bind):-
+	atoms_counts(As,[B,N,A|Acc],Bind).
+
+atoms_counts([B|As],[A|Acc],Bind):-
+% New atom - first time seen
+	atoms_counts(As,[B,A|Acc],Bind).
 
 
 %!	list_merge(+Xs,+Ys,-Zs) is det.
@@ -254,7 +369,7 @@ unfold((X),(X,Xs),Xs):-
 encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
 	configuration:extend_metarules(E)
 	,encapsulated_bk(BK,BK_)
-	,(   E == true
+	,(   E \== false
 	 ->  extended_metarules(MS, MS_)
 	 ;   expanded_metarules(MS,MS_)
 	 )
