@@ -6,6 +6,12 @@
 			,metarule/3
 			,metarule/4
 			,metarule/5
+			,metarule/6
+			,metarule/7
+			,metarule/8
+			,metarule/9
+			,metarule/10
+			,metarule_constraints/2
 			,recursion_depth_limit/2
 			,recursive_reduction/1
 			,reduction/1
@@ -14,8 +20,8 @@
 			]).
 
 :-user:use_module(src(experiment_file)).
-:-reexport(lib(program_reduction/reduction_configuration), except([derivation_depth/1
-								  ,resolutions/1])).
+:-reexport(lib(program_reduction/reduction_configuration),
+	   except([derivation_depth/1								  ,resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
 :-reexport(lib/sampling/sampling_configuration).
 
@@ -25,13 +31,23 @@
          ,m/2
          ,m/3
 	 ,m/4
-	 ,m/5.
+	 ,m/5
+	 ,m/6
+	 ,m/7
+	 ,m/8
+	 ,m/9
+	 ,m/10.
 
 :-multifile m/1
            ,m/2
 	   ,m/3
 	   ,m/4
-	   ,m/5.
+	   ,m/5
+	   ,m/6
+	   ,m/7
+	   ,m/8
+	   ,m/9
+	   ,m/10.
 
 % Allows experiment files to define their own, special metarules.
 % BUG: Actually, this doesn't work- module quantifiers, again.
@@ -39,7 +55,19 @@
 :-multifile metarule/2
            ,metarule/3
            ,metarule/4
-	   ,metarule/5.
+	   ,metarule/5
+	   ,metarule/6
+	   ,metarule/7
+	   ,metarule/8
+	   ,metarule/9
+	   ,metarule/10
+	   .
+
+% Experiment files may or may not define metarule constraints to filter
+% the Top program for unwanted clause structures (e.g. I don't like
+% left-recursive clauses because they mess up evaluation).
+:- dynamic metarule_constraints/2.
+:-multifile metarule_constraints/2.
 
 /* Debug levels */
 %:-debug(depth). % Debug number of clauses and invented predicates.
@@ -96,6 +124,7 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %	in the extended set.
 %
 extend_metarules(false).
+%extend_metarules(1).
 
 
 %!	learner(?Name) is semidet.

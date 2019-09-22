@@ -229,7 +229,8 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,!
 	,write_program(Pos,BK,MS,Refs)
 	,top_program_(Pos,Neg,BK,MS,Ms)
-	,unfolded_metasubs(Ms,Ts)
+	,constraints(Ms, Ms_)
+	,unfolded_metasubs(Ms_,Ts)
 	,erase_program_clauses(Refs).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(tp)
@@ -421,6 +422,46 @@ specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
 	%,print_clauses(Ts_Neg)
 	%,nl
 	.
+
+
+%!	constraints(+Top,-Filtered) is det.
+%
+%	Filter the Top program by a set of metarule constraints.
+%
+%	Constraints are declared in experiment files as clauses
+%	of configuration:metarule_constraints/2.
+%
+%	The first argument of metarule_constraints/2 is the
+%	metasubstitution atom of an encapsulated metarule (the functor
+%	must be "metarule" not "m"). Metarule constraints are applied to
+%	any metasubstitution in the Top program that match this first
+%	argument.
+%
+%	The second argument of metarule_constraints/2 is an arbitrary
+%	Prolog goal. If the goal fails, the metasubstitution in the
+%	first argument is removed from the Top program.
+%
+%	@tbd If there are any metarule constraints declared in the
+%	current experiment file, this predicate will walk over the
+%	entire Top program to filter it. It would save quite a bit of
+%	juice to instead do the check at the point where a
+%	metasubstitution is initially created- for example, right after
+%	metasubstitution/3.
+%
+constraints(Ms,Ms):-
+	predicate_property(metarule_constraints(_,_), number_of_clauses(0))
+	,!.
+constraints(Ms,Ms_):-
+	predicate_property(metarule_constraints(_,_), number_of_clauses(N))
+	,N > 0
+	,findall(Sub
+		,(member(Sub,Ms)
+		 ,Sub =.. [m|As]
+		 ,Sub_ =.. [metarule|As]
+		 ,configuration:metarule_constraints(Sub_, C)
+		 ,user:call(C)
+		 )
+		,Ms_).
 
 
 
