@@ -1,4 +1,5 @@
-:-module(auxiliaries, [write_encapsulated_problem/1
+:-module(auxiliaries, [load_experiment_file/0
+		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
 		      ,learning_targets/1
 		      ,known_metarules/1
@@ -22,6 +23,16 @@
 :-user:use_module(lib(program_reduction/program_reduction)).
 :-user:use_module(lib(mathemancy/mathemancy)).
 :-use_module(src(mil_problem)).
+
+
+%!	load_experiment_file is det.
+%
+%	Load the current experiment file into module user.
+%
+load_experiment_file:-
+	experiment_file(P,_M)
+	,user:use_module(P).
+
 
 
 %!	write_encapsulated_problem(+Target) is det.
