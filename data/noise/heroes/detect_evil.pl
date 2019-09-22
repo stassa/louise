@@ -21,6 +21,20 @@ See hero_generator.pl for instructions on how to generate hereos.pl.
 
 */
 
+%!	noise(?Amount) is semidet.
+%
+%	The Amount of noise to add to positive examples.
+%
+%	"Noise" refers to classification noise and specifically noise
+%	in the positive examples (i.e. negative examples classified
+%	mistakenly as positive or in other words false positives).
+%
+%	Amount is a float, denoting the probability that a positive
+%	example is replaced by a negative example, when calling
+%	positive_example/2.
+%
+noise(0.1).
+
 :-dynamic m/3.
 
 configuration:metarule(double_identity,P,Q,R,Y,Z,D):-m(P,X,Y),m(Q,X,Z),m(R,X,D).
@@ -34,8 +48,20 @@ background_knowledge(alignment/2, BK):-
 
 metarules(alignment/2,[double_identity]).
 
+% Positive examples generator with added noise.
 positive_example(alignment/2,alignment(Id, evil)):-
-	alignment(Id, evil).
+	noise(P)
+	,findall(alignment(Id, evil)
+		,alignment(Id, evil)
+		,Es)
+	,p_list_partitions(P,Es,Ns,Cs)
+	,length(Ns, N)
+	,findall(E
+		,negative_example(alignment/2,E)
+		,Es_)
+	,k_list_samples(N,Es_,Es_neg)
+	,append(Cs,Es_neg,Es_all)
+	,member(alignment(Id, evil), Es_all).
 
 negative_example(alignment/2,alignment(Id, evil)):-
 	hero_attributes(Id,_As)
