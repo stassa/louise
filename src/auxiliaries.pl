@@ -269,10 +269,17 @@ initialise_experiment:-
 %	re-load any necessary clauses.
 %
 cleanup_experiment:-
+	% Retract encapsulated examples, BK and metarule clauses.
 	forall(user:current_predicate(m,H)
 	      ,(user:retractall(H)
 	       % Clauses in program module are asserted
 	       % by predicates in program_reduction module
+	       ,program:retractall(H)
+	       )
+	      )
+	% Retract encapsulated clauses of predicates in BK closure.
+	,forall(user:current_predicate(p,H)
+	      ,(user:retractall(H)
 	       ,program:retractall(H)
 	       )
 	      ).

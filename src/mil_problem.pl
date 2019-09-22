@@ -382,14 +382,114 @@ encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
 %
 %	Encapsulate a list of Background definitions.
 %
-encapsulated_bk(BK,BK_flat):-
+encapsulated_bk(BK,Es):-
 	closure(BK, user, Ps)
 	,findall(Cs_
 	       ,(member(Cs, Ps)
 		,encapsulated_clauses(Cs,Cs_)
 		)
-	       ,BK_)
-	,flatten(BK_, BK_flat).
+	       ,Es_)
+	,flatten(Es_, Fs)
+	,hide_bk_closure(Fs,BK,Es).
+
+
+%!	hide_bk_closure(+Closure,+Signature,-Hidden) is det.
+%
+%	Hide programs in the BK's Closure from the learning process.
+%
+%	Encapsulating the clauses of predicates in the BK and predicates
+%	in the closure of predicates in the BKusing the same
+%	encapsulation predicate makes it impossible to separate the
+%	symbols in the BK, that should be used in the clauses of a
+%	hypothesis, from the symbols in the BK's closure, that should
+%	not.
+%
+%	The solution implemented in this predicate is to encapsulate the
+%	clauses of predicates in the BK and the predicates in its
+%	closure using different encapsulation predicates in a
+%	post-processing step, i.e. after everything has already been
+%	encapsulated using the BK encapsulation predicate.
+%
+%	Specifically, the BK encapsulation symbol is 'm' and the
+%	BK-closure encapsulation symbol is 'p'.
+%
+%	The result of "hiding" the BK's closure in this way can be seen
+%	with list_encapsulated_problem/1.
+%
+%	@tbd Now that there are two encapsulation predicates,
+%	hard-coding them throughout the code, as is currently done, is
+%	just begging for bugs. The two encapsulation predicates should
+%	be formally defined as such, i.e. with a predicate
+%	encapsulation_predicate(Purpose, Symbol) or some such, and
+%	obtained from this predicate wherever needed.
+%
+%	@tbd Encapsulating non-BK predicates in a post-processing step
+%	once they've all been encapsulated using the BK encapsulation
+%	predicate already is ... not optimal. It will take a bit of work
+%	maybe to add a couple of arguments to encapsulated_clause/2 etc
+%	to select the encapsulation predicate during the initial
+%	encapsulation step- but that's the best way to do it.
+%
+hide_bk_closure(Cs,PS,Cs_):-
+	hide_bk_closure(Cs,PS,[],Cs_).
+
+%!	hide_bk_closure(+Closure,+Signature,+Acc,-Hidden) is det.
+%
+%	Business end of hide_bk_closure/3.
+%
+hide_bk_closure([],_PS,Acc,Cs):-
+	sort(Acc,Cs)
+	,!.
+hide_bk_closure([C|Cs],PS,Acc,Bind):-
+	hide_clause(C,PS,C_)
+	,hide_bk_closure(Cs,PS,[C_|Acc],Bind).
+
+
+%!	hide_clause(+Clause,+Signature,-Hidden) is det.
+%
+%	Hide non-BK literals in a Clause.
+%
+%	Clause is an encapsulated clause of a BK predicate.
+%
+%	The encapsulation predicate of literals in Clause whose symbol
+%	is not in Signature is changed to the encapsulation predicate of
+%	the BK closure, rather than the BK encapsulation predicate.
+%
+hide_clause(C,PS,C_):-
+	clause_literals(C,Ls)
+	,hide_literals(Ls,PS,[],Ls_)
+	,once(list_tree(Ls_,T))
+	,(   T = (H,B)
+	 ->  C_ = (H:-B)
+	 % T is an atom
+	 ;   T \== (_,_)
+	 ->  C_ = T
+	 ).
+
+
+%!	hide_literals(+Literals,+Signature,+Acc,-Hidden) is det.
+%
+%	Hide non-BK Literals
+%
+%	Literals is a list of encapsulated literals in a clause
+%	processed by hide_clause/3.
+%
+%	Each literal in Literals is "hidden" from the learning process
+%	by replacing its encapsulation predicate with the closure
+%	encapsulation predicate.
+%
+hide_literals([],_PS,Acc,Ls):-
+	reverse(Acc,Ls)
+	,!.
+hide_literals([L|Ls],PS,Acc,Bind):-
+	L =.. [m,F|As]
+	,length(As,A)
+	,\+ memberchk(F/A,PS)
+	,!
+	,L_ =.. [p,F|As]
+	,hide_literals(Ls,PS,[L_|Acc],Bind).
+hide_literals([L|Ls],PS,Acc,Bind):-
+	hide_literals(Ls,PS,[L|Acc],Bind).
 
 
 
