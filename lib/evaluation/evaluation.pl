@@ -75,10 +75,13 @@ train_and_test(T,S,Ps,M,V):-
 train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
 	train_test_splits(S,Pos,Pos_Train,Pos_Test)
 	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
-	,learn(Pos_Train,Neg_Train,BK,MS,Ps)
+	,(   learn(Pos_Train,Neg_Train,BK,MS,Ps)
+	 ->  true
+	 ;   Ps = []
+	 )
 	,program_results(T,Ps,BK,Rs)
 	,evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
-	,metric(M,Cs,V).
+	,once(metric(M,Cs,V)).
 
 
 
