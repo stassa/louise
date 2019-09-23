@@ -21,7 +21,7 @@
 
 :-user:use_module(src(experiment_file)).
 :-reexport(lib(program_reduction/reduction_configuration),
-	   except([derivation_depth/1								  ,resolutions/1])).
+	   except([resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
 :-reexport(lib/sampling/sampling_configuration).
 
@@ -85,22 +85,6 @@
 %:-debug(top). % Debug Top program construction.
 %:-debug(reduction). % Debug Top program construction.
 %:-debug(episodic). % Debug episodic learning.
-
-
-%!	derivation_depth(?Depth) is semidet.
-%
-%	Maximum depth of derivation branches.
-%
-%	Used in program_reduction module with solve_to_depth/3 and
-%	solve_to_limit/4 meta-interpreters.
-%
-%derivation_depth(3).
-%derivation_depth(5).
-%derivation_depth(8).
-derivation_depth(9).
-%derivation_depth(10).
-%derivation_depth(20).
-%derivation_depth(5000).
 
 
 %!	experiment_file(?Path,?Module) is semidet.
