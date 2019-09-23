@@ -1,4 +1,5 @@
-:-module(auxiliaries, [load_experiment_file/0
+:-module(auxiliaries, [set_configuration_option/2
+		      ,load_experiment_file/0
 		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
 		      ,learning_targets/1
@@ -23,6 +24,41 @@
 :-user:use_module(lib(program_reduction/program_reduction)).
 :-user:use_module(lib(mathemancy/mathemancy)).
 :-use_module(src(mil_problem)).
+
+
+%!	set_configuration_option(+Option,+Value) is det.
+%
+%	Change the Value of a configuration Option.
+%
+%	Option is an atom, the name of a configuration option defined in
+%	(or exported to) module configuration.
+%
+%	Value is the set of the arguments of Option. Iff Option has a
+%	single argument, Value can be a single atomic constant.
+%	Otherwise, it must be a list.
+%
+%	set_configuration_option/2 first retracts _all_ clauses of the
+%	named Option, then asserts a new clause with the given Value.
+%
+%	Only configuration options declared as dynamic can be changed
+%	using set_configuration_option/2. Attempting to change a static
+%	configuration option will raise a permission error.
+%
+%	@tbd This predicate cannot change configuration options with
+%	multiple clauses (or at least can't change any but their first
+%	clause). Such functionality may or may not be necessary to add.
+%
+set_configuration_option(N, V):-
+	atomic(V)
+	,!
+	,set_configuration_option(N,[V]).
+set_configuration_option(N, Vs):-
+	length(Vs, A)
+	,functor(T,N,A)
+	,T_ =.. [N|Vs]
+	,retractall(configuration:T)
+	,assert(configuration:T_).
+
 
 
 %!	load_experiment_file is det.
