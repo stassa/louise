@@ -26,6 +26,16 @@
 :-reexport(lib/sampling/sampling_configuration).
 
 
+% Dynamic configuration options can be manipulated
+% by means of set_configuration_option/2 in module auxiliaries.
+:- dynamic extend_metarules/1
+          ,recursion_depth_limit/2
+	  ,recursive_reduction/1
+	  ,reduction/1
+	  ,resolutions/1
+	  ,theorem_prover/1.
+
+
 % Body literals of H(2,2) metarules.
 :-dynamic m/1
          ,m/2
@@ -105,6 +115,7 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/kinship/kinship.pl',kinship).
 %experiment_file('data/robots/robots.pl',robots).
 %experiment_file('data/robots/generator/robots_gen.pl',robots_gen).
+%experiment_file('data/noise/heroes/detect_evil.pl',detect_evil).
 
 
 %!	extend_metarules(?Extend) is semidet.
@@ -161,7 +172,9 @@ metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
 metarule(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
 metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
 metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
-
+% Used in noise/heroes/detect_evil.pl
+% Added here for Thelma compatibility
+metarule(double_identity,P,Q,R,Y,Z,D):-m(P,X,Y),m(Q,X,Z),m(R,X,D).
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
 %
