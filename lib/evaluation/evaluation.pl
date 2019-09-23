@@ -1,5 +1,7 @@
 :-module(evaluation, [train_and_test/5
 		     ,train_and_test/6
+		     ,timed_train_and_test/6
+		     ,timed_train_and_test/7
 		     ,print_evaluation/3
 		     ,print_evaluation/7
 		     ,list_results/3
@@ -50,20 +52,21 @@ train_and_test(T,S,Ps,M,V):-
 
 
 
-%!	train_and_test(+Target,+Sample,+Pos,+Neg,+BK,+MS,-Prog,+Metric,-Val)
+%!	train_and_test(+Target,+Sample,+Problem,-Prog,+Metric,-Val)
 %!	is det.
 %
-%	Learn a hypothesis and print out evaluation results.
+%	Learn a Program and evaluate the results by the given Metric.
 %
 %	Sample is the size of the training partition for each of the
 %	positive and negative examples, as a float between 0 and 1.0 or
 %	as an integer. The testing partition is the complement of Sample
 %	with respect to the entire set of positive or negative examples.
 %
-%	Pos, Neg, BK and MS are the example atoms, background knowledge
-%	symbols and arities and metarule names of a MIL problem.
+%	Problem is a list [Pos, Neg, BK, MS] whose elements are the
+%	elements of a MIL problem: example atoms, background knowledge
+%	symbols and arities and metarule names of the MIL problem.
 %
-%	Prog is the program learned from the given MIL problem.
+%	Prog is the program learned from the given Problem.
 %
 %	Metric is one of: [acc, err, fpr, fnr, tpr, tnr, pre, fsc],
 %	corresponding to the metrics calculated by evaluation/6.
@@ -79,6 +82,48 @@ train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
 	 ->  true
 	 ;   Ps = []
 	 )
+	,program_results(T,Ps,BK,Rs)
+	,evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
+	,once(metric(M,Cs,V)).
+
+
+
+%!	timed_train_and_test(+Target,+Sample,+Limit,-Program,+Metric,-Value)
+%!	is det.
+%
+%	Learn a Program and evaluate it by the requested Metric.
+%
+%	As train_and_test/5 by additionally imposes a time Limit of that
+%	many seconds to learning.
+%
+%	This version obtains the MIL problem (examples, BK and
+%	metarules) from the current experiment file.
+%
+timed_train_and_test(T,S,L,Ps,M,V):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V).
+
+
+
+%!	timed_train_and_test(+Target,+Limit,+Sample,+Problem,-Prog,+Metric,-Val)
+%!	is det.
+%
+%	Learn a program and evaluate the results by the given Metric.
+%
+%	As train_and_test/6 but additionally, a time Limit of that many
+%	seconds is imposed on learning. If learning does not complete
+%	(successfully or not) in Limit seconds, the empty hypothesis is
+%	ealuated as the result of learning.
+%
+timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V):-
+	train_test_splits(S,Pos,Pos_Train,Pos_Test)
+	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
+	,G = (   learn(Pos_Train,Neg_Train,BK,MS,Ps)
+	     ->  true
+	     ;   Ps = []
+	     )
+	,C = call_with_time_limit(L,G)
+	,catch(C,time_limit_exceeded,(Ps=[]))
 	,program_results(T,Ps,BK,Rs)
 	,evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
 	,once(metric(M,Cs,V)).
