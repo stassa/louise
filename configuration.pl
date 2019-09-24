@@ -97,6 +97,7 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/special_metarules.pl',special_metarules).
 %experiment_file('data/mtg/mtg_fragment.pl',mtg_fragment).
 %experiment_file('data/examples/kinship/kinship.pl',kinship).
+%experiment_file('data/examples/kinship/kinship_accuracy.pl',kinship_accuracy).
 %experiment_file('data/robots/robots.pl',robots).
 %experiment_file('data/robots/generator/robots_gen.pl',robots_gen).
 %experiment_file('data/noise/heroes/detect_evil.pl',detect_evil).

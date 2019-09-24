@@ -19,6 +19,9 @@
 
 /** <module> Evil alignment detector for auto-generated heroes dataset.
 
+Hero data is loaded from heroes.pl. See hero_generator.pl for
+instructions on how to generate hereos.pl.
+
 Contents of this file
 =====================
 
@@ -32,20 +35,18 @@ Contents of this file
 The strings in square braces in the TOC above can be used to search for
 the relevant sections
 
-Hero data is loaded from heroes.pl. See hero_generator.pl for
-instructions on how to generate hereos.pl.
-
-The instructions in the section immediately following are for a simple
-learning attempt, which is not particularly interesting, given that the
-problem is a bog-standard binary classification problem that any
-propositional learner can solve easily.
-
-The subsequent section instead documents the more interesting experiment
-defined in this file that measures the performance of Thelma and Louise
-on a dataset with classification noise.
-
 Training instructions for simple learning attempt
 =================================================
+
+The instructions in this section are for a simple learning attempt,
+which is not particularly interesting, given that the problem is a
+bog-standard binary classification problem that any propositional
+learner can solve easily.
+
+The section immediately following instead documents the more interesting
+experiment defined in this file that measures the performance of Thelma
+and Louise on a dataset with classification noise.
+
 
 1.  Set the noise option to 0:
 
