@@ -1,4 +1,5 @@
-:-module(auxiliaries, [set_configuration_option/2
+:-module(auxiliaries, [same_metarule/2
+		      ,set_configuration_option/2
 		      ,load_experiment_file/0
 		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
@@ -24,6 +25,75 @@
 :-user:use_module(lib(program_reduction/program_reduction)).
 :-user:use_module(lib(mathemancy/mathemancy)).
 :-use_module(src(mil_problem)).
+
+
+%!	same_metarule(+Metarule1,+Metarule2) is det.
+%
+%	True when Metarule1 and Metarule2 are identical.
+%
+%	To compare the two metarules, first they are skolemised using
+%	numbervars/1, then their head and body literals are compared.
+%
+%	This predicate is useful for debugging experiment files, in
+%	particular when metarule extension is turned on. Extended
+%	metarules can become too long to easily read and compare by the
+%	naked eye.
+%
+%	Example of use
+%	==============
+%	The query below compares metarules expanded from an initial set
+%	of chain and inverse to the un-expanded chain metarule. The
+%	chain metarule itself is in the output of expanded_metarules/2
+%	so the query is true once.
+%
+%	==
+%	?- _Sub1 = metarule(chain,_P,_Q,_R)
+%	,clause(_Sub1, _MB), _M1 = (_Sub1:-_MB)
+%	,expanded_metarules([chain,inverse], _Ms)
+%	, member(_M2, _Ms), same_metarule(_M1, _M2), print_clauses([_M2,_M1]).
+%	m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E).
+%	metarule(chain,A,B,C):-configuration:(m(A,D,E),m(B,D,F),m(C,F,E)).
+%	true ;
+%	false.
+%	==
+%
+same_metarule(M1,M2):-
+	skolem_copy(M1,M1_)
+	,skolem_copy(M2,M2_)
+	,M1_ = M2_
+	,!.
+same_metarule(M1,M2):-
+	skolem_copy(M1,M1_)
+	,skolem_copy(M2,M2_)
+	,metarule_head_body_name(M1_,Sub,B,Id)
+	,metarule_head_body_name(M2_,Sub,B,Id).
+
+
+%!	skolem_copy(+Term,-Skolemised) is det.
+%
+%	Copy and skolemise a Prolog Term.
+%
+%	Term is an arbitrary Prolog term and Skolemised is a copy of
+%	this Term with variables replaced by numbered constants with
+%	varnumbers/1. Skolemised is copied before passing it to
+%	numbervars so the variables in Term remain unaffected by the
+%	skolemisation.
+%
+skolem_copy(T,T_):-
+	copy_term(T,T_)
+	,numbervars(T_).
+
+
+%!	metarule_head_body_name(+Metarule,-Metasubstitution,-Body,-Id) is det.
+%
+%	Extract a metarule's Metasubstitution and Body literals and Id.
+%
+metarule_head_body_name(M,Sub_,B_,Id):-
+	M = (Sub:-B)
+	,strip_module(B,_M,B_)
+	,Sub =.. [_F,Id|Ps]
+	,Sub_ =.. [m,Id|Ps].
+
 
 
 %!	set_configuration_option(+Option,+Value) is det.
