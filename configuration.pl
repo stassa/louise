@@ -157,9 +157,26 @@ metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
 metarule(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
 metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
 metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
+% H22 metarules redundnant given chain and inverse.
+% To avoid proliferation of vaguely descriptive names these are named
+% by their firts-order, universally quantified variables.
+% identity and switch are also in this set (but they are already named)
+metarule(xy_xy_xy,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,X,Y).
+metarule(xy_xy_yx,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y,X).
+%metarule(xy_xz_yz,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z). % switch
+metarule(xy_yx_xy,P,Q,R):- m(P,X,Y), m(Q,Y,X), m(R,X,Y).
+metarule(xy_yx_yx,P,Q,R):- m(P,X,Y), m(Q,Y,X), m(R,Y,X).
+metarule(xy_yz_xz,P,Q,R):- m(P,X,Y), m(Q,Y,Z), m(R,X,Z).
+metarule(xy_yx_zx,P,Q,R):- m(P,X,Y), m(Q,Y,Z), m(R,Z,X).
+metarule(xy_zx_yz,P,Q,R):- m(P,X,Y), m(Q,Z,X), m(R,Y,Z).
+metarule(xy_zx_zy,P,Q,R):- m(P,X,Y), m(Q,Z,X), m(R,Z,Y).
+metarule(xy_zy_xz,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,X,Z).
+metarule(xy_zy_zx,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,Z,X).
+
 % Used in noise/heroes/detect_evil.pl
 % Added here for Thelma compatibility
 metarule(double_identity,P,Q,R,Y,Z,D):-m(P,X,Y),m(Q,X,Z),m(R,X,D).
+
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
 %
