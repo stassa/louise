@@ -63,7 +63,8 @@ write_dataset:-
 	,flatten(Hs, Hs_f)
 	,sort(Hs_f, Hs_s)
 	,open(P,write,S,[alias(heroes_dataset)])
-	,format(S,':-module(heroes, ~w).~n~n',[Es])
+	,format(S,':-module(heroes, ~w).~n~n',[[alignment/2|Es]])
+	,format(S,':-dynamic alignment/2.~n~n',[])
 	,write_atoms(S,Hs_s)
 	,close(S).
 
@@ -103,7 +104,7 @@ heroes(Hs):-
 		)
 	       ,As_)
 	% Add hero ids to attribute terms.
-	,findall(Hs_Id
+	,findall(Hs_Id_
 		,(nth1(Id,As_,As_Id)
 		 ,findall(A_Id_
 			 ,(member(A_Id, As_Id)
@@ -111,8 +112,10 @@ heroes(Hs):-
 			  ,A_Id_ =.. [F,Id,A]
 			  )
 			 ,Hs_Id)
+		 ,alignment(Hs_Id, Hs_Id_)
 		 )
 		,Hs).
+
 
 
 %!	instantiate(:Attributes) is nondet.
@@ -124,6 +127,31 @@ instantiate([]):-
 instantiate([A|As]):-
 	call(A)
 	,instantiate(As).
+
+
+%!	alignment(+Hero, -Aligned) is det.
+%
+%	Determine a Hero's good or evil alignment.
+%
+%	Hero is a list of a hero's attributes. Aligned is the same list
+%	with an alignment atom prepended. An alignment atom is an atom
+%	alignement(Id, A) where A is the hero's alingment, one of [good,
+%	evil].
+%
+alignment(Hs,[alignment(Id,evil)|Hs]):-
+	memberchk(class(Id,knight),Hs)
+	,memberchk(honour(Id,dishonourable),Hs)
+	,!.
+alignment(Hs,[alignment(Id,evil)|Hs]):-
+	memberchk(class(Id,raider),Hs)
+	,memberchk(kills(Id,scourge),Hs)
+	,!.
+alignment(Hs,[alignment(Id,evil)|Hs]):-
+	memberchk(class(Id,priest),Hs)
+	,memberchk(faith(Id,faithless),Hs)
+	,!.
+alignment(Hs,[alignment(Id,good)|Hs]):-
+	memberchk(class(Id,_),Hs).
 
 
 

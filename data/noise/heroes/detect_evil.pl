@@ -20,7 +20,7 @@
 /** <module> Evil alignment detector for auto-generated heroes dataset.
 
 Hero data is loaded from heroes.pl. See hero_generator.pl for
-instructions on how to generate hereos.pl.
+instructions on how to generate heroes.pl.
 
 Contents of this file
 =====================
@@ -32,8 +32,8 @@ Contents of this file
 5. MIL problem           [mil_problem]
 6. Auxiliary predicates  [auxiliary_preds]
 
-The strings in square braces in the TOC above can be used to search for
-the relevant sections
+The strings in square braces in the TOC above can be used to search for,
+and so jump to, the relevant sections in this file.
 
 Training instructions for simple learning attempt
 =================================================
@@ -46,7 +46,6 @@ learner can solve easily.
 The section immediately following instead documents the more interesting
 experiment defined in this file that measures the performance of Thelma
 and Louise on a dataset with classification noise.
-
 
 1.  Set the noise option to 0:
 
@@ -78,12 +77,14 @@ sample_size/1. Classification Error is used to evaluate learned
 hypotheses.
 
 ==
-?- _T = alignment/2, _M = err, _K = 10,detect_evil:noise_interval(0,9,1,_Ps),detect_evil:learning_rates(_T,_M,_K,_Ps,_Ms,_SDs).
+?- _T = alignment/2, _M = err, _K = 10, detect_evil:noise_interval(0,9,1,_Ps), detect_evil:learning_rates(_T,_M,_K,_Ps,_Ms,_SDs).
 ==
 
 Results of the experiment are logged to a file placed in the directory
 logs/heroes/ and with a filename starting with the string
-"detect_evil_err_" followed by a timestamp.
+"detect_evil_err_" followed by a timestamp. The full path to the log
+file is determined by the local configuration option dataset_filename/1
+(in heroes_configuration.pl).
 
 Logging results include two R vectors, one for means and one for
 standard deviations, of the FNR metric, of all learning attempts in each
@@ -96,17 +97,19 @@ Motivation
 
 This experiment file is meant to compare the performance of Thelma and
 Louise in the presence of classification noise, specifically,
-misclassified negative examples, i.e. negative examples also appearing
-in the set of positive examples.
+misclassified negative examples, i.e. negative examples labelled as
+positive.
 
 The expected result is that Louise will handle noise by including any
-misclassified examples encountered during training in the learned
-hypothesis as "exceptions" to the rules in the hypothesis. Conversely,
-Thelma will simply fail to learn because of its strict hypothesis
-validation that accepts only hypotheses that cover all positive and no
-negative examples. The larger the sample size used for training, the
-more often misclassified examples will be encountered and, consequently,
-the more often Thelma should fail to learn.
+misclassified negative examples encountered during training in the
+learned hypothesis as "exceptions" to the rules in the hypothesis.
+Conversely, Thelma will simply fail to learn because of its strict
+hypothesis validation that accepts only hypotheses that cover all
+positive and no negative examples (such a hypothesis is not possible to
+construct given misclassified examples- of any sign). The larger the
+sample size used for training, the more often misclassified examples
+will be encountered and, consequently, the more often Thelma should fail
+to learn.
 
 Unbalanced classes
 ==================
@@ -120,11 +123,9 @@ resulting in a misleadingly high accuracy score (when a learning attempt
 fails, the learned hypothesis evaluated is the empty hypothesis, which
 rejects everything).
 
-To avoid such confusing results, this experiment file defines an
-uncommon example generator for both positive and negative examples that
-ensures their numbers are equal. This examples generator, examples/2, is
-private and only used through the experiment file interface predicates,
-positive_example/2 and negative_example/2.
+To avoid such confusing results, this experiment file defines a class
+balancing predicate, balance/5. Refer to that predicate for more details
+on class balancing.
 
 */
 
@@ -133,8 +134,14 @@ positive_example/2 and negative_example/2.
 %:-edit(hero_generator).
 %:-edit(heroes_configuration).
 
+% Declared dynamic to allow manipulation by learning_rate/7.
 :-dynamic noise/1.
 
+% Declared dynamic to avoid warnings in misclassify/0.
+% alignment/2 is defined in heroes.pl and alignment.pl
+% but not found until those are loaded, or after the definitions in
+% heroes.pl removed by miclassify/0.
+%:-dynamic alignment/2.
 
 
 %[experiment_settings]
@@ -174,14 +181,13 @@ noise(0.0).
 %
 %	Learning rate experiments defined in this file are meant to
 %	compare the behaviour of Louise and Thelma in the presence of
-%	classification noise in the form of negative examples also
-%	included in the set of positive examples. For such experiments
-%	only the noise amount (i.e. the proportion of misclassified
-%	positive examples with respect to the total number of positive
-%	examples) must vary so the sample size is a constant throughout
-%	each experiment step. Therefore, this option is not dynamic,
-%	unlike noise/1 which must be manipulated during experiment
-%	execution.
+%	classification noise in the form of negative examples added to
+%	the set of positive examples. For such experiments only the
+%	noise amount (i.e. the proportion of misclassified positive
+%	examples with respect to the total number of positive examples)
+%	must vary so the sample size is a constant throughout each
+%	experiment step. Therefore, this option is not dynamic, unlike
+%	noise/1 which must be manipulated during experiment execution.
 %
 sample_size(0.5).
 
@@ -345,7 +351,7 @@ learning_rates(T,M,K,Ps,Ms,SDs):-
 %
 %	Business end of learning_rates/6.
 %
-%	Limit is the time limit define din time_limit/1. This is used to
+%	Limit is the time limit defined in time_limit/1. This is used to
 %	limit the time a learning attempt is allowed to continue for.
 %
 %	Results is a list of lists of length equal to Samples, where
@@ -361,6 +367,7 @@ learning_rate(T,M,K,S,L,Ps,Rs):-
 			 ,set_noise_amount(P)
 			 ,debug(progress,'Set noise amount to: ~w',[P])
 			 ,debug(detect_evil,'Set noise amount to: ~w',[P])
+			 ,misclassify
 			 % Soft cut to stop Thelma backtracking
 			 % into multiple learning steps.
 			 ,once(timed_train_and_test(T,S,L,Prog,M,V))
@@ -465,77 +472,207 @@ background_knowledge(alignment/2, BK):-
 
 metarules(alignment/2,[double_identity]).
 
-% Positive examples generator with added noise.
 positive_example(alignment/2,alignment(Id, evil)):-
-	examples(Pos,_)
-	,member(alignment(Id, evil),Pos).
+	alignment(Id, evil).
 
 negative_example(alignment/2,alignment(Id, evil)):-
-	examples(_,Neg)
-	,member(alignment(Id, evil),Neg).
+	alignment(Id, good).
 
 
-%!	examples(-Positive, -Negative) is det.
+%!	save_alignments is det.
 %
-%	Generator for positive and negative examples.
+%	Save true alignment to a file.
 %
-%	This predicate performs two uncommon functions, specific to this
-%	experiment:
+%	This copies all the alignment/2 atoms from the auto-generated
+%	dataset in heroes.pl to a file alingment.pl. This keeps them
+%	safe from misclassify/0 so they can be restored to their
+%	original form later.
 %
-%	a) It generates equal numbers of positive and negative examples.
+%	Note that this predicate is called as a directive whenever this
+%	file is loaded. The directive is directly below this definition.
 %
-%	b) It adds classification noise to the positive examples.
+%	See misclassified/0 for an explanation of how alignments are
+%	manipulated dynamically and why restoring them from a static
+%	source is well, sort of necessary.
 %
-%	(a) is performed by generating a set of positive examples, a
-%	set of negative examples, and then selecting a subset of the
-%	negative examples equal in size to the set of positive examples.
+save_alignments:-
+	(   is_stream(alignment_set)
+	->  close(alignment_set)
+	;   true
+	)
+	,findall(alignment(Id,A)
+	       ,alignment(Id,A)
+	       ,As)
+	,open('data/noise/heroes/alignment.pl',write,S,[alias(alignment_set)])
+	,format(S,':-module(alignment, []).~n~n',[])
+	,format(S,':-dynamic alignment/2.~n~n',[])
+	,forall(member(A,As)
+	       ,write_term(S,A,[fullstop(true)
+			       ,nl(true)
+			       ]
+			  )
+	       )
+	,close(S).
+
+% Keep true alignment information safe from misclassify/0.
+% See save_alignments/0 and misclassify/0 defined in this file.
+:-save_alignments.
+
+
+%!	misclassify is det.
 %
-%	Generating equal numbers of positive and negative examples
-%	assumes that the negative examples are more numerous. This
-%	assumption may well fail, depending on the configuration options
-%	for the hero geneator.
+%	Add classification noise to positive examples.
 %
-%	(b) is performed by discarding a proportion of the positive
-%	examples equal to the noise amount in noise/1 and replacing them
-%	with an equal number of negative examples.
+%	This predicate dynamically manipulates the Herbrand base of
+%	alignment/2, i.e. the positive and negative examples of the
+%	target predicate for the learning rate experiments defined in
+%	the experiment_code section.
 %
-examples(Pos,Neg):-
+%	Examples of alingment/2 are atoms of the form alignment(Id,
+%	Alignment) where Id is the Id of a hero, and Alignment is one of
+%	[good,evil]. alignment/2 atoms where Alignment is "evil" are
+%	positive examples for the detect_evil/2 task, whereas atoms
+%	where Alignment is "good" are negative examples.
+%
+%	misclassify/0 adds classification noise only to the _positive_
+%	examples of alignment/2. It does this by selecting P _negative_
+%	examples, at random and without replacement, and changing their
+%	second argument from "good" to "evil", thereby turning them
+%	into false positives. The original negative examples are then
+%	removed from the set of clauses of alignment/2 in the dynamic
+%	database, and the false positives are added in. The amount of
+%	noise, P, is taken from noise/1 defined in the
+%	experiment_settings section.
+%
+%	misclassify/0 also ensures that the set of positive and negative
+%	examples of alignment/2 are balanced, in the sense that there is
+%	an equal number of positive and negatives. This is achieved with
+%	a call to balance/5. The purpose of balancing the numbers of two
+%	sets of examples is to avoid misleading accuracy measurements
+%	when learning fails and the empty hypothesis is returned. The
+%	empty hypothesis rejects all negative examples and so has a
+%	maximal false positive rate. Although all positive examples are
+%	also rejected, therefore the false negative rate is also
+%	maximal, when there are many fewer positive than negative
+%	examples, the overall rate of misclassifications, measured by
+%	the accuracy metric (or its complement, error) is very high.
+%
+%	Resetting alignments
+%	====================
+%
+%	The dynamic manipulation of the definition of alignment/2, as
+%	expected, causes all sorts of headaches. In particular, it
+%	complicates the task of "resetting" the definition of
+%	alignment/2 between experiments, so that different amounts of
+%	noise can be added to the positive examples in different steps
+%	of a learning rate experiment.
+%
+%	For this reason, the original definition of alignment/2, as
+%	defined in the auto-generated dataset in heroes.pl, is copied
+%	from heroes.pl to a file alignment.pl (in the same directory as
+%	this file). This file is loaded at the start of execution of
+%	misclassify/0, thereby replacing all alingment/2 atoms with
+%	their original definition.
+%
+%	@tbd The dynamic database is EVIL.
+%
+misclassify:-
 	noise(P)
-	,findall(alignment(Id, evil)
-	       ,alignment(Id, evil)
-	       ,Pos_)
-	,findall(alignment(Id, evil)
-		,good(Id)
-		,Neg_)
-	,misclassified(P,Pos_,Neg_,Pos)
-	,length(Pos,K)
-	,k_list_samples(K,Neg_,Neg).
+	,use_module(data(noise/heroes/alignment))
+	,findall(alignment(Id,evil)
+	       ,alignment:alignment(Id,evil)
+	       ,Pos)
+	,findall(alignment(Id,good)
+	       ,alignment:alignment(Id,good)
+	       ,Neg)
+	,(   P =:= 0
+	 ->  Replaced = []
+	    ,True_Pos = Pos
+	 ;   p_list_partitions(P,Pos,Replaced,True_Pos)
+	 )
+	,length(Replaced,K)
+	,misclassified(K,Neg,good/evil,False_Pos,True_Neg)
+	,balance(True_Pos,True_Neg,False_Pos,Pos_,Neg_)
+	,flatten([Pos_,Neg_],Es)
+	,retractall(heroes:alignment(_,_))
+	,forall(member(E,Es)
+	       ,assert(heroes:E)
+	       ).
 
 
-%!	misclassified(+P,+Positive,+Negative,-Misclassified) is det.
+%!	misclassified(+K,+Examples,+Signs,-False,-True) is det.
 %
-%	Replaces a proportion P of Positive examples with Negative ones.
+%	Misclassify a partition of K elements of a set of Examples.
 %
-misclassified(P,Pos,Neg,Pos_):-
-	P_ is 1 - P
-	,p_list_samples(P_,Pos,Pos_true)
-	,length(Pos, N)
-	,length(Pos_true, M)
-	,K is N	- M
-	,k_list_samples(K,Neg,Pos_false)
-	,append(Pos_true,Pos_false,Pos_).
+%	Examples is a list of examples of alignment/2. In particular,
+%	it's the set of alignment/2 atoms read from the file
+%	alignment.pl that stores the "true" alignments in heroes.pl.
+%
+%	K is an integer, the number of Examples that are to be
+%	misclassified.
+%
+%	Signs is a term T/F, where T the "true" alignment that must be
+%	changed and F the false alignment to which T must be changed.
+%	For the purpose of misclassifying positive examples of the
+%	detect_evil/2 task, T/F is good/evil, resulting in the change of
+%	"good" to "evil" in the second argument of some alignment/2
+%	atoms in Examples.
+%
+%	misclassified/4 splits Examples into two partitions, False and
+%	True. False holds a proportion of atoms in Examples equal to P,
+%	where P is taken from the argument of noise/1 (defined in
+%	section experiment_settings). True holds the remaining atoms.
+%
+%	Each of the elements of False is misclassified by "flipping" its
+%	alignment term, from T to F. In particular, for the purpose of
+%	misclassifying negative examples of the detect_evil/2 task as
+%	positive, an atom alignment(Id, T) in Examples is replaced by an
+%	atom alignment(Id, F) in False, where T is "good" and F is
+%	"evil".
+%
+misclassified(_,Es,_,[],Es):-
+	noise(P)
+	,P =:= 0
+	,!.
+misclassified(K,Es,T/F,False,True):-
+	k_list_partitions(K,Es,False_,True)
+	,findall(alignment(Id,F)
+		,(member(alignment(Id,T),False_)
+		 %,format('Misclassifying ~w~n',[Id])
+		 )
+		,False).
 
 
-% Target theory, also used to generate positive examples.
-alignment(Id,evil):- class(Id, knight), honour(Id, dishonourable).
-alignment(Id,evil):- class(Id, raider), kills(Id, scourge).
-alignment(Id,evil):- class(Id, priest), faith(Id, faithless).
+%!	balance(+Pos,+Neg,-False_Positive,-True_Positive,-True_Negative)
+%!	is det.
+%
+%	Balance the numbers of a set of positive and negative examples.
+%
+%	Pos and Neg are lists of true positive and negative examples.
+%
+%	False_Positive is a list of false positives, produced by
+%	misclassified/5. True_Positive is the concatenation of Pos and
+%	False_Positive. True_Negative is a list of elements of Neg of
+%	length equal to True_Positive and with elements selected at
+%	random and without replacement.
+%
+%	In short, this predicate ensures that the sets of positive and
+%	negative examples of alingment/2 are of equal length, while
+%	including false positive "noise" to the set of positives.
+%
+balance(Pos,Neg,False_Pos,Pos_,Neg_):-
+	append(Pos,False_Pos,Pos_)
+	,length(Pos_,K)
+	,k_list_samples(K,Neg,Neg_).
 
-% Complementary theory, used to generate negative examples.
-good(Id):-
-	class(Id,_)
-	,\+ alignment(Id,_).
 
+
+% Target theory, also used to generate alignments in hero_generator.
+% Named true_alignment/2 to avoid trouble with dynamic manipulation of
+% alignment/2 in misclassify/0.
+true_alignment(Id,evil):- class(Id, knight), honour(Id, dishonourable).
+true_alignment(Id,evil):- class(Id, raider), kills(Id, scourge).
+true_alignment(Id,evil):- class(Id, priest), faith(Id, faithless).
 
 
 % [auxiliary_preds]
