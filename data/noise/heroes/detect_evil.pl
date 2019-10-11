@@ -17,6 +17,7 @@
       ,reexport(heroes)
    ).
 
+
 /** <module> Evil alignment detector for auto-generated heroes dataset.
 
 Hero data is loaded from heroes.pl. See hero_generator.pl for
@@ -189,7 +190,7 @@ noise(0.0).
 %	experiment step. Therefore, this option is not dynamic, unlike
 %	noise/1 which must be manipulated during experiment execution.
 %
-sample_size(0.5).
+sample_size(0.8).
 
 
 %!	time_limit(?Seconds) is semidet.
@@ -516,7 +517,12 @@ save_alignments:-
 
 % Keep true alignment information safe from misclassify/0.
 % See save_alignments/0 and misclassify/0 defined in this file.
-:-save_alignments.
+%:-save_alignments.
+
+:- (\+ exists_file('data/noise/heroes/alignment.pl')
+   ->  save_alignments
+   ;   true
+   ).
 
 
 %!	misclassify is det.
