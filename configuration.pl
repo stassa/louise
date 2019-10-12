@@ -19,6 +19,9 @@
 			,theorem_prover/1
 			]).
 
+% Must be loaded before experiment file to allow experiment files to
+% use set_configuration_option/2 without errors.
+:-use_module(src(auxiliaries), [set_configuration_option/2]).
 :-user:use_module(src(experiment_file)).
 :-reexport(lib(program_reduction/reduction_configuration),
 	   except([resolutions/1])).
@@ -77,7 +80,7 @@
 % the Top program for unwanted clause structures (e.g. I don't like
 % left-recursive clauses because they mess up evaluation).
 :- dynamic metarule_constraints/2.
-:-multifile metarule_constraints/2.
+:- multifile metarule_constraints/2.
 
 /* Debug levels */
 %:-debug(depth). % Debug number of clauses and invented predicates.

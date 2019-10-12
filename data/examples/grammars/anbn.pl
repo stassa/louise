@@ -35,9 +35,19 @@ start of the source code, below):
 ==
 :- set_configuration_option(extend_metarules, [1]).
 ==
+
+Note also that setting a configuration option dynamically using
+set_configuration_option/2 will _not_ reset the configuration option
+after any learning attempt. This means that subsequent learning attempts
+will retain the value of the dynamically changed option. This will
+usually not be what is expected and may well cause some confusion.
+
+For the time being the only sure-fire way to reset a configuration
+option to its original value is to edit the value of that option in the
+configuration file and then reload the configuration file with make/0.
 */
 
-:- set_configuration_option(extend_metarules, [1]).
+:- auxiliaries:set_configuration_option(extend_metarules, [1]).
 
 background_knowledge('S'/2,['A'/2,'B'/2]).
 
