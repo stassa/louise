@@ -178,6 +178,7 @@ extended_metarules(MS,Es,1):-
 	       ,Es_)
 	,flatten(Es_,Es_f)
 	,sort(1,@<,Es_f,Es_s)
+	%,Es_f = Es_s
 	,pairs_keys_values(Es_s,_Ns,Es).
 extended_metarules(MS,Es,N):-
 	integer(N)
@@ -211,7 +212,7 @@ extended_metarules_(I,N,Acc,Bind):-
 		,H_2 =.. [m,Id_2|_]
 		,format('Extending ~w by ~w~n', [Id_1,Id_2])
 		*/
-		,once(metarule_extension(M1,M2,M3))
+		,metarule_extension(M1,M2,M3)
 		)
 	       ,Ms_I)
 	,succ(I,I_)
@@ -227,26 +228,83 @@ extended_metarules_(I,N,Acc,Bind):-
 %	literal of the first metarule and the body literals of both
 %	minus the literal used to unfold one metarule on the other.
 %
-%	Unfolding two metarules involves unifying the last body literal
-%	of one metarule with the head literal of the second metarule and
+%	Unfolding two metarules involves unifying each body literal of
+%	one metarule with the head literal of the second metarule and
 %	then concatenating their body literals minus the body literal
 %	unified with the head literal of the second metarule.
 %
 metarule_extension((M1:-B1),(M2:-B2),(M3:-B3)):-
-	metasubs_extension(M1,M2,M3)
-	,unfold(B1,B2,B3).
+	C = c(0)
+	,unfold(B1,B2,B3)
+	,metasubs_extension(C,M1,M2,B3,M3).
 
 
-%!	metasubs_extension(+Metasub1,+Metasub2,+Metasub3) is det.
+%!	metasubs_extension(+Count,+Metasub1,+Metasub2,+Body,-Metasub3)
+%!	is det.
 %
-%	Create a metasubstitution for a metarule extension.
+%	Create a named metasubstitution for a metarule extension.
 %
-metasubs_extension(M1,M2,M3):-
-	M1 =.. [m,N1|Ps1]
-	,M2 =.. [m,N2|Ps2]
-	,extension_name(N1,N2,N3)
-	,list_merge(Ps1,Ps2,Ps3)
+%	Ensures that the metasubstitution atom, Metasub3, of a metarule
+%	extension has a meaningful name and the correct set of
+%	existentially quantified variables.
+%
+%	Metasub1 and Metasub2 are the metasubstitution atoms of two
+%	metarules being extended. Body is the vector of body literals of
+%	the extended metarules.
+%
+%	Count is a term c(I) used as a destructively updateable counter.
+%	I counts the number of times metasubs_extension/5 is entered on
+%	backtracking since the first binding of C, and, therefore, the
+%	number of times the same two metasubstitutions have been
+%	extended. If metasubs_extension/5 is called multiple times on
+%	backtracking, the current value of I is appended to the end of
+%	the name of the metarule extension created by extension_name/3.
+%
+%	@tbd As this entire call stack, this predicate too is insanely
+%	inefficient, repeating the same calculation multiple times etc.
+%	Perhaps use tabling? Or just find a better way to do all this.
+%
+metasubs_extension(C,M1,M2,B3,M3):-
+	M1 =.. [m,N1|_Ps1]
+	,M2 =.. [m,N2|_Ps2]
+	,extension_name(N1,N2,N)
+	,arg(1,C,I)
+	,succ(I,I_)
+	,(   I = 0
+	 ->  N3 = N
+	 ;   atomic_list_concat([N,I_],'_',N3)
+	 )
+	,nb_setarg(1,C,I_)
+	,existential_vars(B3,Ps3)
 	,M3 =.. [m,N3|Ps3].
+
+
+%!	existential_vars(+Literals,-Variables) is det.
+%
+%	Collect Existentially quantified Variables in a set of Literals.
+%
+%	Literals is a "vector" of body literals of an encapsulated
+%	metarule. Variables is a list of the their existentially
+%	quantified variables.
+%
+%	@bug Actually, this only collects existentially quantified
+%	_second order_ variables. Existentially quantified first order
+%	variables will be lost in translation.
+%
+existential_vars(Ls,Vs):-
+	existential_vars(Ls, [], Vs).
+
+%!	existential_vars(+Litearls,+Acc,-Vars) is det.
+%
+%	Business end of existential_vars/2.
+%
+existential_vars((L),Vs,[S|Vs]):-
+	L \= (_,_)
+	,L =.. [m,S|_]
+	,!.
+	existential_vars((L,Ls), Acc, [S|Bind]):-
+	L =.. [m,S|_]
+	,existential_vars(Ls,Acc,Bind).
 
 
 %!	extension_name(+Name1,+Name2,-Name) is det.
@@ -318,31 +376,31 @@ atoms_counts([B|As],[A|Acc],Bind):-
 	atoms_counts(As,[B,A|Acc],Bind).
 
 
-%!	list_merge(+Xs,+Ys,-Zs) is det.
+%!	unfold(+Metarule1,+Metarule2,-Unfolded) is nondet.
 %
-%	Merge two lists.
+%	Unfold two metarules on one another.
 %
-%	Merging here means that we discard the element at the end of the
-%	first list, the element at the start of the second list, and
-%	append the remaining elements of the two lists.
+%	Unfodling here means that we resolve the two metarules so that
+%	each of the body literals of Metarule1 is the literal resolved
+%	upon.
 %
-list_merge([_],[_|Xs],Xs).
-list_merge([X|Xs],Ys,[X|Zs]):-
-	list_merge(Xs,Ys,Zs).
-
-
-%!	unfold(+Tree1,+Tree2,-Unfolded) is det.
+%	Operatively, we take each body literal Li in Metarule1, unify
+%	it with the head literal of Metarule2 and replace Li with the
+%	body literals of Metarule2.
 %
-%	Unfold two trees on one another.
+%	This nondeterminism in this predicate comes from the consecutive
+%	resolution with each possible body literal in Metarule1.
 %
-%	Unfolding here means that we find the last literal of Tree1, the
-%	first literal of Tree2, unify them and return the concatenation
-%	of remaining literals in both trees.
+%	@tbd This is a very naive and so inefficient way to do this.
+%	There is a better way but it takes more work and I want to test
+%	that this all works as expected first.
 %
-unfold((X,Xs),Ys,(X,Zs)):-
-	unfold(Xs,Ys,Zs).
-unfold((X),(X,Xs),Xs):-
-	X \== (_,_).
+unfold(M1,M2,M):-
+	once(list_tree([H1|B1],M1))
+	,once(list_tree([H2|B2],M2))
+	,select(H2,B1,B2,B3)
+	,flatten([H1|B3], M_f),
+	once(list_tree(M_f,M)).
 
 
 
