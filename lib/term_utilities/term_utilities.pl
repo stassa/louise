@@ -11,6 +11,7 @@
 			,clause_literals/2
 			,list_tree/2
 			,treeverse/2
+			,treeppend/3
 			]).
 
 /** <modules> Prolog term inspection and manipulation.
@@ -258,3 +259,15 @@ treeverse((X,Xs),Acc,Bind):-
 	!
 	,treeverse(Xs,(X,Acc),Bind).
 treeverse(X,Ys,(X,Ys)).
+
+
+
+%!	treeppend(?Tree1,?Tree2,?Tree3) is nondet.
+%
+%	Like append/3 but for trees.
+%
+%
+treeppend((X,Xs),Ys,(X,Zs)):-
+	treeppend(Xs,Ys,Zs).
+treeppend(X,Ys,(X,Ys)):-
+	X \= (_,_).
