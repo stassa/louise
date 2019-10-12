@@ -118,6 +118,19 @@ metarule_head_body_name(M,Sub_,B_,Id):-
 %	multiple clauses (or at least can't change any but their first
 %	clause). Such functionality may or may not be necessary to add.
 %
+%	@bug Sorta bug, but if set_configuration_option/2 is used as
+%	intended, at the start of an experiment file, to set a necessary
+%	configuration option, the configuration option thus changed will
+%	remain changed until the option is changed with
+%	set_configuration_option/2 or by editing the configuration file.
+%	And note that just reloading the configuration file will not
+%	reset the option- it will just add an extra clause of it in the
+%	database, which will often cause unepxected backtracking. This
+%	may cause some confusion, for example when setting the value of
+%	extend_metarules/1 to something other than false for one
+%	experiment, which then of course affects subsequent experiments.
+%	It happened to me, it could happen to you.
+%
 set_configuration_option(N, V):-
 	atomic(V)
 	,!
