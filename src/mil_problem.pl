@@ -692,7 +692,8 @@ metarule_projection(S,H:-B):-
 %
 %	Remove encapsulation from a list of Clauses.
 %
-%	Only clauses of the Target predicate are processed- clauses of
+%	Only clauses of the Target predicate or invented predicates
+%	based on the Target predicate, are excapsulated- clauses of
 %	metarules and background definitions are dropped silently.
 %
 excapsulated_clauses(T, Cs, Cs_):-
@@ -726,10 +727,11 @@ excapsulated_clause(T,C,C_):-
 %
 excapsulated_clause(T/A,H:-Bs,Acc,Bind):-
 % Definite clause; H is the head literal.
-	H =.. [m|[T|As]]
+	H =.. [m|[S|As]]
+	,target_or_invention(T,S)
 	,length(As,A)
 	,!
-	,H_ =.. [T|As]
+	,H_ =.. [S|As]
 	,excapsulated_clause(T,Bs,[H_|Acc],Bind).
 excapsulated_clause(T,(L,Ls),Acc,Bind):-
 % Definite clause: L is the next body literal.
@@ -740,10 +742,11 @@ excapsulated_clause(T,(L,Ls),Acc,Bind):-
 excapsulated_clause(T/A,L,[],L_):-
 % Unit clause: the accumulator is empty.
 	!
-        ,L =.. [m|[T|As]]
+        ,L =.. [m|[S|As]]
+	,target_or_invention(T,S)
 	,length(As, A)
-	,ground(T)
-	,L_ =.. [T|As].
+	,ground(S)
+	,L_ =.. [S|As].
 excapsulated_clause(_T,(L),Acc,(H:-Bs)):-
 % Definite clause: L is the last literal.
 	L =.. [m|[F|As]]
@@ -751,3 +754,18 @@ excapsulated_clause(_T,(L),Acc,(H:-Bs)):-
 	,reverse([L_|Acc],Ls)
 	,once(list_tree(Ls,(H,Bs))).
 
+
+%!	target_or_invention(+Target,+Symbol) is det.
+%
+%	True when Symbol is Target or an invention from Target.
+%
+%	@tbd This expects that invented predicates' symbols will have
+%	the same functor as the Target predicate but with a numeric
+%	index appended to it by an underscore, '_'. This could be
+%	enforced a little more strictly through the project.
+%
+target_or_invention(T,T):-
+	!.
+target_or_invention(T,S):-
+	atomic_list_concat([T,A],'_',S)
+	,atom_number(A,_N).

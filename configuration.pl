@@ -2,6 +2,7 @@
 			,experiment_file/2
 			,extend_metarules/1
 			,learner/1
+			,max_invented/1
 			,metarule/2
 			,metarule/3
 			,metarule/4
@@ -88,6 +89,7 @@
 %:-debug(top). % Debug Top program construction.
 %:-debug(reduction). % Debug Top program construction.
 %:-debug(episodic). % Debug episodic learning.
+%:-debug(dynamic). % Debug dynamic learning.
 
 
 %!	experiment_file(?Path,?Module) is semidet.
@@ -124,6 +126,13 @@ experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
 %
 extend_metarules(false).
 %extend_metarules(1).
+
+
+%!	max_invented(?Number) is semidet.
+%
+%	Maximum number of invented predicates in dynamic learning.
+%
+max_invented(2).
 
 
 %!	learner(?Name) is semidet.
