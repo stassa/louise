@@ -246,7 +246,10 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(dynamic,'First dynamic episode',[])
 	,dynamic_episode(C,Pos_,Neg_,BK_,MS_,Es_1)
-	,length(Es_1,N)
+	,atomic_residue(Es_1,Pos_,Rs)
+	,length(Rs,N)
+	,debug(dynamic, 'Reduced examples: ~w', [N])
+	%,debug_clauses(dynamic, Es_1)
 	,learn_dynamic(C,T,N,Pos_,Neg_,BK_,MS_,Es_1,Ps_k)
 	,excapsulated_clauses(T,Ps_k,Ps).
 
@@ -275,9 +278,11 @@ learn_dynamic(C,T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
 	append(BK,Es_i,BK_)
 	,debug(dynamic,'New dynamic episode',[])
 	,dynamic_episode(C,Pos,Neg,BK_,MS,Es_j)
-	,length(Es_j,M)
-	,debug(dynamic, 'Length: ~w', [M])
-	,M > N
+	,atomic_residue(Es_j,Pos,Rs)
+	,length(Rs,M)
+	,debug(dynamic, 'Reduced examples: ~w', [M])
+	%,debug_clauses(dynamic, Es_j)
+	,M < N
 	,!
 	,learn_dynamic(C,T/A,M,Pos,Neg,BK_,MS,Es_j,Bind).
 learn_dynamic(_C,_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
@@ -298,6 +303,33 @@ dynamic_episode(C,Pos,Neg,BK,MS,Es):-
 	,louise:recursion_guard(G,L,TP)
 	,debug(dynamic,'Reducing Top program',[])
 	,reduced_top_program(Pos,BK,MS,Ms,Es).
+
+
+%!	atomic_residue(+Program,+Positive,-Residue) is det.
+%
+%	Residue is the intersection of Program and Positive examples.
+%
+%	Program is the reduction of the BK, Positive (examples) and
+%	learned hypothesis. Residue is a list of examples in
+%	Positive that remain in Program after it is reduced.
+%
+%	This is used to determine whether dynamic learning should
+%	continue. Dynamic learning should stop if the number of
+%	unreduced examples does not change between learning attempts,
+%	because this indicates that no new clauses have been added to
+%	the Top program.
+%
+%	Note that the last part is a bit of a conjecture. There is
+%	always the possibility that adding one or more new clauses to
+%	the Top program doesn't change the program's success set.
+%
+%	More worryingly it's possible that adding one or more new
+%	clauses to the Top program will make it harder to reduce the MIL
+%	problem successfully.
+%
+atomic_residue(Ps,Pos,Is):-
+	sort(Ps,Ps_)
+	,ord_intersect(Ps_, Pos, Is).
 
 
 %!	top_program_dynamic(+Counter,+Pos,+Neg,+BK,+MS,-Top) is det.
@@ -345,12 +377,17 @@ generalise_invent(C,Pos,MS,Ss_Pos):-
 	examples_target(Pos,T/_)
 	,setof(S
 	     ,M1^MS^M2^M3^Ep^Pos^H^(metarule_extension(MS,M3,M1,M2)
-				      ,member(Ep,Pos)
-				      ,louise:metasubstitution(Ep,M3,H)
-				      ,metasub_atom(C,T,M1,M2,S)
-				      %,debug_clauses(invention,S)
-				      )
+				   ,member(Ep,Pos)
+				   ,louise:metasubstitution(Ep,M3,H)
+				   %,debug(dynamic,'Extended:',[])
+				   %,debug_clauses(dynamic,H)
+				   ,metasub_atom(C,T,M1,M2,S)
+				   %,debug(dynamic,'Invented:',[])
+				   %,debug_clauses(dynamic,S)
+				   )
 	     ,Ss_Pos)
+	%,debug(dynamic,'Generalised:',[])
+	%,debug_clauses(dynamic,Ss_Pos)
 	,!.
 % Extended metarules may fail to generalise any examples.
 % In that case, generalise_invent/4 should not fail and take down
