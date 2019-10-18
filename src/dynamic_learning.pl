@@ -360,7 +360,10 @@ top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 %	Generalisation step of dynamic Top program construction.
 %
 generalise_dynamic(C,Pos,MS,Ss_Pos):-
-	louise:generalise(Pos,MS,Ss_1)
+	(   louise:generalise(Pos,MS,Ss_1)
+	->  true
+	;   Ss_1 = []
+	)
 	,generalise_invent(C,Pos,MS,Ss_2)
 	,append(Ss_1,Ss_2,Ss_Pos).
 
