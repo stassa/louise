@@ -19,6 +19,7 @@
 		      ,debug_clauses/2
 		      ,program/3
 		      ,closure/3
+		      ,built_in_or_library_predicate/1
 		      ]).
 
 :-user:use_module(lib(term_utilities/term_utilities)).
@@ -645,7 +646,7 @@ closure([],Ps,Ps,_M,Cs,Cs):-
 	!.
 closure([F/A|Ss],Ps_Acc,Ps_Bind,M,Acc,Bind):-
 	functor(S,F,A)
-	,predicate_property(S,built_in)
+	,built_in_or_library_predicate(S)
 	,!
 	,closure(Ss,Ps_Acc,Ps_Bind,M,Acc,Bind).
 closure([S|Ss],Ps_Acc,Ps_Bind,M,Acc,Bind):-
@@ -670,3 +671,18 @@ program_symbols(Ps,Ss):-
 		    ,functor(L,F,A)
 		    )
 	      ,Ss).
+
+
+%!	built_in_or_library_predicate(+Predicate) is det.
+%
+%	True for a built-in or autoloaded Predicate.
+%
+%	Thin wrapper around predicate_property/2. Used to decide what
+%	programs to collect with closure/3 and what programs to
+%	encapsulate.
+%
+built_in_or_library_predicate(H):-
+	predicate_property(H, built_in)
+	,!.
+built_in_or_library_predicate(H):-
+	predicate_property(H, autoload(_)).
