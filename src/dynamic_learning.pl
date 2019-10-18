@@ -246,10 +246,12 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(dynamic,'First dynamic episode',[])
 	,dynamic_episode(C,Pos_,Neg_,BK_,MS_,Es_1)
-	,atomic_residue(Es_1,Pos_,Rs)
-	,length(Rs,N)
-	,debug(dynamic, 'Reduced examples: ~w', [N])
 	%,debug_clauses(dynamic, Es_1)
+	,debug(dynamic,'Reducing Top program',[])
+	,reduced_top_program(Pos_,BK_,MS_,Es_1,Rs_1)
+	,atomic_residue(Rs_1,Pos_,Rs)
+	,length(Rs,N)
+	,debug(dynamic,'Reduced examples: ~w', [N])
 	,learn_dynamic(C,T,N,Pos_,Neg_,BK_,MS_,Es_1,Ps_k)
 	,excapsulated_clauses(T,Ps_k,Ps).
 
@@ -278,14 +280,17 @@ learn_dynamic(C,T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
 	append(BK,Es_i,BK_)
 	,debug(dynamic,'New dynamic episode',[])
 	,dynamic_episode(C,Pos,Neg,BK_,MS,Es_j)
-	,atomic_residue(Es_j,Pos,Rs)
-	,length(Rs,M)
-	,debug(dynamic, 'Reduced examples: ~w', [M])
 	%,debug_clauses(dynamic, Es_j)
+	,debug(dynamic,'Reducing Top program',[])
+	,reduced_top_program(Pos,BK_,MS,Es_j,Rs_j)
+	,atomic_residue(Rs_j,Pos,Rs)
+	,length(Rs,M)
+	,debug(dynamic,'Reduced examples: ~w', [M])
 	,M < N
 	,!
 	,learn_dynamic(C,T/A,M,Pos,Neg,BK_,MS,Es_j,Bind).
-learn_dynamic(_C,_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
+learn_dynamic(_C,_T,_M,Pos,_Neg,BK,MS,Es_i,Ps):-
+	reduced_top_program(Pos,BK,MS,Es_i,Ps).
 
 
 %!	dynamic_episode(+Counter,+Pos,+Neg,+BK,+MS,-Episode) is det.
@@ -295,14 +300,12 @@ learn_dynamic(_C,_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
 %	Thin ish wrapper around top_program_dynamic/6 to allow for some
 %	control of recursion, via louise:recursion_guard/3.
 %
-dynamic_episode(C,Pos,Neg,BK,MS,Es):-
+dynamic_episode(C,Pos,Neg,BK,MS,Ms):-
 	configuration:theorem_prover(TP)
 	,configuration:recursion_depth_limit(episodic_learning,L)
 	,debug(dynamic,'Constructing Top program',[])
 	,G = dynamic_learning:top_program_dynamic(C,Pos,Neg,BK,MS,Ms)
-	,louise:recursion_guard(G,L,TP)
-	,debug(dynamic,'Reducing Top program',[])
-	,reduced_top_program(Pos,BK,MS,Ms,Es).
+	,louise:recursion_guard(G,L,TP).
 
 
 %!	atomic_residue(+Program,+Positive,-Residue) is det.
