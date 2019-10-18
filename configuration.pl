@@ -33,6 +33,7 @@
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
 :- dynamic extend_metarules/1
+          ,max_invented/1
           ,recursion_depth_limit/2
 	  ,recursive_reduction/1
 	  ,reduction/1
@@ -132,7 +133,7 @@ extend_metarules(false).
 %
 %	Maximum number of invented predicates in dynamic learning.
 %
-max_invented(2).
+max_invented(1).
 
 
 %!	learner(?Name) is semidet.
