@@ -28,7 +28,7 @@ Includes examples for ancestor/2, father/2, grandfather/2 and male/2.
 background_knowledge(ancestor/2,[parent/2]).
 background_knowledge(grandparent/2,[parent/2]).
 %background_knowledge(grandfather/2,[father/2,mother/2,parent/2]).
- background_knowledge(grandfather/2,[father/2,parent/2,husband/2,grandmother/2]).
+background_knowledge(grandfather/2,[father/2,parent/2,husband/2,grandmother/2]).
 background_knowledge(grandmother/2,[mother/2,parent/2]).
 background_knowledge(parent/2,[father/2,mother/2]).
 background_knowledge(husband/2,[father/2,mother/2]).
