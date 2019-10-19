@@ -6,7 +6,186 @@
 :-use_module(configuration).
 :-use_module(src(louise)).
 
-/** <module> Dynamic learning with metarule extension for predicate invention.
+/** <module> Dynamic learning with metarule extension and predicate invention.
+
+Dynamic learning is Louise's strategy for bias shift by metarule
+extension and predicate invention.
+
+Dynamic Learning
+================
+
+Dynamic learning proceeds in a finite number of discrete _learning
+episodes_. The hypothesis learned in each episode k is added to the
+background knowledge of episode k+1. Hypotheses may include invented
+predicates, constructed by a process of metarule extension, described
+below.
+
+The purpose of dynamic learning is to perform _bias shift_. Bias shift
+is the automatic modification, or generation, of inductive bias. In the
+context of machine learning, iductive bias is normally taken to mean
+everything that contributes to learning, other than the learner itself
+and the set of training examples. In the case of Louise and
+Meta-Interpretive Learning (MIL) in general, inductive bias refers to
+the background knowledge and metarules.
+
+Louise's implementation of dynamic learning modifies both the metarules
+and the background knowledge. More precisely, the modification of
+metarules is done by _metarule extension_ and the modification of the
+background knowledge by inclusion of previously learned hypotheses in
+the background knowledge and by _predicate invention_.
+
+Metarule extension
+------------------
+
+Metarule extension refers to a process of adding new body literals to
+metarules by _unfolding_ between pairs of metarules taken from an
+initially given set (provided by the user). Metarule extension involves
+an ordered set of two metarules, Ext = {M1, M2}, that we will refer to
+as the _extension pair_. The first metarule in an extension pair, M1, is
+the _extended metarule_ and the second metarule, M2, is the _extending
+metarule_. We will say that "M1 is extended by M2", or that M2 "extends
+M1".
+
+During metarule extension, first each body literal, L_i, of the extended
+metarule, M1, is unified with the head literal of the extending
+metarule, M2, then L_i is replaced by each body literal of the extending
+metarule, M2. The result is a new metarule, M_i, the _extension of M1
+with respect to L_i_, whereas L_i is the _extended literal_. M_i has n-1
+more body literals than M1, where n is the number of body literals in
+M2.
+
+The following is an example of extending the chain metarule by a call to
+Louise's extended_metarules/2 predicate:
+
+==
+?- extended_metarules([chain], _Es), print_clauses(_Es).
+m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E).
+m(chain_2,A,B,C,D):-m(A,E,F),m(B,E,G),m(C,G,H),m(D,H,F).
+m(chain_2_2,A,B,C,D):-m(A,E,F),m(B,E,G),m(C,G,H),m(D,H,F).
+true.
+==
+
+Note that the result of calling extended_metarules/2 also returns the
+extended metarule itself, in this case, chain.
+
+Also note that the two extending metarules above, named chain_2 and
+chain_2_2, appear otherwise identical, however this is an artifact of
+the pretty-printing by print_clauses/1. In reality, the two extensions
+are identical _up to renaming of variables_ (and ignoring the
+automatically assigned names). Each extension results from resolving
+chain by itself on a different body literal each time. Thus, while the
+structure of the two extensions is identical different variable
+susbsitutions are possible, as shown in the section on predicate
+inventionm, below.
+
+The result of unconstrained metarule extension is a set of extensions
+that grows exponentially in the number of metarules in the initial set.
+What's worse, many of the metarule extensions resulting from the
+unconstrainted process may have duplicate body literals and are
+therefore redundant with respect to shorter extensions of the same
+extension pair. For efficiency, we wish to constraint the process of
+extension so that the number of resulting extensions remains polynomial
+and is maximally relevant to the learning target. Dynamic learning
+ensures that this is the case.
+
+Predicate invention
+-------------------
+
+During a dynamic learning episode, Louise extends the metarules in the
+initial set _once_, then the extensions and the initial metarules are
+used to construct the Top program as normal. If a metarule extension is
+successfully used to generalise an example, the metasubstitution atoms
+of the _extension pair_ used to construct the extension are added to the
+Top program. Note again: the extended metarule's metasubstitution atom
+is _not_ added to the Top program; only the metasubstitution atoms of
+the extension pair are.
+
+The following example illustrates the process described above:
+
+==
+% [1] Extension pair consisting of two instances of chain.
+M1 = m(chain, P1, Q1, R1):- m(P1, X, Y), m(Q1, X, Z), m(R1, Z, Y)
+M2 = m(chain, P2, Q2, R2):- m(P2, U, W), m(Q2, U, V), m(R2, V, W)
+
+% [2] Extension of M1 by M2.
+M = m(chain_chain, P1, Q2, R2, R1):- m(P1, U, Y), m(Q2, U, V), m(R2, V, W), m(R1, W, Y)
+
+% [3] Example variable substitutions.
+% Zeta is applied to M1 and M2 during metarule extension.
+% Eta is applied to M during Top program construction.
+% Theta is applied to M1 and M2 during predicate invention.
+Zeta = {Q1/P2, X/U, Z/W}
+Eta = {P1/p, R1/s, Q2/q, R2/r}
+Theta = {P2/p_1}
+
+% [4] Result of applying Zeta to M1 and M2
+m(chain, P1, P2, R1):-m(P1, U, Y), m(P2, U, W), m(R1, W, Y)
+m(chain, P2, Q2, R2):-m(P2, U, W), m(Q2, U, V), m(R2, V, W)
+
+% [5] Result of applying Eta to M.
+m(chain_chain, p, q, r, s):- m(p, U, Y), m(q, U, V), m(r, V, W), m(s, W, Y)
+
+% [6] Result of applying Theta to M1 and M2.
+m(chain, p, p_1, s):- m(p, U, Y), m(p_1, U, W), m(s, W, Y)
+m(chain, p_1, q, r):- m(p_1, U, W), m(q, U, V), m(r, V, W)
+
+% [7] Excapsulation of M1 and M2 after variable substitutions.
+C1 = p(U, Y):- p_1(U, W), s(W, Y)
+C2 = p_1(U, W):- q(U, V), r(V, W)
+==
+
+Above, in [1], M1 and M2 are two instances of _chain_ with variables
+standardised apart. M1 and M2 constitute an extension pair.
+
+In [2], M1 is extended by M2, producing M, essentially a chain metarule
+with one additional body literal.
+
+In [3] we illustrate the variable substitutions found during metarule
+extension, Top program construction and predicate invention, with
+examples.
+
+Zeta is a substitution of the variables in M1 and M2 found during the
+extension of M1 by M2. Q1 and P2 are the existentially quantified,
+second-order variables corresponding to the predicate symbols of the
+extended literal of M1, m(Q1, X, Z), and the head literal of M2, m(P2,
+U, W), respectively. X, U, Z and W are universally quantified,
+first-order variables in body literals of M1 and M2 unified during
+extension.
+
+Eta is a _metasubstitution_, a substitution of the existentially
+quantified, second-order variables, P1, R1, Q2 and R2 in M by the
+predicate symbols, p, q, r and s, representing symbols of predicates in
+the examples and the background knowledge. p represents the predicate
+symbol of the learning target whreas q, r and s represent predicate
+symbols selected by successful resolution of M with the background
+knowledge during the generalisation step of Top program construction.
+
+Theta is a metasubstitution of the existentially quantified,
+second-order variable P2 by an _invented_ symbol.
+
+In [4] we list the result of applying Zeta to M1 and M2. In [5] we list
+the result of appying Eta to M. And in [6] we list the result of
+applying Theta to M1 and M2.
+
+Note that, until applying Theta to M1 and M2, the variable P2 remains
+free (after unification with Q1).
+
+Finally, in [7], we excapsulate M1 and M2, resulting in two clauses, C1
+and C2. Note that C1 and C2 are _connected_ in the sense that a body
+literal in C1 is the body literal of C2. The predicate symbol, p_1,
+bound to P2 by Theta, represents an _invented_ predicate symbol.
+
+C1 and C2 would be added to the learned hypothesis during a dynamic
+learning episode. Then, the learned hypothesis would be added to the
+background knowledge for the next learning episode. In the new episode,
+the initial set of metarules, including M1 and M2 _but not M_ would be
+extended again, in the same way as described above and any new clauses
+resulting from this extension added to the learned hypothesis for this
+new step; and so on.
+
+In this way, dynamic learning will build up a hypothesis containing long
+"chains" of connected clauses incrementally but without ever having to
+extend the initial set of metarules more than a single time.
 
 */
 
