@@ -1,5 +1,4 @@
-:-module(configuration, [derivation_depth/1
-			,experiment_file/2
+:-module(configuration, [experiment_file/2
 			,extend_metarules/1
 			,learner/1
 			,max_invented/1
