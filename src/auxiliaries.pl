@@ -1,4 +1,5 @@
-:-module(auxiliaries, [same_metarule/2
+:-module(auxiliaries, [list_problem_statistics/1
+		      ,same_metarule/2
 		      ,set_configuration_option/2
 		      ,load_experiment_file/0
 		      ,write_encapsulated_problem/1
@@ -26,6 +27,28 @@
 :-user:use_module(lib(program_reduction/program_reduction)).
 :-user:use_module(lib(mathemancy/mathemancy)).
 :-use_module(src(mil_problem)).
+
+/** <module> Auxiliary predicates.
+*/
+
+
+%!	list_problem_statistics(+Target) is det.
+%
+%	List statistics of the MIL problem for Target.
+%
+%	Currently this only lists the numbers of positive and negative
+%	examples, background definitions and metarules in the initial
+%	MIL problem for Target (i.e. before any automatic modifications
+%	such as metarule extension).
+%
+list_problem_statistics(T):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,maplist(length,[Pos,Neg,BK,MS],[I,J,K,N])
+	,format('Positive examples:    ~w~n', [I])
+	,format('Negative examples:    ~w~n', [J])
+	,format('Background knowledge: ~w~n', [K])
+	,format('Metarules:            ~w ~w ~n', [N,MS]).
+
 
 
 %!	same_metarule(+Metarule1,+Metarule2) is det.
