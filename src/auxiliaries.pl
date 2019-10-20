@@ -666,7 +666,25 @@ experiment_data(T,Pos,Neg,BK,MS):-
 		,Neg_)
 	,sort(Neg_, Neg)
 	,once(M:background_knowledge(T,BK))
-	,once(M:metarules(T,MS)).
+	,once(M:metarules(T,MS_))
+	,(   MS_ == [all]
+	 ->  configuration_metarules(MS)
+	 ;   MS = MS_
+	 ).
+
+
+%!	configuration_metarules(+Metarules) is det.
+%
+%	Collect the names of all Metarules defined in the configuration.
+%
+configuration_metarules(MS):-
+	findall(Id
+	       ,(configuration:current_predicate(metarule,H)
+		,predicate_property(H, implementation_module(configuration))
+		,H =.. [metarule,Id|_]
+		,clause(H, _B)
+		)
+	       ,MS).
 
 
 
