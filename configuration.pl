@@ -74,8 +74,7 @@
 	   ,metarule/7
 	   ,metarule/8
 	   ,metarule/9
-	   ,metarule/10
-	   .
+	   ,metarule/10.
 
 % Experiment files may or may not define metarule constraints to filter
 % the Top program for unwanted clause structures (e.g. I don't like
@@ -84,7 +83,6 @@
 :- multifile metarule_constraints/2.
 
 /* Debug levels */
-%:-debug(depth). % Debug number of clauses and invented predicates.
 %:-debug(learn). % Debug learning steps.
 %:-debug(top). % Debug Top program construction.
 %:-debug(reduction). % Debug Top program construction.
