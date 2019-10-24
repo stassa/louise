@@ -10,8 +10,11 @@ user:file_search_path(output, project_root(output)).
 
 :-use_module(configuration).
 :-use_module(src(louise)).
+:-use_module(src(mil_problem)).
 :-use_module(src(auxiliaries)).
 :-use_module(lib(evaluation/evaluation)).
+:-use_module(lib(sampling/sampling)).
+:-use_module(src(dynamic_learning)).
 
 edit_files:-
 	configuration:experiment_file(P,_)
@@ -20,6 +23,8 @@ edit_files:-
 	,edit(src(mil_problem))
 	,edit(src(louise))
 	,edit(src(auxiliaries))
+	,edit(lib(evaluation/evaluation))
+	,edit(src(dynamic_learning))
 	,edit(P)
 	.
 :-edit_files.
@@ -28,6 +33,9 @@ edit_files:-
 %:-run_tests.
 
 % Large data may require a larger stack.
-%:-set_prolog_stack(global, limit(2**9*10**6)).
+:- set_prolog_flag(stack_limit, 2_147_483_648).
+%:- set_prolog_flag(stack_limit, 4_294_967_296).
+%:-set_prolog_flag(stack_limit, 8_589_934_592).
+%:-set_prolog_flag(stack_limit, 17_179_869_184).
 :-current_prolog_flag(stack_limit, V)
  ,format('Global stack limit ~D~n',[V]).
