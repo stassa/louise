@@ -8,14 +8,16 @@ user:file_search_path(output, project_root(output)).
 
 :-use_module(configuration).
 :-use_module(src(louise)).
+:-use_module(src(mil_problem)).
 :-use_module(src(auxiliaries)).
 :-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(sampling/sampling)).
+:-use_module(src(dynamic_learning)).
 
 %:-load_test_files([]).
 %:-run_tests.
 
 % Large data may require a larger stack.
-%:-set_prolog_stack(global, limit(2**9*10**6)).
+:- set_prolog_flag(stack_limit, 2_147_483_648).
 :-current_prolog_flag(stack_limit, V)
  ,format('Global stack limit ~D~n',[V]).
