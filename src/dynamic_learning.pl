@@ -7,6 +7,7 @@
 
 :-use_module(configuration).
 :-use_module(src(louise)).
+:-use_module(src(mil_problem)).
 
 /** <module> Dynamic learning with metarule extension and predicate invention.
 
