@@ -190,7 +190,7 @@ list_problem_statistics(T):-
 %	naked eye.
 %
 %	Example of use
-%	==============
+%	--------------
 %	The query below compares metarules expanded from an initial set
 %	of chain and inverse to the un-expanded chain metarule. The
 %	chain metarule itself is in the output of expanded_metarules/2
@@ -597,12 +597,11 @@ assert_program(M,[C|P],Acc,Bind):-
 %	program's clauses asserted to the dynamic database with
 %	assert_program/3.
 %
-%	The purpose of this predicate is, very specifically, to allow a
-%	learned theory previously asserted by invoking assert_program/3
-%	during disprove/2, to be removed from the dynamic database
-%	without stumbling over module scoping that can be complicated
-%	when a predicate is declared in one module and then clauses of
-%	it are added in another module.
+%	The purpose of this predicate is to allow a set of clauses
+%	previously asserted by invoking assert_program/3 to be removed
+%	from the dynamic database without stumbling over module scoping
+%	that can be complicated when a predicate is declared in one
+%	module and then clauses of it are added in another module.
 %
 %	For example, the following is what you should expect to see in
 %	the dynamic database after a theory of father/2 is learned and
@@ -610,6 +609,7 @@ assert_program(M,[C|P],Acc,Bind):-
 %	knowledge of father/2:
 %
 %	==
+%	% Example copied from Thelma.
 %	[debug] [1]  ?- listing(thelma:father/2).
 %	:- dynamic tiny_kinship:father/2.
 %
@@ -625,12 +625,18 @@ assert_program(M,[C|P],Acc,Bind):-
 %	true.
 %	==
 %
-%	This happens because we allow the same experiment modules to
-%	export background predicates that have the same symbol and
-%	arities with target predicates declared in the same module. It
-%	means that it's very fiddly to remove the clauses of the learned
-%	theory, especially while leaving the background predicate
-%	untouched.
+%	This happens whenever new clauses of a previous defined
+%	predicate are asserted in a different module than the
+%	predicate's original implementation module. The reason we may
+%	wish to do that is to create "multiple worlds" each with
+%	different definitions of a predicate. For example, Thelma, where
+%	the above example is taken from, asserts a learned hypothesis to
+%	the dynamic database in order to test it against the negative
+%	examples. However, the clauses of the learned hypothesis can get
+%	mixed up with the examples of the target predicate. This creates
+%	an unholy mess that is very fiddly to manage.
+%	erase_program_clauses/1 helps a little, but, ultimately, one
+%	must never forget that the dynamic database is evil.
 %
 erase_program_clauses([]):-
 	!.
@@ -784,7 +790,7 @@ program(Ss,M,Ps):-
 %	everything to the user module.
 %
 %	Example
-%	=======
+%	-------
 %	==
 %	?- closure([ancestor/2],user,_Cs),forall(member(P,_Cs),print_clauses(P)).
 %

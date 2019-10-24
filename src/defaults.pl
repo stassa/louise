@@ -17,7 +17,7 @@ dynamic configuration options to the values specified in this file.
 
 %!	default_extend_metarules(?Default) is semidet.
 %
-%	Default value for extended_metarules/1 option.
+%	Default value for extend_metarules/1 option.
 %
 %	The default value is "false".
 %
@@ -35,9 +35,11 @@ default_max_invented(1).
 
 %!	default_recursion_depth_limit(?Default) is semidet.
 %
-%	Default value for recursion_depth_limit/1 option.
+%	Default value for recursion_depth_limit/2 option.
 %
-%	The default value is "(episodic_learning, 100)".
+%	The default value is "[episodic_learning, 100]". Note that while
+%	the configuration option takes two arguments, the default has a
+%	single argument.
 %
 default_recursion_depth_limit([episodic_learning, 100]).
 

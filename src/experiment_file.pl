@@ -64,35 +64,45 @@ reload/0, nothing else requires it).
 %	-----------------
 %
 %	The steps taken by this predicate to update the definitions of
-%	the experiment fiel interface predicates are as follows:
-%	a) A dynamic predicate, '$experiment_file'/2 is used to store
-%	the file path and module name given in the configuration option
-%	experiment_file/2.
-%	b) If a clause of '$experiment_file'/2 does not exist in the
-%	database, one is created.
-%	c) If a clause of '$experiment_file'/2 exists in the database,
-%	the file at the path specified in its first argument is
-%	unloaded. This removes from memory all clauses of the interface
-%	predicates, and all other predicates, loaded from this file.
-%	d) All clauses of '$experiment_file'/2 are retracted from the
-%	database.
-%	e) A clause of '$experiment_file'/2 is asserted to the database
-%	with the file path and module name given in the configuration
-%	option experiment_file/2 as its arguments.
-%	f) The experiment file interface predicates are abolished from
-%	module user.
-%	g) The experiment file interface predicates are abolished from
-%	module in experiment_file.pl (i.e. the present module).
-%	h) The experiment file interface predicates defined in the
-%	currently configured experiment file module are re-exported by
-%	the module in experiment_file.pl (i.e. this here module).
+%	the experiment file interface predicates are as follows:
+%
+%	  0. A dynamic predicate, '$experiment_file'/2 is instatiated to
+%	  the arguments of experiment_file/2 store the file path and
+%	  module name given in the configuration option.
+%
+%	  1. If a clause of '$experiment_file'/2 does not exist in the
+%	  database, one is created.
+%
+%	  2. If a clause of '$experiment_file'/2 exists in the database,
+%	  the file at the path specified in its first argument is
+%	  unloaded. This removes from memory all clauses of the
+%	  interface predicates, and all other predicates, loaded from
+%	  this file.
+%
+%	  3. All clauses of '$experiment_file'/2 are retracted from the
+%	  database.
+%
+%	  4. A clause of '$experiment_file'/2 is asserted to the
+%	  database with the file path and module name given in the
+%	  configuration option experiment_file/2 as its arguments.
+%
+%	  5. The experiment file interface predicates are abolished from
+%	  module user.
+%
+%	  6. The experiment file interface predicates are abolished from
+%	  the module defined in experiment_file.pl (i.e. the present
+%	  module).
+%
+%	  7. The experiment file interface predicates defined in the
+%	  currently configured experiment file module are re-exported by
+%	  the module in experiment_file.pl (i.e. this here module).
 %
 %	The end result of the process described above is that only the
 %	definitions of the experiment file interface predicates that are
 %	defined in the experiment file currently specified in
 %	experiment_file/2 are in the database at any one point.
 %
-%	The last step in the process above, (h), is how the experiment
+%	The last step in the process above, (8), is how the experiment
 %	file interface predicates end up in the module in
 %	experiment_file.pl (this module) and also the user module. This
 %	should explain why these interface predicates must be abolished
@@ -119,6 +129,18 @@ reload/0, nothing else requires it).
 %	time the configuration file is is reloaded, if the
 %	experiment_file/2 values have changed, a new experiment file
 %	module is loaded following the procedure specified above.
+%
+%	@bug Loading two experiment files exporting the same definitions
+%	of some predicates other than the interface predicates, one (not
+%	necessarily immediately) after the other, will raise permission
+%	errors saying you're not allowed to redefine the predicates
+%	exported by both modules. The only reasonably easy way to avoid
+%	such errors is, whenever you want to load a new experiment file
+%	that exports some of the same predicates as an experiment file
+%	module loaded previously in the same session, to first start a
+%	new session. There is just no easy way to avoid errors if you
+%	load two modules that export (some of) the same predicates in
+%	the same session.
 %
 reload:-
 	configuration:experiment_file(P, M)
@@ -176,7 +198,7 @@ abolish_experiment_file_interface(M):-
 	       ).
 
 
-%!	experiment_file_interfact(?Interface) is semidet.
+%!	experiment_file_interface(?Interface) is semidet.
 %
 %	List of predicate symbols exported by experiment files.
 %

@@ -224,6 +224,9 @@ learn(Pos,Neg,BK,MS,Ps):-
 %	work in progress and may not fully eliminate too-general
 %	metasubstitutions.
 %
+%	@bug Actually, Top program construction using the TP operator
+%	currently doesn't work at all.
+%
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
@@ -692,6 +695,8 @@ model_subset((L,Ls), Ms):-
 %!	selected_subhypothesis(+Pos,+BK,+MS,+Prog,-Sub) is det.
 %
 %	Select a correct sub-hypothesis from a set of clauses.
+%
+%	@tbd Needs documentation.
 %
 selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
 	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,MS_])

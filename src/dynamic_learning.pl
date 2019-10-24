@@ -221,13 +221,12 @@ learn_dynamic(T,Ps):-
 %	predicate invention by metarule extension.
 %
 %	@tbd Metarule extension for dynamic learning is currently
-%	performed by the predicate extend/3 defined in this file and
-%	_not_ with extended_metarules/3. This is a bit of a premature
-%	optimisation hack, to avoid the more expensive operation in
-%	extended_metarules/3. Additionally, extend/3 ensures that
-%	variables in metarules in an exension pair are standardised
-%	apart, which is lacking in extended_metarules/3. In the future,
-%	the two extension versions will be merged to reduce confusion.
+%	performed by the predicate metarule_extension/4 defined in this
+%	file and _not_ with extended_metarules/3 defined in
+%	mil_problem.pl, even though extended_metarules/3 is itself
+%	defined in terms of metarule_extension/4. Metarule extension is
+%	still being developed so some confusion like this will reign for
+%	a while still.
 %
 learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	C = c(0)
@@ -402,6 +401,12 @@ generalise_invent(_C,_Pos,_MS,[]).
 %	The original metarules, Original1 and Original2 are needed in
 %	generalise_invent/4 because we want to collect their ground
 %	metasubstitutions as invented clauses.
+%
+%	@tbd This predicate has a very confusing interface. Metarule is
+%	a single argument, a list of two (expanded) metarules, however
+%	it's described as a "pair" - because the predicate operates on a
+%	pair of metarules. This is probably a vestige of early
+%	development without prior design and needs fixin.
 %
 metarule_extension(MS,M3,M1,M2_):-
 	member(M1,MS)

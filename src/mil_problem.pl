@@ -38,7 +38,7 @@
 %	Metarule, respectively.
 %
 %	Note that one of Id, Metarule or Sub must be at least partly
-%	instantiated or metarule_parts/6 will fail silently.
+%	instantiated or metarule_parts/5 will fail silently.
 %
 %	Use this predicate to access encapsulated and expanded metarules
 %	in their internal representation, as clauses of m/n in the
@@ -263,6 +263,8 @@ extended_metarules_(I,N,Acc,Bind):-
 %	one metarule with the head literal of the second metarule and
 %	then concatenating their body literals minus the body literal
 %	unified with the head literal of the second metarule.
+%
+%	@deprecated Use extend/3 instead.
 %
 metarule_extension((M1:-B1),(M2:-B2),(M3:-B3)):-
 	C = c(0)
