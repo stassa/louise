@@ -14,6 +14,7 @@
 
 :-use_module(configuration).
 :-use_module(lib(term_utilities/term_utilities)).
+:-use_module(src(dynamic_learning)).
 
 /** <module> Predicates to transform a MIL problem.
 
