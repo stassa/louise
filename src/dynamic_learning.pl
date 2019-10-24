@@ -1,6 +1,8 @@
 :-module(dynamic_learning, [learn_dynamic/1
 			   ,learn_dynamic/2
 			   ,learn_dynamic/5
+			   ,metarule_extension/4
+			   ,extend/3
 			   ]).
 
 :-use_module(configuration).

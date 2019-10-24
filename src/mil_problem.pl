@@ -156,13 +156,43 @@ metarule_expansion(Id,Mh_:-Mb_):-
 %	this predicate only needs to be called once at the start of
 %	learning.
 %
+extended_metarules(MS,MS):-
+	configuration:extend_metarules(false)
+	,!.
 extended_metarules(MS,Es):-
-	configuration:extend_metarules(E)
-	,extended_metarules(MS,Es,E).
+	configuration:extend_metarules(N)
+	,integer(N)
+	,expanded_metarules(MS,MS_)
+	,extended_metarules(0,N,MS_,Es).
+
+%!	extended_metarules(+Current,+Step,+Acc,-Metarules) is det.
+%
+%	Business end of extended_metarules/2.
+%
+%	@bug this doesn't sort results because that makes less sense
+%	with the naming scheme using gensym/2. The result is extreme
+%	duplication of results in the output. In the previous version,
+%	the query sort([1,1],@<,Es_, Es) was useful to sort results.
+%
+extended_metarules(N,N,MS,MS):-
+	!.
+extended_metarules(I,N,MS,Bind):-
+	findall(E
+		,(metarule_extension(MS,E,_,_)
+		 )
+		,Es)
+	,append(MS,Es,Es_i)
+	,succ(I,I_)
+	,extended_metarules(I_,N,Es_i,Bind).
+
+
 
 %!	extended_metarules(+Ids,-Extended,+N) is det.
 %
 %	Business end of extended_metarules/2.
+%
+%	@tbd Vestigial version replaced by extended_metarules/4 and left
+%	behind just in case while working on newest extension scheme.
 %
 extended_metarules(MS,Es,1):-
 	!
