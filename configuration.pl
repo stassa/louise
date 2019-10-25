@@ -93,16 +93,17 @@
 %
 %	The Path and Module name of an experiment file.
 %
-experiment_file('data/examples/kinship/tiny_kinship.pl',tiny_kinship).
-%experiment_file('data/examples/grammars/anbn.pl',anbn).
+experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
+%experiment_file('data/examples/anbn.pl',anbn).
 %experiment_file('data/examples/abduced.pl',abduced).
 %experiment_file('data/examples/special_metarules.pl',special_metarules).
-%experiment_file('data/mtg/mtg_fragment.pl',mtg_fragment).
-%experiment_file('data/examples/kinship/kinship.pl',kinship).
-%experiment_file('data/examples/kinship/kinship_accuracy.pl',kinship_accuracy).
-%experiment_file('data/robots/robots.pl',robots).
-%experiment_file('data/robots/generator/robots_gen.pl',robots_gen).
-%experiment_file('data/noise/heroes/detect_evil.pl',detect_evil).
+%experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
+%experiment_file('data/examples/recipes.pl',recipes).
+%experiment_file('data/thelma_louise/kinship/kinship.pl',kinship).
+%experiment_file('data/thelma_louise/kinship/kinship_accuracy.pl',kinship_accuracy).
+%experiment_file('data/thelma_louise/robots/robots.pl',robots).
+%experiment_file('data/thelma_louise/robots/generator/robots_gen.pl',robots_gen).
+%experiment_file('data/thelma_louise/noise/heroes/detect_evil.pl',detect_evil).
 
 
 %!	extend_metarules(?Extend) is semidet.

@@ -177,7 +177,8 @@ background_knowledge(move/2, [% Move primitives
 			  ]).
 
 
-metarules(move/2,[unit_identity,chain,precon,postcon,projection]).
+%metarules(move/2,[unit_identity,chain,precon,postcon,projection]).
+metarules(move/2,[chain,precon,postcon]).
 
 positive_example(move/2,move(Ss,Gs)):-
 	dataset_file_name(Bn,_)

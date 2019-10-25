@@ -7,7 +7,7 @@
 
 :-use_module(generator_configuration).
 :- (    configuration:learner(louise)
-   ->	use_module(data(robots/world))
+   ->	use_module(data(thelma_louise/robots/world))
    ;    configuration:learner(thelma)
    ->   use_module(data(louise/robots/world))
    ).

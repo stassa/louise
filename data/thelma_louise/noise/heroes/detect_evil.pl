@@ -11,7 +11,7 @@
 :-use_module(heroes_configuration).
 % Loads the generated heroes dataset if it exists
 % or generates it and then loads it.
-:- (exists_file('data/noise/heroes/heroes.pl')
+:- (exists_file('data/thelma_louise/noise/heroes/heroes.pl')
   ->   reexport(heroes)
    ;   write_dataset
       ,reexport(heroes)
@@ -519,7 +519,7 @@ save_alignments:-
 % See save_alignments/0 and misclassify/0 defined in this file.
 %:-save_alignments.
 
-:- (\+ exists_file('data/noise/heroes/alignment.pl')
+:- (\+ exists_file('data/thelma_louise/noise/heroes/alignment.pl')
    ->  save_alignments
    ;   true
    ).

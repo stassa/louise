@@ -27,6 +27,7 @@
 		  ,learning_rate/2
 		  ]).
 
+:-use_module(lib(tp/tp)).
 
 /* For experiments with Louise, when learning blood_relative/2, set:
    derivation_depth(9).
