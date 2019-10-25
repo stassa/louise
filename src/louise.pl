@@ -10,6 +10,9 @@
 :-use_module(mil_problem).
 :-use_module(lib(tp/tp)).
 
+/** <module> Meta-Interpretive Learning by Top program construction and reduction.
+
+*/
 
 %!	learn(+Target) is det.
 %
