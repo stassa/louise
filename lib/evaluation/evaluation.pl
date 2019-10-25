@@ -17,11 +17,7 @@
 :-use_module(configuration).
 :-use_module(lib(sampling/sampling)).
 :-use_module(src(auxiliaries)).
-:-learner(L)
-  ,(   L = thelma
-   ->  use_module(lib(tp/tp))
-   ;   true
-   ).
+:-use_module(lib(tp/tp)).
 
 /** <module> Evaluation metrics for experiment results.
 */
@@ -328,7 +324,7 @@ program_results(T,Ps,BK,Rs):-
 %	Collect ground BK atoms.
 %
 %	Also remove from the BK atoms of the learning Target. That's to
-%	allow lfp/e to succeed if the learning Target is also a
+%	allow lfp/2 to succeed if the learning Target is also a
 %	predicate in the BK (more precisely, if it is a determinant of
 %	another BK predicate).
 %

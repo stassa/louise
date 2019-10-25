@@ -306,7 +306,7 @@ dynamic_episode(C,Pos,Neg,BK,MS,Ms):-
 %	Theorem_Prover is the current value of the configuration option
 %	theorem_prover/1. If this is "resolution" then Depth_Limit is
 %	used with call_with_depth_limit/3. If theorem_prover/1 is set to
-%	"tp" there is no reason to guard against recursion her: the TP
+%	"tp" there is no reason to guard against recursion here: the TP
 %	operator is guaranteed to terminate. At least it is, given a
 %	definite datalog program.
 %
