@@ -1,30 +1,37 @@
-:-module(auxiliaries, [reset_defaults/0
-		      ,list_config/0
+:-module(auxiliaries, [% Printing auxiliaries
+	               print_or_debug/3
+		       % Configuration auxiliareis
 		      ,debug_config/1
-		      ,print_or_debug/3
-		      ,list_problem_statistics/1
-		      ,same_metarule/2
+		      ,list_config/0
+		      ,reset_defaults/0
 		      ,set_configuration_option/2
-		      ,load_experiment_file/0
+		       % MIL Problem auxiliaries
+		      ,known_metarules/1
+		      ,same_metarule/2
 		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
-		      ,learning_targets/1
-		      ,known_metarules/1
+		       % Debugging auxiliaries
+		      ,list_encapsulated_problem/1
+		      ,list_mil_problem/1
+		      ,list_problem_statistics/1
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
 		      ,list_top_program/2
-		      ,list_encapsulated_problem/1
-		      ,list_mil_problem/1
-		      ,initialise_experiment/0
-		      ,cleanup_experiment/0
+		       % Database auxiliaries
 		      ,assert_program/3
 		      ,erase_program_clauses/1
+		       % Experiment file auxiliaries
+		      ,cleanup_experiment/0
 		      ,experiment_data/5
-		      ,print_clauses/1
-		      ,debug_clauses/2
-		      ,program/3
-		      ,closure/3
+		      ,initialise_experiment/0
+		      ,learning_targets/1
+		      ,load_experiment_file/0
+		       % Program auxiliaries
 		      ,built_in_or_library_predicate/1
+		      ,closure/3
+		      ,debug_clauses/2
+		      ,print_clauses/1
+		      ,program/3
 		      ]).
 
 :-user:use_module(lib(term_utilities/term_utilities)).
@@ -34,20 +41,119 @@
 :-use_module(src(defaults)).
 
 /** <module> Auxiliary predicates.
+
+This module defines and exports predicates supporting other predicates
+in the main project modules (louise, mil_problem and dynamic_learning),
+or support the user with useful facilities for inspection and
+manipulation of configuration and experiment files, or the elements of a
+MIL problem loaded from an experiment file.
+
+There are already quite a few predicates in this module and their number
+should be expected to grow as the project is developed further. Perhaps
+some should be moved to specialised libraries. However, to find a
+balance between fragmentation of project source files and proliferation
+of auxiliaries, the source code in this file is split into sections
+grouping the definitions of predicates with similar functionality.
+
+To facilitate browsing the source code in this module, the different
+sections are listed in the ToC below. Each section is assigned a tag
+made up of sec_ and a contracted section description, enclosed in square
+braces. These tags can be used to jump to the relevant section by
+searching the text for the text of a tag.
+
+The ToC below can also help browsing the structured documentation,
+rather than the source code, of predicates defined in this module. In
+the Swi-Prolog documentation browser, the predicate indicators of
+predicates listed under a section's title in the ToC should be rendered
+as links that can be navigated-to in the user's browser, by clicking on
+them.
+
+
+Table of Contents
+-----------------
+
+1. Printing auxiliaries [sec_print]
+   * print_or_debug/3
+
+2. Configuration auxiliaries [sec_config]
+   * debug_config/1
+   * list_config/0
+   * reset_defaults/0
+   * set_configuration_option/2
+
+3. MIL problem auxiliaries [sec_prob]
+   * known_metarules/1
+   * same_metarule/2
+   * write_encapsulated_problem/1
+   * write_encapsulated_problem/4
+
+4. Debugging auxiliaries [sec_debug]
+   * list_encapsulated_problem/1
+   * list_mil_problem/1
+   * list_problem_statistics/1
+   * list_top_program_reduction/1
+   * list_top_program/1
+   * list_top_program/2
+
+5. Database auxiliaries [sec_dynm]
+   * assert_program/3
+   * erase_program_clauses/1
+
+6. Experiment file auxiliaries [sec_expr]
+   * cleanup_experiment/0
+   * experiment_data/5
+   * initialise_experiment/0
+   * learning_targets/1
+   * load_experiment_file/0
+
+7. Program auxiliaries [sec_prog]
+   * built_in_or_library_predicate/1
+   * closure/3
+   * debug_clauses/2
+   * print_clauses/1
+   * program/3
+
 */
 
 
-%!	list_config is det.
-%
-%	Print configuration options to the console.
-%
-%	Only configuration options actually defined in the configuration
-%	module (i.e. not re-exported from other configuration files) are
-%	printed.
-%
-list_config:-
-	list_config(print,user_output).
+% [sec_print]
+% ================================================================================
+% Printing auxiliaries
+% ================================================================================
+% Predicates for printing to streams (including user_output).
 
+
+%!	print_or_debug(+Print_or_Debug,+Stream_or_Subject,+Atom) is
+%!	det.
+%
+%	Print or debug an Atom.
+%
+%	Print_or_Debug can be one of: [print,debug,both]. If "print",
+%	Stream_or_Subject should be the name or alias of a stream
+%	and Atom is printed at that Stream. If "debug",
+%	Stream_or_Subject should be a debug subject and Atom is printed
+%	to the current debug stream, iff the specified subject is being
+%	debugged. If "both", Stream_or_Subject should be a term Str/Sub,
+%	where Str the name or alias of a stream and Sub the name of
+%	debug topic; then Atom is printed to the specified stream and
+%	also to the current debug topic if Sub is being debugged.
+%
+print_or_debug(debug,S,C):-
+	debug(S,'~w',[C]).
+print_or_debug(print,S,C):-
+	format(S,'~w~n',[C]).
+print_or_debug(both,Str/Sub,C):-
+	print_or_debug(print,Str,C)
+	,print_or_debug(debug,Sub,C).
+
+
+
+
+% [sec_config]
+% ================================================================================
+% Configuration auxiliaries
+% ================================================================================
+% Predicates for inspecting and manipulating configuration options.
 
 
 %!	debug_config(+Subject) is det.
@@ -60,6 +166,18 @@ list_config:-
 %
 debug_config(S):-
 	list_config(debug,S).
+
+
+%!	list_config is det.
+%
+%	Print configuration options to the console.
+%
+%	Only configuration options actually defined in the configuration
+%	module (i.e. not re-exported from other configuration files) are
+%	printed.
+%
+list_config:-
+	list_config(print,user_output).
 
 
 %!	list_config(+Print_or_Debug,+Atom) is det.
@@ -85,30 +203,6 @@ list_config(T,S):-
 		,print_or_debug(T,S,Opt_)
 		)
 	       ).
-
-
-%!	print_or_debug(+Print_or_Debug,+Stream_or_Subject,+Atom) is
-%!	det.
-%
-%	Print or debug an Atom.
-%
-%	Print_or_Debug can be one of: [print,debug,both]. If "print",
-%	Stream_or_Subject should be the name or alias of a stream
-%	and Atom is printed at that Stream. If "debug",
-%	Stream_or_Subject should be a debug subject and Atom is printed
-%	to the current debug stream, iff the specified subject is being
-%	debugged. If "both", Stream_or_Subject should be a term Str/Sub,
-%	where Str the name or alias of a stream and Sub the name of
-%	debug topic; then Atom is printed to the specified stream and
-%	also to the current debug topic if Sub is being debugged.
-%
-print_or_debug(debug,S,C):-
-	debug(S,'~w',[C]).
-print_or_debug(print,S,C):-
-	format(S,'~w~n',[C]).
-print_or_debug(both,Str/Sub,C):-
-	print_or_debug(print,Str,C)
-	,print_or_debug(debug,Sub,C).
 
 
 
@@ -158,22 +252,73 @@ reset_defaults:-
 
 
 
-%!	list_problem_statistics(+Target) is det.
+%!	set_configuration_option(+Option,+Value) is det.
 %
-%	List statistics of the MIL problem for Target.
+%	Change the Value of a configuration Option.
 %
-%	Currently this only lists the numbers of positive and negative
-%	examples, background definitions and metarules in the initial
-%	MIL problem for Target (i.e. before any automatic modifications
-%	such as metarule extension).
+%	Option is an atom, the name of a configuration option defined in
+%	(or exported to) module configuration.
 %
-list_problem_statistics(T):-
-	experiment_data(T,Pos,Neg,BK,MS)
-	,maplist(length,[Pos,Neg,BK,MS],[I,J,K,N])
-	,format('Positive examples:    ~w~n', [I])
-	,format('Negative examples:    ~w~n', [J])
-	,format('Background knowledge: ~w~n', [K])
-	,format('Metarules:            ~w ~w ~n', [N,MS]).
+%	Value is the set of the arguments of Option. Iff Option has a
+%	single argument, Value can be a single atomic constant.
+%	Otherwise, it must be a list.
+%
+%	set_configuration_option/2 first retracts _all_ clauses of the
+%	named Option, then asserts a new clause with the given Value.
+%
+%	Only configuration options declared as dynamic can be changed
+%	using set_configuration_option/2. Attempting to change a static
+%	configuration option will raise a permission error.
+%
+%	@tbd This predicate cannot change configuration options with
+%	multiple clauses (or at least can't change any but their first
+%	clause). Such functionality may or may not be necessary to add.
+%
+%	@bug Sorta bug, but if set_configuration_option/2 is used as
+%	intended, at the start of an experiment file, to set a necessary
+%	configuration option, the configuration option thus changed will
+%	remain changed until the option is changed with
+%	set_configuration_option/2 or by editing the configuration file.
+%	And note that just reloading the configuration file will not
+%	reset the option- it will just add an extra clause of it in the
+%	database, which will often cause unepxected backtracking. This
+%	may cause some confusion, for example when setting the value of
+%	extend_metarules/1 to something other than false for one
+%	experiment, which then of course affects subsequent experiments.
+%	It happened to me, it could happen to you.
+%
+set_configuration_option(N, V):-
+	atomic(V)
+	,!
+	,set_configuration_option(N,[V]).
+set_configuration_option(N, Vs):-
+	length(Vs, A)
+	,functor(T,N,A)
+	,T_ =.. [N|Vs]
+	,retractall(configuration:T)
+	,assert(configuration:T_).
+
+
+
+
+% [sec_prob]
+% ================================================================================
+% MIL problem auxiliaries
+% ================================================================================
+% Predicates for inspecting and manipulating a MIL problem.
+
+
+%!	known_metarules(-Ids) is det.
+%
+%	Collect the Ids of metarules known to the system.
+%
+known_metarules(Ids):-
+	findall(Id
+	       ,(configuration:current_predicate(metarule, H)
+		,H =.. [metarule,Id|_]
+		,clause(H,_B)
+		)
+	       ,Ids).
 
 
 
@@ -246,64 +391,6 @@ metarule_head_body_name(M,Sub_,B_,Id):-
 
 
 
-%!	set_configuration_option(+Option,+Value) is det.
-%
-%	Change the Value of a configuration Option.
-%
-%	Option is an atom, the name of a configuration option defined in
-%	(or exported to) module configuration.
-%
-%	Value is the set of the arguments of Option. Iff Option has a
-%	single argument, Value can be a single atomic constant.
-%	Otherwise, it must be a list.
-%
-%	set_configuration_option/2 first retracts _all_ clauses of the
-%	named Option, then asserts a new clause with the given Value.
-%
-%	Only configuration options declared as dynamic can be changed
-%	using set_configuration_option/2. Attempting to change a static
-%	configuration option will raise a permission error.
-%
-%	@tbd This predicate cannot change configuration options with
-%	multiple clauses (or at least can't change any but their first
-%	clause). Such functionality may or may not be necessary to add.
-%
-%	@bug Sorta bug, but if set_configuration_option/2 is used as
-%	intended, at the start of an experiment file, to set a necessary
-%	configuration option, the configuration option thus changed will
-%	remain changed until the option is changed with
-%	set_configuration_option/2 or by editing the configuration file.
-%	And note that just reloading the configuration file will not
-%	reset the option- it will just add an extra clause of it in the
-%	database, which will often cause unepxected backtracking. This
-%	may cause some confusion, for example when setting the value of
-%	extend_metarules/1 to something other than false for one
-%	experiment, which then of course affects subsequent experiments.
-%	It happened to me, it could happen to you.
-%
-set_configuration_option(N, V):-
-	atomic(V)
-	,!
-	,set_configuration_option(N,[V]).
-set_configuration_option(N, Vs):-
-	length(Vs, A)
-	,functor(T,N,A)
-	,T_ =.. [N|Vs]
-	,retractall(configuration:T)
-	,assert(configuration:T_).
-
-
-
-%!	load_experiment_file is det.
-%
-%	Load the current experiment file into module user.
-%
-load_experiment_file:-
-	experiment_file(P,_M)
-	,user:use_module(P).
-
-
-
 %!	write_encapsulated_problem(+Target) is det.
 %
 %	Write an encapsulated MIL problem to the dynamic db.
@@ -334,106 +421,12 @@ write_encapsulated_problem(Pos,Neg,BK,MS):-
 
 
 
-%!	learning_targets(+Targets) is det.
-%
-%	Collect learning Targets defined in an experiment file.
-%
-%	Targets is the list of predicate symbols and arities of each of
-%	the target predicates that have background knowledge
-%	declarations in background/2 clauses in the current experiment
-%	file.
-%
-learning_targets(Ts):-
-	initialise_experiment
-	,experiment_file(_P, M)
-	,findall(T
-		,M:background_knowledge(T, _BK)
-		,Ts).
 
-
-
-%!	known_metarules(-Ids) is det.
-%
-%	Collect the Ids of metarules known to the system.
-%
-known_metarules(Ids):-
-	findall(Id
-	       ,(configuration:current_predicate(metarule, H)
-		,H =.. [metarule,Id|_]
-		,clause(H,_B)
-		)
-	       ,Ids).
-
-
-
-%!	list_top_program_reduction(+Target) is det.
-%
-%	List the top-program reduction step for a learning Target.
-%
-%	@tbd: This does no feedbacksies. So you only see the first step
-%	of the reduction.
-%
-list_top_program_reduction(T):-
-	experiment_data(T,Pos,Neg,BK,MS)
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,top_program(Pos_,Neg_,BK_,MS_,Ms)
-	,flatten([Pos_,BK_,Ms,MS_],Ps_)
-	,reduction_report(Ps_).
-
-
-
-%!	list_top_program(+Target) is det.
-%
-%	Pretty-print the Top program for a Target predicate.
-%
-%	Same as list_top_program(Target, true).
-%
-list_top_program(T):-
-	list_top_program(T,true).
-
-
-
-%!	list_top_program(+Target, +Unfold) is det.
-%
-%	Pretty-print the Top program for a Target predicate.
-%
-%	Unfold is one of [true,false]. If true, the Top program is
-%	unfolded into a list of definite clauses before printing.
-%	Otherwise it is printed as a list of metasubstitutions.
-%
-list_top_program(T,U):-
-	experiment_data(T,Pos,Neg,BK,MS)
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,louise:write_program(Pos_,BK_,MS_,Refs)
-	,louise:generalise(Pos_,MS_,Ss_Pos)
-	,write_and_count('Generalisation:',Ss_Pos,U)
-	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)
-	,nl
-	,write_and_count('Specialisation:',Ss_Neg,U)
-	,erase_program_clauses(Refs).
-
-
-%!	write_and_count(+Message,+Metasubs,+Unfold) is det.
-%
-%	Auxiliary to list_top_program/2.
-%
-%	Pretty-print a set of Metasubs, its cardinality and a Message.
-%	Unfold is a boolean inherited from list_top_program/2,
-%	determining whether the Top program is unfolded to a list of
-%	definite clauses before printing.
-%
-write_and_count(Msg,Cs,U):-
-	(   U = true
-	->  louise:unfolded_metasubs(Cs, Cs_)
-	;   U = false
-	->  Cs_ = Cs
-	% Else fail silently to flumox the user. Nyahahaha!
-	)
-	,length(Cs_, N)
-	,format_underlined(Msg)
-	,print_clauses(Cs_)
-	,format('Length:~w~n',[N]).
-
+% [sec_debug]
+% ================================================================================
+% Debugging auxiliaries
+% ================================================================================
+% Predicates to facilitate debugging of experiments.
 
 
 %!	list_encapsulated_problem(+Target) is det.
@@ -528,42 +521,102 @@ atom_underline(A,A_):-
 
 
 
-%!	initialise_experiment is det.
+%!	list_problem_statistics(+Target) is det.
 %
-%	Load and initialise the current experiment file.
+%	List statistics of the MIL problem for Target.
 %
-initialise_experiment:-
-	configuration:experiment_file(P,_M)
-	,user:use_module(P).
+%	Currently this only lists the numbers of positive and negative
+%	examples, background definitions and metarules in the initial
+%	MIL problem for Target (i.e. before any automatic modifications
+%	such as metarule extension).
+%
+list_problem_statistics(T):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,maplist(length,[Pos,Neg,BK,MS],[I,J,K,N])
+	,format('Positive examples:    ~w~n', [I])
+	,format('Negative examples:    ~w~n', [J])
+	,format('Background knowledge: ~w~n', [K])
+	,format('Metarules:            ~w ~w ~n', [N,MS]).
 
 
 
-%!	cleanup_experiment is det.
+%!	list_top_program_reduction(+Target) is det.
 %
-%	Clean up after a learning session.
+%	List the top-program reduction step for a learning Target.
 %
-%	Currently this only removes clauses of m/n asserted to the
-%	dynamic database.
+%	@tbd: This does no feedbacksies. So you only see the first step
+%	of the reduction.
 %
-%	Remember to run initialise_experiment/0 after this one to
-%	re-load any necessary clauses.
-%
-cleanup_experiment:-
-	% Retract encapsulated examples, BK and metarule clauses.
-	forall(user:current_predicate(m,H)
-	      ,(user:retractall(H)
-	       % Clauses in program module are asserted
-	       % by predicates in program_reduction module
-	       ,program:retractall(H)
-	       )
-	      )
-	% Retract encapsulated clauses of predicates in BK closure.
-	,forall(user:current_predicate(p,H)
-	      ,(user:retractall(H)
-	       ,program:retractall(H)
-	       )
-	      ).
+list_top_program_reduction(T):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,top_program(Pos_,Neg_,BK_,MS_,Ms)
+	,flatten([Pos_,BK_,Ms,MS_],Ps_)
+	,reduction_report(Ps_).
 
+
+
+%!	list_top_program(+Target) is det.
+%
+%	Pretty-print the Top program for a Target predicate.
+%
+%	Same as list_top_program(Target, true).
+%
+list_top_program(T):-
+	list_top_program(T,true).
+
+
+
+%!	list_top_program(+Target, +Unfold) is det.
+%
+%	Pretty-print the Top program for a Target predicate.
+%
+%	Unfold is one of [true,false]. If true, the Top program is
+%	unfolded into a list of definite clauses before printing.
+%	Otherwise it is printed as a list of metasubstitutions.
+%
+list_top_program(T,U):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,louise:write_program(Pos_,BK_,MS_,Refs)
+	,louise:generalise(Pos_,MS_,Ss_Pos)
+	,write_and_count('Generalisation:',Ss_Pos,U)
+	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)
+	,nl
+	,write_and_count('Specialisation:',Ss_Neg,U)
+	,erase_program_clauses(Refs).
+
+
+%!	write_and_count(+Message,+Metasubs,+Unfold) is det.
+%
+%	Auxiliary to list_top_program/2.
+%
+%	Pretty-print a set of Metasubs, its cardinality and a Message.
+%	Unfold is a boolean inherited from list_top_program/2,
+%	determining whether the Top program is unfolded to a list of
+%	definite clauses before printing.
+%
+write_and_count(Msg,Cs,U):-
+	(   U = true
+	->  louise:unfolded_metasubs(Cs, Cs_)
+	;   U = false
+	->  Cs_ = Cs
+	% Else fail silently to flumox the user. Nyahahaha!
+	)
+	,length(Cs_, N)
+	,format_underlined(Msg)
+	,print_clauses(Cs_)
+	,format('Length:~w~n',[N]).
+
+
+
+
+% [sec_dynm]
+% ================================================================================
+% Database auxiliaries
+% ================================================================================
+% Predicates for manipulating the Prolog dynamic database.
+% Remember: the dynamic database is evil.
 
 
 %!	assert_program(+Module,+Program,-Clause_References) is det.
@@ -646,6 +699,42 @@ erase_program_clauses([Ref|Rs]):-
 
 
 
+
+% [sec_expr]
+% ================================================================================
+% Experiment file auxiliaries
+% ================================================================================
+% Auxiliaries for inspecting and manipulating experiment files.
+
+
+%!	cleanup_experiment is det.
+%
+%	Clean up after a learning session.
+%
+%	Currently this only removes clauses of m/n asserted to the
+%	dynamic database.
+%
+%	Remember to run initialise_experiment/0 after this one to
+%	re-load any necessary clauses.
+%
+cleanup_experiment:-
+	% Retract encapsulated examples, BK and metarule clauses.
+	forall(user:current_predicate(m,H)
+	      ,(user:retractall(H)
+	       % Clauses in program module are asserted
+	       % by predicates in program_reduction module
+	       ,program:retractall(H)
+	       )
+	      )
+	% Retract encapsulated clauses of predicates in BK closure.
+	,forall(user:current_predicate(p,H)
+	      ,(user:retractall(H)
+	       ,program:retractall(H)
+	       )
+	      ).
+
+
+
 %!	experiment_data(+Target,-Positive,-Negative,-BK,-Metarules) is
 %!	det.
 %
@@ -694,81 +783,65 @@ configuration_metarules(MS):-
 
 
 
-%!	print_clauses(+Clauses) is det.
+%!	initialise_experiment is det.
 %
-%	Print a list of Clauses to standard output.
+%	Load and initialise the current experiment file.
 %
-print_clauses(L):-
-	\+ is_list(L)
-	,!
-	,print_clauses([L]).
-print_clauses(Cs):-
-	forall(member(C,Cs)
-	      ,(copy_term(C,C_)
-	       ,numbervars(C_)
-	       ,write_term(C_, [fullstop(true)
-			       ,nl(true)
-			       ,numbervars(true)
-			       ,quoted(true)
-			       ])
-	       )
-	      ).
+initialise_experiment:-
+	configuration:experiment_file(P,_M)
+	,user:use_module(P).
 
 
 
-%!	debug_clauses(+Topic,+Clauses) is det.
+%!	learning_targets(+Targets) is det.
 %
-%	Debug a list of Clauses if Topic is being debugged.
+%	Collect learning Targets defined in an experiment file.
 %
-debug_clauses(T,L):-
-	\+ is_list(L)
-	,!
-	,debug_clauses(T,[L]).
-debug_clauses(T,Cs):-
-	forall(member(C,Cs)
-	      ,(copy_term(C,C_)
-	       ,numbervars(C_)
-	       ,format(atom(A),'~W',[C_, [fullstop(true)
-					 ,numbervars(true)
-					 ,quoted(true)]
-				    ])
-	       ,debug(T,'~w',A)
-	       )
-	      ).
+%	Targets is the list of predicate symbols and arities of each of
+%	the target predicates that have background knowledge
+%	declarations in background/2 clauses in the current experiment
+%	file.
+%
+learning_targets(Ts):-
+	initialise_experiment
+	,experiment_file(_P, M)
+	,findall(T
+		,M:background_knowledge(T, _BK)
+		,Ts).
 
 
 
-%!	program(+Symbols,+Module,-Program) is det.
+%!	load_experiment_file is det.
 %
-%	Collect all clauses of a Program.
+%	Load the current experiment file into module user.
 %
-%	Symbols is the list of predicate indicators, F/A, of clauses in
-%	Program.
+load_experiment_file:-
+	experiment_file(P,_M)
+	,user:use_module(P).
+
+
+
+
+% [sec_prog]
+% ================================================================================
+% Program auxiliaries
+% ================================================================================
+% Predicates for inspecting a program.
+
+
+%!	built_in_or_library_predicate(+Predicate) is det.
 %
-%	Module is the definition module for Progam. This can be set to
-%	user if the Program is not defined in a module.
+%	True for a built-in or autoloaded Predicate.
 %
-%	Program is a list of all the clauses of the predicates in
-%	Symbols.
+%	Thin wrapper around predicate_property/2. Used to decide what
+%	programs to collect with closure/3 and what programs to
+%	encapsulate.
 %
-%	@tbd This doesn't attempt to sort the list of Symbols to exclude
-%	duplicates- if the same Symbol is passed in more than once, the
-%	same definition will be included that many times in Programs.
-%
-program(F/A,M,Ps):-
-	!
-	,program([F/A],M,Ps).
-program(Ss,M,Ps):-
-	findall(P
-	       ,(member(F/A,Ss)
-		,functor(H,F,A)
-		,M:clause(H,B)
-		,(   B == true
-		 ->  P = H
-		 ;   P = (H:-B)
-		 )
-		)
-	       ,Ps).
+built_in_or_library_predicate(H):-
+	predicate_property(H, built_in)
+	,!.
+built_in_or_library_predicate(H):-
+	predicate_property(H, autoload(_)).
 
 
 
@@ -846,16 +919,79 @@ program_symbols(Ps,Ss):-
 	      ,Ss).
 
 
-%!	built_in_or_library_predicate(+Predicate) is det.
+
+%!	debug_clauses(+Topic,+Clauses) is det.
 %
-%	True for a built-in or autoloaded Predicate.
+%	Debug a list of Clauses if Topic is being debugged.
 %
-%	Thin wrapper around predicate_property/2. Used to decide what
-%	programs to collect with closure/3 and what programs to
-%	encapsulate.
+debug_clauses(T,L):-
+	\+ is_list(L)
+	,!
+	,debug_clauses(T,[L]).
+debug_clauses(T,Cs):-
+	forall(member(C,Cs)
+	      ,(copy_term(C,C_)
+	       ,numbervars(C_)
+	       ,format(atom(A),'~W',[C_, [fullstop(true)
+					 ,numbervars(true)
+					 ,quoted(true)]
+				    ])
+	       ,debug(T,'~w',A)
+	       )
+	      ).
+
+
+
+%!	print_clauses(+Clauses) is det.
 %
-built_in_or_library_predicate(H):-
-	predicate_property(H, built_in)
-	,!.
-built_in_or_library_predicate(H):-
-	predicate_property(H, autoload(_)).
+%	Print a list of Clauses to standard output.
+%
+print_clauses(L):-
+	\+ is_list(L)
+	,!
+	,print_clauses([L]).
+print_clauses(Cs):-
+	forall(member(C,Cs)
+	      ,(copy_term(C,C_)
+	       ,numbervars(C_)
+	       ,write_term(C_, [fullstop(true)
+			       ,nl(true)
+			       ,numbervars(true)
+			       ,quoted(true)
+			       ])
+	       )
+	      ).
+
+
+
+%!	program(+Symbols,+Module,-Program) is det.
+%
+%	Collect all clauses of a Program.
+%
+%	Symbols is the list of predicate indicators, F/A, of clauses in
+%	Program.
+%
+%	Module is the definition module for Progam. This can be set to
+%	user if the Program is not defined in a module.
+%
+%	Program is a list of all the clauses of the predicates in
+%	Symbols.
+%
+%	@tbd This doesn't attempt to sort the list of Symbols to exclude
+%	duplicates- if the same Symbol is passed in more than once, the
+%	same definition will be included that many times in Programs.
+%
+program(F/A,M,Ps):-
+	!
+	,program([F/A],M,Ps).
+program(Ss,M,Ps):-
+	findall(P
+	       ,(member(F/A,Ss)
+		,functor(H,F,A)
+		,M:clause(H,B)
+		,(   B == true
+		 ->  P = H
+		 ;   P = (H:-B)
+		 )
+		)
+	       ,Ps).
