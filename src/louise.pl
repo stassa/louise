@@ -1,7 +1,4 @@
-:-module(louise, [learn_episodic/1
-		 ,learn_episodic/2
-		 ,learn_episodic/5
-		 ,learn/1
+:-module(louise, [learn/1
 		 ,learn/2
 		 ,learn/5
 		 ,top_program/5
@@ -16,23 +13,23 @@
 :-use_module(mil_problem).
 
 
-%!	learn_episodic(+Target) is det.
+%!	learn(+Target) is det.
 %
-%	Learn a definition of a Target in successive episodes.
+%	Learn a deafinition of a Target predicate.
 %
-learn_episodic(T):-
-	learn_episodic(T,Ps)
+learn(T):-
+	learn(T,Ps)
 	,print_clauses(Ps).
 
 
 
-%!	learn_episodic(+Target,-Definition) is det.
+%!	learn(+Target,-Definition) is det.
 %
-%	Learn a Definition of a Target in successive episodes.
+%	Learn a definition of a Target predicate.
 %
-learn_episodic(T,Ps):-
+learn(T,Ps):-
 	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
-	,learn_episodic(Pos,Neg,BK,MS,Ps).
+	,learn(Pos,Neg,BK,MS,Ps).
 
 
 %!	tp_safe_experiment_data(+Target,-Pos,-Neg,-BK,-MS) is det.
@@ -56,130 +53,6 @@ tp_safe_experiment_data(T,Pos,Neg_,BK,MS):-
 tp_safe_experiment_data(T,Pos,[],BK,MS):-
 % If there are no negative examples there's nothing to sanitise.
 	experiment_data(T,Pos,[],BK,MS).
-
-
-
-%!	learn_episodic(+Pos,+Neg,+BK,+Metarules,-Program) is det.
-%
-%	Learn a Program over successive episodes.
-%
-%	Base predicate for episodic learning. Program is learned in
-%	successive episodes where the learned hypothesis is added to the
-%	BK and learning begins all over again.
-%
-learn_episodic(Pos,Neg,BK,MS,Ps):-
-	debug(episodic,'Encapsulating problem',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,debug(episodic,'Learning first episode',[])
-	,learning_episode(Pos_,Neg_,BK_,MS_,Ps_1)
-	,examples_target(Pos,T)
-	,learned_hypothesis(T,Ps_1,Es_1)
-	,length(Es_1,N)
-	,learn_episodic(T,N,Pos_,Neg_,BK_,MS_,Es_1,Ps_k)
-	,excapsulated_clauses(T,Ps_k,Ps).
-
-
-%!	learned_hypothesis(+Target,+Program,-Hypothesis) is det.
-%
-%	Collect the clauses of a learned Hypothesis.
-%
-%	Helper to separate a learned hypothesis from the rest of a
-%	reduced program, so that it can be added to the background
-%	knowledge for a subsequent learning episode.
-%
-learned_hypothesis(T/A,Ps,Hs):-
-	findall(H:-B
-	       ,(member(H:-B,Ps)
-		,H =.. [m,T|As]
-		,length(As,A)
-		)
-	       ,Hs).
-
-
-%!	learn_episodic(+Target,+N,+Pos,+Neg,+BK,+Meta,+Acc,-Bind)
-%!	is det.
-%
-%	Business end of learn_episodic/5.
-%
-%	Recursively learns a hypothesis with background knowledge
-%	including the hypothesis learned in the previous recursion step.
-%
-%	Recursion stops when the length of the learned hypothesis does
-%	not change from one recursion step to the next.
-%
-learn_episodic(T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
-	append(BK,Es_i,BK_)
-	,debug(episodic,'Learning new episode',[])
-	,learning_episode(Pos,Neg,BK_,MS,Ps)
-	,learned_hypothesis(T/A,Ps,Es_j)
-	,length(Es_j,M)
-	,M > N
-	,!
-	,learn_episodic(T/A,M,Pos,Neg,BK_,MS,Es_j,Bind).
-learn_episodic(_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
-
-
-%!	learning_episode(+Pos,+Neg,+BK,+Ms,-Episode) is det.
-%
-%	Process one learning episode.
-%
-%	One learning episode consists of constructing the Top program
-%	and then reducing it.
-%
-%	@tbd This could replace the two calls to top_program/6 and
-%	reduced_top_program/6 in learn/5, so as to add the recursion
-%	depth limit test in here. Just in case.
-%
-learning_episode(Pos,Neg,BK,MS,Es):-
-	configuration:theorem_prover(TP)
-	,configuration:recursion_depth_limit(episodic_learning,L)
-	,debug(episodic,'Constructing Top program',[])
-	,G = top_program(Pos,Neg,BK,MS,Ms)
-	,recursion_guard(G,L,TP)
-	,debug(episodic,'Reducing Top program',[])
-	,reduced_top_program(Pos,BK,MS,Ms,Es).
-
-
-%!	recursion_guard(+Goal,+Time_Limit,+Theorem_Prover) is det.
-%
-%	Call Goal guarding for infinite recursion.
-%
-%	Time_Limit is passed to call_with_depth_limit/3 if necessary.
-%
-%	Theorem_Prover is the current value of the configuration option
-%	theorem_prover/1. If this is "resolution" then Depth_Limit is
-%	used with call_with_depth_limit/3. If theorem_prover/1 is set to
-%	"tp" there is no reason to guard against recursion her: the TP
-%	operator is guaranteed to terminate. At least it is, given a
-%	definite datalog program.
-%
-recursion_guard(G,L,resolution):-
-	!
-	,call_with_depth_limit(G,L,Rs)
-	,Rs \= depth_limit_exceeded.
-recursion_guard(G,_L,tp):-
-% TP operator is already recursion-safe.
-	call(G).
-
-
-
-%!	learn(+Target) is det.
-%
-%	Learn a deafinition of a Target predicate.
-%
-learn(T):-
-	learn(T,Ps)
-	,print_clauses(Ps).
-
-
-
-%!	learn(+Target,-Definition) is det.
-%
-%	Learn a definition of a Target predicate.
-%
-learn(T,Ps):-
-	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
-	,learn(Pos,Neg,BK,MS,Ps).
 
 
 

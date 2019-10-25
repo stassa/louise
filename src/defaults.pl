@@ -37,11 +37,11 @@ default_max_invented(1).
 %
 %	Default value for recursion_depth_limit/2 option.
 %
-%	The default value is "[episodic_learning, 100]". Note that while
+%	The default value is "[dynamic_learning, 100]". Note that while
 %	the configuration option takes two arguments, the default has a
 %	single argument.
 %
-default_recursion_depth_limit([episodic_learning, 100]).
+default_recursion_depth_limit([dynamic_learning, 100]).
 
 
 %!	default_recursive_reduction(?Default) is semidet.

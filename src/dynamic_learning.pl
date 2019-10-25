@@ -291,10 +291,32 @@ learn_dynamic(_C,_T,_M,Pos,_Neg,BK,MS,Es_i,Ps):-
 %
 dynamic_episode(C,Pos,Neg,BK,MS,Ms):-
 	configuration:theorem_prover(TP)
-	,configuration:recursion_depth_limit(episodic_learning,L)
+	,configuration:recursion_depth_limit(dynamic_learning,L)
 	,debug(dynamic,'Constructing Top program',[])
 	,G = dynamic_learning:top_program_dynamic(C,Pos,Neg,BK,MS,Ms)
-	,louise:recursion_guard(G,L,TP).
+	,recursion_guard(G,L,TP).
+
+
+%!	recursion_guard(+Goal,+Time_Limit,+Theorem_Prover) is det.
+%
+%	Call Goal guarding for infinite recursion.
+%
+%	Time_Limit is passed to call_with_depth_limit/3 if necessary.
+%
+%	Theorem_Prover is the current value of the configuration option
+%	theorem_prover/1. If this is "resolution" then Depth_Limit is
+%	used with call_with_depth_limit/3. If theorem_prover/1 is set to
+%	"tp" there is no reason to guard against recursion her: the TP
+%	operator is guaranteed to terminate. At least it is, given a
+%	definite datalog program.
+%
+recursion_guard(G,L,resolution):-
+	!
+	,call_with_depth_limit(G,L,Rs)
+	,Rs \= depth_limit_exceeded.
+recursion_guard(G,_L,tp):-
+% TP operator is already recursion-safe.
+	call(G).
 
 
 %!	atomic_residue(+Program,+Positive,-Residue) is det.

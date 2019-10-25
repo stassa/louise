@@ -86,7 +86,6 @@
 %:-debug(learn). % Debug learning steps.
 %:-debug(top). % Debug Top program construction.
 %:-debug(reduction). % Debug Top program construction.
-%:-debug(episodic). % Debug episodic learning.
 %:-debug(dynamic). % Debug dynamic learning.
 
 
@@ -198,10 +197,10 @@ metarule(double_identity,P,Q,R,Y,Z,D):-m(P,X,Y),m(Q,X,Z),m(R,X,D).
 %
 %	Known purposes are as follows:
 %
-%	* episodic_learning: Limits recursion during Top program
-%	construction in episodic learning.
+%	* dyamic_learning: Limits recursion during Top program
+%	construction in dynamic learning.
 %
-recursion_depth_limit(episodic_learning,100).
+recursion_depth_limit(dynamic_learning,100).
 
 
 %!	recursive_reduction(?Bool) is semidet.
