@@ -26,6 +26,7 @@
 		      ,initialise_experiment/0
 		      ,learning_targets/1
 		      ,load_experiment_file/0
+		      ,tp_safe_experiment_data/5
 		       % Program auxiliaries
 		      ,built_in_or_library_predicate/1
 		      ,closure/3
@@ -105,6 +106,7 @@ Table of Contents
    * initialise_experiment/0
    * learning_targets/1
    * load_experiment_file/0
+   * tp_safe_experiment_data/5
 
 7. Program auxiliaries [sec_prog]
    * built_in_or_library_predicate/1
@@ -818,6 +820,30 @@ learning_targets(Ts):-
 load_experiment_file:-
 	experiment_file(P,_M)
 	,user:use_module(P).
+
+
+
+%!	tp_safe_experiment_data(+Target,-Pos,-Neg,-BK,-MS) is det.
+%
+%	Ensure experiment data is safe for TP operator predicates.
+%
+%	Basically just removes the ":-" in front of the negative
+%	examples, since they are not recognised by the Top program
+%	construction predicates that use a TP operator.
+%
+tp_safe_experiment_data(T,Pos,Neg_,BK,MS):-
+	configuration:theorem_prover(TP)
+	,experiment_data(T,Pos,Neg,BK,MS)
+	,(   TP == tp
+	 ->  setof(E
+		  ,Neg^member((:-E),Neg)
+		  ,Neg_)
+	 ;   Neg_ = Neg
+	 )
+	,!.
+tp_safe_experiment_data(T,Pos,[],BK,MS):-
+% If there are no negative examples there's nothing to sanitise.
+	experiment_data(T,Pos,[],BK,MS).
 
 
 

@@ -7,7 +7,8 @@
 		 ]).
 
 :-use_module(configuration).
-:-use_module(mil_problem).
+:-use_module(src(auxiliaries)).
+:-use_module(src(mil_problem)).
 :-use_module(lib(tp/tp)).
 
 /** <module> Meta-Interpretive Learning by Top program construction and reduction.
@@ -31,29 +32,6 @@ learn(T):-
 learn(T,Ps):-
 	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
 	,learn(Pos,Neg,BK,MS,Ps).
-
-
-%!	tp_safe_experiment_data(+Target,-Pos,-Neg,-BK,-MS) is det.
-%
-%	Ensure experiment data is safe for TP operator predicates.
-%
-%	Basically just removes the ":-" in front of the negative
-%	examples, since they are not recognised by the Top program
-%	construction predicates that use a TP operator.
-%
-tp_safe_experiment_data(T,Pos,Neg_,BK,MS):-
-	configuration:theorem_prover(TP)
-	,experiment_data(T,Pos,Neg,BK,MS)
-	,(   TP == tp
-	 ->  setof(E
-		  ,Neg^member((:-E),Neg)
-		  ,Neg_)
-	 ;   Neg_ = Neg
-	 )
-	,!.
-tp_safe_experiment_data(T,Pos,[],BK,MS):-
-% If there are no negative examples there's nothing to sanitise.
-	experiment_data(T,Pos,[],BK,MS).
 
 
 

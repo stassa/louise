@@ -6,6 +6,7 @@
 			   ]).
 
 :-use_module(configuration).
+:-use_module(src(auxiliaries)).
 :-use_module(src(louise)).
 :-use_module(src(mil_problem)).
 
@@ -208,7 +209,7 @@ learn_dynamic(T):-
 %	Learn a Program by dynamic learning.
 %
 learn_dynamic(T,Ps):-
-	louise:tp_safe_experiment_data(T,Pos,Neg,BK,MS)
+	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
 	,learn_dynamic(Pos,Neg,BK,MS,Ps).
 
 
