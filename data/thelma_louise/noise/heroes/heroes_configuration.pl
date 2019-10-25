@@ -6,7 +6,7 @@
 %
 %	Path to the generated heroes dataset.
 %
-dataset_filename('data/noise/heroes/heroes.pl').
+dataset_filename('data/thelma_louise/noise/heroes/heroes.pl').
 
 
 %!	hero_attributes(?Attributes) is semidet.

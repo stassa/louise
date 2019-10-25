@@ -504,7 +504,7 @@ save_alignments:-
 	,findall(alignment(Id,A)
 	       ,alignment(Id,A)
 	       ,As)
-	,open('data/noise/heroes/alignment.pl',write,S,[alias(alignment_set)])
+	,open('data/thelma_louise/noise/heroes/alignment.pl',write,S,[alias(alignment_set)])
 	,format(S,':-module(alignment, []).~n~n',[])
 	,format(S,':-dynamic alignment/2.~n~n',[])
 	,forall(member(A,As)
