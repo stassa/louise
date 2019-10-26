@@ -1,4 +1,6 @@
-:-module(metagen, [encapsulated_metarules/3
+:-module(metagen, [metarule_generations/3
+		  ,metarule_generation/3
+		  ,encapsulated_metarules/3
 		  ,encapsulated_metarule/3
 		  ,generate_metarules/3
 		  ,generate_metarule/3
@@ -6,6 +8,50 @@
 
 /** <module> Generator for chain and inverse and their extensions.
 */
+
+%!	metarule_generations(+Maximum,+IDs,-Metarules) is det.
+%
+%	Generate Metarules in generations from 1 to Maximum.
+%
+%	Maximum is a number, denoting the highest metarule generation to
+%	be generated. IDs is a list of metarule IDs taken from the set
+%	of [chain, inverse, identity]. Metarules is a list of metarule
+%	extensions with lengths that depend on their generation.
+%
+%	The length of a metarule of generation n is n + 1 if the
+%	metarule is an extension of inverse or identity and n + 2 if the
+%	metarule is chain.
+%
+metarule_generations(I,IDs,MS):-
+	!
+	,findall(M
+		,(between(1,I,I_)
+		 ,member(Id,IDs)
+		 ,metarule_generation(I_,Id,M)
+		 )
+		,MS).
+
+
+
+%!	metarule_generation(+Generation,+Id,-Metarule) is semidet.
+%
+%	Generate a Metarule of the given Generation.
+%
+%	The length of a metarule of generation n is n + 1 if the
+%	metarule is an extension of inverse or identity and n + 2 if the
+%	metarule is chain.
+%
+metarule_generation(I,chain,M):-
+	I_ is I + 2
+	,encapsulated_metarule(chain,I_,M).
+metarule_generation(I,inverse,M):-
+	succ(I, I_)
+	,encapsulated_metarule(inverse,I_,M).
+metarule_generation(I,identity,M):-
+	succ(I, I_)
+	,encapsulated_metarule(identity,I_,M).
+
+
 
 %!	encapsulated_metarules(+Ids,Literals,-Metarules) is det.
 %
