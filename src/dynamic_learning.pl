@@ -359,11 +359,6 @@ atomic_residue(Ps,Pos,Is):-
 %	extension pair are added to the Top program, as described in
 %	learn_dynamic/5.
 %
-/*
-TODO: this will fail after the change of write_program/4 (now 3) to not
-write the metarules to the dynamic database. generalise_dynamic/4 in
-particular needs to be updated.
-*/
 top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
@@ -400,11 +395,12 @@ generalise_invent(C,Pos,MS,Ss_Pos):-
 	examples_target(Pos,T/_)
 	,setof(S
 	     ,M1^MS^M2^M3^Ep^Pos^H^(metarule_extension(MS,M3,M1,M2)
+				   ,copy_term([M1,M2],[M1_,M2_])
 				   ,member(Ep,Pos)
 				   ,louise:metasubstitution(Ep,M3,H)
 				   %,debug(dynamic,'Extended:',[])
 				   %,debug_clauses(dynamic,H)
-				   ,metasub_atom(C,T,M1,M2,S)
+				   ,metasub_atom(C,T,M1-M1_,M2-M2_,S)
 				   %,debug(dynamic,'Invented:',[])
 				   %,debug_clauses(dynamic,S)
 				   )
@@ -419,6 +415,7 @@ generalise_invent(C,Pos,MS,Ss_Pos):-
 % Perhaps change this so the call to setof/3 doesn't fail even when
 % metasubstitution/3 never succeeds?
 generalise_invent(_C,_Pos,_MS,[]).
+
 
 
 %!	metarule_extension(+Metarules,+Extension,+Original1,+Original2)
@@ -470,16 +467,26 @@ metarule_extension(MS,M3,M1,M2_):-
 %	generalise_invent/4 when an extended metarule succeeds in
 %	generalising a positive example.
 %
-metasub_atom(C,T,(M1:-_),(M2:-_),S):-
+%	@tbd After the changes in the static_metarules_clean branch to
+%	avoid asserting metarules to the dynamic database Metarule1 and
+%	Metarule2 are now actually key-value pairs, where the keys are
+%	Metarule1 and Metarule2 as before and their values are fresh
+%	copies of those metarules with free variables. Accordingly, S is
+%	a pair Metasub-M where Metasub is as before and M is the copy of
+%	each of Metarule1 or Metarule2. There are reasons why this is
+%	such a mess. One day they may even be revealed.
+%
+metasub_atom(C,T,(S1:-_)-M1,(S2:-_)-M2,S):-
 % There should only be one variable in both metasub atoms
 % The variable of the invented predicate's symbol.
-	term_variables([M1,M2],[V])
+	term_variables([S1,S2],[V])
 	,invented_symbol(T,C,V)
 	% We use member/2's nondeterminism here to return
 	% multiple results in setof/3 and avoid having to flatten
 	% its set of results later.
 	% Yeah, I know this is a bit cryptic, sorry.
-	,member(S,[M1,M2]).
+	,member(S,[S1-M1,S2-M2]).
+
 
 
 %!	invented_symbol(+Target,+Counter,?Symbol) is det.
