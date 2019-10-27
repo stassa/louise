@@ -353,69 +353,62 @@ atomic_residue(Ps,Pos,Is):-
 %
 %	This is a dynamic version of Top program construction. It is
 %	identical to the ordinary Top program construction implemented
-%	in louise:top_program/5, except that an additional
-%	generalisation step is taken where metarules are extended and
-%	the metasubstitution atoms of the original metarules in an
-%	extension pair are added to the Top program, as described in
-%	learn_dynamic/5.
+%	in louise:top_program/5, except that a second Top program
+%	construction step is taken where metarules are
+%	extended and the metasubstitution atoms of the original
+%	metarules in an extension pair are added to the Top program, as
+%	described in learn_dynamic/5.
 %
 top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,louise:write_program(Pos,BK,Refs)
-	,generalise_dynamic(C,Pos,MS,Ms_Pos)
-	,louise:specialise(Ms_Pos,Neg,Ms)
+	,top_program_dynamic(C,Pos,Neg,MS,Ms)
 	%,constraints(Ms, Ms_)
 	,unfolded_metasubs(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
 
-
-%!	generalise_dynamic(+Counter,+Pos,+MS,-Metasubs) is det.
+%!	top_program_dynamic(+Counter,+Pos,+Neg,+Metarules,-Metasubs) is
+%!	det.
 %
-%	Generalisation step of dynamic Top program construction.
+%	Business end of top_program_dynamic/6.
 %
-generalise_dynamic(C,Pos,MS,Ss_Pos):-
-	(   louise:generalise(Pos,MS,Ss_1)
-	->  true
-	;   Ss_1 = []
-	)
-	,generalise_invent(C,Pos,MS,Ss_2)
-	,append(Ss_1,Ss_2,Ss_Pos).
-
-
-%!	generalise_invent(+Counter,+Pos,+MS,-Metasubs) is det.
+%	Performs Top program construction by calling top_program_/5 in
+%	louise.pl. Then takes a second Top program construction step
+%	where metarules are extended and retracted in order to perform
+%	predicate invention. The result of the two construction steps
+%	are appended in the end.
 %
-%	Generalisation step of dynamic Top program construction.
+%	@tbd The second Top program construction step implemented in
+%	this predicate performs generalisation and specialisation "in
+%	one go", i.e. without first collecting all generalising
+%	metasubstitutions and then specialising them. Could this be
+%	applied to ordinary Top program construction, i.e. not in
+%	dynamic learning?
 %
-%	This is the second generalisation step that actually adds the
-%	metasubstitution atoms of the original metarules in an extension
-%	pair to the Top program, resulting in predicate invention.
-%
-generalise_invent(C,Pos,MS,Ss_Pos):-
-	examples_target(Pos,T/_)
-	,setof(S
-	     ,M1^MS^M2^M3^Ep^Pos^H^(metarule_extension(MS,M3,M1,M2)
-				   ,copy_term([M1,M2],[M1_,M2_])
-				   ,member(Ep,Pos)
-				   ,louise:metasubstitution(Ep,M3,H)
-				   %,debug(dynamic,'Extended:',[])
-				   %,debug_clauses(dynamic,H)
-				   ,metasub_atom(C,T,M1-M1_,M2-M2_,S)
-				   %,debug(dynamic,'Invented:',[])
-				   %,debug_clauses(dynamic,S)
-				   )
-	     ,Ss_Pos)
-	%,debug(dynamic,'Generalised:',[])
-	%,debug_clauses(dynamic,Ss_Pos)
-	,!.
-% Extended metarules may fail to generalise any examples.
-% In that case, generalise_invent/4 should not fail and take down
-% generalise_dynamic/4 with it. Note however that a catch-all clause
-% like this is a rather dangerous way to achieve a graceful exit.
-% Perhaps change this so the call to setof/3 doesn't fail even when
-% metasubstitution/3 never succeeds?
-generalise_invent(_C,_Pos,_MS,[]).
-
+top_program_dynamic(C,Pos,Neg,MS,Ms):-
+	% Construct Top program for initial metarules
+	(   louise:top_program_(Pos,Neg,_,MS,Ss_Neg)
+	 ->  true
+	;   Ss_Neg = []
+	 )
+	% Construct Top program for metarule extensions
+	% Potentially performing predicate invention
+	,examples_target(Pos,T/_)
+	,findall(S
+		,(metarule_extension(MS,M3,M1,M2)
+		 % Keep fresh variables for specialisation step
+		 ,copy_term(M3,M3_)
+		 % Generalisation
+		 ,entails(+,M3,Pos,A)
+		 % Specialisation
+		 ,\+ entails(-,M3_,Neg,A)
+		 ,metasub_atom(C,T,M1,M2,S)
+		 )
+		,Ss_Inv_)
+	,sort(Ss_Inv_, Ss_Inv_s)
+	% And append
+	,append(Ss_Neg,Ss_Inv_s,Ms).
 
 
 %!	metarule_extension(+Metarules,+Extension,+Original1,+Original2)
@@ -444,6 +437,22 @@ metarule_extension(MS,M3,M1,M2_):-
 	 ).
 
 
+%!	entails(+Sign,+Metarule,+Examples) is det.
+%
+%	True when Metarule entails each of a set of Examples.
+%
+%	Sign is one of [+,-] denoting whether Examples is the set of
+%	positive or negative examples. This is only used to remove the
+%	now very bothersome ":-" prefix for negative examples.
+%
+entails(+,M,Pos,S):-
+	member(Ep, Pos)
+	,louise:metasubstitution(Ep,M,S).
+entails(-,M,Neg,S):-
+	member(:-En, Neg)
+	,louise:metasubstitution(En,M,S).
+
+
 %!	metasub_atom(+Count,+Target,+Metarule1,+Metarule2,-Metasub) is
 %!	nondet.
 %
@@ -467,16 +476,7 @@ metarule_extension(MS,M3,M1,M2_):-
 %	generalise_invent/4 when an extended metarule succeeds in
 %	generalising a positive example.
 %
-%	@tbd After the changes in the static_metarules_clean branch to
-%	avoid asserting metarules to the dynamic database Metarule1 and
-%	Metarule2 are now actually key-value pairs, where the keys are
-%	Metarule1 and Metarule2 as before and their values are fresh
-%	copies of those metarules with free variables. Accordingly, S is
-%	a pair Metasub-M where Metasub is as before and M is the copy of
-%	each of Metarule1 or Metarule2. There are reasons why this is
-%	such a mess. One day they may even be revealed.
-%
-metasub_atom(C,T,(S1:-_)-M1,(S2:-_)-M2,S):-
+metasub_atom(C,T,(S1:-_),(S2:-_),S):-
 % There should only be one variable in both metasub atoms
 % The variable of the invented predicate's symbol.
 	term_variables([S1,S2],[V])
@@ -485,8 +485,7 @@ metasub_atom(C,T,(S1:-_)-M1,(S2:-_)-M2,S):-
 	% multiple results in setof/3 and avoid having to flatten
 	% its set of results later.
 	% Yeah, I know this is a bit cryptic, sorry.
-	,member(S,[S1-M1,S2-M2]).
-
+	,member(S,[S1,S2]).
 
 
 %!	invented_symbol(+Target,+Counter,?Symbol) is det.
