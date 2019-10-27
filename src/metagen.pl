@@ -18,9 +18,15 @@
 %	of [chain, inverse, identity]. Metarules is a list of metarule
 %	extensions with lengths that depend on their generation.
 %
-%	The length of a metarule of generation n is n + 1 if the
-%	metarule is an extension of inverse or identity and n + 2 if the
-%	metarule is chain.
+%	A metarule generation is a tuple, (M1,I,Mi) where M1 is a
+%	metarule, called the _progenitor_ of the generation, i > 0 is
+%	the generation, a positive integer, and Mi is an extension of M1
+%	with n+i (head and body) literals, where n is the number of body
+%	literals in M1.
+%
+%	For example, the length of a metarule of generation n is n + 1
+%	if the metarule is an extension of inverse or identity and n + 2
+%	if the metarule is chain.
 %
 metarule_generations(I,IDs,MS):-
 	!
@@ -37,9 +43,15 @@ metarule_generations(I,IDs,MS):-
 %
 %	Generate a Metarule of the given Generation.
 %
-%	The length of a metarule of generation n is n + 1 if the
-%	metarule is an extension of inverse or identity and n + 2 if the
-%	metarule is chain.
+%	A metarule generation is a tuple, (M1,I,Mi) where M1 is a
+%	metarule, called the _progenitor_ of the generation, i > 0 is
+%	the generation, a positive integer, and Mi is an extension of M1
+%	with n+i (head and body) literals, where n is the number of body
+%	literals in M1.
+%
+%	For example, the length of a metarule of generation n is n + 1
+%	if the metarule is an extension of inverse or identity and n + 2
+%	if the metarule is chain.
 %
 metarule_generation(I,chain,M):-
 	I_ is I + 2
