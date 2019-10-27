@@ -580,7 +580,7 @@ list_top_program(T):-
 list_top_program(T,U):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,louise:write_program(Pos_,BK_,MS_,Refs)
+	,louise:write_program(Pos_,BK_,Refs)
 	,louise:generalise(Pos_,MS_,Ss_Pos)
 	,write_and_count('Generalisation:',Ss_Pos,U)
 	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)

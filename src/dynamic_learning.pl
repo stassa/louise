@@ -359,10 +359,15 @@ atomic_residue(Ps,Pos,Is):-
 %	extension pair are added to the Top program, as described in
 %	learn_dynamic/5.
 %
+/*
+TODO: this will fail after the change of write_program/4 (now 3) to not
+write the metarules to the dynamic database. generalise_dynamic/4 in
+particular needs to be updated.
+*/
 top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
-	,louise:write_program(Pos,BK,MS,Refs)
+	,louise:write_program(Pos,BK,Refs)
 	,generalise_dynamic(C,Pos,MS,Ms_Pos)
 	,louise:specialise(Ms_Pos,Neg,Ms)
 	%,constraints(Ms, Ms_)

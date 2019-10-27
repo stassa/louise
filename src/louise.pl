@@ -82,7 +82,7 @@ learn(Pos,Neg,BK,MS,Ps):-
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
-	,write_program(Pos,BK,MS,Refs)
+	,write_program(Pos,BK,Refs)
 	,top_program_(Pos,Neg,BK,MS,Ms)
 	,constraints(Ms, Ms_)
 	,unfolded_metasubs(Ms_,Ts)
@@ -97,16 +97,16 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,specialise(Ts_Pos_,Is,Neg,Ts).
 
 
-%!	write_program(+Pos,+BK,+MS,+PS,-Refs) is det.
+%!	write_program(+Pos,+BK,+PS,-Refs) is det.
 %
-%	Write an encapsulated program to the dynamic database.
+%	Write an encapsulated MIL problem to the dynamic database.
 %
-%	@tbd The negative examples don't need to be written to the
-%	dynamic database.
+%	@tbd The negative examples and metarules don't need to be
+%	written to the dynamic database.
 %
-write_program(Pos,BK,MS,Rs):-
+write_program(Pos,BK,Rs):-
 	findall(Rs_i
-		,(member(P, [Pos,BK,MS])
+		,(member(P, [Pos,BK])
 		 ,assert_program(user,P,Rs_i)
 		 )
 		,Rs_)
@@ -130,13 +130,21 @@ top_program_(Pos,Neg,_BK,MS,Ss):-
 %	Generalises a set of Positive examples by finding each
 %	metasubstitution of a metarule that entails a positive example.
 %
+%	Generalised is a set of key-value pairs where the keys are
+%	ground metasubstitution atoms and the values are a copy with
+%	free variables of the encapsulated head and body literals of the
+%	metarule corresponding to the metasubsitution.
+%
 generalise(Pos,MS,Ss_Pos):-
-	setof(H
-	     ,M^MS^Ep^Pos^(member(M,MS)
-			  ,member(Ep,Pos)
-			  ,metasubstitution(Ep,M,H)
-			  )
+	setof(H-M
+	     ,M^MS^M_^Ep^Pos^
+	      (member(M,MS)
+	      ,copy_term(M,M_)
+	      ,member(Ep,Pos)
+	      ,metasubstitution(Ep,M_,H)
+	      )
 	     ,Ss_Pos).
+
 
 /* Alternative version- only resolves metarules, without taking into
 %  account the examples except to bind the symbol of the target predicate.
@@ -166,9 +174,9 @@ generalise(Pos,MS,Ss_Pos):-
 %
 specialise(Ss_Pos,Neg,Ss_Neg):-
 	setof(H
-	     ,Ss_Pos^En^Neg^M^
-	      (member(H,Ss_Pos)
-	      ,\+((member(En,Neg)
+	     ,H^M^Ss_Pos^En^Neg^
+	      (member(H-M,Ss_Pos)
+	      ,\+((member(:-En,Neg)
 		  ,metasubstitution(En,M,H)
 		  )
 		 )
@@ -186,11 +194,6 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	negative example is a ground definite goal (i.e. a clause of the
 %	form :-Example).
 %
-metasubstitution(:-E,M,Sub):-
-	!
-	,bind_head_literal(E,M,(Sub:-(E,Ls)))
-	,metarule_parts(_Id,M,Sub,E,Ls)
-	,user:call(Ls).
 metasubstitution(E,M,Sub):-
 	bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,user:call(Ls).
@@ -339,12 +342,14 @@ constraints(Ms,Ms_):-
 %	shorter amount of time, without increasing the number of
 %	resolution steps in the program reduction meta-interpreter.
 %
+/* TODO: Will need a different way to write the program.
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:reduction(subhypothesis)
 	,!
 	,write_program(Pos,BK,MS,Refs)
 	,subhypothesis(Pos,Ps,Rs)
 	,erase_program_clauses(Refs).
+*/
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(true)
 	,!
@@ -390,10 +395,23 @@ reduced_top_program_(_,Rs,_BK,_MS,Rs).
 %
 %	@tbd Needs documentation.
 %
+/*
+% TODO: This will need a different way to write the program than
+% write_program/4 (now3) which doesn't write the metarules any more.
 selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
 	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,MS_])
 	,encapsulated_clauses(Ps, Ps_)
 	,write_program(Pos_,BK_,MS_,Refs)
+	,subhypothesis(Pos_,Ps_,Hs_)
+	,erase_program_clauses(Refs)
+	,examples_target(Pos_,T)
+	,excapsulated_clauses(T,Hs_,Hs).
+*/
+
+selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
+	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,_MS_])
+	,encapsulated_clauses(Ps, Ps_)
+	,write_program(Pos_,BK_,Refs)
 	,subhypothesis(Pos_,Ps_,Hs_)
 	,erase_program_clauses(Refs)
 	,examples_target(Pos_,T)
