@@ -577,16 +577,23 @@ list_top_program(T):-
 %	unfolded into a list of definite clauses before printing.
 %	Otherwise it is printed as a list of metasubstitutions.
 %
+/*
+TODO: After the changes to Top program construction and
+unfold_metasubs/2 (now 3) to avoid writing the metarules to the
+dynamic database this doesn't work correctly anymore and its output look
+funny. The breackage is in write_and_count/4 actually taht doesn't
+expect a list of key-value pairs, as now returned by generalise/3.
+*/
 list_top_program(T,U):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,louise:write_program(Pos_,BK_,Refs)
 	,louise:generalise(Pos_,MS_,Ss_Pos)
-	,write_and_count('Generalisation:',Ss_Pos,U)
+	,write_and_count('Generalisation:',MS,Ss_Pos,U)
 	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)
 	,nl
-	,write_and_count('Specialisation:',Ss_Neg,U)
-	,erase_program_clauses(Refs).
+	,erase_program_clauses(Refs)
+	,write_and_count('Specialisation:',MS,Ss_Neg,U).
 
 
 %!	write_and_count(+Message,+Metasubs,+Unfold) is det.
@@ -598,9 +605,9 @@ list_top_program(T,U):-
 %	determining whether the Top program is unfolded to a list of
 %	definite clauses before printing.
 %
-write_and_count(Msg,Cs,U):-
+write_and_count(Msg,MS,Cs,U):-
 	(   U = true
-	->  unfolded_metasubs(Cs, Cs_)
+	->  unfolded_metasubs(Cs, MS, Cs_)
 	;   U = false
 	->  Cs_ = Cs
 	% Else fail silently to flumox the user. Nyahahaha!
@@ -609,7 +616,6 @@ write_and_count(Msg,Cs,U):-
 	,format_underlined(Msg)
 	,print_clauses(Cs_)
 	,format('Length:~w~n',[N]).
-
 
 
 

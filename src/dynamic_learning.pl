@@ -371,7 +371,7 @@ top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	,generalise_dynamic(C,Pos,MS,Ms_Pos)
 	,louise:specialise(Ms_Pos,Neg,Ms)
 	%,constraints(Ms, Ms_)
-	,unfolded_metasubs(Ms,Ts)
+	,unfolded_metasubs(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
 
 

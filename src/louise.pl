@@ -85,7 +85,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,write_program(Pos,BK,Refs)
 	,top_program_(Pos,Neg,BK,MS,Ms)
 	,constraints(Ms, Ms_)
-	,unfolded_metasubs(Ms_,Ts)
+	,unfolded_metasubs(Ms_,MS,Ts)
 	,erase_program_clauses(Refs).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(tp)
@@ -93,7 +93,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,bind_target(MS,T,MS_)
 	,flatten([Pos,BK],Ps)
 	,generalise(MS_,Ps,Is,Ts_Pos)
-	,unfolded_metasubs(Ts_Pos,Ts_Pos_)
+	,unfolded_metasubs(Ts_Pos,MS,Ts_Pos_)
 	,specialise(Ts_Pos_,Is,Neg,Ts).
 
 

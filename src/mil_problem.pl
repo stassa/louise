@@ -7,7 +7,7 @@
 		      ,encapsulated_bk/2
 		      ,examples_target/2
 		      ,encapsulated_clauses/2
-		      ,unfolded_metasubs/2
+		      ,unfolded_metasubs/3
 		      ,metarule_projection/2
 		      ,excapsulated_clauses/3
 		      ]).
@@ -682,20 +682,27 @@ encapsulated_clause(L,Acc,(H:-Bs)):-
 
 
 
-%!	unfolded_metasubs(+Metasubstitutions,-Unfolded) is det.
+%!	unfolded_metasubs(+Metasubstitutions,+Metarules,-Unfolded) is
+%!	det.
 %
 %	Project a list of Metasubstitutions onto fitting metarules.
 %
 %	The list of Metasubstitutions is normally the specialised Top
 %	program.
 %
-unfolded_metasubs(Ss,Ms):-
-	findall(P
+%	@tbd To avoid having to write the Metarules to the dynamic
+%	database just after we went to all this trouble to not do
+%	that, this predicate could just operate on a list of key-value
+%	pairs similar to the one returned by generalise/3.
+%
+unfolded_metasubs(Ss,MS,Ms):-
+	assert_program(user,MS,Rs)
+	,findall(P
 		,(member(S,Ss)
 		 ,metarule_projection(S,P)
 		 )
-		,Ms).
-
+		,Ms)
+	,erase_program_clauses(Rs).
 
 
 %!	metarule_projection(+Metasubstitution,-Projection) is det.
