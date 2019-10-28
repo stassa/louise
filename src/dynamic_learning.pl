@@ -365,7 +365,7 @@ top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	,louise:write_program(Pos,BK,Refs)
 	,top_program_dynamic(C,Pos,Neg,MS,Ms)
 	%,constraints(Ms, Ms_)
-	,unfolded_metasubs(Ms,MS,Ts)
+	,applied_metarules(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
 
 %!	top_program_dynamic(+Counter,+Pos,+Neg,+Metarules,-Metasubs) is

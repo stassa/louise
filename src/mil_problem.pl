@@ -7,7 +7,7 @@
 		      ,encapsulated_bk/2
 		      ,examples_target/2
 		      ,encapsulated_clauses/2
-		      ,unfolded_metasubs/3
+		      ,applied_metarules/3
 		      ,metarule_projection/2
 		      ,excapsulated_clauses/3
 		      ]).
@@ -682,10 +682,10 @@ encapsulated_clause(L,Acc,(H:-Bs)):-
 
 
 
-%!	unfolded_metasubs(+Metasubstitutions,+Metarules,-Unfolded) is
+%!	applied_metarules(+Metasubstitutions,+Metarules,-Applied) is
 %!	det.
 %
-%	Project a list of Metasubstitutions onto fitting metarules.
+%	Apply a list of Metasubstitutions to corresponding Metarules.
 %
 %	The list of Metasubstitutions is normally the specialised Top
 %	program.
@@ -695,7 +695,7 @@ encapsulated_clause(L,Acc,(H:-Bs)):-
 %	that, this predicate could just operate on a list of key-value
 %	pairs similar to the one returned by generalise/3.
 %
-unfolded_metasubs(Ss,MS,Ms):-
+applied_metarules(Ss,MS,Ms):-
 	assert_program(user,MS,Rs)
 	,findall(P
 		,(member(S,Ss)

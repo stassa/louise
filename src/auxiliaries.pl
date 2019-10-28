@@ -604,7 +604,7 @@ list_top_program(T,U):-
 %
 write_and_count(Msg,MS,Cs,U):-
 	(   U = true
-	->  unfolded_metasubs(Cs, MS, Cs_)
+	->  applied_metarules(Cs, MS, Cs_)
 	;   U = false
 	->  Cs_ = Cs
 	% Else fail silently to flumox the user. Nyahahaha!
