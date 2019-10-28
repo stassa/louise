@@ -578,19 +578,15 @@ list_top_program(T):-
 %	unfolded into a list of definite clauses before printing.
 %	Otherwise it is printed as a list of metasubstitutions.
 %
-/*
-TODO: After the changes to Top program construction and
-unfold_metasubs/2 (now 3) to avoid writing the metarules to the
-dynamic database this doesn't work correctly anymore and its output look
-funny. The breackage is in write_and_count/4 actually taht doesn't
-expect a list of key-value pairs, as now returned by generalise/3.
-*/
 list_top_program(T,U):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,louise:write_program(Pos_,BK_,Refs)
 	,louise:generalise(Pos_,MS_,Ss_Pos)
-	,write_and_count('Generalisation:',MS,Ss_Pos,U)
+	,findall(S
+		,member(S-_M,Ss_Pos)
+		,Ss_Pos_)
+	,write_and_count('Generalisation:',MS,Ss_Pos_,U)
 	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)
 	,nl
 	,erase_program_clauses(Refs)
