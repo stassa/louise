@@ -8,7 +8,7 @@
 		      ,examples_target/2
 		      ,encapsulated_clauses/2
 		      ,applied_metarules/3
-		      ,metarule_projection/2
+		      ,metarule_application/2
 		      ,excapsulated_clauses/3
 		      ]).
 
@@ -699,13 +699,13 @@ applied_metarules(Ss,MS,Ms):-
 	assert_program(user,MS,Rs)
 	,findall(P
 		,(member(S,Ss)
-		 ,metarule_projection(S,P)
+		 ,metarule_application(S,P)
 		 )
 		,Ms)
 	,erase_program_clauses(Rs).
 
 
-%!	metarule_projection(+Metasubstitution,-Projection) is det.
+%!	metarule_application(+Metasubstitution,-Projection) is det.
 %
 %	Project a Metasubstitution onto a fitting metarule.
 %
@@ -715,12 +715,12 @@ applied_metarules(Ss,MS,Ms):-
 %	that will cause problems with extended metarules and
 %	theorem_prover(tp) so it stays for now.
 %
-metarule_projection(S,H:-B):-
+metarule_application(S,H:-B):-
 	S =.. [m,Id|Ps]
 	,Mh =.. [metarule,Id|Ps]
 	,clause(Mh,(H,B))
 	,!.
-metarule_projection(S,H:-B):-
+metarule_application(S,H:-B):-
 % Extended metarules don't have metarule/n heads!
 % They're only in the database as m/n clauses.
 	S =.. [m,_Id|_Ps]
