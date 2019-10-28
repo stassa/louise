@@ -342,14 +342,12 @@ constraints(Ms,Ms_):-
 %	shorter amount of time, without increasing the number of
 %	resolution steps in the program reduction meta-interpreter.
 %
-/* TODO: Will need a different way to write the program.
-reduced_top_program(Pos,BK,MS,Ps,Rs):-
+reduced_top_program(Pos,BK,_MS,Ps,Rs):-
 	configuration:reduction(subhypothesis)
 	,!
-	,write_program(Pos,BK,MS,Refs)
+	,write_program(Pos,BK,Refs)
 	,subhypothesis(Pos,Ps,Rs)
 	,erase_program_clauses(Refs).
-*/
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(true)
 	,!
@@ -395,22 +393,10 @@ reduced_top_program_(_,Rs,_BK,_MS,Rs).
 %
 %	@tbd Needs documentation.
 %
-/*
-% TODO: This will need a different way to write the program than
-% write_program/4 (now3) which doesn't write the metarules any more.
-selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
-	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,MS_])
-	,encapsulated_clauses(Ps, Ps_)
-	,write_program(Pos_,BK_,MS_,Refs)
-	,subhypothesis(Pos_,Ps_,Hs_)
-	,erase_program_clauses(Refs)
-	,examples_target(Pos_,T)
-	,excapsulated_clauses(T,Hs_,Hs).
-*/
-
 selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
 	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,_MS_])
 	,encapsulated_clauses(Ps, Ps_)
+	% Why do we need to write the positiv examples?
 	,write_program(Pos_,BK_,Refs)
 	,subhypothesis(Pos_,Ps_,Hs_)
 	,erase_program_clauses(Refs)
