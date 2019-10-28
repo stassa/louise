@@ -388,8 +388,9 @@ skolem_copy(T,T_):-
 metarule_head_body_name(M,Sub_,B_,Id):-
 	M = (Sub:-B)
 	,strip_module(B,_M,B_)
-	,Sub =.. [_F,Id|Ps]
-	,Sub_ =.. [m,Id|Ps].
+	,Sub =.. [_F,_|Ps]
+	,Sub_ =.. [m,_|Ps]
+	,Id = '$metarule'.
 
 
 
