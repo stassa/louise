@@ -12,6 +12,7 @@
 		      ,write_encapsulated_problem/4
 		       % Debugging auxiliaries
 		      ,list_encapsulated_problem/1
+		      ,list_learning_results/0
 		      ,list_mil_problem/1
 		      ,list_problem_statistics/1
 		      ,list_top_program_reduction/1
@@ -463,6 +464,26 @@ list_encapsulated_problem(T):-
 	,format_underlined('Metarules')
 	,forall(member(M,MS_)
 	       ,(print_clauses(M)
+		)
+	       ).
+
+
+
+%!	list_learning_results is det.
+%
+%	List results for all learning targets.
+%
+%	Prints to the console the results of training on each learning
+%	target defined in the current experiment file.
+%
+%	Learning targets are obtained with a call to learning_targets/1.
+%	Each learning target is passed to learn/1.
+%
+list_learning_results:-
+	learning_targets(Ts)
+	,forall(member(T,Ts)
+	       ,(learn(T)
+		,nl
 		)
 	       ).
 
