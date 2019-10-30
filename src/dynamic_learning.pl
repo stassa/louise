@@ -401,6 +401,7 @@ top_program_dynamic(C,Pos,Neg,MS,Ms):-
 		 ,copy_term(M3,M3_)
 		 % Generalisation
 		 ,entails(+,M3,Pos,A)
+		 ,constraints(A)
 		 % Specialisation
 		 ,\+ entails(-,M3_,Neg,A)
 		 ,metasub_atom(C,T,M1,M2,S)
