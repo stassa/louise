@@ -2,6 +2,7 @@
 		 ,learn/2
 		 ,learn/5
 		 ,top_program/5
+		 ,constraints/1
 		 ,reduced_top_program/5
 		 ,selected_subhypothesis/5
 		 ]).
@@ -76,16 +77,12 @@ learn(Pos,Neg,BK,MS,Ps):-
 %	work in progress and may not fully eliminate too-general
 %	metasubstitutions.
 %
-%	@bug Actually, Top program construction using the TP operator
-%	currently doesn't work at all.
-%
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,write_program(Pos,BK,Refs)
 	,top_program_(Pos,Neg,BK,MS,Ms)
-	,constraints(Ms, Ms_)
-	,applied_metarules(Ms_,MS,Ts)
+	,applied_metarules(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(tp)
@@ -142,6 +139,7 @@ generalise(Pos,MS,Ss_Pos):-
 	      ,copy_term(M,M_)
 	      ,member(Ep,Pos)
 	      ,metasubstitution(Ep,M_,H)
+	      ,constraints(H)
 	      )
 	     ,Ss_Pos).
 
@@ -282,44 +280,123 @@ specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
 	.
 
 
-%!	constraints(+Top,-Filtered) is det.
+%!	constraints(+Metasubstitution) is det.
 %
-%	Filter the Top program by a set of metarule constraints.
+%	Apply a set of constraints to a generalising Metasubstitution.
 %
-%	Constraints are declared in experiment files as clauses
-%	of configuration:metarule_constraints/2.
+%	Metasubstitution is a generalising metasubstitution considered
+%	for addition to the Top program. A generalising metasubstitution
+%	is one found during the generalisation step of Top program
+%	construction.
 %
-%	The first argument of metarule_constraints/2 is the
+%	constraints/1 tests Metasubstitution against a set of
+%	user-defined constraints. If each applicable constraint is true,
+%	then constraints/1 succeeds and Metasubstitution is included in
+%	the Top program. Otherwise constraints/1 fails and
+%	Metasubstitution is excluded from the Top program.
+%
+%	Note that only metasubstitutions found to generalise an example
+%	are tested for constraints, i.e. metasubstitutions that can not
+%	be proven against the MIL problem will be excluded without
+%	constraints being tested.
+%
+%	User-defined constraints
+%	------------------------
+%
+%	User-defined constraints are declared in experiment files as
+%	clauses of configuration:metarule_constraints/2:
+%
+%	==
+%	configuration:metarule_constraints(?Metasub,+Goal) is semidet.
+%	==
+%
+%	A metarule_constraints/2 clause can be any Prolog clause. To
+%	clarify, it can be a unit clause (a "fact"), or a non-unit
+%	clause (a "rule").
+%
+%	The first argument of metarule_constraints/2 should match the
 %	metasubstitution atom of an encapsulated metarule (the functor
-%	must be "metarule" not "m"). Metarule constraints are applied to
-%	any metasubstitution in the Top program that match this first
-%	argument.
+%	must be "m" not "metarule"). If a generalising metasubstitution
+%	matches this first argument, the matching metarule_constraint/2
+%	clause is called. If this first call succeeds, the Prolog goal
+%	in the second argument is called to perform the constraint test.
 %
 %	The second argument of metarule_constraints/2 is an arbitrary
-%	Prolog goal. If the goal fails, the metasubstitution in the
-%	first argument is removed from the Top program.
+%	Prolog goal. When the first argument of metarule_constraints/2
+%	matches a generalising metasubstitution and the initial call
+%	to metarule_constraint/2 succeds, the second argument is passed
+%	to call/1. If this second call fails, the constraint test fails
+%	and the metasubstitution matching the first argument is removed
+%	from the generalised Top program. If this second calls succeeds,
+%	the cosntraint test passes and the metasubstitution is added to
+%	the generalised Top program.
 %
-%	@tbd If there are any metarule constraints declared in the
-%	current experiment file, this predicate will walk over the
-%	entire Top program to filter it. It would save quite a bit of
-%	juice to instead do the check at the point where a
-%	metasubstitution is initially created- for example, right after
-%	metasubstitution/3.
+%	Example
+%	-------
 %
-constraints(Ms,Ms):-
+%	The following metarule constraint will match a metasubstitution
+%	with any metarule Id and with three existentially quantified
+%	variables all ground to the same term. When the match succeeds,
+%	and given that the constraint is a unit clause (i.e. always
+%	true), the second argument of the constraint, fail/0 will be
+%	called causing the constraint to fail and the metasubstitution
+%	to be discarded:
+%
+%	==
+%	configuration:metarule_constraints(m(_ID,P,P,P),fail).
+%	==
+%
+%	The metarule constraint listed above can be used to exclude
+%	left-recursive clauses from the Top program, but only for
+%	metarules with exactly two body literals. A more general
+%	constraint that will apply to a metarule with an arbitrary
+%	number of body literals is as follows:
+%
+%	==
+%	configuration:metarule_constraints(M,fail):-
+%	M =.. [m,_Id,P|Ps]
+%	,forall(member(P1,Ps)
+%	       ,P1 == P).
+%	==
+%
+%	Alternatively, the symbol of a target predicate can be specified
+%	so that only metasubstitutions of that predicate are excluded
+%	(if they would result in left-recursive clauses):
+%
+%	==
+%	configuration:metarule_constraints(M,fail):-
+%	M =.. [m,_Id,ancestor|Ps]
+%	,forall(member(P1,Ps)
+%	       ,P1 == ancestor).
+%	==
+%
+%	Or the metarule Id can be ground to test only metasubstitutions
+%	of a specific metarule, and so on.
+%
+%
+%	Metarule constraints and predicate invention
+%	--------------------------------------------
+%
+%	In the above examples, note the use of ==/2 instead of =/2 to
+%	perform the comparison between existentially quantified
+%	variables. This is to allow for variables remaining unbound on
+%	generalisation during metarule extension by unfolding in the
+%	proces of predicate invention.
+%
+%	@see data(examples/constraints) for examples of using metarule
+%	constraints, in particular for the purpose of excluding
+%	metasubstitutions resulting in left-recursive clauses from the
+%	Top progam.
+%
+constraints(_Sub):-
 	predicate_property(metarule_constraints(_,_), number_of_clauses(0))
 	,!.
-constraints(Ms,Ms_):-
+constraints(Sub):-
 	predicate_property(metarule_constraints(_,_), number_of_clauses(N))
 	,N > 0
-	,findall(Sub
-		,(member(Sub,Ms)
-		 ,Sub =.. [m|As]
-		 ,Sub_ =.. [metarule|As]
-		 ,configuration:metarule_constraints(Sub_, C)
-		 ,user:call(C)
-		 )
-		,Ms_).
+	,forall(configuration:metarule_constraints(Sub, C)
+	       ,user:call(C)
+	       ).
 
 
 
