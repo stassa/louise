@@ -452,7 +452,7 @@ new_variables(identity,_,[P,A,B],[Q,A,B]):-
 %	Extend a pair of metarules by unfolding.
 %
 extend(H1:-M1,H2:-M2,H3:-M3):-
-	mil_problem:unfold(M1,M2,M3)
+	unfold(M1,M2,M3)
 	,existential(H1,H2,M3,Es)
 	,rename(H1,H2,Es,H3).
 
@@ -557,3 +557,30 @@ rename(H1,H2,Es,H3):-
 	,atomic_list_concat([N1,N2],'_',N_)
 	,gensym(N_,N3)
 	,H3 =.. [m,N3|Es].
+
+
+%!	unfold(+Metarule1,+Metarule2,-Unfolded) is nondet.
+%
+%	Unfold two metarules onto one another.
+%
+%	Unfodling here means that we resolve the two metarules so that
+%	each of the body literals of Metarule1 is the literal resolved
+%	upon.
+%
+%	Operatively, we take each body literal Li in Metarule1, unify
+%	it with the head literal of Metarule2 and replace Li with the
+%	body literals of Metarule2.
+%
+%	The nondeterminism in this predicate comes from the consecutive
+%	resolution with each possible body literal in Metarule1.
+%
+%	@tbd This is a very naive and so inefficient way to do this.
+%	There is a better way but it takes more work and I want to test
+%	that this all works as expected first.
+%
+unfold(M1,M2,M):-
+	once(list_tree([H1|B1],M1))
+	,once(list_tree([H2|B2],M2))
+	,select(H2,B1,B2,B3)
+	,flatten([H1|B3], M_f),
+	once(list_tree(M_f,M)).

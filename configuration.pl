@@ -1,5 +1,4 @@
 :-module(configuration, [experiment_file/2
-			,extend_metarules/1
 			,learner/1
 			,max_invented/1
 			,metarule/2
@@ -31,14 +30,12 @@
 
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
-:- dynamic extend_metarules/1
-          ,max_invented/1
+:- dynamic max_invented/1
           ,recursion_depth_limit/2
 	  ,recursive_reduction/1
 	  ,reduction/1
 	  ,resolutions/1
 	  ,theorem_prover/1.
-
 
 % Body literals of H(2,2) metarules.
 :-dynamic m/1
@@ -89,6 +86,25 @@
 %:-debug(dynamic). % Debug dynamic learning.
 
 
+%!	metarule_constraints(+Metasubstitution,+Goal) is nondet.
+%
+%	A Goal to be called when Metasubstitution is matched.
+%
+%	@tbd This predicate is multifile so that it can be declared by
+%	experiment files, however the definition below is pretty
+%	universally necessary to allow learning hypotheses with
+%	left-recursions using dynamic learning and predicate invention.
+%	So it goes into the configuration that it might be used by
+%	aplicable to every experiment file. If left-recursive hypotheses
+%	are required this definition can be commented out without error,
+%	because metarule_constraints/2 is declared dynamic.
+%
+metarule_constraints(M,fail):-
+	M =.. [m,_Id,P|Ps]
+	,forall(member(P1,Ps)
+	       ,P1 == P).
+
+
 %!	experiment_file(?Path,?Module) is semidet.
 %
 %	The Path and Module name of an experiment file.
@@ -97,6 +113,7 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/anbn.pl',anbn).
 %experiment_file('data/examples/abduced.pl',abduced).
 %experiment_file('data/examples/special_metarules.pl',special_metarules).
+%experiment_file('data/examples/constraints.pl',constraints).
 %experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
 %experiment_file('data/examples/recipes.pl',recipes).
 %experiment_file('data/thelma_louise/kinship/kinship.pl',kinship).
@@ -104,26 +121,6 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/thelma_louise/robots/robots.pl',robots).
 %experiment_file('data/thelma_louise/robots/generator/robots_gen.pl',robots_gen).
 %experiment_file('data/thelma_louise/noise/heroes/detect_evil.pl',detect_evil).
-
-
-%!	extend_metarules(?Extend) is semidet.
-%
-%	Whether, and how, to extend the metarules in a MIL problem.
-%
-%	If Extend is "false", metarules are not extended. If Extend is a
-%	number, metarules are extended that many times, recursively.
-%
-%	Metarule extension begins with the set of metarules declared for
-%	a MIL problem (in a clause of metarules/2 in an experiment
-%	file). In the first step of recursive extension, each metarule
-%	in the original set is extended by each other metarule in the
-%	set, including itself. In the second and each subsequent step,
-%	the process is repeated with the metarules in the extended set
-%	produced in the previous step. The original metarules are always
-%	in the extended set.
-%
-extend_metarules(false).
-%extend_metarules(1).
 
 
 %!	max_invented(?Number) is semidet.
@@ -201,7 +198,7 @@ metarule(double_identity,P,Q,R,Y,Z,D):-m(P,X,Y),m(Q,X,Z),m(R,X,D).
 %	* dyamic_learning: Limits recursion during Top program
 %	construction in dynamic learning.
 %
-recursion_depth_limit(dynamic_learning,100).
+recursion_depth_limit(dynamic_learning,500).
 
 
 %!	recursive_reduction(?Bool) is semidet.

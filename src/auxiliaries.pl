@@ -441,8 +441,7 @@ write_encapsulated_problem(Pos,Neg,BK,MS):-
 %	encapsulated MIL problem to be listed.
 %
 list_encapsulated_problem(T):-
-	configuration:extend_metarules(E)
-	,experiment_data(T,Pos,Neg,BK,MS)
+	experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_clauses(Pos,Pos_)
 	,format_underlined('Positive examples')
 	,print_clauses(Pos_)
@@ -452,10 +451,7 @@ list_encapsulated_problem(T):-
 	,print_clauses(Neg_)
 	,nl
 	,encapsulated_bk(BK,BK_)
-	,(   E \== false
-	 ->  extended_metarules(MS,MS_)
-	 ;   expanded_metarules(MS,MS_)
-	 )
+	,expanded_metarules(MS,MS_)
 	,format_underlined('Background knowledge')
 	,forall(member(P,BK_)
 	       ,print_clauses(P)
