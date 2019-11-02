@@ -7,6 +7,7 @@
 :-use_module(src(auxiliaries)).
 :-use_module(src(louise)).
 :-use_module(src(mil_problem)).
+:-use_module(src(metagen)).
 
 /** <module> Dynamic learning with metarule extension and predicate invention.
 
