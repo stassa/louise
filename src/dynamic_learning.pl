@@ -1,8 +1,6 @@
 :-module(dynamic_learning, [learn_dynamic/1
 			   ,learn_dynamic/2
 			   ,learn_dynamic/5
-			   ,metarule_extension/4
-			   ,extend/3
 			   ]).
 
 :-use_module(configuration).
@@ -397,6 +395,7 @@ top_program_dynamic(C,Pos,Neg,MS,Ms):-
 	,examples_target(Pos,T/_)
 	,findall(S
 		,(metarule_extension(MS,M3,M1,M2)
+		 %,debug_clauses(dynamic, [M3])
 		 % Keep fresh variables for specialisation step
 		 ,copy_term(M3,M3_)
 		 % Generalisation
@@ -502,116 +501,3 @@ invented_symbol(T,C,V):-
 	,I_ =< K
 	,atomic_list_concat([T,I_],'_',V)
 	,nb_setarg(1,C,I_).
-
-
-/*================================================================================
- * Metarule extension
- ================================================================================ */
-
-
-%!	extend(+Metarule_1,+Metarule_2,-Extension) is det.
-%
-%	Extend a pair of metarules.
-%
-extend(H1:-M1,H2:-M2,H3:-M3):-
-	mil_problem:unfold(M1,M2,M3)
-	,existential(H1,H2,M3,Es)
-	,rename(H1,H2,Es,H3).
-
-
-%!	existential(+Metasub_1,+Metasub_2,+Metarule,-Existential) is
-%!	det.
-%
-%	Collect Existentially quantified variables in a metarule Body.
-%
-%	Metarule is the "vector" of head and body literals of an
-%	extended metarule. Metasub_1 and Metasub_2 are the
-%	metasubstitution atoms of the original metarules in the
-%	extension pair that produced the extended metarule. Existential
-%	is the set of existentially quantified variables in Body that
-%	are also in Metasub_1 and Metasub_2. These need to be included
-%	in the metasubstitution atom of the extension, i.e. the one
-%	associated with Metarule.
-%
-existential(H1,H2,B,Es):-
-	maplist(symbols,[H1,H2],[Ss1,Ss2])
-	,term_variables([Ss1,Ss2],Vs)
-	,term_variables(B,Bs)
-	,existential_(Bs,Vs,[],Es).
-
-
-%!	symbols(+Metarule, -Symbols) is det.
-%
-%	Extract predicate symbol variables from a Metarule.
-%
-symbols(M,Ps):-
-	M =.. [m,_N|Ps].
-
-
-%!	existential_(?Metarule,?Metasubs,+Acc,-Existential) is det.
-%
-%	Business end of existential/4.
-%
-%	Metarule is the list of existentially quantified variables in an
-%	extended metarule, M1. Metasubs is the set of existentially
-%	quantified variables in the metarules in the extension pair that
-%	produced M1. Existential is the list of existentially quantified
-%	variables in Metarule that are also in Metasubs. Those need to
-%	be included in the metasubstitution atom associated with
-%	Metarule.
-%
-existential_([],_,Acc,Es):-
-	!
-       ,reverse(Acc,Es).
-existential_([V|Vs],Bs,Acc,Bind):-
-	in_vars(V, Bs)
-	,!
-	,existential_(Vs,Bs,[V|Acc],Bind).
-existential_([_V|Vs],Bs,Acc,Bind):-
-	existential_(Vs,Bs,Acc,Bind).
-
-
-%!	in_vars(?Variable,?Variables) is det.
-%
-%	True when a Variable is in a list of Variables.
-%
-%	Version of memeber/2 that avoids unfiying Variable with every
-%	other variable in Variables and thereby making an awful
-%	mish-mashed mess of unexpectedly identical variables. We need to
-%	preserve Variables and their bindings throughout the project.
-%
-in_vars(V,[V1|_Vs]):-
-	V == V1
-	,!.
-in_vars(V,[_|Vs]):-
-	in_vars(V,Vs).
-
-
-%!	rename(+Metasub_1, +Metasub_2,+Existential,-Metasub_3) is det.
-%
-%	Create a metasubstitution atom for an extended metarule.
-%
-%	Metasub_1 and Metasub_2 are the metasubstitution atoms of the
-%	two metarules in an extension pair. Existential is the set of
-%	existentially quantified variables in the metarule resulting
-%	from this pair's extension, M3. Metasub_3 is the
-%	metasubstitution atom of M3, including a unique name and the set
-%	of Existential variables of the other two metarules that are
-%	also found in the head and body literals of M3.
-%
-%	The unique name for Metasub_3 is currently created by appending
-%	the metarule names in Metasub_1 and Metasub_2, separated by an
-%	underscore, "_", and passed to gensym/2 that adds to it a unique
-%	... ish... numeric index.
-%
-%	The use of gensym/2 is justified, despite its lack of guarantee
-%	of actual uniqueness. Extensions are short lived and we don't
-%	need to track their names throughout the process. Basically, the
-%	new name in Metasub_3 is only useful for debugging purposes.
-%
-rename(H1,H2,Es,H3):-
-	H1 =.. [m,N1|_]
-	,H2 =.. [m,N2|_]
-	,atomic_list_concat([N1,N2],'_',N_)
-	,gensym(N_,N3)
-	,H3 =.. [m,N3|Es].

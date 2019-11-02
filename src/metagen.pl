@@ -2,6 +2,7 @@
 		  ,metarule_kindred/3
 		  ,metarule_bloodline/3
 		  ,metarule_generation/3
+		  ,extend/3
 		  ]).
 
 /** <module> Predicates for metarule generation.
@@ -212,6 +213,11 @@ true.
 ==
 
 */
+
+
+/*================================================================================
+ * Metarule generation
+ ================================================================================ */
 
 
 %!	metarule_coterie(+Minimum,+Maximum,+Progenitors,-Coterie) is
@@ -433,3 +439,121 @@ new_variables(inverse,I,[P,A,B],[Q,B,A]):-
 new_variables(identity,_,[P,A,B],[Q,A,B]):-
 % Every literal in identity is P(A,B), Q(A,B), R(A,B) ...
 	predicate_variable(P,Q).
+
+
+
+/*================================================================================
+ * Metarule extension
+ ================================================================================ */
+
+
+%!	extend(+Metarule_1,+Metarule_2,-Extension) is det.
+%
+%	Extend a pair of metarules by unfolding.
+%
+extend(H1:-M1,H2:-M2,H3:-M3):-
+	mil_problem:unfold(M1,M2,M3)
+	,existential(H1,H2,M3,Es)
+	,rename(H1,H2,Es,H3).
+
+
+%!	existential(+Metasub_1,+Metasub_2,+Metarule,-Existential) is
+%!	det.
+%
+%	Collect existentially quantified variables in a metarule body.
+%
+%	Metarule is the "vector" of head and body literals of a metarule
+%	extension. Metasub_1 and Metasub_2 are the metasubstitution
+%	atoms of the original metarules in the extension pair that
+%	produced the extension. Existential is the set of existentially
+%	quantified variables in Body that are also in Metasub_1 and
+%	Metasub_2. These need to be included in the metasubstitution
+%	atom of the extension, i.e. the one associated with Metarule.
+%
+existential(H1,H2,B,Es):-
+	maplist(symbols,[H1,H2],[Ss1,Ss2])
+	,term_variables([Ss1,Ss2],Vs)
+	,term_variables(B,Bs)
+	,existential_(Bs,Vs,[],Es).
+
+
+%!	symbols(+Metarule, -Symbols) is det.
+%
+%	Extract second order variables from a Metasubstitution.
+%
+symbols(M,Ps):-
+	M =.. [m,_N|Ps].
+
+
+%!	existential_(?Metarule,?Metasubs,+Acc,-Existential) is det.
+%
+%	Business end of existential/4.
+%
+%	Metarule is the list of existentially quantified variables in an
+%	extended metarule, M1. Metasubs is the set of existentially
+%	quantified variables in the metarules in the extension pair that
+%	produced M1. Existential is the list of existentially quantified
+%	variables in Metarule that are also in Metasubs. Those need to
+%	be included in the metasubstitution atom associated with
+%	Metarule.
+%
+existential_([],_,Acc,Es):-
+	!
+       ,reverse(Acc,Es).
+existential_([V|Vs],Bs,Acc,Bind):-
+	in_vars(V, Bs)
+	,!
+	,existential_(Vs,Bs,[V|Acc],Bind).
+existential_([_V|Vs],Bs,Acc,Bind):-
+	existential_(Vs,Bs,Acc,Bind).
+
+
+%!	in_vars(?Variable,?Variables) is det.
+%
+%	True when a Variable is in a list of Variables.
+%
+%	Version of memeber/2 that avoids unfiying Variable with every
+%	other variable in Variables and thereby making an awful
+%	mish-mashed mess of unexpectedly identical variables. We need to
+%	preserve Variables and their bindings throughout the project.
+%
+in_vars(V,[V1|_Vs]):-
+	V == V1
+	,!.
+in_vars(V,[_|Vs]):-
+	in_vars(V,Vs).
+
+
+%!	rename(+Metasub_1,+Metasub_2,+Existential,-Metasub_3) is det.
+%
+%	Create a metasubstitution atom for a metarule extension.
+%
+%	Metasub_1 and Metasub_2 are the metasubstitution atoms of the
+%	two metarules in an extension pair. Existential is the set of
+%	existentially quantified variables in the metarule resulting
+%	from this pair's extension, M3. Metasub_3 is the
+%	metasubstitution atom of M3, including a unique name and the set
+%	of Existential variables of the other two metarules that are
+%	also found in the head and body literals of M3.
+%
+%	The unique name for Metasub_3 is currently created by appending
+%	the metarule names in Metasub_1 and Metasub_2, separated by an
+%	underscore, "_", and passed to gensym/2 that adds to it a unique
+%	... ish... numeric index.
+%
+%	The use of gensym/2 is justified, despite its lack of guarantee
+%	of actual uniqueness. Extensions are short lived and we don't
+%	need to track their names throughout the process. Basically, the
+%	new name in Metasub_3 is only useful for debugging purposes.
+%
+%	@tbd I'm not convinced that there really is a need to number
+%	metarule extensions with gensym. Or at all. We don't really need
+%	the names of extended metarules for anything, so far, so it
+%	seems to be just a bit of an affectation to name them apart.
+%
+rename(H1,H2,Es,H3):-
+	H1 =.. [m,N1|_]
+	,H2 =.. [m,N2|_]
+	,atomic_list_concat([N1,N2],'_',N_)
+	,gensym(N_,N3)
+	,H3 =.. [m,N3|Es].
