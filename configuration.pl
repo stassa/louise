@@ -95,14 +95,17 @@
 %	universally necessary to allow learning hypotheses with
 %	left-recursions using dynamic learning and predicate invention.
 %	So it goes into the configuration that it might be used by
-%	aplicable to every experiment file. If left-recursive hypotheses
-%	are required this definition can be commented out without error,
-%	because metarule_constraints/2 is declared dynamic.
+%	aplicable to every experiment file. On the other
+%	hand, left-recursive hypotheses may be required for some
+%	problems so this definition is left commented out. This will not
+%	raise any errors because metarule_constraints/2 is declared
+%	dynamic.
 %
-metarule_constraints(M,fail):-
+/*metarule_constraints(M,fail):-
 	M =.. [m,_Id,P|Ps]
 	,forall(member(P1,Ps)
 	       ,P1 == P).
+*/
 
 
 %!	experiment_file(?Path,?Module) is semidet.
