@@ -1,4 +1,5 @@
-:-module(defaults, [default_max_invented/1
+:-module(defaults, [default_dynamic_generations/1
+		   ,default_max_invented/1
 		   ,default_recursion_depth_limit/1
 		   ,default_recursive_reduction/1
 		   ,default_reduction/1
@@ -13,6 +14,12 @@ options that are declared dynamic so that they can be manipulated by
 set_configuration_option/2. The auxilary predicate reset_defaults/0 sets
 dynamic configuration options to the values specified in this file.
 */
+
+%!	default_dynamic_generations(?Generations) is det.
+%
+%	Default value for dynamic_generations/1 option.
+%
+default_dynamic_generations(1).
 
 
 %!	default_max_invented(?Default) is semidet.

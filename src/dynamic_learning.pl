@@ -1,6 +1,6 @@
 :-module(dynamic_learning, [learn_dynamic/1
 			   ,learn_dynamic/2
-			   ,learn_dynamic/5
+			   ,learn_dynamic/6
 			   ]).
 
 :-use_module(configuration).
@@ -192,6 +192,15 @@ extend the initial set of metarules more than a single time.
 
 */
 
+%!	h22_metarules(?IDs) is semidet.
+%
+%	IDs of progenitor H22 metarules for metarule generation.
+%
+%h22_metarules([chain,inverse,identity]).
+h22_metarules([chain,inverse]).
+%h22_metarules([chain]).
+
+
 
 %!	learn_dynamic(+Target) is det.
 %
@@ -202,18 +211,19 @@ learn_dynamic(T):-
 	,print_clauses(Ps).
 
 
-
 %!	learn_dynamic(+Target,-Program) is det.
 %
 %	Learn a Program by dynamic learning.
 %
 learn_dynamic(T,Ps):-
-	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
-	,learn_dynamic(Pos,Neg,BK,MS,Ps).
+	configuration:dynamic_generations(N)
+	,h22_metarules(IDs)
+	%,debug(dynamic,'H22 progenitors: ~w',[IDs])
+	,tp_safe_experiment_data(T,Pos,Neg,BK,_)
+	,learn_dynamic(N,Pos,Neg,BK,IDs,Ps).
 
 
-
-%!	learn_dynamic(+Pos,+Neg,+BK,+MS,-Prog) is det.
+%!	learn_dynamic(+Generation,+Pos,+Neg,+BK,+MS,-Prog) is det.
 %
 %	Learn with metarule extension for predicate invention.
 %
@@ -228,26 +238,88 @@ learn_dynamic(T,Ps):-
 %	still being developed so some confusion like this will reign for
 %	a while still.
 %
-learn_dynamic(Pos,Neg,BK,MS,Ps):-
-	C = c(0)
-	,examples_target(Pos,T)
-	,debug(dynamic,'Encapsulating problem',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,debug(dynamic,'First dynamic episode',[])
-	,dynamic_episode(C,Pos_,Neg_,BK_,MS_,Es_1)
-	%,debug_clauses(dynamic, Es_1)
-	,debug(dynamic,'Reducing Top program',[])
-	,reduced_top_program(Pos_,BK_,MS_,Es_1,Rs_1)
-	,atomic_residue(Rs_1,Pos_,Rs)
-	,length(Rs,N)
-	,debug(dynamic,'Reduced examples: ~w', [N])
-	,learn_dynamic(C,T,N,Pos_,Neg_,BK_,MS_,Es_1,Ps_k)
-	,excapsulated_clauses(T,Ps_k,Ps).
+learn_dynamic(N,Pos,Neg,BK,IDs,Ps):-
+	examples_target(Pos,T)
+	,encapsulated_problem_1(Pos,Neg,BK,[Pos_,Neg_,BK_])
+	,dynamic_generations(N,Pos_,Neg_,BK_,IDs,Ps_k)
+	,reduced_top_program(Pos_,BK_,[],Ps_k,Ps_r)
+	,excapsulated_clauses(T,Ps_r,Ps).
 
-%!	learn_dynamic(+Counter,+Tgt,+Size,+Pos,+Neg,+BK,_MS,-Episode,-Prog)
+
+% This is or was needed just so as to not have to expand metarules at
+% the start of learning. We don't do that anymore.
+encapsulated_problem_1(Pos,Neg,BK,[Pos_,Neg_,BK_]):-
+	encapsulated_bk(BK,BK_)
+	,encapsulated_clauses(Pos,Pos_)
+	,encapsulated_clauses(Neg,Neg_).
+
+
+%!	dynamic_generations(+Generations,+Pos,+Neg,+BK,+MS,-Program)
+%
+%	Perform dynamic learning with metarule generation.
+%
+%	Generations is the number of metarule generations to generate.
+%
+dynamic_generations(N,Pos,Neg,BK,IDs,Ps):-
+	C = c(0)
+	,succ(N,N_) % Off by one correction for max generation.
+	,dynamic_generations(1,N_,C,Pos,Neg,BK,IDs,[],Ps).
+
+%!	dynamic_generations(+Current,+Gen,+Counter,+Pos,+Neg,+BK,+MS,+Acc,-Prog)
 %!	is det.
 %
-%	Business end of learn_dynamic/5.
+%	Business end of dynamic_generations/6.
+%
+%	Counter is the counter used in metasub_atom/5 to number invented
+%	predicates' symbols.
+%
+dynamic_generations(I,I,_C,_Pos,_Neg,_BK,_IDs,Hs,Hs):-
+	!
+       ,I_ is I - 1
+       ,debug(dynamic,'Exiting after ~w generations',[I_]).
+dynamic_generations(I,N,C,Pos,Neg,BK,IDs,Hs,Bind):-
+	debug(dynamic,'Starting with generation ~w',[I])
+	%,metarule_kindred(I,IDs,MS_i)
+	,metarule_generation(I,IDs,MS_i)
+	,append(BK,Hs,BK_i)
+	,dynamic_episodes(C,Pos,Neg,BK_i,MS_i,Hs_i)
+	%,debug_clauses(dynamic, Hs_i)
+	%,Hs_i \= []
+	,!
+	,succ(I,I_)
+	,dynamic_generations(I_,N,C,Pos,Neg,BK,IDs,Hs_i,Bind).
+dynamic_generations(I,N,C,Pos,Neg,BK,IDs,Hs,Bind):-
+% We'll get here if the previous dynamic episode fails.
+% TODO: can it, ever? We're not checking it's non-empty anymore.
+	succ(I,I_)
+	,dynamic_generations(I_,N,C,Pos,Neg,BK,IDs,Hs,Bind).
+
+
+%!	dynamic_episodes(+Counter,+Pos,+Neg,+BK,+MS,-Prog) is det.
+%
+%	Perform a series of dynamic episodes.
+%
+%	Each episode is performed with the current metarule generation
+%	and a new generation is tried only after this predicate exits.
+%
+dynamic_episodes(C,Pos,Neg,BK,MS,Ps_k):-
+	examples_target(Pos,T)
+	,debug(dynamic,'First dynamic episode',[])
+	,dynamic_episode(C,Pos,Neg,BK,MS,Es_1)
+	%,debug_clauses(dynamic, Es_1)
+	,debug(dynamic,'Reducing Top program',[])
+	,reduced_top_program(Pos,BK,MS,Es_1,Rs_1)
+	%,debug_clauses(dynamic, Rs_1)
+	,atomic_residue(Rs_1,Pos,Rs)
+	,length(Rs,N)
+	,debug(dynamic,'Reduced examples: ~w', [N])
+	,dynamic_episodes(C,T,N,Pos,Neg,BK,MS,Es_1,Ps_k).
+
+
+%!	dynamic_episodes(+Counter,+Tgt,+Size,+Pos,+Neg,+BK,_MS,-Episode,-Prog)
+%!	is det.
+%
+%	Business end of dynamic_episodes/5.
 %
 %	This predicate implements the dynamic learning loop described in
 %	learn_dynamic/5.
@@ -263,23 +335,23 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 %
 %	Size is the cardinality of the hypothesis in the previous
 %	dynamic learning step. If Size does not increase between steps,
-%	learn_dynamic/9 exits with the current theory bound in Prog.
+%	dynamic_episodes/9 exits with the current theory bound in Prog.
 %
-learn_dynamic(C,T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
+dynamic_episodes(C,T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
 	append(BK,Es_i,BK_)
 	,debug(dynamic,'New dynamic episode',[])
 	,dynamic_episode(C,Pos,Neg,BK_,MS,Es_j)
 	%,debug_clauses(dynamic, Es_j)
 	,debug(dynamic,'Reducing Top program',[])
 	,reduced_top_program(Pos,BK_,MS,Es_j,Rs_j)
+	%,debug_clauses(dynamic, Rs_j)
 	,atomic_residue(Rs_j,Pos,Rs)
 	,length(Rs,M)
 	,debug(dynamic,'Reduced examples: ~w', [M])
 	,M < N
 	,!
-	,learn_dynamic(C,T/A,M,Pos,Neg,BK_,MS,Es_j,Bind).
-learn_dynamic(_C,_T,_M,Pos,_Neg,BK,MS,Es_i,Ps):-
-	reduced_top_program(Pos,BK,MS,Es_i,Ps).
+	,dynamic_episodes(C,T/A,M,Pos,Neg,BK_,MS,Es_j,Bind).
+dynamic_episodes(_C,_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
 
 
 %!	dynamic_episode(+Counter,+Pos,+Neg,+BK,+MS,-Episode) is det.
@@ -358,12 +430,13 @@ atomic_residue(Ps,Pos,Is):-
 %	metarules in an extension pair are added to the Top program, as
 %	described in learn_dynamic/5.
 %
+%	@tbd This doesn't work with theorem_prover(tp).
+%
 top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,louise:write_program(Pos,BK,Refs)
 	,top_program_dynamic(C,Pos,Neg,MS,Ms)
-	%,constraints(Ms, Ms_)
 	,applied_metarules(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
 

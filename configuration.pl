@@ -1,4 +1,5 @@
-:-module(configuration, [experiment_file/2
+:-module(configuration, [dynamic_generations/1
+			,experiment_file/2
 			,learner/1
 			,max_invented/1
 			,metarule/2
@@ -30,7 +31,8 @@
 
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
-:- dynamic max_invented/1
+:- dynamic dynamic_generations/1
+          ,max_invented/1
           ,recursion_depth_limit/2
 	  ,recursive_reduction/1
 	  ,reduction/1
@@ -101,11 +103,19 @@
 %	raise any errors because metarule_constraints/2 is declared
 %	dynamic.
 %
-/*metarule_constraints(M,fail):-
+%/*
+metarule_constraints(M,fail):-
 	M =.. [m,_Id,P|Ps]
 	,forall(member(P1,Ps)
 	       ,P1 == P).
-*/
+%*/
+
+
+%!	dynamic_generations(?Generations) is det.
+%
+%	Number of metarule Generations in dynamic learning.
+%
+dynamic_generations(1).
 
 
 %!	experiment_file(?Path,?Module) is semidet.
