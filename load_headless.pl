@@ -13,11 +13,16 @@ user:file_search_path(output, project_root(output)).
 :-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(sampling/sampling)).
 :-use_module(src(dynamic_learning)).
+:-use_module(src(metagen)).
+:-use_module(src(examples_invention)).
 
 %:-load_test_files([]).
 %:-run_tests.
 
 % Large data may require a larger stack.
+%:- set_prolog_flag(stack_limit, 4_294_967_296).
+%:-set_prolog_flag(stack_limit, 8_589_934_592).
+%:-set_prolog_flag(stack_limit, 17_179_869_184).
 :- set_prolog_flag(stack_limit, 2_147_483_648).
 :-current_prolog_flag(stack_limit, V)
  ,format('Global stack limit ~D~n',[V]).

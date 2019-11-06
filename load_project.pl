@@ -15,6 +15,8 @@ user:file_search_path(output, project_root(output)).
 :-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(sampling/sampling)).
 :-use_module(src(dynamic_learning)).
+:-use_module(src(metagen)).
+:-use_module(src(examples_invention)).
 
 edit_files:-
 	configuration:experiment_file(P,_)
@@ -23,8 +25,10 @@ edit_files:-
 	,edit(src(mil_problem))
 	,edit(src(louise))
 	,edit(src(auxiliaries))
-	,edit(lib(evaluation/evaluation))
+	%,edit(lib(evaluation/evaluation))
 	,edit(src(dynamic_learning))
+	,edit(src(metagen))
+	,edit(src(examples_invention))
 	,edit(P)
 	.
 :-edit_files.
