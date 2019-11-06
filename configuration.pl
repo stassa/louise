@@ -86,29 +86,7 @@
 %:-debug(top). % Debug Top program construction.
 %:-debug(reduction). % Debug Top program construction.
 %:-debug(dynamic). % Debug dynamic learning.
-
-
-%!	metarule_constraints(+Metasubstitution,+Goal) is nondet.
-%
-%	A Goal to be called when Metasubstitution is matched.
-%
-%	@tbd This predicate is multifile so that it can be declared by
-%	experiment files, however the definition below is pretty
-%	universally necessary to allow learning hypotheses with
-%	left-recursions using dynamic learning and predicate invention.
-%	So it goes into the configuration that it might be used by
-%	aplicable to every experiment file. On the other
-%	hand, left-recursive hypotheses may be required for some
-%	problems so this definition is left commented out. This will not
-%	raise any errors because metarule_constraints/2 is declared
-%	dynamic.
-%
-%/*
-metarule_constraints(M,fail):-
-	M =.. [m,_Id,P|Ps]
-	,forall(member(P1,Ps)
-	       ,P1 == P).
-%*/
+%:-debug(examples_invention). % Debug examples invention.
 
 
 %!	dynamic_generations(?Generations) is det.
@@ -129,6 +107,7 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/constraints.pl',constraints).
 %experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
 %experiment_file('data/examples/recipes.pl',recipes).
+%experiment_file('data/examples/examples_invention.pl',path).
 %experiment_file('data/thelma_louise/kinship/kinship.pl',kinship).
 %experiment_file('data/thelma_louise/kinship/kinship_accuracy.pl',kinship_accuracy).
 %experiment_file('data/thelma_louise/robots/robots.pl',robots).
@@ -196,6 +175,46 @@ metarule(xy_zy_zx,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,Z,X).
 % Used in noise/heroes/detect_evil.pl
 % Added here for Thelma compatibility
 metarule(double_identity,P,Q,R,Y,Z,D):-m(P,X,Y),m(Q,X,Z),m(R,X,D).
+
+
+%!	metarule_constraints(+Metasubstitution,+Goal) is nondet.
+%
+%	A Goal to be called when Metasubstitution is matched.
+%
+%	@tbd This predicate is multifile so that it can be declared by
+%	experiment files, however the definition below is pretty
+%	universally necessary to allow learning hypotheses with
+%	left-recursions using dynamic learning and predicate invention.
+%	So it goes into the configuration that it might be used by
+%	aplicable to every experiment file. On the other
+%	hand, left-recursive hypotheses may be required for some
+%	problems so this definition is left commented out. This will not
+%	raise any errors because metarule_constraints/2 is declared
+%	dynamic.
+%
+/*
+metarule_constraints(M,fail):-
+	M =.. [m,Id,P|Ps]
+	% Projection explicitly maps p/2 to p/1.
+	,Id \= projection
+	,forall(member(P1,Ps)
+	       ,P1 == P).
+*/
+
+/*
+metarule_constraints(M,fail):-
+	M =.. [m,Id,P|Ps]
+	,Id \= projection
+	,left_recursive(P,Ps).
+
+left_recursive(T,[T|_Ps]):-
+	!.
+left_recursive(T,[T,T|_Ps]):-
+	!.
+left_recursive(T,[I,T|_Ps]):-
+	atomic_list_concat([T,A],'_',I)
+	,atom_number(A,_N).
+*/
 
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
