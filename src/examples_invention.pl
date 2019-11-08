@@ -53,8 +53,10 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 	,functor(E,T,A)
 	,partial_examples(T/A,Pos,Es_)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,append(Es_,Pos_,Es_Pos)
-	,top_program(Es_Pos,Neg_,BK_,MS_,Ts)
+	% TODO: should Pos also be added in?
+	%,append(Es_,Pos_,Es_Pos)
+	%,top_program(Es_Pos,Neg_,BK_,MS_,Ts)
+	,top_program(Es_,Neg_,BK_,MS_,Ts)
 	,debug(examples_invention,'Generalised partial examples:',[])
 	,debug_clauses(examples_invention,Ts)
 	,flatten([Pos_,Neg_,BK_,Ts], Rs)
