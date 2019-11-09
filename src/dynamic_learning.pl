@@ -304,12 +304,8 @@ dynamic_generations(I,N,C,Pos,Neg,BK,IDs,Hs,Bind):-
 %
 dynamic_episodes(C,Pos,Neg,BK,MS,Ps_k):-
 	examples_target(Pos,T)
-	,debug(dynamic,'First dynamic episode',[])
 	,dynamic_episode(C,Pos,Neg,BK,MS,Es_1)
-	%,debug_clauses(dynamic, Es_1)
-	,debug(dynamic,'Reducing Top program',[])
 	,reduced_top_program(Pos,BK,MS,Es_1,Rs_1)
-	%,debug_clauses(dynamic, Rs_1)
 	,atomic_residue(Rs_1,Pos,Rs)
 	,length(Rs,N)
 	,debug(dynamic,'Reduced examples: ~w', [N])
@@ -339,12 +335,8 @@ dynamic_episodes(C,Pos,Neg,BK,MS,Ps_k):-
 %
 dynamic_episodes(C,T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
 	append(BK,Es_i,BK_)
-	,debug(dynamic,'New dynamic episode',[])
 	,dynamic_episode(C,Pos,Neg,BK_,MS,Es_j)
-	%,debug_clauses(dynamic, Es_j)
-	,debug(dynamic,'Reducing Top program',[])
 	,reduced_top_program(Pos,BK_,MS,Es_j,Rs_j)
-	%,debug_clauses(dynamic, Rs_j)
 	,atomic_residue(Rs_j,Pos,Rs)
 	,length(Rs,M)
 	,debug(dynamic,'Reduced examples: ~w', [M])
@@ -364,9 +356,12 @@ dynamic_episodes(_C,_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
 dynamic_episode(C,Pos,Neg,BK,MS,Ms):-
 	configuration:theorem_prover(TP)
 	,configuration:recursion_depth_limit(dynamic_learning,L)
-	,debug(dynamic,'Constructing Top program',[])
+	,debug(dynamic,'New dynamic episode with BK:',[])
+	,debug_clauses(dynamic, BK)
+	,debug(dynamic,'Constructing Top program...',[])
 	,G = dynamic_learning:top_program_dynamic(C,Pos,Neg,BK,MS,Ms)
-	,recursion_guard(G,L,TP).
+	,recursion_guard(G,L,TP)
+	,debug_clauses(dynamic, Ms).
 
 
 %!	recursion_guard(+Goal,+Time_Limit,+Theorem_Prover) is det.

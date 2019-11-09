@@ -423,12 +423,14 @@ reduced_top_program(Pos,BK,_MS,Ps,Rs):-
 	configuration:reduction(subhypothesis)
 	,!
 	,write_program(Pos,BK,Refs)
+	,debug(reduction,'Reducing Top program...',[])
 	,subhypothesis(Pos,Ps,Rs)
 	,erase_program_clauses(Refs).
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(true)
 	,!
 	,flatten([Pos,BK,Ps,MS],Fs_)
+	,debug(reduction,'Reducing Top program...',[])
 	,program_reduction(Fs_,Rs_,_)
 	,length(Fs_,M)
 	,length(Rs_,N)
@@ -440,6 +442,7 @@ reduced_top_program(Pos,BK,MS,Ps,Rs):-
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(false)
 	,flatten([Pos,BK,Ps,MS],Fs_)
+	,debug(reduction,'Reducing Top program...',[])
 	,program_reduction(Fs_,Rs,_)
 	,cleanup_experiment.
 
