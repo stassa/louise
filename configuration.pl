@@ -81,7 +81,12 @@
 :- dynamic metarule_constraints/2.
 :- multifile metarule_constraints/2.
 
-/* Debug levels */
+/* Debug levels
+ * Note that some of the debug topics below emit identical messages.
+ * In particular, 'learn' debugs learn/5 that calls top program
+ * construction and reduction that are also debugged by 'top_program'
+ * and 'reduction'.
+*/
 %:-debug(learn). % Debug learning steps.
 %:-debug(top_program). % Debug Top program construction.
 %:-debug(reduction). % Debug Top program reduction.

@@ -43,12 +43,12 @@ learn(T,Ps):-
 learn(Pos,Neg,BK,MS,Ps):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,debug(learn,'Constructing Top program',[])
+	,debug(learn,'Constructing Top program...',[])
 	,top_program(Pos_,Neg_,BK_,MS_,Ms)
-	,debug(learn,'Reducing Top program',[])
+	,debug(learn,'Reducing Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
 	,examples_target(Pos,T)
-	,debug(learn,'Excapsulating problem',[])
+	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(T,Rs,Ps).
 
 
@@ -81,6 +81,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,write_program(Pos,BK,Refs)
+	,debug(top_program,'Constructing Top program...',[])
 	,top_program_(Pos,Neg,BK,MS,Ms)
 	,applied_metarules(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
@@ -89,6 +90,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,examples_target(Pos,T)
 	,bind_target(MS,T,MS_)
 	,flatten([Pos,BK],Ps)
+	,debug(top_program,'Constructing Top program...',[])
 	,generalise(MS_,Ps,Is,Ts_Pos)
 	,applied_metarules(Ts_Pos,MS,Ts_Pos_)
 	,specialise(Ts_Pos_,Is,Neg,Ts).
