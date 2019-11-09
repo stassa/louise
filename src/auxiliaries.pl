@@ -970,6 +970,9 @@ program_symbols(Ps,Ss):-
 %
 %	Debug a list of Clauses if Topic is being debugged.
 %
+debug_clauses(T,[]):-
+	!
+	,debug(T,'[]',[]).
 debug_clauses(T,L):-
 	\+ is_list(L)
 	,!
@@ -992,6 +995,9 @@ debug_clauses(T,Cs):-
 %
 %	Print a list of Clauses to standard output.
 %
+print_clauses([]):-
+	!
+	,writeln([]).
 print_clauses(L):-
 	\+ is_list(L)
 	,!
