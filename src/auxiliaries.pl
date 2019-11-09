@@ -31,7 +31,9 @@
 		       % Program auxiliaries
 		      ,built_in_or_library_predicate/1
 		      ,closure/3
+		      ,debug_clauses/3
 		      ,debug_clauses/2
+		      ,print_clauses/2
 		      ,print_clauses/1
 		      ,program/3
 		      ]).
@@ -966,6 +968,15 @@ program_symbols(Ps,Ss):-
 
 
 
+%!	debug_clauses(+Topic,+Message,-Clauses) is det.
+%
+%	Log a Message followed by a set of Clauses.
+%
+debug_clauses(T,M,Cs):-
+	debug(T,'~w',[M])
+	,debug_clauses(T,Cs).
+
+
 %!	debug_clauses(+Topic,+Clauses) is det.
 %
 %	Debug a list of Clauses if Topic is being debugged.
@@ -989,6 +1000,15 @@ debug_clauses(T,Cs):-
 	       )
 	      ).
 
+
+
+%!	print_clauses(+Message,-Clauses) is det.
+%
+%	Print a Message followed by a set of Clauses.
+%
+print_clauses(M,Cs):-
+	format('~w~n',[M])
+	,print_clauses(Cs).
 
 
 %!	print_clauses(+Clauses) is det.

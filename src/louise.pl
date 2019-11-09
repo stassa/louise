@@ -425,27 +425,30 @@ reduced_top_program(Pos,BK,_MS,Ps,Rs):-
 	configuration:reduction(subhypothesis)
 	,!
 	,write_program(Pos,BK,Refs)
-	,debug(reduction,'Reducing Top program...',[])
+	,debug(reduction,'Reducing Top program by subhypothesis selection...',[])
 	,subhypothesis(Pos,Ps,Rs)
+	,debug_clauses(reduction,'Reduced Top program:',Rs)
 	,erase_program_clauses(Refs).
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(true)
 	,!
 	,flatten([Pos,BK,Ps,MS],Fs_)
-	,debug(reduction,'Reducing Top program...',[])
+	,debug(reduction,'Reducing Top program recursively...',[])
 	,program_reduction(Fs_,Rs_,_)
 	,length(Fs_,M)
 	,length(Rs_,N)
 	,debug(reduction,'Initial reduction: ~w to ~w',[M,N])
 	,reduced_top_program_(N,Rs_,BK,MS,Rs)
+	,debug_clauses(reduction,'Reduced Top program:',Rs)
 	% program_reduction module leaves behind garbage
 	% in program module. Why?
 	,cleanup_experiment.
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(false)
 	,flatten([Pos,BK,Ps,MS],Fs_)
-	,debug(reduction,'Reducing Top program...',[])
+	,debug(reduction,'Reducing Top program by Plotkin\'s algorithm...',[])
 	,program_reduction(Fs_,Rs,_)
+	,debug_clauses(reduction,'Reduced Top program:',Rs)
 	,cleanup_experiment.
 
 
@@ -465,7 +468,9 @@ reduced_top_program_(N,Ps,BK,MS,Bind):-
 	,M < N
 	,!
 	,reduced_top_program_(M,Rs,BK,MS,Bind).
-reduced_top_program_(_,Rs,_BK,_MS,Rs).
+reduced_top_program_(_,Rs,_BK,_MS,Rs):-
+	length(Rs, N)
+	,debug(reduction,'Final reduction: ~w',[N]).
 
 
 
