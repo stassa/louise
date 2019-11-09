@@ -789,7 +789,12 @@ experiment_data(T,Pos,Neg,BK,MS):-
 	,(   MS_ == [all]
 	 ->  configuration_metarules(MS)
 	 ;   MS = MS_
-	 ).
+	 )
+	,!.
+experiment_data(T,_,_,_,_):-
+	learning_targets(Ts)
+	,\+ memberchk(T,Ts)
+	,throw('Unknown learning target':T).
 
 
 %!	configuration_metarules(+Metarules) is det.
