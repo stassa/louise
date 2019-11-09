@@ -30,6 +30,11 @@ learn(T):-
 %
 %	Learn a definition of a Target predicate.
 %
+learn(T,_Ps):-
+	(   var(T)
+	->  throw('learn/2: unbound target symbol!')
+	;   fail
+	).
 learn(T,Ps):-
 	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
 	,learn(Pos,Neg,BK,MS,Ps).
@@ -40,6 +45,17 @@ learn(T,Ps):-
 %
 %	Learn a Progam from a MIL problem.
 %
+learn(Pos,Neg,BK,MS,_Ts):-
+	(   var(Pos)
+	->  throw('learn/5: unbound positive examples list!')
+	;   var(Neg)
+	->  throw('learn/5: unbound negative examples list!')
+	;   var(BK)
+	->  throw('learn/5: unbound background symbols list!')
+	;   var(MS)
+	->  throw('learn/5: unbound metarule IDs list!')
+	;   fail
+	).
 learn(Pos,Neg,BK,MS,Ps):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
@@ -77,6 +93,17 @@ learn(Pos,Neg,BK,MS,Ps):-
 %	work in progress and may not fully eliminate too-general
 %	metasubstitutions.
 %
+top_program(Pos,Neg,BK,MS,_Ts):-
+	(   var(Pos)
+	->  throw('top_program/5: unbound positive examples list!')
+	;   var(Neg)
+	->  throw('top_program/5: unbound negative examples list!')
+	;   var(BK)
+	->  throw('top_program/5: unbound background symbols list!')
+	;   var(MS)
+	->  throw('top_program/5: unbound metarule IDs list!')
+	;   fail
+	).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
