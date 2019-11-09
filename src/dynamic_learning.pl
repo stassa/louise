@@ -218,7 +218,6 @@ learn_dynamic(T):-
 learn_dynamic(T,Ps):-
 	configuration:dynamic_generations(N)
 	,h22_metarules(IDs)
-	%,debug(dynamic,'H22 progenitors: ~w',[IDs])
 	,tp_safe_experiment_data(T,Pos,Neg,BK,_)
 	,learn_dynamic(N,Pos,Neg,BK,IDs,Ps).
 
@@ -240,6 +239,8 @@ learn_dynamic(T,Ps):-
 %
 learn_dynamic(N,Pos,Neg,BK,IDs,Ps):-
 	examples_target(Pos,T)
+	,debug(dynamic,'Performing dynamic learning.',[])
+	,debug(dynamic,'Progenitor metarules: ~w',[IDs])
 	,encapsulated_problem_1(Pos,Neg,BK,[Pos_,Neg_,BK_])
 	,dynamic_generations(N,Pos_,Neg_,BK_,IDs,Ps_k)
 	,reduced_top_program(Pos_,BK_,[],Ps_k,Ps_r)
@@ -283,7 +284,6 @@ dynamic_generations(I,N,C,Pos,Neg,BK,IDs,Hs,Bind):-
 	,metarule_generation(I,IDs,MS_i)
 	,append(BK,Hs,BK_i)
 	,dynamic_episodes(C,Pos,Neg,BK_i,MS_i,Hs_i)
-	%,debug_clauses(dynamic, Hs_i)
 	%,Hs_i \= []
 	,!
 	,succ(I,I_)
@@ -459,7 +459,7 @@ top_program_dynamic(C,Pos,Neg,MS,Ms):-
 	 ->  true
 	;   Ss_Neg = []
 	 )
-	,debug_clauses(predicate_invention,'Initial Top program:',[Ss_Neg])
+	,debug_clauses(predicate_invention,'Initial Top program:',Ss_Neg)
 	% Construct Top program for metarule extensions
 	% Potentially performing predicate invention
 	,examples_target(Pos,T/_)
