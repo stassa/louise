@@ -356,8 +356,7 @@ dynamic_episodes(_C,_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
 dynamic_episode(C,Pos,Neg,BK,MS,Ms):-
 	configuration:theorem_prover(TP)
 	,configuration:recursion_depth_limit(dynamic_learning,L)
-	,debug(dynamic,'New dynamic episode with BK:',[])
-	,debug_clauses(dynamic, BK)
+	,debug_clauses(dynamic,'New dynamic episode with BK:',BK)
 	,G = dynamic_learning:top_program_dynamic(C,Pos,Neg,BK,MS,Ms)
 	,recursion_guard(G,L,TP).
 
@@ -429,9 +428,9 @@ top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,louise:write_program(Pos,BK,Refs)
-	,debug(dynamic,'Constructing Top program...',[])
+	,debug(dynamic,'Constructing Top program dynamically...',[])
 	,top_program_dynamic(C,Pos,Neg,MS,Ms)
-	,debug_clauses(dynamic, Ms)
+	,debug_clauses(dynamic,'Dynamic Top program:',Ms)
 	,applied_metarules(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
 
@@ -454,17 +453,20 @@ top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 %	dynamic learning?
 %
 top_program_dynamic(C,Pos,Neg,MS,Ms):-
+	debug(predicate_invention,'Performing predicate invention...',[])
 	% Construct Top program for initial metarules
-	(   louise:top_program_(Pos,Neg,_,MS,Ss_Neg)
+	,(   louise:top_program_(Pos,Neg,_,MS,Ss_Neg)
 	 ->  true
 	;   Ss_Neg = []
 	 )
+	,debug_clauses(predicate_invention,'Initial Top program:',[Ss_Neg])
 	% Construct Top program for metarule extensions
 	% Potentially performing predicate invention
 	,examples_target(Pos,T/_)
+	,debug(predicate_invention,'Extending metarules:',[])
 	,findall(S
 		,(metarule_extension(MS,M3,M1,M2)
-		 %,debug_clauses(dynamic, [M3])
+		 ,debug_clauses(predicate_invention,[M3])
 		 % Keep fresh variables for specialisation step
 		 ,copy_term(M3,M3_)
 		 % Generalisation
@@ -476,6 +478,7 @@ top_program_dynamic(C,Pos,Neg,MS,Ms):-
 		 )
 		,Ss_Inv_)
 	,sort(Ss_Inv_, Ss_Inv_s)
+	,debug_clauses(predicate_invention,'Invented metasubstitutions:',Ss_Inv_s)
 	% And append
 	,append(Ss_Neg,Ss_Inv_s,Ms).
 

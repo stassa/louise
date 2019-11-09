@@ -83,9 +83,10 @@
 
 /* Debug levels */
 %:-debug(learn). % Debug learning steps.
-%:-debug(top). % Debug Top program construction.
-%:-debug(reduction). % Debug Top program construction.
+%:-debug(top_program). % Debug Top program construction.
+%:-debug(reduction). % Debug Top program reduction.
 %:-debug(dynamic). % Debug dynamic learning.
+%:-debug(predicate_invention). % Debug predicate invention.
 %:-debug(examples_invention). % Debug examples invention.
 
 
