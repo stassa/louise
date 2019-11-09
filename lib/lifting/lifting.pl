@@ -167,6 +167,12 @@ lifted_terms(I, I, [], Ts, Ts_):-
 	reverse(Ts, Ts_)
 	,!.
 lifted_terms(I,J,[T|Ts],Acc,Bind):-
+% TODO: I'm not sure how this makes sense. It seems to fail when T
+% is a compound term that is not '$VAR'(K) at which point it will
+% fall over to the next clause and variabilise the compound recursively
+% (which is correct). So this clause seems to only want to match
+% previously assigned numbervar terms. In that case, can't we just do:
+% lifted_terms(I,J,['$VAR'(K)|Ts],Acc,Bind)?
 	compound(T)
 	,T = '$VAR'(K)
 	,!

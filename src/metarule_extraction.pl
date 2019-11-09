@@ -11,12 +11,16 @@
 /** <module> Extract metarules from first-order background knowledge.
 
 Predicates in this module extract metarules from a definite program by
-variabilising the program's clauses. Predicate symbols in the program's
-clauses are replaced with existentially quantified, second-order
-variables and constants are replaced with existentially or universally
-quantified first order variables. Identical terms are replaced with the
-same variable and any variables pre-existing in a clauses are retained
-unchanged.
+variabilising the program's clauses. Extracted metarules are
+encapsulated and expanded into Louise's metarule notation, i.e.
+into clauses where the head literal is a metasubstitution atom and the
+first body literal is the encapsulated head literal of a metarule.
+
+During metarule extraction predicate symbols in a program's clauses are
+replaced with existentially quantified, second-order variables and
+constants are replaced with universally quantified first order
+variables. Identical terms are replaced with the same variable and any
+variables pre-existing in a clauses are retained unchanged.
 
 Note that, since all this is done in Prolog that has no concept of
 existentially quantified variables or second-order terms, in practice
@@ -31,18 +35,18 @@ learning target.
 Examples
 ========
 
-1. program_metarules/2 is used to xtract metarules from an arbitrary
+1. program_metarules/2 is used to extract metarules from an arbitrary
 list of definite clauses:
 
 ==
-?- _Ps = [ p(a,_Y):- q(a,_Z), r(_Z,_Y), p(a,b) ]
-  ,program_metarules(_Ps, _MS), print_clauses(_MS).
+?- _Ps = [ p(_X,_Y):- q(_X,_Z), r(_Z,_Y), p(a,b) ]
+  , program_metarules(_Ps, _MS), print_clauses(_MS).
 
 m(metarule_1,A,B):-m(A,C,D),m(B,C,E).
 true.
 ==
 
-2. symbols_metarules/r is used to extract metarules from a list of
+2. symbols_metarules/3 is used to extract metarules from a list of
 predicate symbols and arities. The second argument is the name of a
 module where the given predicates are defined, or a module importing
 those predicates' definition module:
@@ -91,6 +95,23 @@ numeric index, indicating the order of the metarule in the list of
 metarules output by bk_metarules/2. There is no guarantee that such
 metarule IDs will be in any way unique: the user is required to give
 them unique names, perhaps evern meaningful names.
+
+Limitations
+-----------
+
+A current limitation of metarule extraction is that constants are not
+replaced with existentially quantified first-order variables.
+
+For example, the program p(a,B):- q(a,B) should result in a metarule
+m(metarule_1,P,Q,A):- m(P,A,B), m(Q,A,B), replacing the constant 'a'
+with the existentially quantified first-order variable A.
+
+Instead, the current version of metarule extraction will construct a
+metarule such as m(metarule_1,P,Q):- m(P,A,B), m(Q,A,B) where the
+constant 'a' is replaced by a first-order universally quantified
+variable, thereby subtly altering the structure of the original clause.
+This limitation will be addressed in future versions of this module.
+
 */
 
 
@@ -139,20 +160,28 @@ symbols_metarules(Ss,M,MS):-
 %
 %	Program is a list of first-order definite clauses. Metarules is
 %	a list of metarules such that each non-unit clause in Program is
-%	an instance of a Metarule in Metarules.
+%	an instantiation of a Metarule in Metarules.
 %
-%	Metarules in the output list are given generic metarule IDs,
-%	consisting of the constant "metarule" followed by an underscore
-%	and a number, the position of the metarule in the list,
-%	Metarules. These are by no means guaranteed to be unique and
-%	it is expected taht the user will inspect the metarules
-%	resulting from a call to this predicate and assign unique names
-%	to the ones she wants to keep, perhaps even meaningful names if
-%	that is at all possible.
+%	Metarules in the output list are encapsulated and expanded
+%	into Louise's metarule notation. Metasubstitution atoms in
+%	extracted metarules are given generic metarule IDs, consisting
+%	of the constant "metarule" followed by an underscore and a
+%	number, the position of the metarule in the list, Metarules.
+%	These numbered metarule IDs are by no means guaranteed to be
+%	unique and it is expected that the user will inspect the
+%	metarules resulting from a call to this predicate and assign
+%	unique names to the ones she wants to keep, perhaps even
+%	meaningful names if that is at all possible.
 %
-%	@tbd Note that the description above means that Metarules
-%	are not extracted from unit clauses. Such metarules are usually
-%	of the form m(P,A,B) and not particularly useful in practice.
+%	Note that Metarules are not extracted from unit clauses. Such
+%	metarules are usually of the form m(P,A,B) and not particularly
+%	useful in practice.
+%
+%	@bug This predicate currently replaces constants in the head and
+%	body literals of clauses with universally quantified variables,
+%	when they should be replaced with existentially quantified
+%	first-order variables added to the arguments of the
+%	metasubstitution atom of the encapsulated metarule.
 %
 program_metarules(Ps, MS):-
 	encapsulated_clauses(Ps, Es)
