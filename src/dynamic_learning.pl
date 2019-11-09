@@ -308,7 +308,7 @@ dynamic_episodes(C,Pos,Neg,BK,MS,Ps_k):-
 	,reduced_top_program(Pos,BK,MS,Es_1,Rs_1)
 	,atomic_residue(Rs_1,Pos,Rs)
 	,length(Rs,N)
-	,debug(dynamic,'Reduced examples: ~w', [N])
+	,debug(dynamic,'Atomic residue: ~w', [N])
 	,dynamic_episodes(C,T,N,Pos,Neg,BK,MS,Es_1,Ps_k).
 
 
@@ -339,7 +339,7 @@ dynamic_episodes(C,T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
 	,reduced_top_program(Pos,BK_,MS,Es_j,Rs_j)
 	,atomic_residue(Rs_j,Pos,Rs)
 	,length(Rs,M)
-	,debug(dynamic,'Reduced examples: ~w', [M])
+	,debug(dynamic,'Atomic residue: ~w', [M])
 	,M < N
 	,!
 	,dynamic_episodes(C,T/A,M,Pos,Neg,BK_,MS,Es_j,Bind).
@@ -358,10 +358,8 @@ dynamic_episode(C,Pos,Neg,BK,MS,Ms):-
 	,configuration:recursion_depth_limit(dynamic_learning,L)
 	,debug(dynamic,'New dynamic episode with BK:',[])
 	,debug_clauses(dynamic, BK)
-	,debug(dynamic,'Constructing Top program...',[])
 	,G = dynamic_learning:top_program_dynamic(C,Pos,Neg,BK,MS,Ms)
-	,recursion_guard(G,L,TP)
-	,debug_clauses(dynamic, Ms).
+	,recursion_guard(G,L,TP).
 
 
 %!	recursion_guard(+Goal,+Time_Limit,+Theorem_Prover) is det.
@@ -431,7 +429,9 @@ top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,louise:write_program(Pos,BK,Refs)
+	,debug(dynamic,'Constructing Top program...',[])
 	,top_program_dynamic(C,Pos,Neg,MS,Ms)
+	,debug_clauses(dynamic, Ms)
 	,applied_metarules(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
 
