@@ -18,6 +18,8 @@
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
 		      ,list_top_program/2
+		      ,print_metarules/1
+		      ,print_metarule/1
 		       % Database auxiliaries
 		      ,assert_program/3
 		      ,erase_program_clauses/1
@@ -632,6 +634,364 @@ write_and_count(Msg,MS,Cs,U):-
 	,format_underlined(Msg)
 	,print_clauses(Cs_)
 	,format('Length:~w~n',[N]).
+
+
+
+%!	print_metarules(+Metarules) is det.
+%
+%	Pretty-print a list of Metarules.
+%
+%	Metarules may be a list of atomic metarule IDs, or a list of
+%	expanded metarules, as returned by metarule_expansion/2 or
+%	expanded_metarules/2.
+%
+%	The given metarules are printed at the top-level with variables
+%	replaced by common predicate and variable names, e.g.
+%	second-order existentially quantified variables are printed as
+%	P, Q, R etc, whereas first-order existentialy or universally
+%	quantified variables are printed as X, Y, Z etc. The names for
+%	each type of variable are determined by the appropriate clause
+%	of symbol_range/3.
+%
+%	Motivation
+%	----------
+%
+%	This predicate is the recommended predicate to pretty-print
+%	metarules at the top-level for the purpose of debugging a MIL
+%	problem.
+%
+%	Metarules can also be printed to the top-level using
+%	print_clauses/1, however that predicate assigns variable names
+%	to metarule variables according to their order. This can make
+%	metarules difficult to read especially for the user who has the
+%	notation used in MIL literature in mind.
+%
+print_metarules(MS):-
+	forall(member(M,MS)
+	      ,(print_metarule(M)
+	       ,nl
+	       )
+	      ).
+
+
+%!	print_metarule(+Metarule) is det.
+%
+%	Pretty-print a Metarule at the top-level.
+%
+%	Metarule may be an atomic identifier for a metarule in the
+%	program database, or an expanded metarule, as returned by
+%	metarule_expansion/2.
+%
+print_metarule(Id):-
+	atom(Id)
+	,!
+	,once(metarule_expansion(Id,M))
+	,print_metarule(M).
+print_metarule(MR):-
+	must_be(nonvar, MR)
+	,metarule_variables(MR,Es,Us)
+	,length(Es,N)
+	,numbered_symbols(N,Ps,predicate)
+	,findall('$VAR'(P)
+		,(nth1(I,Ps,P)
+		 ,nth1(I,Es,'$VAR'(P))
+		 )
+		,Es)
+	,length(Us,M)
+	,numbered_symbols(M,Vs,variable)
+	,findall('$VAR'(V)
+		,(nth1(I,Vs,V)
+		 ,nth1(I,Us,'$VAR'(V))
+		 )
+		,Us)
+	,print(MR).
+
+
+%!	metarule_variables(+Metarule,-Second_order,-First_order) is det.
+%
+%	Collect variables in a Metarule
+%
+%	Second_order is the list of second-order existentially
+%	quantified variables in Metarule. First_order is the list of
+%	first-order existentially and universally quantified variables
+%	in Metarule.
+%
+%	The two output lists, Second_order and First_order only include
+%	each variable once and the variables are in the order in which
+%	they were originally in the metarule's literals. Unfortunately
+%	this means that sort/2 cannot be used to remove duplicates
+%	because it also imposes a new order on the variables in each
+%	list, which may not be their original order. For this reason,
+%	two auxiliaries, second_order/3 and first_order/3 go through
+%	a list of variables each time one or more variables must be
+%	added to it, and ensure that only new variables are added. This
+%	of course is rather expensive (it's O(N^2)) so this is not a
+%	predicate that should ever be in the transitive closure of a
+%	heavy-lifting predicate.
+%
+%	@tbd Well, add this warning at print_metarule/1, no?
+%
+metarule_variables(_A:-M,Ss,Fs):-
+	metarule_variables(M,[],Ss_,[],Fs_)
+	,maplist(reverse,[Ss_,Fs_],[Ss,Fs]).
+
+%!	metarule_variables(+Literals,+Ss_Acc,-Ss,+Fs_Acc,-Fs) is det.
+%
+%	Business end of metarule_variables/3.
+%
+metarule_variables((L,Ls),Ss_Acc,Ss_Bind,Fs_Acc,Fs_Bind):-
+	! % Avoid backtracking here for more of the same.
+	,L =.. [m,P|Fs]
+	,second_order(P,Ss_Acc,Ss_Acc_)
+	,first_order(Fs,Fs_Acc,Fs_Acc_)
+	,metarule_variables(Ls,Ss_Acc_,Ss_Bind,Fs_Acc_,Fs_Bind).
+metarule_variables(L,Ss_Acc,Ss,Fs_Acc,Fs):-
+	L \= (_,_)
+	,L =.. [m,P|Fs_L]
+	,second_order(P,Ss_Acc,Ss)
+	,first_order(Fs_L,Fs_Acc,Fs).
+
+
+%!	second_order(+Variable,+Acc,-New) is det.
+%
+%	Add a Variable to an Accumulator if it is not already there.
+%
+second_order(P,Acc,[P|Acc]):-
+	\+ in_vars(P,Acc)
+	,!.
+second_order(_P,Acc,Acc).
+
+
+%!	first_order(+Variables,+Acc,-New) is det.
+%
+%	Add a list of Variables to an Accumulator if not already there.
+%
+first_order([],Fs,Fs):-
+	!.
+first_order([V|Fs],Acc,Bind):-
+	\+ in_vars(V,Acc)
+	,!
+	,first_order(Fs,[V|Acc],Bind).
+first_order([_V|Fs],Acc,Bind):-
+	first_order(Fs,Acc,Bind).
+
+
+%!	in_vars(?Variable,?Variables) is det.
+%
+%	True when a Variable is in a list of Variables.
+%
+%	Version of memeber/2 that avoids unfiying Variable with every
+%	other variable in Variables and thereby making an awful
+%	mish-mashed mess of unexpectedly identical variables. We need to
+%	preserve Variables and their bindings throughout the project.
+%
+%	@tbd This is copied verbatim from metagen module. Maybe add it
+%	to er, this module and make public? Or perhaps in
+%	library(term_utilities)?
+%
+in_vars(V,[V1|_Vs]):-
+	V == V1
+	,!.
+in_vars(V,[_|Vs]):-
+	in_vars(V,Vs).
+
+
+
+%!	numbered_symbols(+N,-Symbols,+Type) is det.
+%
+%	Generate a list of N predicate Symbols of the given Type.
+%
+%	N is an integer, the number of Symbols to generate.
+%
+%	Type is one of [predicate, variable], denoting whether Symbols
+%	should be predicate symbols or variable names.
+%
+%	Symbols is a list of atoms representing predicate or variable
+%	symbols to be used as the names of variables in a metarule when
+%	pretty-printing the metarule. Predicate symbols are assigned to
+%	second-order existentially quantified variables and variable
+%	symbols to first-order universally and existentially quantified
+%	variables.
+%
+%	Generating predicate symbols
+%	----------------------------
+%
+%	When T = predicate, Symbols is a list of atomic predicate
+%	symbols to be assigned to the second-order existentially
+%	quantified variables of a metarule.
+%
+%	Predicate symbols are given names from an initial set of M
+%	symbols, Ns, generated by symbol_range/3 when its first agrument
+%	is the atom 'predicate'. M is the "symbol range" i.e. the
+%	cardinality of Ns. When more than M symbols are generated, each
+%	symbol afte the first M is indexed by a number, according to how
+%	many times the same symbol has been used before.
+%
+%	As an example of how numbers are assigned to predicate symbols,
+%	suppose that Ns = [P,Q,R,S,T] so M = 5.
+%
+%	Then, for N in [1,5] predicate symbols are given the names in Ns
+%	so that the first element in Symbols is 'P', the second is 'Q',
+%	etc.
+%
+%	For N > 6, predicate symbols are given the names in Ns, numbered
+%	with the division of 5 in which N falls. For example, the N's in
+%	[6,10] fall within the first division of 5, the N's in [11,15]
+%	fall in the second division of 5, etc.
+%
+%	This is illustrated with an example, below.
+%
+%	Example:
+%	==
+%	% Generating predicate symbols for varying N.
+%	% Assuming:
+%	% symbol_range(predicate, ['P','Q','R','S','T'], 5).
+%
+%	?- auxiliaries:predicate_symbols(5, S).
+%	S = ['P', 'Q', 'R', 'S', 'T']. % N in 0'th division of 5
+%
+%	?- auxiliaries:predicate_symbols(10, S).
+%	S = ['P', 'Q', 'R', 'S', 'T'  % N in 'th division of 5
+%	,'P1', 'Q1', 'R1', 'S1', 'T1' % N in 1st division of 5
+%	].
+%
+%	?- auxiliaries:predicate_symbols(15, S).
+%	S = ['P', 'Q', 'R', 'S', 'T'  % N in 0'th division of 5
+%	,'P1', 'Q1', 'R1', 'S1', 'T1' % N in 1st division of 5
+%	,'P2', 'Q2', 'R2', 'S2', 'T2' % N in 2nd division of 5
+%	].
+%
+%	?- auxiliaries:predicate_symbols(20, S).
+%	S = ['P', 'Q', 'R', 'S', 'T'  % N in 0'th division of 5
+%	,'P1', 'Q1', 'R1', 'S1', 'T1' % N in 1st division of 5
+%	,'P2', 'Q2', 'R2', 'S2', 'T2' % N in 2nd division of 5
+%	,'P3', 'Q3', 'R3', 'S3', 'T3' % N in 3d division of 5
+%	].
+%
+%	% etc
+%	==
+%
+%	Generating variable names
+%	-------------------------
+%
+%	When T = variable, Symbols is a list of atomic variable names to
+%	be assigned to the first-order existentially and universally
+%	quantified variables of a metarule.
+%
+%	Variable symbols are given names from an initial set of M
+%	symbols, Ns, generated by symbol_range/3 when its first argument
+%	is the atom 'variable'. As for predicate symbols, M is the
+%	symbol range for variables, i.e. the cardinality of Ns. When
+%	more than M symbols are generated, each symbol after the first M
+%	is indexed by a number according to how many times that symbol
+%	has been used before.
+%
+%	As an example of how numbers are assigned to variable symbols,
+%	suppose that Ns = [X,Y,Z] and M = 3.
+%
+%	Then, for N in [1,3], variable symbols are given the names in Ns
+%	so that the first element in Symbols is 'X', the second 'Y' and
+%	the third is 'Q'.
+%
+%	For N > 3, variable symbols are given the names in Ns, numbered
+%	with the division of 3 in which N falls. For example, the N's in
+%	[4,6] fall in the first division of 3, the N's in [7,9] fall in
+%	the second division of 3, etc.
+%
+%	This is illustrated with an example, below.
+%
+%	Example:
+%	==
+%	% Generating variable symbols for varying N.
+%	% Assuming:
+%	%symbol_range(variable, ['X','Y','Z'], 3).
+%
+%	?- auxiliaries:numbered_symbols(3, S, variable).
+%	S = ['X', 'Y', 'Z']. % N in 0'th division of 3
+%
+%	?- auxiliaries:numbered_symbols(6, S, variable).
+%	S = ['X', 'Y', 'Z' % N in 0'th division of 3
+%	,'X1', 'Y1', 'Z1'  % N in 1st division of 3
+%	].
+%
+%	?- auxiliaries:numbered_symbols(9, S, variable).
+%	S = ['X', 'Y', 'Z' % N in 0'th division of 3
+%	,'X1', 'Y1', 'Z1'  % N in 1st division of 3
+%	,'X2', 'Y2', 'Z2'  % N in 2nd division of 3
+%	].
+%
+%	?- auxiliaries:numbered_symbols(12, S, variable).
+%	S = ['X', 'Y', 'Z' % N in 0'th division of 3
+%	,'X1', 'Y1', 'Z1'  % N in 1st division of 3
+%	,'X2', 'Y2', 'Z2'  % N in 2nd division of 3
+%	,'X3', 'Y3', 'Z3'  % N in 3d division of 3
+%	].
+%
+%	% etc.
+%	==
+%
+numbered_symbols(N,Ss,T):-
+	% Off-by-one correction for symbols' indices.
+	succ(N, N_)
+	,numbered_symbols(T,1,N_,[],Ss).
+
+%!	numbered_symbols(+Type,+Current,+Max,+Acc,-Symbols) is det.
+%
+%	Business end of numbered_symbols/3.
+%
+numbered_symbols(_T,N,N,Acc,Ss):-
+	!
+	,reverse(Acc, Ss).
+numbered_symbols(T,I,K,Acc,Bind):-
+	once(numbered_symbol(T,I,S))
+	,succ(I,I_)
+	,numbered_symbols(T,I_,K,[S|Acc],Bind).
+
+
+%!	numbered_symbol(+Type,+Index,-Symbol) is nondet.
+%
+%	Generate a Symbol of the given Type.
+%
+%	Index is the index of the symbol in the list of symbols
+%	generated by numbered_symbols/3. Index is used to determine
+%	whether, and how, to number Symbol to distinguish it from other
+%	symbols with the same letter generated so far. See
+%	numbered_symbols/3 for an explanation of how symbol numbering
+%	works.
+%
+numbered_symbol(T,I,S):-
+	symbol_range(T,Ss,_M)
+	,nth1(I,Ss,S)
+	,!.
+numbered_symbol(T,I,S):-
+	symbol_range(T,Ss,M)
+	,% K'th division of M, counting from 0
+	K is ceiling(I/M) - 1
+	% I_'th item in K'th division of M
+	, I_ is I - M * K
+	,nth1(I_,Ss,S_)
+	% Or:
+	%,numbered_symbol(T,I_,S_)
+	,atomic_list_concat([S_,K],'',S).
+
+
+%!	symbol_range(+Type,-Symbols,-N) is det.
+%
+%	The list of Symbols for a Type.
+%
+%	Type is one of [predicate,variable], denoting the type of
+%	symbols in the currenr range.
+%
+%	Symbols is a list of symbols of the given Type. The value of
+%	Symbols is taken from the configuration option symbol_range/2.
+%
+%	N is the number of symbols in Symbols. This is used by
+%	numbered_symbol/3 to index symbols accordig to how many times
+%	they have already been used.
+%
+symbol_range(T,Ss,N):-
+	configuration:symbol_range(T,Ss)
+	,length(Ss,N).
 
 
 

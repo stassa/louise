@@ -16,6 +16,7 @@
 			,recursive_reduction/1
 			,reduction/1
 			,resolutions/1
+			,symbol_range/2
 			,theorem_prover/1
 			]).
 
@@ -293,6 +294,42 @@ resolutions(5000).
 %resolutions(100).
 %resolutions(15).
 %resolutions(0).
+
+
+%!	symbol_range(?Type,?Symbols) is semidet.
+%
+%	A list of Symbols to pretty-print predicates or variables.
+%
+%	Type is one of [predicate,variable], denoting the type of
+%	symbols in the currenr range.
+%
+%	Symbols is a list of symbols of the given Type.
+%
+%	The atoms in list Symbols is used to assign names to the
+%	variables in a metarule for pretty-printing.
+%
+%	Warning:
+%	--------
+%
+%	symbol_range/2 must have exactly two clauses: one for the
+%	symbols to be used as names for second-order existentially
+%	quantified variables, and one to be used as names for
+%	first-order existentially and universally quantified variables.
+%
+%	You can change each Symbols list as you see fit, but _do not
+%	remove or add clauses_ to symbol_range/2!
+%
+%	Used by
+%	-------
+%
+%	This predicate is used by predicates in the transitive closure
+%	of print_metarules/1 and print_metarule/1, in particular,
+%	numbered_symbol/3, which uses this to generate lists of
+%	predicate symbols to be assigned to variables in metarules
+%	according with their (first- or second-) order.
+%
+symbol_range(predicate, ['P','Q','R','S','T']).
+symbol_range(variable, ['X','Y','Z','U','V','W']).
 
 
 %!	theorem_prover(?Algorithm) is semidet.
