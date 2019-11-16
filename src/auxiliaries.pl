@@ -19,7 +19,7 @@
 		      ,list_top_program/1
 		      ,list_top_program/2
 		      ,print_metarules/1
-		      ,print_metarule/1
+		      ,print_quantified_metarules/1
 		       % Database auxiliaries
 		      ,assert_program/3
 		      ,erase_program_clauses/1
@@ -319,13 +319,21 @@ set_configuration_option(N, Vs):-
 %
 %	Collect the Ids of metarules known to the system.
 %
-known_metarules(Ids):-
+known_metarules_(Ids):-
 	findall(Id
 	       ,(configuration:current_predicate(metarule, H)
 		,H =.. [metarule,Id|_]
 		,clause(H,_B)
 		)
 	       ,Ids).
+
+known_metarules(Ids):-
+	setof(Id
+	       ,H^Ps^B^(configuration:current_predicate(metarule, H)
+			 ,H =.. [metarule,Id|Ps]
+			 ,clause(H,B)
+			 )
+	     ,Ids).
 
 
 
@@ -666,6 +674,27 @@ write_and_count(Msg,MS,Cs,U):-
 %	metarules difficult to read especially for the user who has the
 %	notation used in MIL literature in mind.
 %
+%	Example:
+%       ==
+%       ?- print_metarules([inverse,identity,chain]).
+%       m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
+%       m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
+%       m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+%       true.
+%       ==
+%
+%	Note the difference with the alternative of printing metarules
+%	using print_clauses/2:
+%	==
+%	?- expanded_metarules([inverse,identity,chain],_MS)
+%	,print_clauses(_MS).
+%
+%	m(inverse,A,B):-m(A,C,D),m(B,D,C).
+%	m(identity,A,B):-m(A,C,D),m(B,C,D).
+%	m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E).
+%	true.
+%	==
+%
 print_metarules(MS):-
 	forall(member(M,MS)
 	      ,(print_metarule(M)
@@ -992,6 +1021,211 @@ numbered_symbol(T,I,S):-
 symbol_range(T,Ss,N):-
 	configuration:symbol_range(T,Ss)
 	,length(Ss,N).
+
+
+
+%!	print_quantified_metarules(+Metarules) is det.
+%
+%	Pretty-print a list of Metarules with quantifiers.
+%
+print_quantified_metarules(MS):-
+	forall(member(M,MS)
+	      ,(print_quantified_metarule(M)
+	       ,nl
+	       )
+	      ).
+
+
+%!	print_quantified_metarule(+Metarule) is det.
+%
+%	Pretty-print a Metarule with quantifiers.
+%
+print_quantified_metarule(Id):-
+	atom(Id)
+	,!
+	,once(metarule_expansion(Id,M))
+	,print_quantified_metarule(M).
+print_quantified_metarule(M):-
+	metarule_symbols(M)
+	,excapsulated_metarule(M,M_)
+	,metarule_Id(M, Id)
+	,metarule_quantifiers(M,Es,Us)
+	,atom_chars(Id,[C|Cs])
+	,upcase_atom(C, C_)
+	,atom_chars(Id_,[C_|Cs])
+	,format('(~w) ~w~w: ~w',[Id_,Es,Us,M_]).
+
+
+%!	metarule_quantifiers(+Metarule,-Existential,-Universal) is det.
+%
+%	Collect quantifiers and quantified variables in a Metarule.
+%
+%	Metarule is an expanded metarule.
+%
+%	Existential is an atomic represention of the existentially
+%	quantified variables in Metarule, preceded by an existential
+%	quantifier, in the form \exists.P,Q,R... etc.
+%
+%	Univerasl is a film studio in Hollywood. Also, in this
+%	predicate, it's an atomic representation of the universally
+%	quantified variables in Metarule, preceeded by a universal
+%	quantifier, in the form \forall.X,Y,Z... etc.
+%
+metarule_quantifiers(M,Es,Us):-
+	metarule_variables(M,_Ss,Fs)
+	,existential_vars(M,Es_)
+	,subtract(Fs,Es_,Us_)
+	,maplist(arg(1),Es_,Ss_E)
+	,maplist(arg(1),Us_,Ss_U)
+	,atomic_list_concat(Ss_E,',',Es_1)
+	,atomic_list_concat(Ss_U,',',Us_1)
+	,format(atom(Es),'\u2203.~w',[Es_1])
+	,(   Ss_U = [_]
+	 ->  format(atom(Us),' \u2200~w',[Us_1])
+	 ;   Ss_U = [_|_]
+	 ->  format(atom(Us),' \u2200.~w',[Us_1])
+	 ;   Ss_U = []
+	 ->  Us = ''
+	 ).
+
+
+%!	metarule_symbols(+Metarule) is det.
+%
+%	Assign common names to the variables in a Metarule.
+%
+%	This is a very poorly named predicate but I couldn't really find
+%	anything better. What it does is that it binds the variables in
+%	Metarule to appropriate symbols, depending on whether they're
+%	first- or second-order and existentially or universally
+%	quantified. "Appropriate" symbols then are the symbols that are
+%	typically assigned to the relevant kind of variable in the MIL
+%	literature.
+%
+%	The specific symbols used are defined by the user in the
+%	configuration option symbol_range/2 however this predicate
+%	enforces lower-casing of first-order, universally quantified
+%	variables. However, capitalisation of any-order existentially
+%	quantified variables is not enforced.
+%
+%	@bug The decision to not force capitalisation of existentially
+%	quantified variables might well lead to ugly results if the user
+%	chooses a symbol_range/2 that doesn't agree with this scheme.
+%	e.g. a symbol range for variables where all variables are lower-
+%	case, like symbol_range(variable, [x,y,z]) will cause
+%	existentially quantified first-order variables to be printed in
+%	lower-case.
+%
+metarule_symbols(M):-
+	metarule_variables(M,Ss,Fs)
+	,variables_symbols(predicate,Ss)
+	,variables_symbols(variable,Fs)
+	,existential_vars(M,Es)
+	,quantification_case(Es,Fs).
+
+
+%!	variables_symbols(+Type, ?Variables) is det.
+%
+%	Bind Variables to appropriate symbols of the given Type.
+%
+variables_symbols(T,Vs):-
+	length(Vs,N)
+	,numbered_symbols(N,Ps,T)
+	,findall('$VAR'(P)
+		,(nth1(I,Ps,P)
+		 ,nth1(I,Vs,'$VAR'(P))
+		 )
+		,Vs).
+
+
+%!	existential_vars(+Metarule, -Existential) is det.
+%
+%	Collect Existentially quantified variables from a Metarule.
+%
+existential_vars(A:-_M,Es):-
+	A =.. [m,_Id|Es].
+
+
+%!	quantification_case(+Existential,+First_Order) is det.
+%
+%	Ensure variables' symbols are the appropriate case.
+%
+%	Existential is the list of existentially quantified variables in
+%	a metarule, which may include first- and second-order variables.
+%	First_Order is a list of the first-order variables in a
+%	metarule. Both lists of variables are already ground to
+%	'$VAR'(S) terms where S is a meaningful symbol depending on the
+%	variable's order and quantification.
+%
+%	What this predicate does then is to downcase first-order,
+%	universally quantified variables, which are the variables in
+%	First_Order that are not also in Existential.
+%
+%	@tbd This predicate is very, very naughty. Because Existential
+%	and First_Order are both lists of "Skolem" terms, like
+%	'$VAR'(S), and in order to avoid having to re-construct the
+%	metarule thse variables have come from, it uses arg/3 and
+%	nb_setarg/3 to modify the symbols in '$VAR'(S) terms where
+%	appropriate, by downcasing them.
+%
+quantification_case(_,[]):-
+	!.
+quantification_case(Es,[V|Fs]):-
+	\+ memberchk(V,Es)
+	,!
+	,arg(1,V,S)
+	,downcase_atom(S,S_)
+	,nb_setarg(1,V,S_)
+	,quantification_case(Es,Fs).
+quantification_case(Es,[_V|Fs]):-
+	quantification_case(Es,Fs).
+
+
+%!	excapsulated_metarule(+Metarule,-Atomic) is det.
+%
+%	Excapsulate a metarule into an Atomic representation.
+%
+%	Metarule is an expanded metarule with variables bound '$VAR'(S)
+%	terms where each S is an appropriate name for a variable
+%	depending on its order and quantification.
+%
+%	Atomic is the same metarule in a second-order representation,
+%	although at this point not yet with quantifiers. The
+%	representatin is an atom, because Prolog cannot represent
+%	second-order terms otherwise.
+%
+excapsulated_metarule((_A:-M),A):-
+	clause_literals(M,Ls)
+	,excapsulated_literals(Ls,[],Ls_)
+	,once(list_tree(Ls_,C))
+	,(   C = (H,B)
+	->   format(atom(A),'~w\u2190 ~w',[H,B])
+	     % Unit clause metarule.
+	 ;   format(atom(A),'~w\u2190',[C])
+	 ).
+
+
+%!	excapsulated_literals(+Literals,+Acc,-Excapsulated) is det.
+%
+%	Excapsulate each of the Literals of an expanded metarule.
+%
+excapsulated_literals([],Acc,Ls):-
+	!
+	,reverse(Acc,Ls).
+excapsulated_literals([L|Ls],Acc,Bind):-
+	L =.. [m|As]
+	,findall(S
+		,member('$VAR'(S),As)
+		,Ss)
+	,S_ =.. Ss
+	,excapsulated_literals(Ls,[S_|Acc],Bind).
+
+
+%!	metarule_Id(+Metarule, -Id) is det.
+%
+%	Simple helper to extract metarule identifiers from metarules.
+%
+metarule_Id(A:-_M,Id):-
+	A =.. [m,Id|_Ps].
 
 
 
