@@ -20,11 +20,56 @@ Table of contents
 -----------------
 
 [What Louise, is](#what-louise-is)  
+
 [A first example of learning with Louise](#a-first-example-of-learning-with-louise)  
+* [Running the example in Swi-Prolog](#running-the-example-in-swi-prolog)  
+* [Learning the "ancestor" relation](#learning-the-ancestor-relation)  
+
 [Structure of the experiment file](#structure-of-the-experiment-file)  
+* [Experiment file interface predicates](#experiment-file-interface-predicates)  
+* [The dummy experiment file](#the-dummy-experiment-file)  
+* [Defining a MIL problem](#defining-a-mil-problem)  
+* [Inspecting a MIL problem](#inspecting-a-mil-problem)  
+* [Positive and negative example generators](#positive-and-negative-example-generators)  
+* [Background knowledge](#background-knowledge)  
+* [Metarules](#metarules)  
+* [Defining your own metarules](#defining-your-own-metarules)  
+* [Experiment file compatibility](#experiment-file-compatibility)  
+    
 [Learning with second-order metarules](#learning-with-second-order-metarules)  
+* [Encapsulation of second-order metarules](#encapsulation-of-second-order-metarules)  
+* [Expanded metarules](#expanded-metarules)  
+* [Applying metasubstitutions to metarules](#applying-metasubstitutions-to-metarules)  
+
 [Learning by Top program construction and reduction](#learning-by-top-program-construction-and-reduction)  
+* [Top program reduction by Plotkin's algorithm](#top-program-reduction-by-plotkins-algorithm)  
+* [Controlling reduction strength](#controlling-reduction-strength)  
+* [Top program reduction by sub-hypothesis selection](#top-program-reduction-by-sub-hypothesis-selection)  
+
 [Using Louise: useful auxiliary predicates](#using-louise-useful-auxiliary-predicates)  
+* [Learning predicate variants](#learning-predicate-variants)  
+* [Extracting metarules from a program's structure](#extracting-metarules-from-a-programs-structure)  
+* [Listing configuration options](#listing-configuration-options)  
+* [Restoring default configuration options](#restoring-default-configuration-options)  
+* [Cleaning up an experiment](#cleaning-up-an-experiment)  
+* [Listing learning targets](#listing-learning-targets)  
+* [Listing learning results for all learning targets](#listing-learning-results-for-all-learning-targets)  
+* [List all the metarules known to the system](#list-all-the-metarules-known-to-the-system)  
+* [Pretty-printing logic prorgams](#pretty-printing-logic-prorgams)  
+* [Pretty-printing metarules](#pretty-printing-metarules)  
+* [Listing Louise's learning procedure](#listing-louises-learning-procedure)  
+* [Listing the MIL problem](#listing-the-mil-problem)  
+* [Listing the Encapsulation of a MIL problem](#listing-the-encapsulation-of-a-mil-problem)  
+* [Listing the Top program for a MIL problem](#listing-the-top-program-for-a-mil-problem)  
+* [Listing the reduced Top program](#listing-the-reduced-top-program)  
+* [Listing the learned hypothesis](#listing-the-learned-hypothesis)  
+
+[Dynamic learning](#dynamic-learning)  
+* [Predicate invention](#predicate-invention)  
+* [Metarule generations](#metarule-generations)  
+
+[Examples invention](#examples-invention)  
+
 [Bibliography and References](#bibliography-and-references)  
 
 What Louise, is
@@ -1120,7 +1165,7 @@ theorem_prover(resolution)
 true.
 ```
 
-### Restoring defaule configuration options
+### Restoring default configuration options
 
 Configuration options defined in `louise/configuration.pl` have a set of
 "default" values, that are designed to allow the examples in
