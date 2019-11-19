@@ -16,6 +16,18 @@ github Issue or send a pull request.
 The author specifically pledges never to direct a user to RTFM or in any other
 way dismiss the user's problems with installing or using Louise as trivial.
 
+Table of contents
+-----------------
+
+[Introduction] (## What Louise, is)
+[A first example of learning with Louise](## A first example of learning with Louise)
+[Structure of the experiment file](## Structure of the experiment file)
+[Learning with second-order metarules](## Learning with second-order metarules)
+[Learning by Top program construction and reduction] (## Learning by Top program construction and reduction)
+[Using Louise: useful auxiliary predicates](## Using Louise: useful auxiliary predicates)
+[Bibliography and References](## Bibliography and References)
+
+
 What Louise, is
 ---------------
 
@@ -145,8 +157,8 @@ steps are discussed in detail below.
     structure of an experiment file in general.
 
 
-Structure of experiment files
------------------------------
+Structure of the experiment file
+--------------------------------
 
 ### Experiment file interface predicates
 
@@ -555,7 +567,7 @@ The following are some common metarules from the MIL literature:
 
 ```prolog
 % Examples of metarules from the MIL literature
-P(X,Y):-  % Abduce
+P(X,Y)  % Abduce
 P(x,y):- Q(x,y) % Identity
 P(x,y):- Q(y,x) % Inverse
 P(x,y):- Q(x,z), R(z,y) % Chain
