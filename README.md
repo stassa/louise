@@ -19,13 +19,13 @@ way dismiss the user's problems with installing or using Louise as trivial.
 Table of contents
 -----------------
 
-[What Louise, is](#what-louise-is)
-[A first example of learning with Louise](#a-first-example-of-learning-with-louise)
-[Structure of the experiment file](#structure-of-the-experiment-file)
-[Learning with second-order metarules](#learning-with-second-order-metarules)
-[Learning by Top program construction and reduction](#learning-by-top-program-construction-and-reduction)
-[Using Louise: useful auxiliary predicates](#using-louise-useful-auxiliary-predicates)
-[Bibliography and References](#bibliography-and-references)
+[What Louise, is](#what-louise-is) 
+[A first example of learning with Louise](#a-first-example-of-learning-with-louise) 
+[Structure of the experiment file](#structure-of-the-experiment-file) 
+[Learning with second-order metarules](#learning-with-second-order-metarules) 
+[Learning by Top program construction and reduction](#learning-by-top-program-construction-and-reduction) 
+[Using Louise: useful auxiliary predicates](#using-louise-useful-auxiliary-predicates) 
+[Bibliography and References](#bibliography-and-references) 
 
 What Louise, is
 ---------------
