@@ -14,6 +14,7 @@
 :-use_module(lib(term_utilities/term_utilities)).
 :-use_module(src(dynamic_learning)).
 :-use_module(src(auxiliaries)).
+:-use_module(src(metarules_parser)).
 
 /** <module> Predicates to transform a MIL problem.
 
@@ -116,26 +117,20 @@ expanded_metarules(Ids,Ms):-
 %
 %	Expand a Metarule with the given Id.
 %
-%	@tbd In line 5 of this predicate strip_module/3 is called to
-%	allow metarules defined in experiment files to be used without
-%	stumbling over complicated patterns of module qualifiers (which
-%	will be different in their head and body literals).
+%	Performs a translation beween the user-level, user-friendly
+%	atomic representation of metarules in metarule/2 clauses, and
+%	Louise's internal representation as an expanded metarule with a
+%	metasubstitution atom as a head literal and a set of
+%	encapsualted body literals.
 %
-%	@tbd After the removeal of signature atoms this predicate now
-%	only changes the metarule/n symbol of metarules declared in the
-%	configuration module and experiment files to m/n (and strips the
-%	module qualifiers from it). In other words, it transforms
-%	metarules from the user-friendly (-er) representation used in
-%	configuration and experiment files to Louise's internal
-%	representation that is more appropriate for learning.
+%	@tbd I've been meaning to change the name of this predicate, and
+%	of expanded_metarules/1 to "metarule_translation/2" and
+%	"translated_metarules/1" for a while now to avoid confusion with
+%	metarule extension predicates' names.
 %
-metarule_expansion(Id,Mh_:-Mb_):-
-	configuration:current_predicate(metarule,Mh)
-	,Mh =.. [metarule,Id|Ps]
-	,Mh_ =.. [m,Id|Ps]
-	,clause(Mh,Mb)
-	,strip_module(Mb,_M,Mb_).
-
+metarule_expansion(Id, M):-
+	configuration:metarule(Id, M_)
+	,parsed_metarule(Id,M_,M).
 
 
 %!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Ps)
@@ -412,7 +407,8 @@ applied_metarules(Ss,MS,Ms):-
 %	that will cause problems with extended metarules and
 %	theorem_prover(tp) so it stays for now.
 %
-metarule_application(S,H:-B):-
+metarule_application_(S,H:-B):-
+% TODO: is this needed, after switching to the metarule/2 format?
 	S =.. [m,Id|Ps]
 	,Mh =.. [metarule,Id|Ps]
 	,clause(Mh,(H,B))

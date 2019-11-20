@@ -3,14 +3,6 @@
 			,learner/1
 			,max_invented/1
 			,metarule/2
-			,metarule/3
-			,metarule/4
-			,metarule/5
-			,metarule/6
-			,metarule/7
-			,metarule/8
-			,metarule/9
-			,metarule/10
 			,metarule_constraints/2
 			,recursion_depth_limit/2
 			,recursive_reduction/1
@@ -18,6 +10,7 @@
 			,resolutions/1
 			,symbol_range/2
 			,theorem_prover/1
+			,op(100,xfx,metarule)
 			]).
 
 % Must be loaded before experiment file to allow experiment files to
@@ -40,41 +33,10 @@
 	  ,resolutions/1
 	  ,theorem_prover/1.
 
-% Body literals of H(2,2) metarules.
-:-dynamic m/1
-         ,m/2
-         ,m/3
-	 ,m/4
-	 ,m/5
-	 ,m/6
-	 ,m/7
-	 ,m/8
-	 ,m/9
-	 ,m/10.
-
-:-multifile m/1
-           ,m/2
-	   ,m/3
-	   ,m/4
-	   ,m/5
-	   ,m/6
-	   ,m/7
-	   ,m/8
-	   ,m/9
-	   ,m/10.
-
 % Allows experiment files to define their own, special metarules.
 % BUG: Actually, this doesn't work- module quantifiers, again.
 % Needs fixing.
-:-multifile metarule/2
-           ,metarule/3
-           ,metarule/4
-	   ,metarule/5
-	   ,metarule/6
-	   ,metarule/7
-	   ,metarule/8
-	   ,metarule/9
-	   ,metarule/10.
+:-multifile metarule/2.
 
 % Experiment files may or may not define metarule constraints to filter
 % the Top program for unwanted clause structures (e.g. I don't like
@@ -111,7 +73,7 @@ dynamic_generations(1).
 experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/anbn.pl',anbn).
 %experiment_file('data/examples/abduced.pl',abduced).
-%experiment_file('data/examples/special_metarules.pl',special_metarules).
+%experiment_file('data/examples/user_metarules.pl',user_metarules).
 %experiment_file('data/examples/constraints.pl',constraints).
 %experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
 %experiment_file('data/examples/recipes.pl',recipes).
@@ -154,20 +116,32 @@ learner(louise).
 %	time being this doesn't seem to be necessary but a complete
 %	representation will need to include constraints.
 %
-metarule(abduce,P,X,Y):- m(P,X,Y).
-metarule(unit,P):- m(P,_X,_Y).
-metarule(projection,P,Q):- m(P,X,X), m(Q,X).
-metarule(identity,P,Q):- m(P,X,Y), m(Q,X,Y).
-metarule(inverse,P,Q):- m(P,X,Y), m(Q,Y,X).
-metarule(chain,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
-metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
-metarule(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
-metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
-metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
+abduce metarule 'P(X,Y)'.
+unit metarule 'P(x,y)'.
+projection_21 metarule 'P(x,x):- Q(x)'.
+projection_12 metarule 'P(x):- Q(x,x)'.
+identity metarule 'P(x,y):- Q(x,y)'.
+inverse metarule 'P(x,y):- Q(y,x)'.
+chain metarule 'P(x,y):- Q(x,z), R(z,y)'.
+tailrec metarule 'P(x,y):- Q(x,z), P(z,y)'.
+precon metarule 'P(x,y):- Q(x), R(x,y)'.
+postcon metarule 'P(x,y):- Q(x,y), R(y)'.
+switch metarule 'P(x,y):- Q(x,z), R(y,z)'.
+
+chain_abduce_x metarule 'P(X,y):- Q(X,z), R(z,y)'.
+chain_abduce_y metarule 'P(x,Y):- Q(x,z), R(z,Y)'.
+chain_abduce_z metarule 'P(x,y):- Q(x,Z), R(Z,y)'.
+
+% Used in noise/heroes/detect_evil.pl
+% Added here for Thelma compatibility
+double_identity metarule 'P(x,Y):- Q(x,Z), R(x,U)'.
+
+/*
 % H22 metarules redundnant given chain and inverse.
 % To avoid proliferation of vaguely descriptive names these are named
 % by their firts-order, universally quantified variables.
 % identity and switch are also in this set (but they are already named)
+% TODO: convert to new format.
 metarule(xy_xy_xy,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,X,Y).
 metarule(xy_xy_yx,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y,X).
 %metarule(xy_xz_yz,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z). % switch
@@ -179,11 +153,7 @@ metarule(xy_zx_yz,P,Q,R):- m(P,X,Y), m(Q,Z,X), m(R,Y,Z).
 metarule(xy_zx_zy,P,Q,R):- m(P,X,Y), m(Q,Z,X), m(R,Z,Y).
 metarule(xy_zy_xz,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,X,Z).
 metarule(xy_zy_zx,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,Z,X).
-
-% Used in noise/heroes/detect_evil.pl
-% Added here for Thelma compatibility
-metarule(double_identity,P,Q,R,Y,Z,D):-m(P,X,Y),m(Q,X,Z),m(R,X,D).
-
+*/
 
 %!	metarule_constraints(+Metasubstitution,+Goal) is nondet.
 %
