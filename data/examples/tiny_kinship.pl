@@ -54,10 +54,10 @@ metarules(wife/2,[switch]).
 metarules(child/2,[identity]).
 metarules(son/2,[precon]).
 metarules(daughter/2,[precon]).
-metarules(father/2,[precon,projection]).
-metarules(mother/2,[precon,projection]).
-metarules(male/2,[identity,projection]).
-metarules(female/2,[identity,projection]).
+metarules(father/2,[precon,projection_21]).
+metarules(mother/2,[precon,projection_21]).
+metarules(male/2,[identity,projection_21]).
+metarules(female/2,[identity,projection_21]).
 
 % Positive and negative examples generators.
 positive_example(ancestor/2,ancestor(A,B)):-

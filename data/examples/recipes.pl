@@ -12,6 +12,8 @@
 		  ,replace/4
 		  ]).
 
+:-use_module(configuration).
+
 /* <module> Experiment file for learning cooking recipes.
 
 This experiment file also demonstrates the use of the auxiliary
@@ -38,11 +40,16 @@ configuration file and then reload the configuration file with make/0.
 
 */
 
-:- auxiliaries:set_configuration_option(extend_metarules, [1]).
+:- auxiliaries:set_configuration_option(dynamic_generations, [4]).
 :- auxiliaries:set_configuration_option(max_invented, [1]).
 
-:-dynamic m/3.
-configuration:metarule(chain_abduce,P,Q,R,Y):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
+configuration: chain_abduce metarule 'P(x,Y):- Q(x,z), R(z,Y)'.
+
+
+configuration:metarule_constraints(M,fail):-
+	M =.. [m,_Id,P|Ps]
+	,forall(member(P1,Ps)
+	       ,P1 == P).
 
 background_knowledge(recipe/2,[break_eggs/2
 			      ,whisk_eggs/2
