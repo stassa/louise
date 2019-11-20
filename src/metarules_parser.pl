@@ -4,10 +4,10 @@
 /** <module> Parser for atomic metarules.
 
 The predicate exported by this module, parsed_metarule/3, implements a
-parser for metarules in Louise's user-friendly, user-level metarule
+parser for metarules in Louise's user-friendly, high-level metarule
 format to its internal representation.
 
-Metarules in the user-friendly user-level format are clauses of the
+Metarules in the user-friendly high-level format are clauses of the
 predicate metarule/2. The atom "metarule" is declared as an infix
 operator so that users can define metarules like the following:
 
