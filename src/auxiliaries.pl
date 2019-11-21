@@ -695,6 +695,10 @@ write_and_count(Msg,MS,Cs,U):-
 %	true.
 %	==
 %
+print_metarules(M):-
+	\+ is_list(M)
+	,!
+	,print_metarules([M]).
 print_metarules(MS):-
 	forall(member(M,MS)
 	      ,(print_metarule(M)
@@ -1028,6 +1032,10 @@ symbol_range(T,Ss,N):-
 %
 %	Pretty-print a list of Metarules with quantifiers.
 %
+print_quantified_metarules(M):-
+	\+ is_list(M)
+	,!
+	,print_quantified_metarules([M]).
 print_quantified_metarules(MS):-
 	forall(member(M,MS)
 	      ,(print_quantified_metarule(M)
