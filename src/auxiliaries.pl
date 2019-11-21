@@ -11,6 +11,7 @@
 		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
 		       % Debugging auxiliaries
+		      ,learning_predicate/1
 		      ,list_encapsulated_problem/1
 		      ,list_learning_results/0
 		      ,list_mil_problem/1
@@ -95,6 +96,7 @@ Table of Contents
 
 4. Debugging auxiliaries [sec_debug]
    * list_encapsulated_problem/1
+   * list_learning_results/0
    * list_mil_problem/1
    * list_problem_statistics/1
    * list_top_program_reduction/1
@@ -121,7 +123,6 @@ Table of Contents
    * program/3
 
 */
-
 
 % [sec_print]
 % ================================================================================
@@ -444,6 +445,52 @@ write_encapsulated_problem(Pos,Neg,BK,MS):-
 % ================================================================================
 % Predicates to facilitate debugging of experiments.
 
+%!	learning_predicate(+Learning_Predicate) is semidet.
+%
+%	The Learning_Predicate to be used in list_learning_results/0.
+%
+%	Learning_Predicate is a predicate indicator, the symbol and
+%	arity of one of the following learning predicates defined in
+%	Louise: learn/1, learn_dynamic/1 or
+%	learn_with_examples_invention/2. The specified predicate will be
+%	used to list the learning results for all learning targets
+%	defined in an experiment file with a call to
+%	list_learning_results/0.
+%
+%	learning_predicate/1 is declared as multifile. To specify the
+%	learning predicate to be used with list_learning_results/0, add
+%	a clause of learning_predicate/1 to the relevant experiment
+%	file.
+%
+%	For example, the following clause:
+%	==
+%	auxiliaries:learning_predicate(learn_dynamic/1).
+%	==
+%
+%	Will cause list_learning_results/0 to use learn_dynamic/1 for
+%	all predicates in the experiment file containing that clause.
+%
+%	learning_predicate/1 is declared dynamic. You do not have to
+%	specify a learning predicate for every experiment file.
+%	list_learning_results/0 will default to learn/1.
+%
+%	Note that learning_predicate/1 will not affect learning by
+%	calling learning predicates directly. That is, having added a
+%	clause of learning_predicate/1 like the one above to an
+%	experiment file you are free to then call learn/1 or any other
+%	learning predicate on any of the learning targets in that
+%	experiment file. Only the learning predicate used by
+%	list_learning_results/0 is affected by this option.
+%
+%	Finally, note that specifying any other predicate than the three
+%	learning predicates listed above as a learning_predicate will
+%	cause list_learning_results/0 to raise an error.
+%
+%	@see list_learning_results/0
+%
+:-dynamic learning_predicate/1.
+:-multifile learning_predicate/1.
+
 
 %!	list_encapsulated_problem(+Target) is det.
 %
@@ -485,12 +532,69 @@ list_encapsulated_problem(T):-
 %	target defined in the current experiment file.
 %
 %	Learning targets are obtained with a call to learning_targets/1.
-%	Each learning target is passed to learn/1.
+%
+%	By default, each learning target is passed to learn/1.
+%	Alternatively, the user may declare a clause of the dynamic,
+%	multifile predicate learning_predicate/1 to select a different
+%	learning predicate.
+%
+%	Alternative learning predicates must be one of [learn_dynamic/1,
+%	learn_with_examples_invention/2]. learn/2 can also be specified,
+%	but it will have the same results as learn/1.
+%
+%	If a predicate with a symbol other than learn, learn_dynamic or
+%	learn_with_examples_invention, or with arity other than 1 or 2
+%	is specified, an informative error is raised.
+%
+%	@see learning_predicate/1, learning_targets/1
 %
 list_learning_results:-
+	configuration:learning_predicate(P)
+	,!
+	,list_learning_results(P).
+list_learning_results:-
+	list_learning_results(learn/1).
+
+%!	list_learning_results(+Learning_Predicate) is det.
+%
+%	Business end of list_learning_results/0.
+%
+%	Learning_Predicate is a predicate indicator, the symbol and
+%	arity of one of the learning predicates in Louise.
+%
+%	Clauses are selected according to Learning_Predicate. Known
+%	learning predicates with arity in [1,2] are called on all
+%	learning targets and the results output to console. Predicates
+%	with a symbol that is not one of the known learning predicates
+%	or an arity other than an integer in [1,2], raise an appropriate
+%	error.
+%
+list_learning_results(P/N):-
+	\+ memberchk(P,[learn
+		       ,learn_dynamic
+		       ,learn_with_examples_invention
+		       ])
+	,format(atom(A),'Unknown learning predicate: ~w',[P/N])
+	,throw(A)
+	% Actually needed to raise this error if the next also applies.
+	,!.
+list_learning_results(P/N):-
+	\+ memberchk(N, [1,2])
+	,format(atom(A),'Learning predicate arity must be in [1,2]: got ~w',[P/N])
+	,throw(A).
+list_learning_results(P/1):-
+	!
+	,learning_targets(Ts)
+	,forall(member(T,Ts)
+	       ,(call(P,T)
+		,nl
+		)
+	       ).
+list_learning_results(P/2):-
 	learning_targets(Ts)
 	,forall(member(T,Ts)
-	       ,(learn(T)
+	       ,(call(P,T,Ps)
+		,print_clauses(Ps)
 		,nl
 		)
 	       ).

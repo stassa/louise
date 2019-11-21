@@ -252,6 +252,12 @@ technique that we're working on addressing.
 
 */
 
+:- auxiliaries:set_configuration_option(dynamic_generations, [1]).
+:- auxiliaries:set_configuration_option(max_invented, [1]).
+
+% Tells list_learning_results/0 to use the right learning predicate.
+auxiliaries:learning_predicate(learn_dynamic/1).
+
 % McCarthyite metarule constraint: avoids left-recursion.
 configuration:metarule_constraints(M,fail):-
 	M =.. [m,_Id,P|Ps]
@@ -264,9 +270,6 @@ left_recursive(T,[T,T|_Ps]):-
 left_recursive(T,[I,T|_Ps]):-
 	atomic_list_concat([T,A],'_',I)
 	,atom_number(A,_N).
-
-:- auxiliaries:set_configuration_option(dynamic_generations, [1]).
-:- auxiliaries:set_configuration_option(max_invented, [1]).
 
 background_knowledge('S'/2,['A'/2,'B'/2]).
 

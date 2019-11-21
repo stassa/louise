@@ -445,6 +445,8 @@ left_recursive(T,[I,T|_Ps]):-
 	atomic_list_concat([T,A],'_',I)
 	,atom_number(A,_N).
 
+% Tells list_learning_results/0 to use the right learning predicate.
+auxiliaries:learning_predicate(learn_with_examples_invention/2).
 
 background_knowledge(path/2, [edge/2,not_edge/2]).
 
