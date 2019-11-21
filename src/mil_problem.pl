@@ -128,9 +128,11 @@ expanded_metarules(Ids,Ms):-
 %	"translated_metarules/1" for a while now to avoid confusion with
 %	metarule extension predicates' names.
 %
+%	@tbd Obviously this is just a renaming of parsed_metarule/2.
+%	Another reason to rename it, or just get rid of it completely.
+%
 metarule_expansion(Id, M):-
-	configuration:metarule(Id, M_)
-	,parsed_metarule(Id,M_,M).
+	parsed_metarule(Id,M).
 
 
 %!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Ps)

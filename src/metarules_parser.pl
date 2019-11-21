@@ -1,11 +1,12 @@
-:-module(metarules_parser, [parsed_metarule/3
+:-module(metarules_parser, [parsed_metarule/2
 			   ]).
 
 /** <module> Parser for atomic metarules.
 
-The predicate exported by this module, parsed_metarule/3, implements a
-parser for metarules in Louise's user-friendly, high-level metarule
-format to its internal representation.
+The single predicate exported by this module, parsed_metarule/2,
+implements a transducer to translate metarules in Louise's
+user-friendly, high-level metarule format to its less user-friendly,
+internal representation.
 
 Metarules in the user-friendly high-level format are clauses of the
 predicate metarule/2. The atom "metarule" is declared as an infix
@@ -62,23 +63,61 @@ clause must obey the following rules:
 
 */
 
-%!	parsed_metarule(+Id,+Atomic,-Metarule) is det.
+
+%!	parsed_metarule(+Id,-Metarule) is det.
 %
 %	Parse an Atomic Metarule.
 %
-%	Id is a metarule identifier associated with a clause of
-%	metarule/2 in the program database.
+%	Id is the metarule identifier of a metarule/2 clause in the
+%	program database.
+%
+%	Metarule is a transformation of Atomic to an expanded metarule
+%	in Louise's representation, as a clause with a metasubstitution
+%	atom as its head literal and the encapsulated literals of the
+%	metarule in Atomic as its body literals. In the encapsulated
+%	literals of the expanded metarule predicate symbols, constants
+%	and variables in Atomic have been replaced with appropriate
+%	first-order, universally quantified variables and existentially
+%	quantified variables are collected in the arguments of the
+%	metasubstitution atom at the head of the clause.
+%
+%	Example:
+%	==
+%	?- metarule(chain, M).
+%	M = 'P(x,y):- Q(x,z), R(z,y)'.
+%
+%	?- metarules_parser:parsed_metarule(chain, _M), print_metarules([_M]).
+%	m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+%	true.
+%	==
+%
+parsed_metarule(Id,M):-
+	configuration:metarule(Id, M_)
+	,parsed_metarule(Id,M_,M).
+
+
+%!	parsed_metarule(+Id,+Atomic,-Metarule) is det.
+%
+%	Business end of parsed_metarule/2.
+%
+%	Parses an Atomic Metarule.
+%
+%	Id is the metarule identifier of a metarule/2 clause in the
+%	program database.
 %
 %	Atomic is an atom reprsenting a metarule, e.g. 'P(x,y):- Q(y,x)'
-%	etc, that is the second argument of the metarule/2 clause
-%	associated with Id.
+%	etc, the atomic metarule in the metarule/2 clause with the given
+%	Id.
 %
-%	Metarule is a transformation of Atmic to an expanded metarule in
-%	Louise's internal representation where predicate symbols,
-%	constants and variables in Atomic have been replaced with
-%	appropriate first-order, universally quantified variables in the
-%	expanded metarule's metasubstitution atom or encapsulated
-%	metarule literals.
+%	Metarule is a transformation of Atomic to an expanded metarule
+%	in Louise's internal representation with Id as its identifier.
+%
+%	@tbd This predicate can be used, inadvertently, to rename
+%	metarules. Since this will probably not be the intention of
+%	calling this predicate, it should be accessed only through the
+%	interface of parsed_metarule/2, that ensures the correct
+%	identifier is used, i.e. the identifier associated with Atomic
+%	in a metarule/2 clause in the program database.
 %
 parsed_metarule(Id,M,M1):-
 	atom_chars(M,Cs)
