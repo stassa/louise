@@ -29,8 +29,7 @@ Table of contents
 [Examples invention](#examples-invention)  
 [Bibliography and References](#bibliography-and-references)  
 
-What Louise, is
----------------
+## What Louise, is {#what-louise-is}
 
 Louise is a machine learning system that learns Prolog programs.
 
