@@ -281,7 +281,7 @@ Prefer `experiment_data/5` for this job.
 
 Below we discuss each of the interface predicates in turn.
 
-### Positive and negative example generators
+### Positive and negative examples
 
 The interface predicates `positive_example/2` and `negative_example/2` are
 defined as generators of positive and negative examples, respectively. That they
@@ -425,81 +425,104 @@ metarules(ancestor/2,[tailrec,identity]).
 The first argument of `metarules/2` is the name of a learning target and the
 second argument is a list of metarule _identifiers_.
 
-Similar to the predicate symbols of background predicates declared for a
-learning target in a `background_knowledge/2` clause, metarule identifiers are
-used by Louise to find the definitions of metarules in Prolog's dynamic
-database.
+Metarule identifiers in a `metarules/2` declaration are used by Louise as
+references to find the definitions of metarules in clauses of the predicate
+`metarule/2` in Prolog's dynamic database.
 
-For example, given the metarule declaration above, and given that the
-definitions of the two metarules, _Tailrec_ and _Identity_ are in the program
-database, Louise's learning predicates will find the following definitions of
-the two metarules:
+For example, given the `metarules/2` declaration above, Louise's learning
+predicates will find the following `metarule/2` definitions:
 
 ```prolog
 % Definitions of tailrec and identity metarules.
-metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
-metarule(identity,P,Q):- m(P,X,Y), m(Q,X,Y).
+tailrec metarule 'P(x,y):- Q(x,z), P(z,y)'.
+identity metarule 'P(x,y):- Q(x,y)'.
 ```
 
-Definitions of metarules used by Louise, like, _Tailrec_ and _Identity_ above,
-are in Louise's _encapsulated_ form. This is discussed in more detail in the
-following section.
-
-A number of standard metarules from the MIL bibliography are defined in Louise's
-configuration file, `louise/configuration.pl`. For example, the following are
-some metarules defined in the configuration file, `configuration.pl`:
+By default, the definitions of _Tailrec_ and _Identity_ listed above, are in the
+configuration file, `louise/configuration.pl`, along with other common metarules
+from the MIL bibliography. For example:
 
 ```prolog
-% Some metarules from the configuration:
-metarule(abduce,P,X,Y):- m(P,X,Y).
-metarule(identity,P,Q):- m(P,X,Y), m(Q,X,Y).
-metarule(inverse,P,Q):- m(P,X,Y), m(Q,Y,X).
-metarule(chain,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
-metarule(tailrec,P,Q,P):- m(P,X,Y), m(Q,X,Z), m(P,Z,Y).
-metarule(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
-metarule(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
-metarule(switch,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Y,Z).
+% Some metarules defined in configuration.pl:
+abduce metarule 'P(X,Y)'.
+unit metarule 'P(x,y)'.
+projection_21 metarule 'P(x,x):- Q(x)'.
+projection_12 metarule 'P(x):- Q(x,x)'.
+identity metarule 'P(x,y):- Q(x,y)'.
+inverse metarule 'P(x,y):- Q(y,x)'.
+chain metarule 'P(x,y):- Q(x,z), R(z,y)'.
+tailrec metarule 'P(x,y):- Q(x,z), P(z,y)'.
+precon metarule 'P(x,y):- Q(x), R(x,y)'.
+postcon metarule 'P(x,y):- Q(x,y), R(y)'.
+switch metarule 'P(x,y):- Q(x,z), R(y,z)'.
 ```
 
 Metarules defined in the configuration file can be used immediately by adding
 their names to the second argument of a `metarules/2` declaration for a learning
-target.
-
-The metarules declared for `ancestor/2`, _tailrec_ and _identity_, are defined
-in the configuration file, `configuration.pl`, along with other common metarules
-that are useful for learning many different targets.
+target. These metarules are useful in many cases and should be the first to try
+when tackling a new learning problem.
 
 ### Defining your own metarules.
 
 If you have an intuition about the structure of the hypothesis that you want
-Louise to learn, you may wish to define your own metarules that better match
-this structure, compared to the ones given in the configuration. You can do this
-by adding your own metarules in the configuration file, or in an experiment
-file.
-
-Unlike background predicates, metarules are all exported by the _configuration_
-module. For this reason, if you wish to declare your own metarules in an
-experiment file, you have to prefix each metarule/n clause with the
-configuration module's module qualifier, 'configuration'. 
+Louise to learn and the metarules already defined in the configuration are not
+sufficient to represent that structure, you may wish to define your own
+metarules. You can do this by adding your own `metarule/2` clauses in the
+configuration file, or in an experiment file.
 
 The following example of a user-provided metarule is taken from the example
-experiment file `data/examples/special_metarules.pl`:
+experiment file `data/examples/user_metarules.pl`:
 
 ```prolog
 % Defining a new metarule
-:-dynamic m/3.
-configuration:metarule(special_chain,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
+configuration:special_chain metarule 'P(x,y):- Q(x,z), R(z,y)'.
 ```
 
-The predicate symbols and arities of literals in the body of metarules declared
-in an experiment file must also be declared dynamic, as `m/3`, above.
+Each clause of the predicate `metarule/2` must be of the following form:
+
+```prolog
+<identifier> metarule <atomic metarule>
+```
+
+Where:
+
+  * "identifier" is an atomic identifier used to find the metarule's definition
+    in the program database. Each metarule identifier must be unique to avoid
+    unexpected results during a learning attempt.
+  
+  * "metarule" is the `metarule/2` functor which is declared as an infix
+    operator to allow the above syntax.
+  
+  * "atomic metarule" is an atomic representation of a second-order metarule, as
+    in the examples listed in the previous section.
+
+The atomic representation of a second-order metarule in a metarule/2
+clause must obey the following rules:
+  
+  * Each existentially quantified, second-order variable must be represented by
+    a single upper-case alphabetic character.
+  
+  * Each existentially quantified, first-order variable must be represented as a
+    single, upper-case alphabetic character.
+  
+  * Each universally quantified, first-order variable must be represented as a
+    single, lower-case alphabetic characer.
+  
+  * The sets of characters used for each type of variable: existentially or
+    universally quantified, first- or second-order, must be disjoint.
+
+Unlike background predicates, metarules are all exported by the _configuration_
+module. For this reason, if you wish to declare your own metarules in an
+experiment file, you have to prefix each metarule/2 clause with the module
+qualifier 'configuration:'. 
 
 Refer to the documentation of the example experiment file
-`data/examples/special_metarules.pl` for more details on how to declare your own
-metarules in an experiment file.
+`data/examples/user_metarules.pl` for an example of defininig your own metarules
+in an experiment file.
 
-A following section gives a high-level overview of metarules and how they are
-used in MIL, and Louise.
+The section [Learning with second-order metarules](#learning-with-second-order-metarules) 
+gives a high-level overview of metarules and how they are used in MIL, and
+Louise.
 
 ### Experiment file compatibility
 
@@ -532,8 +555,7 @@ configuration:metarule(special_chain, [P,Q,R], [X,Y,Z], (mec(P,X,Y) :- mec(Q,X,Z
 configuration:order_constraints(special_chain,[P,Q,R],_Fs,[P>Q,P>R],[]).
 
 % The same metarule in Louise's format
-:-dynamic m/3.
-configuration:metarule(special_chain,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
+configuration:special_chain metarule 'P(x,y):- Q(x,z), R(z,y)'.
 ```
 
 The second option is to add the definitions of the new metarules to each
@@ -551,20 +573,27 @@ Learning with second-order metarules
 
 Briefly, metarules are _second-order definite datalog_ clauses that define the
 language of hypotheses for a learning target in Louise, and MIL in general.
-Metarules will be explained in depth in the upcoming Louise manual. The
-following is a short introduction.
+Metarules are discussed in depth in the MIL bibliography and in the upcoming
+Louise manual. The following is a short introduction.
 
-That metarules are second-order means that some of their variables have values
-that range over the set of predicate symbols, the _predicate signature_. That
-they are definite clauses means that they have no literals negated by
-negation-as-failure (.e.g `\+ p(x)` etc). That they are datalog means that the
-language of metarules is a subset of Prolog with no functions of arity more than
-0 (i.e. they have only constants). This is in principle; in practice such
-restrictions are not strictly enforced in Louise, but definite datalog offers
-some theoretical guarantees about learnability that are nice to have. These are
-discussed in the MIL literature and in the upcoming Louise manual.
+We will use the term _predicate signature_ to mean the set of predicate symbols
+in the definitions of background predicates and the target predicate in a MIL
+problem, as well as any invented predicates. We will use the term _constant
+signature_ to mean the set of constants in the background knowledge and examples
+in the MIL problem.
 
-The following are some common metarules from the MIL literature:
+That metarules are second-order means that some of their variables range over
+the set of predicate symbols in the predicate signature. That they are definite
+clauses means that they have no literals negated by negation-as-failure (.e.g
+`\+ P(x)` etc). That they are datalog means that they have no literals with
+functions of arity more than 0 as arguments (functions of arity 0 are
+constants). This is in principle; in practice such restrictions are not strictly
+enforced in Louise, but definite datalog offers some theoretical guarantees of
+learnability and tractability that are nice to have. These are discussed in the
+MIL literature and in the upcoming Louise manual.
+
+The following are some common metarules from the MIL literature in the formal
+notation used in scholarly articles:
 
 ```prolog
 % Examples of metarules from the MIL literature
@@ -572,16 +601,50 @@ P(X,Y)  % Abduce
 P(x,y):- Q(x,y) % Identity
 P(x,y):- Q(y,x) % Inverse
 P(x,y):- Q(x,z), R(z,y) % Chain
+P(x,y):- Q(x,z), P(z,y) % Tailrec
 P(x,y):- Q(x), R(x,y) % Precon
 P(x,y):- Q(x,y), R(y) % Postcon
 ```
 
-In the listing above, `P,Q,R` are second-order, existentially quantified
-variables, `X,Y` are first-order, existentially quantified variables and `x,y,z`
-are first-order, universally quantified variables. `P,Q,R` take values from the
-predicate signature while `X,Y,x,y,z` take values from the _constant signature_,
-the set of constants in the background knowledge and examples given in a MIL
-problem.
+In the listing above, capitalisation denotes quantification. `P,Q,R` are
+second-order, existentially quantified variables, `X,Y` are first-order,
+existentially quantified variables and `x,y,z` are first-order, universally
+quantified variables. `P,Q,R` take values from the predicate signature, `X,Y`
+take values from the constant signature and `x,y,z` take values from the set of
+first-order variables.
+
+Metarules define patterns that must be matched by the clauses of a learned
+hypothesis. A metarule pattern is defined by a clause with literals where
+predicate symbols and terms are represented by variables. Predicate symbols are
+represented by existentially quantified, second-order variables, constants by
+existentially quantified, first-order variables and variables by universally
+quantified, first-order variables. Each clause in a learned hypothesis is an
+instantiation of a metarule with its variables bound to terms of the appropriate
+type.
+
+Louise learns by finding _metasubstitutions_ for the existentially quantified
+variables in a metarule. In particular, it learns by finding appropriate
+bindings for the second-order variables in a metarule to the predicate symbols
+in the predicate signature. Some hypotheses may also bind existentially
+quantified first-order variables in metarules to constants from the constant
+signature. Hypotheses will usually also include free, universally quantified
+first-order variables (i.e. ordinary Prolog variables).
+
+In the `ancestor/2` hypothesis from the example at the start of this README
+file, the first clause is an instantiation of _Identity_ with the variable
+bindings `{P/ancestor, Q/parent, x/A, y/B}` and the second clause is an
+instantiation of _Tailrec_ with the variable bindings `{P/ancestor, Q/ancestor,
+x/A, y/B, z/C}`:
+
+```prolog
+% ancestor/2 hypothesis
+ancestor(A,B):-parent(A,B).
+ancestor(A,B):-ancestor(A,C),ancestor(C,B).
+
+% Identity and Tailrec
+P(x,y):- Q(x,y)
+P(x,y):- Q(x,z), P(z,y)
+```
 
 ### Encapsulation of second-order metarules
 
@@ -591,7 +654,7 @@ an _encapsulated_ form, as first-order clauses. The following is the list of
 metarules above, in Louise's internal representation:
 
 ```prolog
-% Examples of encapsulated metarules in Louise's notation.
+% Examples of encapsulated metarules in Louise's internal representation.
 metarule(abduce,P,X,Y):- m(P,X,Y).
 m(identity,P,Q):- m(P,X,Y), m(Q,X,Y).
 m(inverse,P,Q):- m(P,X,Y), m(Q,Y,X).
@@ -600,31 +663,18 @@ m(precon,P,Q,R):- m(P,X,Y), m(Q,X), m(R,X,Y).
 m(postcon,P,Q,R):- m(P,X,Y), m(Q,X,Y), m(R,Y).
 ```
 
-In the encapsulation of the _Identity_ metarule listed above, the head literal,
-`metarule(identity,P,Q)` is a _metasubstitution atom_ where `identity` is the
-metarule's identifier and `P,Q` are second-order, existentially quantified
-variables, whereas `X,Y,Z` are first-order, universally quantified variables. In
-the encapsulation of the _Abduce_ metarule, `abduce` is the metarule's
-identifier, `P` is a second-order, existentially quantified variable, whereas
-`X,Y` are first-order, existentially quantified variables. In other words, in
-this encapsulated form, existentially quantified variables, of either order, are
-arguments of the metasubstitution atom.
+In an encapsulated metarule the quantification of a variable is determined by
+its inclusion or not in the arguments of the metasubstitution atom and the order
+of a variable is determined by its use in a literal as a symbol of the literal
+or one of its agruments.
 
-A _metasubstitution_ is a substitution of existentially quantified variables in
-a metarule. Existentially quantified variables in metarules may be first- or
-second-order. Second order, existentially quantified variables are substituted
-for symbols in the predicate signature, so they take values from the set of
-predicate symbols of the target predicate and predicates in the background
-knowledge (and also _invented predicates_, discussed later). First-order
-existentially quantified variables are substituted for constants in the
-_constant signature_, the set of constants in the background knowledge and
-examples.
-
-In practice what all this mens is that existentially quantified, second-order
-variables in metasubstitution atoms become the predicate symbols of clauses in a
-learned hypothesis and existentially quantified, first-order variables become
-constants in clauses of a learnerd hypothesis. An example of this is given in a
-following section.
+For example, in the encapsulation of the _Identity_ metarule listed above, the
+head literal, `metarule(identity,P,Q)` is a _metasubstitution atom_ where
+`identity` is the metarule's identifier and `P,Q` are second-order,
+existentially quantified variables, whereas `X,Y,Z` are first-order, universally
+quantified variables. In the encapsulation of the _Abduce_ metarule, `abduce` is
+the metarule's identifier, `P` is a second-order, existentially quantified
+variable, whereas `X,Y` are first-order, existentially quantified variables. 
 
 ### Expanded metarules
 
@@ -654,12 +704,27 @@ m(chain,P,Q,R):-		% Metasubstitution atom
 	m(Q,X,Z), m(R,Z,Y).	% Encapsulated body literals of Chain
 ```
 
-Note that this internal representation is different than the notation used for
+Note that this internal representation is different from the notation used for
 metarules declared in the configuration, discussed in the previous section.
-Metarules declared in the configuration have the predicate symbol `metarule`.
-This is a bit of syntactic sugar to help make metarules easier to read and
-write. You should always use the syntactic sugar'd cofiguration notation to
-declare your own metarules, otherwise they may not be picked up by Louise.
+Metarules declared in the configuration are clauses of the predicate
+`metarule/2` with arguments a metarule identifier and an atomic representation
+of the second-order form of the metarule. This is a bit of syntactic sugar to
+help make metarules easier to read and write. Use the predicate
+`metarule_expansion/2` to translate a metarule to its expanded form at the
+top-level:
+
+```prolog
+% Identity metarule with metarule/2 syntactic sugar:
+?- metarule(identity, M).
+M = 'P(x,y):- Q(x,y)'.
+
+% Identity unsugar'd and transalted into its expanded form:
+?- metarule_expansion(identity, M).
+M =  (m(identity, _7146, _7148):-m(_7146, _7162, _7164), m(_7148, _7162, _7164)).
+```
+
+You should always use the syntactic sugar'd cofiguration notation to declare
+your own metarules, otherwise they may not be picked up by Louise.
 
 ### Applying metasubstitutions to metarules
 
@@ -667,22 +732,28 @@ Metasubstitution atoms are a compact way to store the clauses of a hypothesis
 learned by Louise. A ground metasubstitution atom can be applied to its
 corresponding metarule simply by collecting the encapsulated body literals of
 the expanded metarule and joining the head literal to the body literals by the
-Prolog "neck" symbol, `:-`, thus forming a definite clause. Each clause in a
-hypothesis learned by Louise is the result of applying a metasubstitution to its
-corresponding metarule in this manner.
+Prolog "neck" symbol, `:-`, thus forming a definite clause. Definite clauses in
+a hypothesis learned by Louise are the result of applying a metasubstitution to
+its corresponding metarule in this manner. Metasubstitutions of metarules
+without a body, like _Abduce_ do not need a neck symbol and result in unit
+clauses.
 
-For instance, suppose that, in the process of learning a hypothesis for
-`ancestor/2`, Louise's learning procedure has obtained the metasubstitution
-`m(identity,ancestor,parent)`. Note that this is a _ground_ metasubstitution, in
-the sense that the existentially quantified variables in the metasubstitution
-atom are unified to predicate symbols in the background knowledge for
-`ancestor/2` (i.e. "parent") and the predicate symbol of "ancestor" itself.
+In a previous section we revisited the `ancestor/2` example and listed the
+metasubstitution `{P/ancestor, Q/parent, x/A, y/B}` for the variables in the
+_Identity_ metarule. In the expanded form of _Identity_, this metasubstitution
+would be represented by the metasubstitution atom `m(identity,ancestor,parent)`.
 
-Given that ground metasubstitution, Louise can apply it to the _Identity_
-metarule, matching its identifier, and produce the following definite clause:
+Given that ground metasubstitution atom, Louise can apply it to the _Identity_
+metarule, matching its identifier, to produce the following definite clause:
 
 ```prolog
-% An applied metasubstitution
+% The expanded Identity metarule:
+m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
+
+% A ground metasubstitution of Identity:
+m(identity,ancestor,parent)
+
+% The applied metasubstitution:
 m(ancestor,A,B):- m(parent,A,B)
 ```
 
@@ -694,7 +765,7 @@ Such clauses are obtained with a further transformation, an _excapsulation_ of
 encapsulated clauses in a hypothesis. Given that the result of applying a ground
 metasubstitution atom to its corresponding metarule is a first order clause,
 excapsulation is straightforward. Excapsuating the clause listed above gives us
-the following definite clause of `ancestor/2`:
+the first clause of the `ancestor/2` hypothesis from our example:
 
 ```prolog
 % An excapsulated clause
