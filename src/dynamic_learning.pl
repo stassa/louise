@@ -1,575 +1,355 @@
 :-module(dynamic_learning, [learn_dynamic/1
 			   ,learn_dynamic/2
-			   ,learn_dynamic/6
+			   ,learn_dynamic/5
 			   ]).
 
-:-use_module(configuration).
-:-use_module(src(auxiliaries)).
-:-use_module(src(louise)).
-:-use_module(src(mil_problem)).
-:-use_module(src(metagen)).
+/** <module> Predicates for dynamic learning with predicate invention.
 
-/** <module> Dynamic learning with metarule extension and predicate invention.
+Dynamic learning differs to "static" learning (implemented by
+learn/[1,2,5]) in that, as soon as a new generalising metasubstitution
+is found (and given that the metasubstitution satisfies any constraints)
+it is applied to its corresponding metarule and written to the dynamic
+database so it can be re-used by further Top program construction steps.
 
-Dynamic learning is Louise's strategy for bias shift by metarule
-extension and predicate invention.
+This allows the construction of sets of metasubstitutions that, applied
+to their metarules, result in sets of connected clauses. Two clauses, C
+and D, are connected, iff one or more body literals of C unify with the
+head literal of D.
 
-Dynamic Learning
-================
+In order to create sets of connected clauses, dynamic learning performs
+predicate invention. An invented predicate's symbol is then used in a
+subsequently constructed clause, to form a connected pair of clauses.
+More than two clauses can be connected in this way. It is possible both
+to connect one clause to multiple other clauses, or to connect multiple
+clauses in pairs in the same hypothesis.
 
-Dynamic learning proceeds in a finite number of discrete _learning
-episodes_. The hypothesis learned in each episode k is added to the
-background knowledge of episode k+1. Hypotheses may include invented
-predicates, constructed by a process of metarule extension, described
-below.
+Besides making heavy use of the dynamic database, dynamic learning
+predicates also perform destructive updates of a counter used to keep
+track of the number of invented predicates and also to construct their
+names by indexing the atom '$' with the current highest invented
+predicate index + 1.
 
-The purpose of dynamic learning is to perform _bias shift_. Bias shift
-is the automatic modification, or generation, of inductive bias. In the
-context of machine learning, iductive bias is normally taken to mean
-everything that contributes to learning, other than the learner itself
-and the set of training examples. In the case of Louise and
-Meta-Interpretive Learning (MIL) in general, inductive bias refers to
-the background knowledge and metarules.
-
-Louise's implementation of dynamic learning modifies both the metarules
-and the background knowledge. More precisely, the modification of
-metarules is done by _metarule extension_ and the modification of the
-background knowledge by inclusion of previously learned hypotheses in
-the background knowledge and by _predicate invention_.
-
-Metarule extension
-------------------
-
-Metarule extension refers to a process of adding new body literals to
-metarules by _unfolding_ between pairs of metarules taken from an
-initially given set (provided by the user). Metarule extension involves
-an ordered set of two metarules, Ext = {M1, M2}, that we will refer to
-as the _extension pair_. The first metarule in an extension pair, M1, is
-the _extended metarule_ and the second metarule, M2, is the _extending
-metarule_. We will say that "M1 is extended by M2", or that M2 "extends
-M1".
-
-During metarule extension, first each body literal, L_i, of the extended
-metarule, M1, is unified with the head literal of the extending
-metarule, M2, then L_i is replaced by each body literal of the extending
-metarule, M2. The result is a new metarule, M_i, the _extension of M1
-with respect to L_i_, whereas L_i is the _extended literal_. M_i has n-1
-more body literals than M1, where n is the number of body literals in
-M2.
-
-The following is an example of extending the chain metarule by a call to
-Louise's extended_metarules/2 predicate:
+Dynamic learning essentially updates the background knowledge by adding
+each clause in the Top program (of the origional target or an invented
+predicate) to the dynamic database as soon as it is constructed. Because
+of this, it relies very strongly on the order in which examples are
+given. For example, given the first ordering of examples, below, 'S'/2
+is learnable with dynamic learning, but given the second ordering, it is
+not:
 
 ==
-?- extended_metarules([chain], _Es), print_clauses(_Es).
-m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E).
-m(chain_2,A,B,C,D):-m(A,E,F),m(B,E,G),m(C,G,H),m(D,H,F).
-m(chain_2_2,A,B,C,D):-m(A,E,F),m(B,E,G),m(C,G,H),m(D,H,F).
+% 'S'([a,b],[]) must be found first before all other examples otherwise
+% learning 'S'/2 with dynamic learning will fail
+positive_example('S'/2,E):-
+	member(E, ['S'([a,b],[])
+		  ,'S'([a,a,b,b],[])
+		  ,'S'([a,a,a,b,b,b],[])
+		  ]).
+
+?- learn_dynamic('S'/2).
+'$1'(A,B):-'S'(A,C),'B'(C,B).
+'S'(A,B):-'A'(A,C),'$1'(C,B).
+'S'(A,B):-'A'(A,C),'B'(C,B).
+true.
+
+% This ordering makes 'S'/2 impossible to learn precisely with dynamic
+% learning:
+positive_example('S'/2,E):-
+	member(E, ['S'([a,a,b,b],[])
+		  ,'S'([a,b],[])
+		  ,'S'([a,a,a,b,b,b],[])
+		  ]).
+
+?- learn_dynamic('S'/2).
+'S'([a,a,b,b],[]).
+'S'([a,a,a,b,b,b],[]).
+'S'(A,B):-'A'(A,C),'B'(C,B).
 true.
 ==
-
-Note that the result of calling extended_metarules/2 also returns the
-extended metarule itself, in this case, chain.
-
-Also note that the two extending metarules above, named chain_2 and
-chain_2_2, appear otherwise identical, however this is an artifact of
-the pretty-printing by print_clauses/1. In reality, the two extensions
-are identical _up to renaming of variables_ (and ignoring the
-automatically assigned names). Each extension results from resolving
-chain by itself on a different body literal each time. Thus, while the
-structure of the two extensions is identical different variable
-susbsitutions are possible, as shown in the section on predicate
-inventionm, below.
-
-The result of unconstrained metarule extension is a set of extensions
-that grows exponentially in the number of metarules in the initial set.
-What's worse, many of the metarule extensions resulting from the
-unconstrainted process may have duplicate body literals and are
-therefore redundant with respect to shorter extensions of the same
-extension pair. For efficiency, we wish to constraint the process of
-extension so that the number of resulting extensions remains polynomial
-and is maximally relevant to the learning target. Dynamic learning
-ensures that this is the case.
-
-Predicate invention
--------------------
-
-During a dynamic learning episode, Louise extends the metarules in the
-initial set _once_, then the extensions and the initial metarules are
-used to construct the Top program as normal. If a metarule extension is
-successfully used to generalise an example, the metasubstitution atoms
-of the _extension pair_ used to construct the extension are added to the
-Top program. Note again: the extended metarule's metasubstitution atom
-is _not_ added to the Top program; only the metasubstitution atoms of
-the extension pair are.
-
-The following example illustrates the process described above:
-
-==
-% [1] Extension pair consisting of two instances of chain.
-M1 = m(chain, P1, Q1, R1):- m(P1, X, Y), m(Q1, X, Z), m(R1, Z, Y)
-M2 = m(chain, P2, Q2, R2):- m(P2, U, W), m(Q2, U, V), m(R2, V, W)
-
-% [2] Extension of M1 by M2.
-M = m(chain_chain, P1, Q2, R2, R1):- m(P1, U, Y), m(Q2, U, V), m(R2, V, W), m(R1, W, Y)
-
-% [3] Example variable substitutions.
-% Zeta is applied to M1 and M2 during metarule extension.
-% Eta is applied to M during Top program construction.
-% Theta is applied to M1 and M2 during predicate invention.
-Zeta = {Q1/P2, X/U, Z/W}
-Eta = {P1/p, R1/s, Q2/q, R2/r}
-Theta = {P2/p_1}
-
-% [4] Result of applying Zeta to M1 and M2
-m(chain, P1, P2, R1):-m(P1, U, Y), m(P2, U, W), m(R1, W, Y)
-m(chain, P2, Q2, R2):-m(P2, U, W), m(Q2, U, V), m(R2, V, W)
-
-% [5] Result of applying Eta to M.
-m(chain_chain, p, q, r, s):- m(p, U, Y), m(q, U, V), m(r, V, W), m(s, W, Y)
-
-% [6] Result of applying Theta to M1 and M2.
-m(chain, p, p_1, s):- m(p, U, Y), m(p_1, U, W), m(s, W, Y)
-m(chain, p_1, q, r):- m(p_1, U, W), m(q, U, V), m(r, V, W)
-
-% [7] Excapsulation of M1 and M2 after variable substitutions.
-C1 = p(U, Y):- p_1(U, W), s(W, Y)
-C2 = p_1(U, W):- q(U, V), r(V, W)
-==
-
-Above, in [1], M1 and M2 are two instances of _chain_ with variables
-standardised apart. M1 and M2 constitute an extension pair.
-
-In [2], M1 is extended by M2, producing M, essentially a chain metarule
-with one additional body literal.
-
-In [3] we illustrate the variable substitutions found during metarule
-extension, Top program construction and predicate invention, with
-examples.
-
-Zeta is a substitution of the variables in M1 and M2 found during the
-extension of M1 by M2. Q1 and P2 are the existentially quantified,
-second-order variables corresponding to the predicate symbols of the
-extended literal of M1, m(Q1, X, Z), and the head literal of M2, m(P2,
-U, W), respectively. X, U, Z and W are universally quantified,
-first-order variables in body literals of M1 and M2 unified during
-extension.
-
-Eta is a _metasubstitution_, a substitution of the existentially
-quantified, second-order variables, P1, R1, Q2 and R2 in M by the
-predicate symbols, p, q, r and s, representing symbols of predicates in
-the examples and the background knowledge. p represents the predicate
-symbol of the learning target whreas q, r and s represent predicate
-symbols selected by successful resolution of M with the background
-knowledge during the generalisation step of Top program construction.
-
-Theta is a metasubstitution of the existentially quantified,
-second-order variable P2 by an _invented_ symbol.
-
-In [4] we list the result of applying Zeta to M1 and M2. In [5] we list
-the result of appying Eta to M. And in [6] we list the result of
-applying Theta to M1 and M2.
-
-Note that, until applying Theta to M1 and M2, the variable P2 remains
-free (after unification with Q1).
-
-Finally, in [7], we excapsulate M1 and M2, resulting in two clauses, C1
-and C2. Note that C1 and C2 are _connected_ in the sense that a body
-literal in C1 is the body literal of C2. The predicate symbol, p_1,
-bound to P2 by Theta, represents an _invented_ predicate symbol.
-
-C1 and C2 would be added to the learned hypothesis during a dynamic
-learning episode. Then, the learned hypothesis would be added to the
-background knowledge for the next learning episode. In the new episode,
-the initial set of metarules, including M1 and M2 _but not M_ would be
-extended again, in the same way as described above and any new clauses
-resulting from this extension added to the learned hypothesis for this
-new step; and so on.
-
-In this way, dynamic learning will build up a hypothesis containing long
-"chains" of connected clauses incrementally but without ever having to
-extend the initial set of metarules more than a single time.
-
 */
-
-%!	h22_metarules(?IDs) is semidet.
-%
-%	IDs of progenitor H22 metarules for metarule generation.
-%
-%h22_metarules([chain,inverse,identity]).
-h22_metarules([chain,inverse]).
-%h22_metarules([chain]).
-
 
 
 %!	learn_dynamic(+Target) is det.
 %
-%	Perform dynamic learning for a learning Target.
+%	Learn a program for a Target using dynamic learning.
 %
 learn_dynamic(T):-
 	learn_dynamic(T,Ps)
 	,print_clauses(Ps).
 
 
+
 %!	learn_dynamic(+Target,-Program) is det.
 %
-%	Learn a Program by dynamic learning.
+%	Learn a Program for a Target using dynamic learning.
 %
-learn_dynamic(T,Ps):-
-	configuration:dynamic_generations(N)
-	,h22_metarules(IDs)
-	,tp_safe_experiment_data(T,Pos,Neg,BK,_)
-	,learn_dynamic(N,Pos,Neg,BK,IDs,Ps).
+learn_dynamic(T, Ps):-
+	experiment_data(T,Pos,Neg,BK,MS,false)
+	,learn_dynamic(Pos,Neg,BK,MS,Ps).
 
 
-%!	learn_dynamic(+Generation,+Pos,+Neg,+BK,+MS,-Prog) is det.
+
+%!	learn_dynamic(+Pos,+Neg,+BK,+MS,-Program) is det.
 %
-%	Learn with metarule extension for predicate invention.
+%	Learn a Program using dynamic learning.
 %
-%	Implements dynamic lerning (provisional title), a method for
-%	predicate invention by metarule extension.
+%	@tbd This makes heavy use of the dynamic database and of
+%	destructive updates with setarg/3. It is also terribly
+%	inefficient and a bit of a mess because it's basically
+%	copy/pasta from learn/5 and its auxiliaries in louise module. It
+%	would really be nice to have a more efficient and less dirty
+%	version. Perhaps even one so pure that SLG resolution can be
+%	used with it.
 %
-%	@tbd Metarule extension for dynamic learning is currently
-%	performed by the predicate metarule_extension/4 defined in this
-%	file and _not_ with extended_metarules/3 defined in
-%	mil_problem.pl, even though extended_metarules/3 is itself
-%	defined in terms of metarule_extension/4. Metarule extension is
-%	still being developed so some confusion like this will reign for
-%	a while still.
-%
-learn_dynamic(N,Pos,Neg,BK,IDs,Ps):-
-	examples_target(Pos,T)
-	,debug(dynamic,'Performing dynamic learning.',[])
-	,debug(dynamic,'Progenitor metarules: ~w',[IDs])
-	,encapsulated_problem_1(Pos,Neg,BK,[Pos_,Neg_,BK_])
-	,dynamic_generations(N,Pos_,Neg_,BK_,IDs,Ps_k)
-	,reduced_top_program(Pos_,BK_,[],Ps_k,Ps_r)
-	,excapsulated_clauses(T,Ps_r,Ps).
+learn_dynamic(Pos,Neg,BK,MS,Ps):-
+	configuration:max_invented(I)
+	,C = c(1,I)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,top_program_dynamic(C,Pos_,Neg_,BK_,MS_,Ms)
+	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
+	,examples_target(Pos,T)
+	,excapsulated_clauses(T,Rs,Ps).
 
 
-% This is or was needed just so as to not have to expand metarules at
-% the start of learning. We don't do that anymore.
-encapsulated_problem_1(Pos,Neg,BK,[Pos_,Neg_,BK_]):-
-	encapsulated_bk(BK,BK_)
-	,encapsulated_clauses(Pos,Pos_)
-	,encapsulated_clauses(Neg,Neg_).
-
-
-%!	dynamic_generations(+Generations,+Pos,+Neg,+BK,+MS,-Program)
+%!	top_program_dynamic(+Counter,+Pos,+Neg,+BK,+MS,-Top_Progam) is
+%!	det.
 %
-%	Perform dynamic learning with metarule generation.
-%
-%	Generations is the number of metarule generations to generate.
-%
-dynamic_generations(N,Pos,Neg,BK,IDs,Ps):-
-	C = c(0)
-	,succ(N,N_) % Off by one correction for max generation.
-	,dynamic_generations(1,N_,C,Pos,Neg,BK,IDs,[],Ps).
-
-%!	dynamic_generations(+Current,+Gen,+Counter,+Pos,+Neg,+BK,+MS,+Acc,-Prog)
-%!	is det.
-%
-%	Business end of dynamic_generations/6.
-%
-%	Counter is the counter used in metasub_atom/5 to number invented
-%	predicates' symbols.
-%
-dynamic_generations(I,I,_C,_Pos,_Neg,_BK,_IDs,Hs,Hs):-
-	!
-       ,I_ is I - 1
-       ,debug(dynamic,'Exiting after ~w generations',[I_]).
-dynamic_generations(I,N,C,Pos,Neg,BK,IDs,Hs,Bind):-
-	debug(dynamic,'Starting with generation ~w',[I])
-	%,metarule_kindred(I,IDs,MS_i)
-	,metarule_generation(I,IDs,MS_i)
-	,append(BK,Hs,BK_i)
-	,dynamic_episodes(C,Pos,Neg,BK_i,MS_i,Hs_i)
-	%,Hs_i \= []
-	,!
-	,succ(I,I_)
-	,dynamic_generations(I_,N,C,Pos,Neg,BK,IDs,Hs_i,Bind).
-dynamic_generations(I,N,C,Pos,Neg,BK,IDs,Hs,Bind):-
-% We'll get here if the previous dynamic episode fails.
-% TODO: can it, ever? We're not checking it's non-empty anymore.
-	succ(I,I_)
-	,dynamic_generations(I_,N,C,Pos,Neg,BK,IDs,Hs,Bind).
-
-
-%!	dynamic_episodes(+Counter,+Pos,+Neg,+BK,+MS,-Prog) is det.
-%
-%	Perform a series of dynamic episodes.
-%
-%	Each episode is performed with the current metarule generation
-%	and a new generation is tried only after this predicate exits.
-%
-dynamic_episodes(C,Pos,Neg,BK,MS,Ps_k):-
-	examples_target(Pos,T)
-	,dynamic_episode(C,Pos,Neg,BK,MS,Es_1)
-	,reduced_top_program(Pos,BK,MS,Es_1,Rs_1)
-	,atomic_residue(Rs_1,Pos,Rs)
-	,length(Rs,N)
-	,debug(dynamic,'Atomic residue: ~w', [N])
-	,dynamic_episodes(C,T,N,Pos,Neg,BK,MS,Es_1,Ps_k).
-
-
-%!	dynamic_episodes(+Counter,+Tgt,+Size,+Pos,+Neg,+BK,_MS,-Episode,-Prog)
-%!	is det.
-%
-%	Business end of dynamic_episodes/5.
-%
-%	This predicate implements the dynamic learning loop described in
-%	learn_dynamic/5.
-%
-%	Counter is a Prolog term C(K), updated dynamically to keep track
-%	of the number of predicates invented during a dynamic learning
-%	attempt. This is a bit of a hack- it's meant to stop
-%	dynamic_episode/6 from producing an infinite set of hypotheses
-%	differing only in the name of their invented predicates. A
-%	better way to do this is to test whether a new hypothesis with
-%	invented predicates is already in the background knowledge- but
-%	that may be a bit expensive.
-%
-%	Size is the cardinality of the hypothesis in the previous
-%	dynamic learning step. If Size does not increase between steps,
-%	dynamic_episodes/9 exits with the current theory bound in Prog.
-%
-dynamic_episodes(C,T/A,N,Pos,Neg,BK,MS,Es_i,Bind):-
-	append(BK,Es_i,BK_)
-	,dynamic_episode(C,Pos,Neg,BK_,MS,Es_j)
-	,reduced_top_program(Pos,BK_,MS,Es_j,Rs_j)
-	,atomic_residue(Rs_j,Pos,Rs)
-	,length(Rs,M)
-	,debug(dynamic,'Atomic residue: ~w', [M])
-	,M < N
-	,!
-	,dynamic_episodes(C,T/A,M,Pos,Neg,BK_,MS,Es_j,Bind).
-dynamic_episodes(_C,_T,_M,_Pos,_Neg,_BK,_MS,Ps,Ps).
-
-
-%!	dynamic_episode(+Counter,+Pos,+Neg,+BK,+MS,-Episode) is det.
-%
-%	Complete one dynamic learning episode.
-%
-%	Thin ish wrapper around top_program_dynamic/6 to allow for some
-%	control of recursion, via louise:recursion_guard/3.
-%
-dynamic_episode(C,Pos,Neg,BK,MS,Ms):-
-	configuration:theorem_prover(TP)
-	,configuration:recursion_depth_limit(dynamic_learning,L)
-	,debug_clauses(dynamic,'New dynamic episode with BK:',BK)
-	,G = dynamic_learning:top_program_dynamic(C,Pos,Neg,BK,MS,Ms)
-	,recursion_guard(G,L,TP).
-
-
-%!	recursion_guard(+Goal,+Time_Limit,+Theorem_Prover) is det.
-%
-%	Call Goal guarding for infinite recursion.
-%
-%	Time_Limit is passed to call_with_depth_limit/3 if necessary.
-%
-%	Theorem_Prover is the current value of the configuration option
-%	theorem_prover/1. If this is "resolution" then Depth_Limit is
-%	used with call_with_depth_limit/3. If theorem_prover/1 is set to
-%	"tp" there is no reason to guard against recursion here: the TP
-%	operator is guaranteed to terminate. At least it is, given a
-%	definite datalog program.
-%
-recursion_guard(G,L,resolution):-
-	!
-	,call_with_depth_limit(G,L,Rs)
-	,Rs \= depth_limit_exceeded.
-recursion_guard(G,_L,tp):-
-% TP operator is already recursion-safe.
-	call(G).
-
-
-%!	atomic_residue(+Program,+Positive,-Residue) is det.
-%
-%	Residue is the intersection of Program and Positive examples.
-%
-%	Program is the reduction of the BK, Positive (examples) and
-%	learned hypothesis. Residue is a list of examples in
-%	Positive that remain in Program after it is reduced.
-%
-%	This is used to determine whether dynamic learning should
-%	continue. Dynamic learning should stop if the number of
-%	unreduced examples does not change between learning attempts,
-%	because this indicates that no new clauses have been added to
-%	the Top program.
-%
-%	Note that the last part is a bit of a conjecture. There is
-%	always the possibility that adding one or more new clauses to
-%	the Top program doesn't change the program's success set.
-%
-%	More worryingly it's possible that adding one or more new
-%	clauses to the Top program will make it harder to reduce the MIL
-%	problem successfully.
-%
-atomic_residue(Ps,Pos,Is):-
-	sort(Ps,Ps_)
-	,ord_intersect(Ps_, Pos, Is).
-
-
-%!	top_program_dynamic(+Counter,+Pos,+Neg,+BK,+MS,-Top) is det.
-%
-%	Construct a Top program dynamically.
-%
-%	This is a dynamic version of Top program construction. It is
-%	identical to the ordinary Top program construction implemented
-%	in louise:top_program/5, except that a second Top program
-%	construction step is taken where metarules are
-%	extended and the metasubstitution atoms of the original
-%	metarules in an extension pair are added to the Top program, as
-%	described in learn_dynamic/5.
-%
-%	@tbd This doesn't work with theorem_prover(tp).
+%	Construct the Top_Progam for a MIL problem dynamically.
 %
 top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
-	,louise:write_program(Pos,BK,Refs)
-	,debug(dynamic,'Constructing Top program dynamically...',[])
+	,write_program(Pos,BK,Refs)
+	,debug(dynamic,'Constructing dynamic Top program...',[])
 	,top_program_dynamic(C,Pos,Neg,MS,Ms)
-	,debug_clauses(dynamic,'Dynamic Top program:',Ms)
 	,applied_metarules(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
 
-%!	top_program_dynamic(+Counter,+Pos,+Neg,+Metarules,-Metasubs) is
-%!	det.
+
+%!	write_program(+Pos,+BK,+PS,-Refs) is det.
 %
-%	Business end of top_program_dynamic/6.
+%	Write an encapsulated MIL problem to the dynamic database.
 %
-%	Performs Top program construction by calling top_program_/5 in
-%	louise.pl. Then takes a second Top program construction step
-%	where metarules are extended and retracted in order to perform
-%	predicate invention. The result of the two construction steps
-%	are appended in the end.
+%	@tbd The negative examples and metarules don't need to be
+%	written to the dynamic database.
 %
-%	@tbd The second Top program construction step implemented in
-%	this predicate performs generalisation and specialisation "in
-%	one go", i.e. without first collecting all generalising
-%	metasubstitutions and then specialising them. Could this be
-%	applied to ordinary Top program construction, i.e. not in
-%	dynamic learning?
-%
-top_program_dynamic(C,Pos,Neg,MS,Ms):-
-	debug(predicate_invention,'Performing predicate invention...',[])
-	% Construct Top program for initial metarules
-	,(   louise:top_program_(Pos,Neg,_,MS,Ss_Neg)
-	 ->  true
-	;   Ss_Neg = []
-	 )
-	,debug_clauses(predicate_invention,'Initial Top program:',Ss_Neg)
-	% Construct Top program for metarule extensions
-	% Potentially performing predicate invention
-	,examples_target(Pos,T/_)
-	,debug(predicate_invention,'Extending metarules:',[])
-	,findall(S
-		,(metarule_extension(MS,M3,M1,M2)
-		 ,debug_clauses(predicate_invention,[M3])
-		 % Keep fresh variables for specialisation step
-		 ,copy_term(M3,M3_)
-		 % Generalisation
-		 ,entails(+,M3,Pos,A)
-		 ,constraints(A)
-		 % Specialisation
-		 ,\+ entails(-,M3_,Neg,A)
-		 ,metasub_atom(C,T,M1,M2,S)
+write_program(Pos,BK,Rs):-
+	findall(Rs_i
+		,(member(P, [Pos,BK])
+		 ,assert_program(user,P,Rs_i)
 		 )
-		,Ss_Inv_)
-	,sort(Ss_Inv_, Ss_Inv_s)
-	,debug_clauses(predicate_invention,'Invented metasubstitutions:',Ss_Inv_s)
-	% And append
-	,append(Ss_Neg,Ss_Inv_s,Ms).
+		,Rs_)
+	,flatten(Rs_,Rs).
 
 
-%!	metarule_extension(+Metarules,+Extension,+Original1,+Original2)
+%!	top_program(+Positive,+Negative,+BK,+Metarules,-Metasubstitutions)
 %!	is det.
 %
-%	Extend a pair of metarules and return them and their Extension.
+%	Collect all correct Metasubstitutions in a MIL problem.
 %
-%	The original metarules, Original1 and Original2 are needed in
-%	generalise_invent/4 because we want to collect their ground
-%	metasubstitutions as invented clauses.
-%
-%	@tbd This predicate has a very confusing interface. Metarule is
-%	a single argument, a list of two (expanded) metarules, however
-%	it's described as a "pair" - because the predicate operates on a
-%	pair of metarules. This is probably a vestige of early
-%	development without prior design and needs fixin.
-%
-metarule_extension(MS,M3,M1,M2_):-
-	member(M1,MS)
-	,member(M2,MS)
-	,(   same_metarule(M1,M2)
-	->   copy_term(M2,M2_)
-	    ,extend(M1,M2_,M3)
-	 ;   M2_ = M2
-	    ,extend(M1,M2_,M3)
-	 ).
+top_program_dynamic(C,Pos,Neg,MS,Ss):-
+	generalise(C,Pos,Neg,MS,Ss_Pos)
+	,specialise(Ss_Pos,Neg,Ss).
 
 
-%!	entails(+Sign,+Metarule,+Examples) is det.
+%!	generalise(+Positive,+Metarules,-Generalised) is det.
 %
-%	True when Metarule entails each of a set of Examples.
+%	Generalisation step of Top program construction.
 %
-%	Sign is one of [+,-] denoting whether Examples is the set of
-%	positive or negative examples. This is only used to remove the
-%	now very bothersome ":-" prefix for negative examples.
+%	Generalises a set of Positive examples by finding each
+%	metasubstitution of a metarule that entails a positive example.
 %
-entails(+,M,Pos,S):-
-	member(Ep, Pos)
-	,louise:metasubstitution(Ep,M,S).
-entails(-,M,Neg,S):-
-	member(:-En, Neg)
-	,louise:metasubstitution(En,M,S).
+%	Generalised is a set of key-value pairs where the keys are
+%	ground metasubstitution atoms and the values are a copy with
+%	free variables of the encapsulated head and body literals of the
+%	metarule corresponding to the metasubsitution.
+%
+generalise(C,Pos,Neg,MS,Ss_Pos):-
+	debug_clauses(dynamic,'Generalising positive examples:', Pos)
+	,findall(H-M
+	     ,(member(M,MS)
+	      ,copy_term(M,M_)
+	      ,member(Ep,Pos)
+	      ,generalising_metasubstitutions(C,Ep,M_,Neg,MS,Hs)
+	      ,member(H, Hs)
+	      )
+	     ,Ss_Pos_)
+	,sort(Ss_Pos_, Ss_Pos)
+	,debug_clauses(dynamic,'Generalised Top program',Ss_Pos).
 
 
-%!	metasub_atom(+Count,+Target,+Metarule1,+Metarule2,-Metasub) is
-%!	nondet.
+%!	specialise(+Generalised,+Negatives,-Specialised) is det.
 %
-%	Construct a metasubstitution atom for an invented metarule.
+%	Specialisation step of Top program construction.
 %
-%	Count is the current highest index of an invented predicate.
-%	Target is the predicate symbol (name only- not arity) of the
-%	learning target. Metarule1 and Metarule2 are the metarules in an
-%	extension pair.
+%	Specialises a set of metasubstitutions generalising the positive
+%	examples against the Negative examples by discarding each
+%	metasubstitution that entails a negative example.
 %
-%	Metasub is successively bound to the metasubstitution atom of
-%	each of the two metarules with a suitable predicate symbol bound
-%	to the existentially quantified second order variable of each
-%	metasubstiution atom where an invented symbol should be. The
-%	"suitable" predicate symbol is of the form: <Target>_<Count+1>.
-%	The position of the existentially quantified second order
-%	variable for the invented predicate symbol is known because when
-%	this predicate is called, it should be the only existentially
-%	quantified variable in each of the two metarules that remains
-%	free. Remember that remaining predicate symbols are ground in
-%	generalise_invent/4 when an extended metarule succeeds in
-%	generalising a positive example.
-%
-metasub_atom(C,T,(S1:-_),(S2:-_),S):-
-% There should only be one variable in both metasub atoms
-% The variable of the invented predicate's symbol.
-	term_variables([S1,S2],[V])
-	,invented_symbol(T,C,V)
-	% We use member/2's nondeterminism here to return
-	% multiple results in setof/3 and avoid having to flatten
-	% its set of results later.
-	% Yeah, I know this is a bit cryptic, sorry.
-	,member(S,[S1,S2]).
+specialise(Ss_Pos,Neg,Ss_Neg):-
+	setof(H
+	     ,H^M^Ss_Pos^En^Neg^
+	      (member(H-M,Ss_Pos)
+	      ,\+((member(:-En,Neg)
+		  ,specialising_metasubstitution(En,M,H)
+		  )
+		 )
+	      )
+	     ,Ss_Neg).
 
 
-%!	invented_symbol(+Target,+Counter,?Symbol) is det.
+%!	generalising_metasubstitution(+Cntr,+Ex,+Metarule,+Neg,+Rules,-Metasubs)
+%	is nondet.
 %
-%	Create an invented predicate Symbol.
+%	Find generalising metasubstitutions of a Metarule.
 %
-%	Symbol is of the form <Target>_<Count+1>.
+%	Cntr is a compound c(I,K) where I is the current highest index
+%	of an invented predicate's name and K is the maximum number of
+%	invented predicates to attempt to, well, invent.
 %
-invented_symbol(T,C,V):-
+%	Ex is a positive example, a ground definite unit clause.
+%
+%	Metarule is a non-ground, expanded metarule.
+%
+%	Neg is the set of negative examples and MS the set of metarules
+%	in a MIL problem.
+%
+%	Metasubs is a set of metasubstitutions of Metarule such that the
+%	first predicate symbol in each metasubstitution in Metasubs is
+%	either the predicate symbol of Ex, or an invented predicate
+%	symbol.
+%
+%	Generalising metasubstitutions does a lot of the heavy lifting
+%	(and heave it is) of predicate invention. It returns a list of
+%	metasubstitutions because a list might have been found in the
+%	Top program construction step that may be taken in order to
+%	produce invented predicates. It also checks that each
+%	metasubstitution in Metasubs conforms to any metarule
+%	constraints. Finally, it applies the metasubstitutions in
+%	Metasubs to their metarules and _writes the result to the
+%	dynamic database_ so that it may be reused later to learn
+%	connected clauses and whatnot.
+%
+generalising_metasubstitutions(C,E,M,Neg,MS,[Sub|Subs]):-
+	debug_clauses(dynamic,'New example',[E])
+	,bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,prove_body_literals(C,Ls,Neg,MS,Subs)
+	,findall(S
+		,(member(S,[Sub|Subs])
+		 ,constraints(S)
+		 )
+		,Ss)
+	,applied_metarules(Ss,MS,Cs)
+	,assert_program(user,Cs,_Refs)
+	,debug_clauses(dynamic,'Asserted new clauses:',Cs).
+
+
+%!	bind_head_literal(+Example,+Metarule,-Head) is det.
+%
+%	Bind an Example to the encapsulated Head literal of a Metarule.
+%
+%	Abstracts the complex patterns of binding examples to the heads
+%	of metarules with and without body literals.
+%
+bind_head_literal(E,M,(H:-(E,Ls))):-
+	M = (H:-(E,Ls))
+	,!.
+bind_head_literal(E,M,(H:-(E,true))):-
+	M = (H:-E).
+
+
+%!	prove_body_literals(+Cntr,+Literals,+Neg,+Metarules,-Metasubs)
+%!	is nondet.
+%
+%	Prove the body Literals of a partially instantiated metarule.
+%
+prove_body_literals(C,Ls,Neg,MS,Ss):-
+	once(list_tree(Ls_,Ls))
+	,debug_clauses(dynamic,'Body literals:', [Ls])
+	,prove_body_literals(C,Ls_,Neg,MS,[],Ss).
+
+%!	prove_body_literals(+Cntr,+Literals,+Neg,+Metarules,+Acc,-Metasubs)
+%!	is nondet.
+%
+%	Business end of prove_body_literals/5.
+%
+%	Follows more or less the following procedure:
+%
+%	1) For each literal, l, in Literals
+%	2) Try to prove l against the BK and examples
+%	3) If that fails, try to invent a new predicate
+%	4) Return all invented metasubstitutions
+%
+%	Inventing metasubstitutions is done by Top program construction
+%	where the set of positive examples contains only a single
+%	literal, a literal that could not be proven given the examples
+%	and background knowledge.
+%
+%	Note that the distantly-recursive Top program construction step
+%	in the second clause of this predicate goes through
+%	generalising_metasubstitutions/6, so each metasubstitution found
+%	by it is _written to the dynamic database_ so that it can be
+%	reused later.
+%
+prove_body_literals(_C,[],_Neg,_MS,Acc,Ss):-
+	flatten(Acc,Ss).
+prove_body_literals(C,[L|Ls],Neg,MS,Acc,Bind):-
+% L is an example atom or entailed by the BK and examples.
+	debug_clauses(dynamic,'Proving:',[L])
+	,user:call(L)
+	,debug_clauses(dynamic,'Proved:',[L])
+	,prove_body_literals(C,Ls,Neg,MS,Acc,Bind).
+prove_body_literals(C,[L|Ls],Neg,MS,Acc,Bind):-
+% Try inventing a new predicate that entails L.
+	\+ user:call(L)
+	,debug_clauses(dynamic,'Failed proving:',[L])
+	,new_atom(C,L,L_)
+	,debug_clauses(dynamic,'New atom:',[L_])
+	,top_program_dynamic(C,[L_],Neg,MS,Ss)
+	,debug_clauses(dynamic,'Invented:',Ss)
+	,prove_body_literals(C,Ls,Neg,MS,[Ss|Acc],Bind).
+
+
+%!	new_atom(+Counter,+Atom,-New) is det.
+%
+%	Index an Atom to create a New, invented symbol.
+%
+new_atom(C,L,L_):-
+	L =.. [m,P|As]
+	,new_symbol(C,P)
+	,L_ =.. [m,P|As].
+
+%!	new_symbol(+Counter,?Symbol) is det.
+%
+%	Bind a Symbol variable to a new, invented Symbol.
+%
+%	Counter is _destructively updated_ by a call to setarg/3 (and
+%	_not_ to nb_setarg/3) in this predicate.
+%
+new_symbol(C,P):-
 	arg(1,C,I)
-	,succ(I,I_)
-	,configuration:max_invented(K)
-	,I_ =< K
-	,atomic_list_concat([T,I_],'_',V)
-	,nb_setarg(1,C,I_).
+	,arg(2,C,K)
+	,I =< K
+	,atomic_list_concat(['$',I],'',P)
+	,succ(I, I_)
+	,setarg(1,C,I_).
+
+
+%!	specialising_metasubstitution(+Example,-Metarule,+Metasubstitution)
+%	is nondet.
+%
+%	Specialise a Metasubstitution against a negative Example.
+%
+%	Example is a negative example, a ground definite goal (i.e. a
+%	clause of the form :-Example).
+%
+%	Metarule is a non-ground metarule. This is actually the output
+%	argument (should go last; was second because this was copied
+%	from metasubstitution/3 where this makes sense).
+%
+%	Metasubstitution is a ground metasubstitution of Metarule.
+%	Metarule is ground according to the terms in Metasubstitution.
+%
+specialising_metasubstitution(E,M,Sub):-
+	bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,user:call(Ls).
