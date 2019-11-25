@@ -13,8 +13,9 @@ you encoutner unless you report them. Please use the author's email to contact
 the author regarding bugs and errors. Alternatively, you are welcome to open a
 github Issue or send a pull request. 
 
-The author specifically pledges never to direct a user to RTFM or in any other
-way dismiss the user's problems with installing or using Louise as trivial.
+The author specifically pledges to help the user with Louise and never to direct
+a user to RTFM or in any other way dismiss the user's problems with installing
+or using Louise as trivial.
 
 Table of contents
 -----------------
@@ -45,9 +46,42 @@ addition to examples and background knowledge, a set of clause templates called
 _metarules_ are also used. Examples, background knowledge and metarules are
 discussed later in this README file. 
 
+### Efficient Meta-Interpretive Learning of large programs
+
 Louise is intersting because its polynomial-time learning algorithm is efficient
 enough to learn programs that are too large to be learned by current MIL
-learners, like [Metagol].
+learners, like [Metagol]. Metagol, like most ILP-learners learns by searching a
+_Hypothesis space_ for a correct hypothesis. The Hypothesis space for a learning
+problem is the set of hypotheses that can be formed from the background
+knowledge (and metarules in the case of MIL). Each hypothesis in the Hypothesis
+space is a set of clauses, so the Hypothesis space is the _powerset_ of the set
+of clauses. The set of clauses in the Hypothesis space is the _Top program_, the
+most general program that entails each positive example and no negative example.
+Louise learns by Top program construction and reduction. Given that the Top
+program is much smaller than the Hypothesis space (the powerset of a set is much
+larger than the set itself), constructing the Top program is much more efficient
+than searching the Hypothesis space. In particular, constructing the Top program
+can be done in time polynomial to the cardinality of the Top program, whereas
+seaching the Hypothesis space can take time exponential to the cardinality of
+the Top program. 
+
+A further source of complexity in ILP-learners that learn by searching the
+Hypothesis space is the need to evaluate candidate hypotheses against the
+examples. This evaluation is expensive computationally, in fact it is
+undecidable for arbitrary clausal languages and costly even for restricted
+languages like Horn clause languages with no function symbols (of arity more
+than 0). Louise avoids this expensive step of hypothesis evaluation and instead
+constructs the Top program as the set of clauses that entail at least one
+positive example and no negative examples.
+
+Louise follows Top program construction step with a _reduction_ step. The
+reduction step removes redundant clauses from the Top program, resulting in a
+smaller hypothesis that is in some cases more convenient (for example, it's
+easier to store and amy execute faster, etc).
+
+In the following section we give examples of learning with Louise. We only give
+examples of learning small, simple programs. The aim is to instruct the user in
+how to use Louise, not to prove our claim that Louise can learn large programs.
 
 A first example of learning with Louise
 ---------------------------------------
