@@ -127,10 +127,16 @@ tailrec metarule 'P(x,y):- Q(x,z), P(z,y)'.
 precon metarule 'P(x,y):- Q(x), R(x,y)'.
 postcon metarule 'P(x,y):- Q(x,y), R(y)'.
 switch metarule 'P(x,y):- Q(x,z), R(y,z)'.
-
+% Metarules with abductible first-order existentially quantified
+% variables. Also see abduce metarule above.
 chain_abduce_x metarule 'P(X,y):- Q(X,z), R(z,y)'.
 chain_abduce_y metarule 'P(x,Y):- Q(x,z), R(z,Y)'.
 chain_abduce_z metarule 'P(x,y):- Q(x,Z), R(Z,y)'.
+projection_21_abduce metarule 'P(X,X):- Q(X)'.
+projection_12_abduce metarule 'P(X):- Q(X,X)'.
+precon_abduce metarule 'P(X,y):- Q(X), R(X,y)'.
+postcon_abduce metarule 'P(x,Y):- Q(x,Y), R(Y)'.
+
 
 % Used in noise/heroes/detect_evil.pl
 % Added here for Thelma compatibility
@@ -160,17 +166,20 @@ metarule(xy_zy_zx,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,Z,X).
 %	A Goal to be called when Metasubstitution is matched.
 %
 %	@tbd This predicate is multifile so that it can be declared by
-%	experiment files, however the definition below is pretty
+%	experiment files, however the definitions below are pretty
 %	universally necessary to allow learning hypotheses with
 %	left-recursions using dynamic learning and predicate invention.
-%	So it goes into the configuration that it might be used by
-%	aplicable to every experiment file. On the other
-%	hand, left-recursive hypotheses may be required for some
-%	problems so this definition is left commented out. This will not
-%	raise any errors because metarule_constraints/2 is declared
-%	dynamic.
+%	So in they goes into the configuration that they might be used
+%	by every experiment file. On the other hand, left-recursive
+%	hypotheses may be required for some problems so this definition
+%	is left commented out. This will not raise any errors because
+%	metarule_constraints/2 is declared dynamic so a definition is
+%	not necessary to exist in this module (or anywhere).
 %
 /*
+% Anti-recursion constraint - excludes recursive clauses
+% Does not take into account invented or metarules with existentially
+% quantified secod-order variables.
 metarule_constraints(M,fail):-
 	M =.. [m,Id,P|Ps]
 	% Projection explicitly maps p/2 to p/1.
@@ -180,6 +189,9 @@ metarule_constraints(M,fail):-
 */
 
 /*
+% McCarthyite constraint - excludes left-recursive metasubstitutions
+% Allows for invented predicates. Does not take into account existentially
+% quantified secod-order variables in metarules.
 metarule_constraints(M,fail):-
 	M =.. [m,Id,P|Ps]
 	,Id \= projection
@@ -192,6 +204,59 @@ left_recursive(T,[T,T|_Ps]):-
 left_recursive(T,[I,T|_Ps]):-
 	atom_chars(I,['$',A])
 	,atom_number(A,_N).
+*/
+
+/*
+% Lexicographic order constraint - imposes total ordering on the Herbrand base.
+% Allows for invented predicates and metarules with existentially
+% quantified first-order variables.
+% Remember to change #TARGET_PREDICATE/ARITY# with an actual symbol/arity.
+configuration:metarule_constraints(M,fail):-
+	debug_clauses(dynamic,'Testing constraint for metasub:',M)
+	,configuration:max_invented(I)
+	,M =.. [m,_Id|Ps]
+	,predicate_signature(#TARGET_PREDICATE/ARITY#, Ss)
+	,findall(P/A
+		,(member(P,Ps)
+		 ,(   memberchk(P/A,Ss)
+		  ;   atomic(P)
+		     ,invented_symbol(I,A,P)
+		  )
+		 )
+		,Ps_)
+	,\+ ordered_sublist(Ps_, Ss)
+	,debug(dynamic,'Constraint test passed',[]).
+
+
+%!	ordered_sublist(?Sublist,+Ordering) is det.
+%
+%	A Sublist order according to a total Ordering of its elements.
+%
+ordered_sublist([X,Y],Os):-
+	above(X,Y,Os).
+ordered_sublist([X,Y|Ls],Os):-
+	above(X,Y,Os)
+	,ordered_sublist([Y|Ls],Os).
+
+
+%!	above(?Above,+Below,+Ordering) is det.
+%
+%	True when Above is above Below in a total Ordering.
+%
+above(S1,S2,Ss):-
+	previous(S1,S2,Ss).
+above(S1,S3,Ss):-
+	previous(S1,S2,Ss)
+	,above(S2,S3,Ss).
+above(S1,S2,[_|Ss]):-
+	above(S1,S2,Ss).
+
+
+%!	previous(?First,?Next,?List) is det.
+%
+%	True when First and Next are the first two elements of List.
+%
+previous(S1,S2,[S1,S2|_Ss]).
 */
 
 

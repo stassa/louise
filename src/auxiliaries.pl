@@ -6,7 +6,12 @@
 		      ,reset_defaults/0
 		      ,set_configuration_option/2
 		       % MIL Problem auxiliaries
+		      ,invented_symbol/3
+		      ,invented_symbol/2
+		      ,invented_symbols/3
+		      ,invented_symbols/2
 		      ,known_metarules/1
+		      ,predicate_signature/2
 		      ,same_metarule/2
 		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
@@ -90,7 +95,12 @@ Table of Contents
    * set_configuration_option/2
 
 3. MIL problem auxiliaries [sec_prob]
+   * invented_symbol/3
+   * invented_symbol/2
+   * invented_symbols/3
+   * invented_symbols/2
    * known_metarules/1
+   * predicate_signature/2
    * same_metarule/2
    * write_encapsulated_problem/1
    * write_encapsulated_problem/4
@@ -318,6 +328,74 @@ set_configuration_option(N, Vs):-
 % Predicates for inspecting and manipulating a MIL problem.
 
 
+%!	invented_symbol(+Index,?Arity,?Symbol) is nondet.
+%
+%	An invented Symbol witn an index in [1,Index].
+%
+%	Symbol is a predicate indicator, S/A, where S is an invented
+%	symbol and A is Arity.
+%
+%	Use this predicate to generate invented symbols of a given
+%	Arity or verify that a Prolog term is an invented symbol of tha
+%	Arity.
+%
+invented_symbol(I,A,S/A):-
+	between(1,I,K)
+	,atom_concat('$',K,S).
+
+
+
+%!	invented_symbol(+Index,?Symbol) is nondet.
+%
+%	An invented Symbol witn an index in [1,Index].
+%
+%	As invented_symbol/2 but Symbol is an atomic term without an
+%	arity.
+%
+%	Use this predicate to generate invented symbols or verify that
+%	a Prolog term is an invented symbol.
+%
+invented_symbol(I,S):-
+	between(1,I,K)
+	,atom_concat('$',K,S).
+
+
+
+%!	invented_symbols(+Index,?Arity,?Symbols) is det.
+%
+%	A list of invented Symbols up to some maximum Index.
+%
+%	Symbols is a list of symbols S/A, where each S is an invented
+%	symbol and A is Arity.
+%
+%	Use this predicate to generate invented symbols of a given Arity
+%	or verify that a list of Prolog terms is a list of invented
+%	symbols of that Arity.
+%
+invented_symbols(I,A,Ss):-
+	findall(S
+	       ,invented_symbol(I,A,S)
+	       ,Ss).
+
+
+
+%!	invented_symbols(+Index,?Symbols) is det.
+%
+%	A list of invented Symbols up to some maximum Index.
+%
+%	As invented_symbols/3 but Symbols are atomic terms without
+%	arities.
+%
+%	Use this predicate to generate invented symbols or verify that a
+%	list of Prolog terms is a list of invented symbols.
+%
+invented_symbols(I,Ss):-
+	findall(S
+	       ,invented_symbol(I,S)
+	       ,Ss).
+
+
+
 %!	known_metarules(-Ids) is det.
 %
 %	Collect the Ids of metarules known to the system.
@@ -337,6 +415,36 @@ known_metarules(Ids):-
 			 ,clause(H,B)
 			 )
 	     ,Ids).
+
+
+
+%!	predicate_signature(+Target,-Signature) is det.
+%
+%	Construct the predicate Signature given a learning Target.
+%
+%	Target is the predicate indicator of a learning target defined
+%	in the current experiment file.
+%
+%	Signature is a list of predicate indicators: [Target, I1, ...,
+%	In, B1, ..., Bm], where each Ii is an invented symbol and n is
+%	the current value of max_invented/1, and each Bi is the symbol
+%	of a predicate declared as background knowledge for Target.
+%
+%	Each invented symbol is an atom '$I' where I is a numerical
+%	index from 1 to the value of max_invented/1. The ordering if
+%	invented symbols in Signature is according to their indices.
+%
+%	The ordering of predicate symbols in Signature is identical to
+%	their order in the background_knowledge/2 declaration for
+%	Target.
+%
+predicate_signature(T/A,[T/A|Ss]):-
+	configuration:max_invented(I)
+	,configuration:experiment_file(P,M)
+	,user:use_module(P)
+	,M:background_knowledge(T/A,BK)
+	,invented_symbols(I,A,Is)
+	,append(Is,BK,Ss).
 
 
 

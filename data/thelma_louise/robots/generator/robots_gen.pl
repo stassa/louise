@@ -17,6 +17,9 @@
 		     ,move_down_then_left/2
 		     ]).
 
+:-use_module(configuration).
+:-use_module(src(auxiliaries)).
+
 :-user:use_module('../world.pl').
 :-user:use_module('../render.pl').
 :-user:use_module(move_generator).
@@ -149,8 +152,59 @@ learning_rate(T,M,K,Ss,Rs):-
 % MIL problem
 % ========================================
 
-configuration:metarule(unit_identity,P,Q):- m(P,X,_Y), m(Q,X).
-configuration:metarule(unit_identity, [P,Q], [X,Y], mec(P,X,Y) :- mec(Q,X)).
+% For Thelma
+configuration:metarule(projection_21_abduce, [P,Q,X], [], mec(P,X,X):- mec(Q,X)).
+configuration:metarule(precon_abduce, [P,Q,R,X], [Y], (mec(P,X,Y):- mec(Q,X), mec(R,X,Y))).
+configuration:metarule(postcon_abduce, [P,Q,R,Y], [X], (mec(P,X,Y):- mec(Q,X,Y), mec(R,Y))).
+
+% Lexicographic order constraint.
+% Order of predicate signature taken from background_knowledge/2.
+% See predicate_signature/2 in auxiliaries.pl.
+configuration:metarule_constraints(M,fail):-
+	configuration:max_invented(I)
+	,M =.. [m,_Id|Ps]
+	,predicate_signature(move/2, Ss)
+	,findall(P/A
+		,(member(P,Ps)
+		 ,(   memberchk(P/A,Ss)
+		  ;   atomic(P)
+		     ,invented_symbol(I,A,P)
+		  )
+		 )
+		,Ps_)
+	,\+ ordered_sublist(Ps_, Ss).
+
+
+%!	ordered_sublist(?Sublist,+Ordering) is det.
+%
+%	A Sublist order according to a total Ordering of its elements.
+%
+ordered_sublist([X,Y],Os):-
+	above(X,Y,Os).
+ordered_sublist([X,Y|Ls],Os):-
+	above(X,Y,Os)
+	,ordered_sublist([Y|Ls],Os).
+
+
+%!	above(?Above,+Below,+Ordering) is det.
+%
+%	True when Above is above Below in a total Ordering.
+%
+above(S1,S2,Ss):-
+	previous(S1,S2,Ss).
+above(S1,S3,Ss):-
+	previous(S1,S2,Ss)
+	,above(S2,S3,Ss).
+above(S1,S2,[_|Ss]):-
+	above(S1,S2,Ss).
+
+
+%!	previous(?First,?Next,?List) is det.
+%
+%	True when First and Next are the first two elements of List.
+%
+previous(S1,S2,[S1,S2|_Ss]).
+
 
 background_knowledge(move/2, [% Move primitives
 			      move_right/2
@@ -176,9 +230,13 @@ background_knowledge(move/2, [% Move primitives
 			     ,move_down_then_left/2
 			  ]).
 
-
-%metarules(move/2,[unit_identity,chain,precon,postcon,projection]).
-metarules(move/2,[chain,precon,postcon]).
+metarules(move/2,[chain
+		 ,projection_21_abduce
+		 ,chain_abduce_x
+		 ,chain_abduce_y
+		 ,chain_abduce_s
+		 ,precon_abduce
+		 ,postcon_abduce]).
 
 positive_example(move/2,move(Ss,Gs)):-
 	dataset_file_name(Bn,_)
