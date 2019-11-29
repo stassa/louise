@@ -253,7 +253,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	dynamic database_ so that it may be reused later to learn
 %	connected clauses and whatnot.
 %
-generalising_metasubstitutions(C,E,M,Neg,MS,[Sub|Subs]):-
+generalising_metasubstitutions(C,E,M,Neg,MS,Ss):-
 	debug_clauses(dynamic,'Generalising example',[E])
 	,bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,prove_body_literals(C,Ls,Neg,MS,Subs)
