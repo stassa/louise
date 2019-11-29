@@ -3,6 +3,10 @@
 			   ,learn_dynamic/5
 			   ]).
 
+:-use_module(src(mil_problem)).
+:-use_module(src(auxiliaries)).
+:-use_module(src(louise)).
+
 /** <module> Predicates for dynamic learning with predicate invention.
 
 Dynamic learning differs to "static" learning (implemented by
@@ -83,6 +87,11 @@ learn_dynamic(T):-
 %
 %	Learn a Program for a Target using dynamic learning.
 %
+learn_dynamic(T,_Ps):-
+	(   var(T)
+	->  throw('learn_dynamic/2: unbound target symbol!')
+	;   fail
+	).
 learn_dynamic(T, Ps):-
 	experiment_data(T,Pos,Neg,BK,MS,false)
 	,learn_dynamic(Pos,Neg,BK,MS,Ps).
@@ -101,13 +110,28 @@ learn_dynamic(T, Ps):-
 %	version. Perhaps even one so pure that SLG resolution can be
 %	used with it.
 %
+learn_dynamic(Pos,Neg,BK,MS,_Ts):-
+	(   var(Pos)
+	->  throw('learn_dynamic/5: unbound positive examples list!')
+	;   var(Neg)
+	->  throw('learn_dynamic/5: unbound negative examples list!')
+	;   var(BK)
+	->  throw('learn_dynamic/5: unbound background symbols list!')
+	;   var(MS)
+	->  throw('learn_dynamic/5: unbound metarule IDs list!')
+	;   fail
+	).
 learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	configuration:max_invented(I)
 	,C = c(1,I)
+	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,debug(dynamic,'Constructing dynamic Top program...',[])
 	,top_program_dynamic(C,Pos_,Neg_,BK_,MS_,Ms)
+	,debug(learn,'Reducing dynamic Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
 	,examples_target(Pos,T)
+	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(T,Rs,Ps).
 
 
@@ -120,7 +144,6 @@ top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,write_program(Pos,BK,Refs)
-	,debug(dynamic,'Constructing dynamic Top program...',[])
 	,top_program_dynamic(C,Pos,Neg,MS,Ms)
 	,applied_metarules(Ms,MS,Ts)
 	,erase_program_clauses(Refs).
@@ -231,7 +254,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	connected clauses and whatnot.
 %
 generalising_metasubstitutions(C,E,M,Neg,MS,[Sub|Subs]):-
-	debug_clauses(dynamic,'New example',[E])
+	debug_clauses(dynamic,'Generalising example',[E])
 	,bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,prove_body_literals(C,Ls,Neg,MS,Subs)
 	,findall(S
@@ -265,7 +288,7 @@ bind_head_literal(E,M,(H:-(E,true))):-
 %
 prove_body_literals(C,Ls,Neg,MS,Ss):-
 	once(list_tree(Ls_,Ls))
-	,debug_clauses(dynamic,'Body literals:', [Ls])
+	,debug_clauses(dynamic,'Proving body literals:', [Ls])
 	,prove_body_literals(C,Ls_,Neg,MS,[],Ss).
 
 %!	prove_body_literals(+Cntr,+Literals,+Neg,+Metarules,+Acc,-Metasubs)
@@ -295,18 +318,18 @@ prove_body_literals(_C,[],_Neg,_MS,Acc,Ss):-
 	flatten(Acc,Ss).
 prove_body_literals(C,[L|Ls],Neg,MS,Acc,Bind):-
 % L is an example atom or entailed by the BK and examples.
-	debug_clauses(dynamic,'Proving:',[L])
+	debug_clauses(dynamic,'Proving literal:',[L])
 	,user:call(L)
-	,debug_clauses(dynamic,'Proved:',[L])
+	,debug_clauses(dynamic,'Proved literal:',[L])
 	,prove_body_literals(C,Ls,Neg,MS,Acc,Bind).
 prove_body_literals(C,[L|Ls],Neg,MS,Acc,Bind):-
 % Try inventing a new predicate that entails L.
 	\+ user:call(L)
-	,debug_clauses(dynamic,'Failed proving:',[L])
+	,debug_clauses(dynamic,'Failed proving literal:',[L])
 	,new_atom(C,L,L_)
-	,debug_clauses(dynamic,'New atom:',[L_])
+	,debug_clauses(dynamic,'Generating new atom:',[L_])
 	,top_program_dynamic(C,[L_],Neg,MS,Ss)
-	,debug_clauses(dynamic,'Invented:',Ss)
+	,debug_clauses(dynamic,'Invented clauses:',Ss)
 	,prove_body_literals(C,Ls,Neg,MS,[Ss|Acc],Bind).
 
 
