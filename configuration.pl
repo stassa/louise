@@ -190,7 +190,7 @@ left_recursive(T,[T|_Ps]):-
 left_recursive(T,[T,T|_Ps]):-
 	!.
 left_recursive(T,[I,T|_Ps]):-
-	atomic_list_concat([T,A],'_',I)
+	atom_chars(I,['$',A])
 	,atom_number(A,_N).
 */
 

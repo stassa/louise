@@ -504,3 +504,11 @@ target_or_invention(T,T):-
 target_or_invention(T,S):-
 	atomic_list_concat([T,A],'_',S)
 	,atom_number(A,_N).
+target_or_invention(_,S):-
+	atom_chars(S,['$',A])
+	,atom_number(A,_N).
+/* Alternative- might use later
+target_or_invention_(_,S):-
+	atomic_list_concat(['$',A],'_',S)
+	,atom_number(A,_N).
+*/
