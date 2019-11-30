@@ -234,7 +234,7 @@ metarules(move/2,[chain
 		 ,projection_21_abduce
 		 ,chain_abduce_x
 		 ,chain_abduce_y
-		 ,chain_abduce_s
+		 ,chain_abduce_z
 		 ,precon_abduce
 		 ,postcon_abduce]).
 
