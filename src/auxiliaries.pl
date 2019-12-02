@@ -1,5 +1,7 @@
-:-module(auxiliaries, [% Printing auxiliaries
-	               print_or_debug/3
+:-module(auxiliaries, [% Experiment auxiliaries
+	               protocol_experiment/3
+	               % Printing auxiliaries
+		      ,print_or_debug/3
 		       % Configuration auxiliareis
 		      ,debug_config/1
 		      ,list_config/0
@@ -85,6 +87,9 @@ them.
 Table of Contents
 -----------------
 
+1. Experiment auxiliaries [sec_prot]
+   * protocol_experiment/3
+
 1. Printing auxiliaries [sec_print]
    * print_or_debug/3
 
@@ -135,6 +140,50 @@ Table of Contents
    * program/3
 
 */
+
+
+% [sec_prot]
+% ================================================================================
+% Experiment auxiliaries
+% ================================================================================
+% Predicates to manage experiments logged with protocol/1.
+
+
+%!	protocol_experiment(+Target,+Protocol,+Goal) is det.
+%
+%	Run an experimental Goal and log results with protocol/1.
+%
+%	Target is a learning target in the current experiment file.
+%
+%	Protocol is the name of a file in which to save output of
+%	executing Goal using protocol/1.
+%
+%	Goal is an arbitrary Prolog goal. It's expected that Goal has
+%	something to do with Target.
+%
+%	Use this predicate to run quick, simple experiments keeping a
+%	record of their configuration options, problem statisticts,
+%	experiment Goal and result.
+%
+protocol_experiment(T,N,G):-
+	protocol(N)
+	,writeln('Current configuration:')
+	,list_config
+	,nl
+	,writeln('Problem statistics:')
+	,list_problem_statistics(T)
+	,nl
+	,copy_term(G,G_)
+	,numbervars(G_)
+	,writeln('Goal:')
+	,print(G_)
+	,nl
+	,nl
+	,writeln('Results:')
+	,user:call(G)
+	,noprotocol.
+
+
 
 % [sec_print]
 % ================================================================================
@@ -781,7 +830,7 @@ list_problem_statistics(T):-
 	,maplist(length,[Pos,Neg,BK,MS],[I,J,K,N])
 	,format('Positive examples:    ~w~n', [I])
 	,format('Negative examples:    ~w~n', [J])
-	,format('Background knowledge: ~w~n', [K])
+	,format('Background knowledge: ~w ~w~n', [K,BK])
 	,format('Metarules:            ~w ~w ~n', [N,MS]).
 
 
