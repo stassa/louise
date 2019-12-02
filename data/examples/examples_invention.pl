@@ -16,7 +16,6 @@ following configuration options.
 
 ==
 ?- list_config.
-dynamic_generations(1)
 experiment_file(data/drafts/examples_invention/path.pl,path)
 learner(louise)
 max_invented(0)
@@ -27,7 +26,6 @@ resolutions(5000)
 theorem_prover(resolution)
 true.
 ==
-
 
 Examples invention
 ------------------
@@ -398,18 +396,21 @@ Examples invention and metarule extension
 -----------------------------------------
 
 Attempting to learn a hypothesis of path/2 from the MIL problem defined
-in this experiment file using dynamic learning with metarule generation
-and predicate invention returns a very specific hypothesis:
+in this experiment file using dynamic learning for predicate invention
+returns a very specific hypothesis:
 
 ==
-?- learn_dynamic(path/2), dynamic_generations(Generations), max_invented(Invented).
-path(A,B):-edge(A,C),edge(C,D),edge(D,E),edge(E,F),edge(F,B).
-Generations = Invented, Invented = 4.
+?- max_invented(I), learn_dynamic(path/2).
+'$1'(A,B):-edge(A,C),'$2'(C,B).
+'$2'(A,B):-edge(A,C),'$3'(C,B).
+'$3'(A,B):-edge(A,C),edge(C,B).
+path(A,B):-edge(A,C),'$1'(C,B).
+I = 4.
 ==
 
 As demonstrated in the above experiments, examples invention can, in
-some cases, obtain better results than dynamic learning with metarule
-extension and predicate invention.
+some cases, obtain better results than dynamic learning and predicate
+invention.
 
 The combination of examples invention and dynamic learning is not yet
 fully implemented, and examples invention is not fully integrated to the

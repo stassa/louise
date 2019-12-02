@@ -41,7 +41,6 @@ configuration file and then reload the configuration file with make/0.
 */
 
 % Set to 4 and reduce recursion_depth_limit/2 to obtain alternatives.
-:- auxiliaries:set_configuration_option(dynamic_generations, [2]).
 :- auxiliaries:set_configuration_option(max_invented, [3]).
 :- auxiliaries:set_configuration_option(recursion_depth_limit,[dynamic_learning,2000]).
 

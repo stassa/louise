@@ -1,5 +1,4 @@
-:-module(configuration, [dynamic_generations/1
-			,experiment_file/2
+:-module(configuration, [experiment_file/2
 			,learner/1
 			,max_invented/1
 			,metarule/2
@@ -25,8 +24,7 @@
 
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
-:- dynamic dynamic_generations/1
-          ,max_invented/1
+:- dynamic max_invented/1
           ,recursion_depth_limit/2
 	  ,recursive_reduction/1
 	  ,reduction/1
@@ -57,13 +55,6 @@
 %:-debug(dynamic). % Debug dynamic learning.
 %:-debug(predicate_invention). % Debug predicate invention.
 %:-debug(examples_invention). % Debug examples invention.
-
-
-%!	dynamic_generations(?Generations) is det.
-%
-%	Number of metarule Generations in dynamic learning.
-%
-dynamic_generations(1).
 
 
 %!	experiment_file(?Path,?Module) is semidet.
