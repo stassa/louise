@@ -144,9 +144,11 @@ write_program(Pos,BK,Rs):-
 %
 %	Collect all correct Metasubstitutions in a MIL problem.
 %
-top_program_(Pos,Neg,_BK,MS,Ss):-
-	generalise(Pos,MS,Ss_Pos)
-	,specialise(Ss_Pos,Neg,Ss).
+top_program_(Pos,Neg,_BK,MS,Ss_Spec):-
+	generalise(Pos,MS,Ss_Gen)
+	,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
+	,specialise(Ss_Gen,Neg,Ss_Spec)
+	,debug_clauses(top_program,'Specialised Top program',Ss_Spec).
 
 
 %!	generalise(+Positive,+Metarules,-Generalised) is det.

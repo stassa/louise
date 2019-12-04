@@ -126,9 +126,8 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,C = c(1,I)
 	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,debug(dynamic,'Constructing dynamic Top program...',[])
+	,debug(learn,'Constructing dynamic Top program...',[])
 	,top_program_dynamic(C,Pos_,Neg_,BK_,MS_,Ms)
-
 	,debug(learn,'Reducing dynamic Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
 	,examples_target(Pos,T)
@@ -171,9 +170,11 @@ write_program(Pos,BK,Rs):-
 %
 %	Collect all correct Metasubstitutions in a MIL problem.
 %
-top_program_dynamic(C,Pos,Neg,MS,Ss):-
-	generalise(C,Pos,Neg,MS,Ss_Pos)
-	,specialise(Ss_Pos,Neg,Ss).
+top_program_dynamic(C,Pos,Neg,MS,Ss_Spec):-
+	generalise(C,Pos,Neg,MS,Ss_Gen)
+	,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
+	,specialise(Ss_Gen,Neg,Ss_Spec)
+	,debug_clauses(top_program,'Specialised Top program',Ss_Spec).
 
 
 %!	generalise(+Positive,+Metarules,-Generalised) is det.
@@ -189,8 +190,7 @@ top_program_dynamic(C,Pos,Neg,MS,Ss):-
 %	metarule corresponding to the metasubsitution.
 %
 generalise(C,Pos,Neg,MS,Ss_Pos):-
-	debug_clauses(dynamic,'Generalising positive examples:', Pos)
-	,findall(H-M
+	findall(H-M
 	     ,(member(M,MS)
 	      ,copy_term(M,M_)
 	      ,member(Ep,Pos)
@@ -198,8 +198,7 @@ generalise(C,Pos,Neg,MS,Ss_Pos):-
 	      ,member(H, Hs)
 	      )
 	     ,Ss_Pos_)
-	,sort(1,@<,Ss_Pos_,Ss_Pos)
-	,debug_clauses(dynamic,'Generalised Top program',Ss_Pos).
+	,sort(1,@<,Ss_Pos_,Ss_Pos).
 
 
 %!	specialise(+Generalised,+Negatives,-Specialised) is det.
@@ -375,5 +374,7 @@ new_symbol(C,P):-
 %	Metarule is ground according to the terms in Metasubstitution.
 %
 specialising_metasubstitution(E,M,Sub):-
-	bind_head_literal(E,M,(Sub:-(E,Ls)))
-	,user:call(Ls).
+	debug_clauses(dynamic,'Specialising metasubstitution',[Sub])
+	,bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,user:call(Ls)
+	,debug(dynamic,'Kept metasubstitution',[]).
