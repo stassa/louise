@@ -128,6 +128,7 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(dynamic,'Constructing dynamic Top program...',[])
 	,top_program_dynamic(C,Pos_,Neg_,BK_,MS_,Ms)
+
 	,debug(learn,'Reducing dynamic Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
 	,examples_target(Pos,T)
@@ -197,7 +198,7 @@ generalise(C,Pos,Neg,MS,Ss_Pos):-
 	      ,member(H, Hs)
 	      )
 	     ,Ss_Pos_)
-	,sort(Ss_Pos_, Ss_Pos)
+	,sort(1,@<,Ss_Pos_,Ss_Pos)
 	,debug_clauses(dynamic,'Generalised Top program',Ss_Pos).
 
 

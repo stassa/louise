@@ -162,15 +162,15 @@ top_program_(Pos,Neg,_BK,MS,Ss):-
 %	metarule corresponding to the metasubsitution.
 %
 generalise(Pos,MS,Ss_Pos):-
-	setof(H-M
-	     ,M^MS^M_^Ep^Pos^
-	      (member(M,MS)
+	findall(H-M
+	     ,(member(M,MS)
 	      ,copy_term(M,M_)
 	      ,member(Ep,Pos)
 	      ,metasubstitution(Ep,M_,H)
 	      ,constraints(H)
 	      )
-	     ,Ss_Pos).
+	     ,Ss_Pos_)
+	,sort(1,@<,Ss_Pos_,Ss_Pos).
 
 
 /* Alternative version- only resolves metarules, without taking into
@@ -529,6 +529,9 @@ subhypothesis(Pos,Ps,Hs):-
 	sort(Ps, Ps_s)
 	,ord_subtract(Ps_s,Pos,Ps_r)
 	,random_permutation(Ps_r, Ps_)
+	% Maybe use member/2 instead?
+	% Start from each clause in the overhypothesis and
+	% try to create a new sub-hypothesis from it.
 	,subhypothesis(Ps_, Pos, [], [], Hs).
 
 %!	subhypothesis(+Overhypothesis,+Positives,+Entailed,+Acc,-Subhypothesis)
@@ -547,6 +550,11 @@ subhypothesis(_,[],_,Acc,Hs):-
 	,!.
 subhypothesis([],_,_Ps,Acc,Hs):-
 % This should not really be allowed. This needs fixin.
+% This happens when we can't find a subhypothesis that covers all the
+% positive examples because we started with a too-specific clause. The
+% solution is probably to keep an accumulator of clauses discarded so
+% far and restart the search with one of those clauses instead. Or just
+% backtrack and get a new clause.
 	reverse(Acc,Hs)
 	,!.
 subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
