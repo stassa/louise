@@ -1834,6 +1834,10 @@ built_in_or_library_predicate(H):-
 %	true.
 %	==
 %
+%	@tbd Why is closure/3 returning a list of lists rather than a
+%	flat list? In mil_problem:encapsulated_bk/2 it's flattened after
+%	being called. Why do we need to do that?
+%
 closure(Ss,M,Cs):-
 	closure(Ss,[],_Ps,M,[],Cs_)
 	,reverse(Cs_, Cs).
