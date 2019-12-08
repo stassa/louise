@@ -129,6 +129,10 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing dynamic Top program...',[])
 	,top_program_dynamic(C,Pos_,Neg_,BK_,MS_,Ms)
+	% generalising_metasubstitution/6 leaves behind garbage
+	% that we don't have clause references for to remove them.
+	% TODO: don't let this hack become established. Fix!
+	,cleanup_experiment
 	,debug(learn,'Reducing dynamic Top program...',[])
 	,reduced_top_program_dynamic(Pos_,BK_,MS_,Ms,Rs)
 	,examples_target(Pos,T)
