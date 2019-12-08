@@ -6,6 +6,7 @@
 :-use_module(src(mil_problem)).
 :-use_module(src(auxiliaries)).
 :-use_module(src(louise)).
+:-use_module(src(subhypothesis_selection)).
 
 /** <module> Predicates for dynamic learning with predicate invention.
 
@@ -129,7 +130,7 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,debug(learn,'Constructing dynamic Top program...',[])
 	,top_program_dynamic(C,Pos_,Neg_,BK_,MS_,Ms)
 	,debug(learn,'Reducing dynamic Top program...',[])
-	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
+	,reduced_top_program_dynamic(Pos_,BK_,MS_,Ms,Rs)
 	,examples_target(Pos,T)
 	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(T,Rs,Ps).
@@ -378,3 +379,23 @@ specialising_metasubstitution(E,M,Sub):-
 	,bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,user:call(Ls)
 	,debug(dynamic,'Kept metasubstitution',[]).
+
+
+%!	reduced_top_program_dynamic(+Pos,+BK,+Metarules,+Top_Program,-Redued)
+%!	is det.
+%
+%	Reduce a dynamically learned Top_Program.
+%
+%	As reduced_top_program/5 but ensures that subhypothesis
+%	reduction is correctly routed to subhypothesis_dynamic/4 that
+%	knows how to deal with dynamically learned predicates with
+%	possible invented clauses.
+%
+reduced_top_program_dynamic(Pos,BK,_MS,Ps,Rs):-
+	configuration:reduction(subhypothesis)
+	,!
+	,debug(reduction,'Reducing Top program by subhypothesis selection...',[])
+	,subhypothesis_dynamic(Pos,BK,Ps,Rs)
+	,debug_clauses(reduction,'Reduced Top program:',Rs).
+reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
+	reduced_top_program(Pos,BK,MS,Ps,Rs).

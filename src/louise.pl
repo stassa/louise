@@ -4,13 +4,13 @@
 		 ,top_program/5
 		 ,constraints/1
 		 ,reduced_top_program/5
-		 ,selected_subhypothesis/5
 		 ]).
 
 :-use_module(configuration).
 :-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).
 :-use_module(lib(tp/tp)).
+:-use_module(src(subhypothesis_selection)).
 
 /** <module> Meta-Interpretive Learning by Top program construction and reduction.
 
@@ -453,11 +453,9 @@ constraints(Sub):-
 reduced_top_program(Pos,BK,_MS,Ps,Rs):-
 	configuration:reduction(subhypothesis)
 	,!
-	,write_program(Pos,BK,Refs)
 	,debug(reduction,'Reducing Top program by subhypothesis selection...',[])
-	,subhypothesis(Pos,Ps,Rs)
-	,debug_clauses(reduction,'Reduced Top program:',Rs)
-	,erase_program_clauses(Refs).
+	,subhypothesis(Pos,BK,Ps,Rs)
+	,debug_clauses(reduction,'Reduced Top program:',Rs).
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(true)
 	,!
@@ -500,132 +498,3 @@ reduced_top_program_(N,Ps,BK,MS,Bind):-
 reduced_top_program_(_,Rs,_BK,_MS,Rs):-
 	length(Rs, N)
 	,debug(reduction,'Final reduction: ~w',[N]).
-
-
-
-%!	selected_subhypothesis(+Pos,+BK,+MS,+Prog,-Sub) is det.
-%
-%	Select a correct sub-hypothesis from a set of clauses.
-%
-%	@tbd Needs documentation.
-%
-selected_subhypothesis(Pos,BK,MS,Ps,Hs):-
-	encapsulated_problem(Pos,[],BK,MS,[Pos_,[],BK_,_MS_])
-	,encapsulated_clauses(Ps, Ps_)
-	% Why do we need to write the positiv examples?
-	,write_program(Pos_,BK_,Refs)
-	,subhypothesis(Pos_,Ps_,Hs_)
-	,erase_program_clauses(Refs)
-	,examples_target(Pos_,T)
-	,excapsulated_clauses(T,Hs_,Hs).
-
-
-%!	subhypothesis(+Positive,+Top,-Subhypothesis) is det.
-%
-%	Select a subset of clauses of the Top program.
-%
-%	Subhypothesis is a sub-set of the clauses in the Top program
-%	that entails each positive example (and none of the negatives).
-%
-subhypothesis(Pos,Ps,Hs):-
-	sort(Ps, Ps_s)
-	,ord_subtract(Ps_s,Pos,Ps_r)
-	,random_permutation(Ps_r, Ps_)
-	% Maybe use member/2 instead?
-	% Start from each clause in the overhypothesis and
-	% try to create a new sub-hypothesis from it.
-	,subhypothesis(Ps_, Pos, [], [], Hs).
-
-%!	subhypothesis(+Overhypothesis,+Positives,+Entailed,+Acc,-Subhypothesis)
-%!	is det.
-%
-%	Business end of subhypothesis/3.
-%
-%	Positives is the set of positive training examples. Entailed is
-%	the accumulator of examples entailed by the Subhypothesis
-%	constructed so-far.
-%
-%	@tbd This needs documentation of the algorithm implemented.
-%
-subhypothesis(_,[],_,Acc,Hs):-
-	reverse(Acc,Hs)
-	,!.
-subhypothesis([],_,_Ps,Acc,Hs):-
-% This should not really be allowed. This needs fixin.
-% This happens when we can't find a subhypothesis that covers all the
-% positive examples because we started with a too-specific clause. The
-% solution is probably to keep an accumulator of clauses discarded so
-% far and restart the search with one of those clauses instead. Or just
-% backtrack and get a new clause.
-	reverse(Acc,Hs)
-	,!.
-subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
-	tautology(C)
-	,!
-	,subhypothesis(Ps,Pos,Es,Acc,Bind).
-subhypothesis([C|Ps],Pos,Es,Acc,Bind):-
-	member(E,Es)
-	,entails(C,E)
-	,! % Cut member/2 choicepoint
-	,subhypothesis(Ps,Pos,Es,Acc,Bind).
-subhypothesis([C|Ps], Pos, Es, Acc, Bind):-
-	entailed_by(C,Pos,[],Pos_,Es,Es_)
-	,Pos_ \= Pos
-	,subhypothesis(Ps,Pos_,Es_,[C|Acc],Bind).
-
-
-%!	entailed_by(+Clause,+Examples,+Acc_1,+Ex_New,+Acc_2,-Entailed)
-%!	is det.
-%
-%	Find all Examples entailed by a Clause.
-%
-%	Acc_1 is the accumulator of positive examples _not_ entailed by
-%	Clause, or any of the clauses in the sub-hypothesis constructed
-%	by subhypothesis/5.
-%
-%	Acc_2 is the accumulator of positive examples entailed so-far by
-%	the sub-hypothesis constructed in subhypothesis/5.
-%
-entailed_by(_C,[],Pos,Pos,Es,Es):-
-	!.
-entailed_by(C,[E|Pos],Pos_Acc,Pos_Bind,Es_Acc,Es_Bind):-
-	entails(C,E)
-	,!
-	,entailed_by(C,Pos,Pos_Acc,Pos_Bind,[E|Es_Acc],Es_Bind).
-entailed_by(C,[E|Pos],Pos_Acc,Pos_Bind,Es_Acc,Es_Bind):-
-	entailed_by(C,Pos,[E|Pos_Acc],Pos_Bind,Es_Acc,Es_Bind).
-
-
-%!	entails(+Clause,+Example) is det.
-%
-%	True when Clause entails Example.
-%
-%	Entailment is decided by binding Example to the head of Clause
-%	and calling the body of Clause.
-%
-%	The encapsulated MIL problem is in the dynamic database so if
-%	the call succeeds Clause entails Example with respect to the
-%	background knowledge in the MIL problem.
-%
-entails(C,E):-
-	C \= E
-	,(   copy_term(C,E:-B)
-	 ->  user:call(B)
-	 ;   C =.. [F|_]
-	    ,F \= ':-' %So, a fact
-	 ).
-
-
-%!	tautology(?Clause) is semidet.
-%
-%	True when Clause is a tautology.
-%
-%	@tbd Well, this is a bit of a misnomer. This predicate is true
-%	when a clause is of the form L:-L, i.e. when it's made up of the
-%	same literal as both head and body. True test for tautologies
-%	takes a bit more work, I reckon.
-%
-tautology(C):-
-	copy_term(C, H:-B)
-	,numbervars(H:-B)
-	,H = B.
