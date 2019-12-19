@@ -1,4 +1,4 @@
-:-module(auxiliaries, [% Experiment auxiliaries
+ :-module(auxiliaries, [% Experiment auxiliaries
 	               protocol_experiment/3
 	               % Printing auxiliaries
 		      ,print_or_debug/3
@@ -25,7 +25,7 @@
 		      ,list_problem_statistics/1
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
-		      ,list_top_program/2
+		      ,list_top_program/3
 		      ,print_metarules/1
 		      ,print_quantified_metarules/1
 		       % Database auxiliaries
@@ -117,7 +117,7 @@ Table of Contents
    * list_problem_statistics/1
    * list_top_program_reduction/1
    * list_top_program/1
-   * list_top_program/2
+   * list_top_program/3
 
 5. Database auxiliaries [sec_dynm]
    * assert_program/3
@@ -855,55 +855,71 @@ list_top_program_reduction(T):-
 %
 %	Pretty-print the Top program for a Target predicate.
 %
-%	Same as list_top_program(Target, true).
+%	Same as list_top_program(Target,true,true).
 %
 list_top_program(T):-
-	list_top_program(T,true).
+	list_top_program(T,true,true).
 
 
 
-%!	list_top_program(+Target, +Unfold) is det.
+%!	list_top_program(+Target,+Apply,+Excapsulate) is det.
 %
 %	Pretty-print the Top program for a Target predicate.
 %
-%	Unfold is one of [true,false]. If true, the Top program is
-%	unfolded into a list of definite clauses before printing.
-%	Otherwise it is printed as a list of metasubstitutions.
+%	Apply is one of [true,false]. If true, the Top program is
+%	applied to the corresponding metarules to expand it into a list
+%	of definite clauses with Target (and any invented predicates) as
+%	their predicate symbol(s) before printing. Otherwise it is printed as
+%	a list of metasubstitutions.
 %
-list_top_program(T,U):-
+%	Excapsulate is one of [true,false]. If true, the Top program is
+%	excapsulated before printing. The Top program can't be
+%	excapsulated unless it's applied, therefore
+%	list_top_program(Target,false,true) will have the same effect as
+%	list_top_program(Target,true,true).
+%
+list_top_program(T,U,E):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,louise:write_program(Pos_,BK_,Refs)
-	,louise:generalise(Pos_,MS_,Ss_Pos)
-	,findall(S
-		,member(S-_M,Ss_Pos)
-		,Ss_Pos_)
-	,write_and_count('Generalisation:',MS,Ss_Pos_,U)
-	,louise:specialise(Ss_Pos,Neg_,Ss_Neg)
+	,write_program(Pos_,BK_,Refs)
+	,generalise(Pos_,MS_,Ss_Pos)
+	,pairs_keys_values(Ss_Pos,Ss_Pos_,_)
+	,write_and_count(T,'Generalisation:',MS,Ss_Pos_,U,E)
+	,specialise(Ss_Pos,Neg_,Ss_Neg)
 	,nl
 	,erase_program_clauses(Refs)
-	,write_and_count('Specialisation:',MS,Ss_Neg,U).
+	,write_and_count(T,'Specialisation:',MS,Ss_Neg,U,E).
 
 
-%!	write_and_count(+Message,+Metasubs,+Unfold) is det.
+%!	write_and_count(+Target,+Message,+Metasubs,+Apply,+Excapsulate)
+%!	is det.
 %
 %	Auxiliary to list_top_program/2.
 %
 %	Pretty-print a set of Metasubs, its cardinality and a Message.
-%	Unfold is a boolean inherited from list_top_program/2,
-%	determining whether the Top program is unfolded to a list of
-%	definite clauses before printing.
+%	Apply and Excapsulate are booleans inherited from
+%	list_top_program/2. Apply determines whether the Top program is
+%	applied to its metasubstitutions to forma list of definite
+%	clauses before printing. Excapsulate determines whether the Top
+%	program is excapsulated before printing. The Top program can't
+%	be excapsulated unless it's applied to its metarules.
 %
-write_and_count(Msg,MS,Cs,U):-
+write_and_count(T,Msg,MS,Cs,U,E):-
 	(   U = true
-	->  applied_metarules(Cs, MS, Cs_)
+	->  expanded_metarules(MS, MS_)
+	   ,applied_metarules(Cs, MS_, Cs_1)
 	;   U = false
-	->  Cs_ = Cs
+	->  Cs_1 = Cs
 	% Else fail silently to flumox the user. Nyahahaha!
 	)
-	,length(Cs_, N)
+	,(   E = true
+	    ,U = true % Can't excapsulate applied meatasubs!
+	 ->  excapsulated_clauses(T,Cs_1,Cs_2)
+	 ;   Cs_2 = Cs_1
+	 )
+	,length(Cs_2, N)
 	,format_underlined(Msg)
-	,print_clauses(Cs_)
+	,print_clauses(Cs_2)
 	,format('Length:~w~n',[N]).
 
 

@@ -154,37 +154,21 @@ top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
 	,erase_program_clauses(Refs).
 
 
-%!	write_program(+Pos,+BK,+PS,-Refs) is det.
-%
-%	Write an encapsulated MIL problem to the dynamic database.
-%
-%	@tbd The negative examples and metarules don't need to be
-%	written to the dynamic database.
-%
-write_program(Pos,BK,Rs):-
-	findall(Rs_i
-		,(member(P, [Pos,BK])
-		 ,assert_program(user,P,Rs_i)
-		 )
-		,Rs_)
-	,flatten(Rs_,Rs).
-
-
 %!	top_program(+Positive,+Negative,+BK,+Metarules,-Metasubstitutions)
 %!	is det.
 %
 %	Collect all correct Metasubstitutions in a MIL problem.
 %
 top_program_dynamic(C,Pos,Neg,MS,Ss_Spec):-
-	generalise(C,Pos,Neg,MS,Ss_Gen)
+	generalise_dynamic(C,Pos,Neg,MS,Ss_Gen)
 	,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
-	,specialise(Ss_Gen,Neg,Ss_Spec)
+	,specialise_dynamic(Ss_Gen,Neg,Ss_Spec)
 	,debug_clauses(top_program,'Specialised Top program',Ss_Spec).
 
 
-%!	generalise(+Positive,+Metarules,-Generalised) is det.
+%!	generalise_dynamic(+Positive,+Metarules,-Generalised) is det.
 %
-%	Generalisation step of Top program construction.
+%	Generalisation step of dynamic Top program construction.
 %
 %	Generalises a set of Positive examples by finding each
 %	metasubstitution of a metarule that entails a positive example.
@@ -194,7 +178,7 @@ top_program_dynamic(C,Pos,Neg,MS,Ss_Spec):-
 %	free variables of the encapsulated head and body literals of the
 %	metarule corresponding to the metasubsitution.
 %
-generalise(C,Pos,Neg,MS,Ss_Pos):-
+generalise_dynamic(C,Pos,Neg,MS,Ss_Pos):-
 	findall(H-M
 	     ,(member(M,MS)
 	      ,copy_term(M,M_)
@@ -206,15 +190,15 @@ generalise(C,Pos,Neg,MS,Ss_Pos):-
 	,sort(1,@<,Ss_Pos_,Ss_Pos).
 
 
-%!	specialise(+Generalised,+Negatives,-Specialised) is det.
+%!	specialise_dynamic(+Generalised,+Negatives,-Specialised) is det.
 %
-%	Specialisation step of Top program construction.
+%	Specialisation step of dynamic Top program construction.
 %
 %	Specialises a set of metasubstitutions generalising the positive
 %	examples against the Negative examples by discarding each
 %	metasubstitution that entails a negative example.
 %
-specialise(Ss_Pos,Neg,Ss_Neg):-
+specialise_dynamic(Ss_Pos,Neg,Ss_Neg):-
 	setof(H
 	     ,H^M^Ss_Pos^En^Neg^
 	      (member(H-M,Ss_Pos)

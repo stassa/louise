@@ -1,7 +1,10 @@
 :-module(louise, [learn/1
 		 ,learn/2
 		 ,learn/5
+		 ,write_program/3
 		 ,top_program/5
+		 ,generalise/3
+		 ,specialise/3
 		 ,constraints/1
 		 ,reduced_top_program/5
 		 ]).
