@@ -1636,7 +1636,9 @@ cleanup_experiment:-
 	      ,(user:retractall(H)
 	       ,program:retractall(H)
 	       )
-	      ).
+	      )
+	% Remove tabling for all tabled predicates
+	,abolish_all_tables.
 
 
 

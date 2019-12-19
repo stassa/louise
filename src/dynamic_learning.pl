@@ -127,17 +127,71 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,C = c(1,I)
 	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,examples_target(Pos,T)
+	,table_encapsulated(T)
 	,debug(learn,'Constructing dynamic Top program...',[])
 	,top_program_dynamic(C,Pos_,Neg_,BK_,MS_,Ms)
 	% generalising_metasubstitution/6 leaves behind garbage
 	% that we don't have clause references for to remove them.
 	% TODO: don't let this hack become established. Fix!
 	,cleanup_experiment
+	,untable_encapsulated(T)
 	,debug(learn,'Reducing dynamic Top program...',[])
 	,reduced_top_program_dynamic(Pos_,BK_,MS_,Ms,Rs)
-	,examples_target(Pos,T)
 	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(T,Rs,Ps).
+
+
+%!	table_encapsulated(+Target) is det.
+%
+%	Prepare an encapsulated learning Target for tabling.
+%
+%	Target is a predicate indicator, F/A, the predicate symbol and
+%	arity of a target predicate. table_encapsulated/1 prepares for
+%	tabling the predicate m/N, where N is A+1. m/N is the predicate
+%	encapsulating Target (though not necessarily _only_ target).
+%
+%	Motivation
+%	----------
+%
+%	Tabling the predicate encapsulating a learning Target is a very
+%	convenient way to avoid entering infinite recursion during
+%	dynamic learning. Because dynamic learning adds to the dynamic
+%	database clauses of the Top program learned in a previous
+%	iteration, so that they may be called in subsequent iterations,
+%	if a recursive clause is added to the dynamic database before a
+%	suitable "base case" for the recursion is added, it's likely
+%	that the learning procedure will enter an infinite recursion.
+%	Tabling, implementing SLG resolution, avoids this and guarantees
+%	termination by precomputing the result of recursive calls and
+%	storing them in a table, so that execution does not have to
+%	descend infinitely, like it does with ordinary SLDNF resolution.
+%
+%	@tbd Tabling is a new feature in Swi-Prolog and it may change
+%	substantially in the future. For the time being, this predicate
+%	works as intended. If tabling changes, this may have to change
+%	also.
+%
+table_encapsulated(_F/A):-
+	succ(A,A_)
+	,table(user:m/A_).
+
+
+%!	untable_encapsulated(+Target) is det.
+%
+%	Remove tabling for an encapsulated learning Target.
+%
+%	This is the counterpart to table_encapsulated/1.
+%
+%	Target is a predicate indicator, F/A, the predicate symbol and
+%	arity of a target predicate. untable_encapsulated/1 removes
+%	tabling from the predicate m/N, where N is A+1. m/N is the
+%	predicate encapsulating Target (though not necessarily _only_
+%	target).
+%
+untable_encapsulated(_F/A):-
+	succ(A,A_)
+	,untable(user:m/A_).
 
 
 %!	top_program_dynamic(+Counter,+Pos,+Neg,+BK,+MS,-Top_Progam) is
