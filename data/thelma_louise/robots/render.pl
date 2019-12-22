@@ -169,12 +169,17 @@ build_world(Ss,Bs):-
 /* Empty world */
 object_symbol(R,[R,_G,_],S):-
 	symbol(robot,false,S).
-object_symbol(G,[_R,G,_],S):-
-	symbol(goal,false,S).
+object_symbol(XY,[_R,G,_],S):-
+% If the state comes from a primitive move the goal will be a free
+% variable. See generate_moves/1 and closure in move_generator.pl
+	XY == G
+	,symbol(goal,false,S).
 object_symbol(_,[_,_,_],S):-
 	symbol(floor,false,S).
 
 /* Simple world */
+% This and rest of worlds need to deal with goals left unbound from
+% primitive move generator.
 object_symbol(R,[R,_B,_G,HB,_],S):-
 	symbol(robot,HB,S).
 object_symbol(B,[_R,B,_G,HB,_],S):-
