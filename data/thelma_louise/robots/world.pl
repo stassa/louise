@@ -273,4 +273,3 @@ object_location(rugby_world,[rugby_world,R,_B,_O,_G,_,_],robot,R).
 object_location(rugby_world,[rugby_world,_R,B,_O,_G,_,_],ball,B).
 object_location(rugby_world,[rugby_world,_R,_B,O,_G,_,_],opponent,O).
 object_location(rugby_world,[rugby_world,_R,_B,_O,G,_,_],goal,G).
-

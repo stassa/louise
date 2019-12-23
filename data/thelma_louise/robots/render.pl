@@ -1,6 +1,8 @@
 :-module(render, [render_problem/1
 		 ,render_sequence/1
 		 ,render_world/1
+		 ,output/2
+		 ,output_nl/0
 		 ]).
 
 /** <module> World rendering
@@ -91,8 +93,10 @@ output_to(console).
 render_problem(P):-
 	P =.. [_,Ss,Gs]
 	,output('Starting state: ~w~n',[Ss])
-	,output('Goal state: ~w~n',[Gs])
-	,render_sequence([Ss,Gs]).
+	,render_world(Ss)
+	,output('~nGoal state: ~w~n',[Gs])
+	,render_world(Gs)
+	,output_nl.
 
 
 
