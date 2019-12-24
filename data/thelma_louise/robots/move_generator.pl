@@ -471,11 +471,8 @@ generate_moves(Ms):-
 	,setof(M
 	      ,Wr^W^H^Ss^Gs^(problem(Wr,nondeterministic,W,H,Ss,Gs)
 			    ,move(Ss,M)
-			    % To avoid sorting variables by age.
-			    ,numbervars(M)
 			    )
-	      ,Ms_)
-	,varnumbers(Ms_,Ms).
+	      ,Ms).
 
 
 %!	move(+Start,-Move) is nondet.
