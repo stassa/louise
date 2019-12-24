@@ -1,6 +1,7 @@
 :-module(generator_configuration, [experiment_world/1
 				  ,world_dimensions/2
 				  ,output_directory/1
+                                  ,symbol/3
 				  ]).
 
 /** <module> Configuration parameters for move_generator.pl
@@ -33,3 +34,15 @@ world_dimensions(4,4).
 %       you will get errors.
 %
 output_directory('/worlds/').
+
+
+%!	symbol(?Object,+Holds_Ball,?Symbol) is semidet.
+%
+%	The Symbol used to represent an Object.
+%
+symbol(robot,false,#).
+symbol(robot,true,$).
+symbol(ball,_,@).
+symbol(obstacle,_,o).
+symbol(goal,_,x).
+symbol(floor,_,.).

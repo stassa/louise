@@ -5,6 +5,8 @@
 		 ,output_nl/0
 		 ]).
 
+:-use_module(generator_configuration).
+
 /** <module> World rendering
 
 Predicates for presenting the state of a grid world visually in a human
@@ -214,19 +216,6 @@ object_symbol(XY,[rugby_world,R,B,O,G,HB,WH],S):-
 object_symbol(XY,[rugby_world,R,B,O,G,HB,WH],S):-
 % Same as obstacles world, other than the world label.
 	object_symbol(XY,[R,B,O,G,HB,WH],S).
-
-
-
-%!	symbol(?Object,+Holds_Ball,?Symbol) is semidet.
-%
-%	The Symbol used to represent an Object.
-%
-symbol(robot,false,#).
-symbol(robot,true,$).
-symbol(ball,_,@).
-symbol(obstacle,_,'O').
-symbol(goal,_,x).
-symbol(floor,_,.).
 
 
 %!	present_world(+Width,+Height,+World) is det.
