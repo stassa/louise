@@ -263,7 +263,7 @@ holds_ball(_,R,B,false):-
 object_location(empty_world,[R,_,_],robot,R).
 object_location(empty_world,[_,G,_],goal,G).
 object_location(simple_world,[R,_B,_G,_,_],robot,R).
-object_location(simple_world,[_R,B,_G,_,_],boal,B).
+object_location(simple_world,[_R,B,_G,_,_],ball,B).
 object_location(simple_world,[_R,_B,G,_,_],goal,G).
 object_location(obstacles_world,[R,_B,_O,_G,_,_],robot,R).
 object_location(obstacles_world,[_R,B,_O,_G,_,_],ball,B).
