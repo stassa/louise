@@ -1,6 +1,7 @@
 :-module(generator_configuration, [experiment_world/1
 				  ,world_dimensions/2
 				  ,output_directory/1
+                                  ,output_to/1
                                   ,symbol/3
 				  ]).
 
@@ -34,6 +35,25 @@ world_dimensions(4,4).
 %       you will get errors.
 %
 output_directory('/worlds/').
+
+
+%!	output_to(?Where) is semidet.
+%
+%	Where to send rendering output.
+%
+%	One of: [console, log].
+%
+%	If "console", rendered states are output to the Swi-Prolog
+%	top-level.
+%
+%	If "log", rendered states are output to the current debug stream
+%	for the debug subject "robots".
+%
+%	Used by output/2 and output_nl/0 to decide where to output
+%	rendered states.
+%
+output_to(console).
+%output_to(log).
 
 
 %!	symbol(?Object,+Holds_Ball,?Symbol) is semidet.

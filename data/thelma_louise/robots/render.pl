@@ -65,24 +65,6 @@ yet.
 
 */
 
-%!	output_to(?Where) is semidet.
-%
-%	Where to send rendering output.
-%
-%	One of: [console, log].
-%
-%	If "console", rendered states are output to the Swi-Prolog
-%	top-level.
-%
-%	If "log", rendered states are output to the current debug stream
-%	for the debug subject "robots".
-%
-%	Used by output/2 and output_nl/0 to decide where to output
-%	rendered states.
-%
-output_to(console).
-%output_to(log).
-
 
 %!	render_problem(+Problem) is det.
 %
