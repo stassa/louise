@@ -2,7 +2,6 @@
 		 ,metarules/2
 		 ,positive_example/2
 		 ,negative_example/2
-		 ,learning_rates/6
 		 ,render_plan/3
 		 ,double_move/3
 		 ,triple_move/3
@@ -40,122 +39,6 @@
 :-edit(generator_configuration).
 */
 
-:-debug(robots).
-
-% ========================================
-% Experiment logging
-% ========================================
-
-%!	close_log(+Alias) is det.
-%
-%	Close the log file with the given Alias if it exists.
-%
-close_log(A):-
-	(   is_stream(A)
-	->  close(robots)
-	;   true
-	) .
-
-
-%!	debug_timestamp(-Timestamp) is det.
-%
-%	Helper predicate to generate a Timestamp for log files.
-%
-%	Note that this is different to logging_timestamp/1 in module
-%	logging. The format of Timestamp in this predicate is suitable
-%	for naming a file (i.e. no characters that give Windows the
-%	fits) whereas the format in logging_timstamp/1 is appropriate
-%	for printing in a log file.
-%
-debug_timestamp(A):-
-	get_time(T)
-	,stamp_date_time(T, DT, local)
-	,format_time(atom(A), '%d_%m_%y_%H_%M_%S', DT).
-
-% Uncomment to log debug outputs to a file. Note that debug messages to
-% the console cease entirely and progress can't be tracked easily.
-% Change mode from "write" to "append" to avoid clobbering earlier logs.
-%
-start_logging:-
-	close_log(robots)
-	,debug_timestamp(T)
-	,atom_concat(robots_gen_,T,Bn)
-	,atom_concat(Bn,'.log',Fn)
-	,atom_concat('logs/robots/',Fn,P)
-	,open(P,write,S,[alias(robots)])
-	,debug(robots>S).
-
-% Uncomment to allow tracking progresss while logging to file.
-:-debug(progress).
-
-
-% ========================================
-% Experiment code
-% ========================================
-
-
-%!	learning_rates(+Target,+Metric,+Steps,+Samples,-Means,-SDs) is
-%!	det.
-%
-%	Perform a learning rate experiment and collect Means and SDs.
-%
-%	Target is a predicate indicator, the symbol and arity of the
-%	learning target, so move/2 for grid world navigation.
-%
-%	Metric is an atom, the metric to be measured: err, acc, fpr,
-%	etc.
-%
-%	Steps is an integer, the number of steps the experiment will run
-%	for.
-%
-%	Samples is a list of numbers, either integers or floats. In each
-%	Step, a learning atempt is made for each number in Samples.
-%
-%	Means is a list of length equal to Samples where each element is
-%	the mean value of the selected Metric for each Sample size at
-%	the same position in Samples.
-%
-%	SDs is a list of length equal to Samples storing the standard
-%	deviations of the reasults averaged in Means.
-%
-learning_rates(T,M,K,Ss,Ms,SDs):-
-	configuration:learner(L)
-	,start_logging
-	,learning_rate(T,M,K,Ss,Rs)
-	,Rs \= []
-	,pairs_averages(Rs,Ms)
-	,pairs_sd(Rs,Ms,SDs)
-	% Print R vectors for plotting
-	,Ms_v =.. [c|Ms]
-	,SDs_v =.. [c|SDs]
-	,debug(robots,'~w.acc.mean <- ~w',[L,Ms_v])
-	,debug(robots,'~w.acc.sd <- ~w',[L,SDs_v])
-	,close_log(robots).
-
-%!	learning_rate(+Target,+Metric,+Steps,+Samples,-Results) is det.
-%
-%	Business end of learning_rates/6.
-%
-%	Results is a list of lists of length equal to Samples, where
-%	each sub-list is the lits of values of the chosen Metric for
-%	the corresponding Sample size.
-%
-learning_rate(T,M,K,Ss,Rs):-
-	findall(Vs
-	       ,(between(1,K,J)
-		,debug(progress,'Step ~w of ~w',[J,K])
-		,findall(S-V
-			,(member(S,Ss)
-			 ,debug(progress,'Sampling size: ~w',[S])
-			 % Soft cut to stop Thelma backtracking
-			 % into multiple learning steps.
-			 ,once(train_and_test(T,S,_Ps,M,V))
-			 )
-			,Vs)
-		)
-	       ,Rs).
-
-
 % ========================================
 % MIL problem
 % ========================================
@@ -177,9 +60,11 @@ configuration:order_constraints(tri_chain_3,[P,Q,R,_M,_N],_Fs,[P>Q,P>R],[]).
 
 :-elif(learner(louise)).
 
-configuration:tri_chain_1 metarule 'P(x,y):- Q(M,x,z), R(z,y)'.
-configuration:tri_chain_2 metarule 'P(x,y):- Q(x,z), R(M,z,y)'.
-configuration:tri_chain_3 metarule 'P(x,y):- Q(M,x,z), R(N,z,y)'.
+% Reverting to no-operators notation to accommodate Thelma (that doesn't
+% know metarule/2 is an operator).
+configuration:metarule(tri_chain_1, 'P(x,y):- Q(M,x,z), R(z,y)').
+configuration:metarule(tri_chain_2, 'P(x,y):- Q(x,z), R(M,z,y)').
+configuration:metarule(tri_chain_3, 'P(x,y):- Q(M,x,z), R(N,z,y)').
 
 :-endif.
 
