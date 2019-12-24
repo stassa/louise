@@ -72,7 +72,6 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/thelma_louise/kinship/kinship.pl',kinship).
 %experiment_file('data/thelma_louise/kinship/kinship_accuracy.pl',kinship_accuracy).
 %experiment_file('data/thelma_louise/robots/robots.pl',robots).
-%experiment_file('data/thelma_louise/robots/generator/robots_gen.pl',robots_gen).
 %experiment_file('data/thelma_louise/noise/heroes/detect_evil.pl',detect_evil).
 
 
@@ -298,6 +297,7 @@ recursive_reduction(false).
 %	* subhypothesis: select one hypothesis entailed by the Top
 %	program.
 %
+%reduction(none).
 reduction(plotkins).
 %reduction(subhypothesis).
 

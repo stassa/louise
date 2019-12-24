@@ -453,6 +453,10 @@ constraints(Sub):-
 %	shorter amount of time, without increasing the number of
 %	resolution steps in the program reduction meta-interpreter.
 %
+reduced_top_program(_Pos,_BK,_MS,Ps,Ps):-
+	configuration:reduction(none)
+	,debug(reduction,'reduction/1 is "none". The Top program is not reduced.',[])
+	,!.
 reduced_top_program(Pos,BK,_MS,Ps,Rs):-
 	configuration:reduction(subhypothesis)
 	,!
