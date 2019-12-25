@@ -121,7 +121,7 @@ running the experiments for those two learners separately.
 
 % Create the logging directory if it does not exist to avoid ugly
 % existence errors.
-:- logging_directory(D)
+:- learning_rate_configuration:logging_directory(D)
   ,(   \+ exists_directory(D)
   ->   make_directory(D)
    ;   true
@@ -140,16 +140,19 @@ debug_timestamp(A):-
 	,stamp_date_time(T, DT, local)
 	,format_time(atom(A), '%d_%m_%y_%H_%M_%S', DT).
 
-%!	start_logging is det.
+
+%!	start_logging(+Target) is det.
 %
 %	Start logging to a new log file.
 %
-start_logging:-
-	close_log(learning_rate)
+start_logging(F/A):-
+	configuration:learner(L)
+	,learning_rate_configuration:logging_directory(D)
+	,close_log(learning_rate)
 	,debug_timestamp(T)
-	,atom_concat(learning_rate_,T,Bn)
+	,atomic_list_concat([L,learning_rate,F,A,T],'_',Bn)
 	,atom_concat(Bn,'.log',Fn)
-	,atom_concat('logs/learning_rate/',Fn,P)
+	,atom_concat(D,Fn,P)
 	,open(P,write,S,[alias(learning_rate)])
 	,debug(learning_rate>S).
 
@@ -229,8 +232,8 @@ log_experiment_results(M,Ms,SDs):-
 %	deviations of the reasults averaged in Means.
 %
 learning_rate(T,M,K,Ss,Ms,SDs):-
-	start_logging
-	,time_limit(L)
+	start_logging(T)
+	,learning_rate_configuration:time_limit(L)
 	,log_experiment_setup(T,L,M,K,Ss)
 	,experiment_data(T,Pos,Neg,BK,MS)
 	,learning_rate(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs)
@@ -305,8 +308,8 @@ learning_rate(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 %
 print_r_vectors(T,M,Ss,Ms,SDs):-
 	configuration:learner(L)
+	,learning_rate_configuration:r_data_file(Fn)
 	,metric_name(M,N)
-	,r_data_file(Fn)
 	,Ms_v =.. [c|Ms]
 	,SDs_v =.. [c|SDs]
 	,Ss_v =.. [c|Ss]
