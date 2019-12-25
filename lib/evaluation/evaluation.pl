@@ -177,8 +177,6 @@ print_evaluation(T,Ps,Pos,Neg,BK):-
 %
 %	Raises error if Size is equal to 1.0 or 0.0.
 %
-train_test_splits(_P,[],_Train,_Test):-
-	throw('train_test_splits/4: No examples found. Cannot partition data.').
 train_test_splits(P,_Es,_Train,_Test):-
 	float(P)
 	,P >= 1.0
@@ -529,6 +527,8 @@ evaluation(Rs,Pos,Neg
 %
 %	Calculate the Accuracy of a result.
 %
+acc(_PP,_NN,[],[],_ACC):-
+	throw('acc/5: Empty testing partition. Cannot evaluate hypothesis.').
 acc(PP,NN,Pos,Neg,ACC):-
 	total(PP,NN,Ps)
 	,total(Pos,Neg,As)
