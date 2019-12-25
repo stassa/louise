@@ -1,6 +1,7 @@
 :-module(learning_rate, [learning_rate/6
                         ]).
 
+:-use_module(learning_rate_configuration).
 :-use_module(lib(evaluation/evaluation)).
 
 /** <module> Experiment script for learnign rate experiments.
@@ -118,13 +119,6 @@ running the experiments for those two learners separately.
 :-debug(progress).
 
 
-%!	logging_directory(?Directory) is semidet.
-%
-%	Directory to place learning rate experiment logs.
-%
-logging_directory('logs/learning_rate/').
-
-
 % Create the logging directory if it does not exist to avoid ugly
 % existence errors.
 :- logging_directory(D)
@@ -132,15 +126,6 @@ logging_directory('logs/learning_rate/').
   ->   make_directory(D)
    ;   true
    ).
-
-
-%!	r_data_file(?Path) is semidet.
-%
-%	Path to the output file for R plotting script data.
-%
-%	Paths is relative to the louise/ root directory.
-%
-r_data_file('scripts/plotting/learning_rate_data.r').
 
 
 %!	debug_timestamp(-Timestamp) is det.
@@ -217,13 +202,6 @@ log_experiment_results(M,Ms,SDs):-
 % ================================================================================
 % Experiment code
 % ================================================================================
-
-
-%!	time_limit(?Limit) is semidet.
-%
-%	Time Limit after which a learning attempt will fail.
-%
-time_limit(600).
 
 
 %!	learning_rate(+Target,+Metric,+Steps,+Samples,-Means,-SDs) is
