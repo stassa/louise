@@ -148,7 +148,10 @@ print_evaluation(T,S,Ps):-
 print_evaluation(T,S,Pos,Neg,BK,MS,Ps):-
 	train_test_splits(S,Pos,Pos_Train,Pos_Test)
 	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
-	,learn(Pos_Train,Neg_Train,BK,MS,Ps)
+	,(   learn(Pos_Train,Neg_Train,BK,MS,Ps)
+	 ->   true
+	 ;    Ps = []
+	 )
 	,print_evaluation(T,Ps,Pos_Test,Neg_Test,BK).
 
 
@@ -174,6 +177,8 @@ print_evaluation(T,Ps,Pos,Neg,BK):-
 %
 %	Raises error if Size is equal to 1.0 or 0.0.
 %
+train_test_splits(_P,[],_Train,_Test):-
+	throw('train_test_splits/4: No examples found. Cannot partition data.').
 train_test_splits(P,_Es,_Train,_Test):-
 	float(P)
 	,P >= 1.0
@@ -696,8 +701,8 @@ ratio(Xs,Ys,R):-
 %
 %	Avoid dividing by zero.
 %
-%	If the denominator of a division os 0, return C, else do the
-%	division.
+%	If the denominator of a division is 0, return A, else divide
+%	A/B and return the result in C.
 %
 safe_division(A,0,A):-
 	!.
