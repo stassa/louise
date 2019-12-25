@@ -218,6 +218,13 @@ log_experiment_results(M,Ms,SDs):-
 % ================================================================================
 
 
+%!	time_limit(?Limit) is semidet.
+%
+%	Time Limit after which a learning attempt will fail.
+%
+time_limit(600).
+
+
 %!	learning_rate(+Target,+Metric,+Steps,+Samples,-Means,-SDs) is
 %!	det.
 %
@@ -245,7 +252,8 @@ log_experiment_results(M,Ms,SDs):-
 learning_rate(T,M,K,Ss,Ms,SDs):-
 	start_logging
 	,log_experiment_setup(T,M,K,Ss)
-	,learning_rate(T,M,K,Ss,Rs)
+	,experiment_data(T,Pos,Neg,BK,MS)
+	,learning_rate_(T,[Pos,Neg,BK,MS],M,K,Ss,Rs)
 	,Rs \= []
 	,pairs_averages(Rs,Ms)
 	,pairs_sd(Rs,Ms,SDs)
@@ -255,28 +263,66 @@ learning_rate(T,M,K,Ss,Ms,SDs):-
 	,print_r_vectors(T,M,Ss,Ms,SDs)
 	,close_log(learning_rate).
 
-%!	learning_rate(+Target,+Metric,+Steps,+Samples,-Results) is det.
+%!	learning_rate(+Target,+Problem,+Metric,+Steps,+Samples,-Results)
+%!	is det.
 %
 %	Business end of learning_rates/6.
+%
+%	Problem is a list [Pos,Neg,BK,MS] of the positive examples,
+%	negative examples, background knowledge symbols and metarule
+%	identifiers, respectively.
 %
 %	Results is a list of lists of length equal to Samples, where
 %	each sub-list is the lits of values of the chosen Metric for
 %	the corresponding Sample size.
 %
-learning_rate(T,M,K,Ss,Rs):-
+learning_rate_(T,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 	findall(Vs
 	       ,(between(1,K,J)
 		,debug(progress,'Step ~w of ~w',[J,K])
 		,findall(S-V
 			,(member(S,Ss)
 			 ,debug(progress,'Sampling size: ~w',[S])
-			 % Soft cut to stop Thelma backtracking
-			 % into multiple learning steps.
-			 ,once(train_and_test(T,S,_Ps,M,V))
+			 % Soft cut stops backtracking into multiple learning steps.
+			 % when training with Thelma or with reduction(subhypothesis)
+			 ,once(train_and_test_with_time_limit(T,[Pos,Neg,BK,MS],S,M,V))
 			 )
 			,Vs)
 		)
 	       ,Rs).
+
+
+%!	train_and_test_with_time_limt(+Target,+Problem,+Sample,+Metric,-Value)
+%!	is det.
+%
+%	Train and test under a time limit.
+%
+%	Time-limited version of train_and_test/6. Hacking through module
+%	boundaries to re-implement that predicate. Tut tut. You should
+%	not do that.
+%
+train_and_test_with_time_limit(T,[Pos,Neg,BK,MS],S,M,V):-
+	time_limit(L)
+	,evaluation:train_test_splits(S,Pos,Pos_Train,Pos_Test)
+	,evaluation:train_test_splits(S,Neg,Neg_Train,Neg_Test)
+	% Train and return the empty program if training fails.
+	,G = (   learn(Pos_Train,Neg_Train,BK,MS,Ps)
+	     ->  true
+	     ;   Ps = []
+	     )
+	,C = call_with_time_limit(L,G)
+	% Call the training goal and return the empty program
+	% if the training time limit is exceeded
+	,(   catch(C,time_limit_exceeded,fail)
+	 ->  true
+	 ;   Ps = []
+	 )
+	% Evaluate results. If the empty program was learned
+	% evaluate the empty program.
+	,evaluation:program_results(T,Ps,BK,Rs)
+	,evaluation:evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
+	,once(evaluation:metric(M,Cs,V)).
+
 
 
 % ================================================================================
