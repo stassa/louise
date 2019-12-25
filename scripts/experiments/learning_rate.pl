@@ -14,7 +14,7 @@ The predicate learning_rate/6 exported by this module takes in as
 arguments: the symbol and arity of a target predicate, an evaluation
 metric (as defined in module louise/lib/evaluation/evaluation.pl), a
 number indicating the steps for the experiment to run and a list of
-numbers indicating samplign rates for the steps of the experiment. It
+numbers indicating sampling rates for the steps of the experiment. It
 outputs the means and standard deviations of the experiment's results in
 the specified metric.
 
@@ -42,8 +42,8 @@ true.
 % Step 2 of 2
 % Sampling size: 1
 % Sampling size: 2
-% louise.eval.mean <- c(0.7777777777777778,0.65625)
-% louise.eval.sd <- c(0.0,0.2209708691207961)
+% louise.acc.mean <- c(0.7777777777777778,0.65625)
+% louise.acc.sd <- c(0.0,0.2209708691207961)
 [0.7777777777777778,0.65625]
 [0.0,0.2209708691207961]
 true.
@@ -53,7 +53,6 @@ Note the two calls to debug/1 before the experiment query, proper.
 Although debugging is enabled in this module, if the configuration
 module is loaded first, the directive :-nodebug(_) near its beginning
 may turn debugging for this experiment off.
-
 
 Here's a similar query, this time defining the sampling rate as a
 proportion of all examples, rather than an integer:
@@ -66,8 +65,8 @@ proportion of all examples, rather than an integer:
 % Step 2 of 2
 % Sampling size: 0.1
 % Sampling size: 0.2
-% louise.eval.mean <- c(0.7777777777777778,0.875)
-% louise.eval.sd <- c(0.0,0.1767766952966369)
+% louise.acc.mean <- c(0.7777777777777778,0.875)
+% louise.acc.sd <- c(0.0,0.1767766952966369)
 [0.7777777777777778,0.875]
 [0.0,0.1767766952966369]
 true.
@@ -181,17 +180,19 @@ close_log(A):-
 	).
 
 
-%!	log_experiment_setup(+Target,+Metric,+Steps,+Samples) is det.
+%!	log_experiment_setup(+Target,+Limit,+Metric,+Steps,+Samples) is
+%!	det.
 %
 %	Log configuration options and experiment parameters.
 %
-log_experiment_setup(T,M,K,Ss):-
+log_experiment_setup(T,L,M,K,Ss):-
 	metric_name(M,N)
 	,debug(learning_rate,'Experiment parameters:',[])
 	,debug(learning_rate,'Target:  ~w',[T])
 	,debug(learning_rate,'Metric:  ~w',[N])
 	,debug(learning_rate,'Steps:   ~w',[K])
 	,debug(learning_rate,'Samples: ~w',[Ss])
+	,debug(learning_rate,'Time limit (sec): ~w',[L])
 	,debug(learning_rate,'',[])
 	,debug(learning_rate,'Configuration options:',[])
 	,debug_config(learning_rate).
@@ -251,9 +252,10 @@ time_limit(600).
 %
 learning_rate(T,M,K,Ss,Ms,SDs):-
 	start_logging
-	,log_experiment_setup(T,M,K,Ss)
+	,time_limit(L)
+	,log_experiment_setup(T,L,M,K,Ss)
 	,experiment_data(T,Pos,Neg,BK,MS)
-	,learning_rate_(T,[Pos,Neg,BK,MS],M,K,Ss,Rs)
+	,learning_rate(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs)
 	,Rs \= []
 	,pairs_averages(Rs,Ms)
 	,pairs_sd(Rs,Ms,SDs)
@@ -263,10 +265,12 @@ learning_rate(T,M,K,Ss,Ms,SDs):-
 	,print_r_vectors(T,M,Ss,Ms,SDs)
 	,close_log(learning_rate).
 
-%!	learning_rate(+Target,+Problem,+Metric,+Steps,+Samples,-Results)
+%!	learning_rate(+Target,+Limit,+Problem,+Metric,+Steps,+Samples,-Results)
 %!	is det.
 %
 %	Business end of learning_rates/6.
+%
+%	Limit is the time limit set in time_limit/1.
 %
 %	Problem is a list [Pos,Neg,BK,MS] of the positive examples,
 %	negative examples, background knowledge symbols and metarule
@@ -276,7 +280,7 @@ learning_rate(T,M,K,Ss,Ms,SDs):-
 %	each sub-list is the lits of values of the chosen Metric for
 %	the corresponding Sample size.
 %
-learning_rate_(T,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
+learning_rate(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 	findall(Vs
 	       ,(between(1,K,J)
 		,debug(progress,'Step ~w of ~w',[J,K])
@@ -285,43 +289,11 @@ learning_rate_(T,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 			 ,debug(progress,'Sampling size: ~w',[S])
 			 % Soft cut stops backtracking into multiple learning steps.
 			 % when training with Thelma or with reduction(subhypothesis)
-			 ,once(train_and_test_with_time_limit(T,[Pos,Neg,BK,MS],S,M,V))
+			 ,once(timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],_Ps,M,V))
 			 )
 			,Vs)
 		)
 	       ,Rs).
-
-
-%!	train_and_test_with_time_limt(+Target,+Problem,+Sample,+Metric,-Value)
-%!	is det.
-%
-%	Train and test under a time limit.
-%
-%	Time-limited version of train_and_test/6. Hacking through module
-%	boundaries to re-implement that predicate. Tut tut. You should
-%	not do that.
-%
-train_and_test_with_time_limit(T,[Pos,Neg,BK,MS],S,M,V):-
-	time_limit(L)
-	,evaluation:train_test_splits(S,Pos,Pos_Train,Pos_Test)
-	,evaluation:train_test_splits(S,Neg,Neg_Train,Neg_Test)
-	% Train and return the empty program if training fails.
-	,G = (   learn(Pos_Train,Neg_Train,BK,MS,Ps)
-	     ->  true
-	     ;   Ps = []
-	     )
-	,C = call_with_time_limit(L,G)
-	% Call the training goal and return the empty program
-	% if the training time limit is exceeded
-	,(   catch(C,time_limit_exceeded,fail)
-	 ->  true
-	 ;   Ps = []
-	 )
-	% Evaluate results. If the empty program was learned
-	% evaluate the empty program.
-	,evaluation:program_results(T,Ps,BK,Rs)
-	,evaluation:evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
-	,once(evaluation:metric(M,Cs,V)).
 
 
 
