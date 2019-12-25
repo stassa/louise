@@ -127,6 +127,13 @@ running the experiments for those two learners separately.
    ;   true
    ).
 
+% Same for the R plotting scripts directory
+:- learning_rate_configuration:plotting_directory(D)
+  ,(   \+ exists_directory(D)
+  ->   make_directory(D)
+   ;   true
+   ).
+
 
 %!	debug_timestamp(-Timestamp) is det.
 %
@@ -308,8 +315,13 @@ learning_rate(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 %
 print_r_vectors(T,M,Ss,Ms,SDs):-
 	configuration:learner(L)
-	,learning_rate_configuration:r_data_file(Fn)
+	,learning_rate_configuration:plotting_directory(D)
+	,learning_rate_configuration:r_data_file(Bn)
+	% Construct plotting file name
+	,atomic_list_concat([L,Bn],'_',Bn_)
+	,atom_concat(D,Bn_,Fn)
 	,metric_name(M,N)
+	% Create R vectors of results and sampling rates
 	,Ms_v =.. [c|Ms]
 	,SDs_v =.. [c|SDs]
 	,Ss_v =.. [c|Ss]
