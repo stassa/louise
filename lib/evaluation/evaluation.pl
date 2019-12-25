@@ -501,6 +501,7 @@ print_metrics(T,Ps,Pos,Neg,BK):-
 %
 evaluation(Rs,Pos,Neg
 	  ,[P,N],[PP_,NN_,NP_,PN_],[ACC,ERR,FPR,FNR,TPR,TNR,PRE,FSC]):-
+	%maplist(print_clauses,['Results','Examples'],[Rs,Pos]),
 	convert_examples(Pos,Neg,Pos_c,Neg_c)
 	,maplist(sort,[Rs,Pos_c,Neg_c],[Rs_,Pos_,Neg_])
 	,maplist(length,[Pos_,Neg_],[P,N])
@@ -590,7 +591,27 @@ fsc(PRE,REC,FSC):-
 %	examples and the set of positive predicted Results.
 %
 false_positives(Rs,Neg,NP):-
-	ord_intersection(Rs,Neg,NP).
+% ord_intersection/3 uses the standard order of terms in which variables
+% are ordered by age. This causes comparisons between two non-ground
+% terms to fail even if they are alphabetic variants of each other (i.e.
+% identical up to renaming of variables). This is not what we want. It
+% turns out the library(list) version of intersection is less strict
+% about ordering and will compare non-ground terms more or less
+% correctly. "More or less" because there's some strange behaviour I
+% don't understand that seems to be the result of variables in
+% non-ground terms being bound during intersection/3 execution. The best
+% solution seems to be to write a new intersection predicate to do what
+% is needed, but this will take some time. In the meantime, ground/1 is
+% used to select clauses in this predicate and also false_negatives/3,
+% true_positives/3 and true_negatives/3. Note that the two of those call
+% (ord)subtract/3 instead of (ord)intersection/3 but that predicate also
+% has the same ordering er, not quite problem really, it's just not what
+% we want here.
+	ground(Rs)
+	,!
+	,ord_intersection(Rs,Neg,NP).
+false_positives(Rs,Neg,NP):-
+	intersection(Rs,Neg,NP).
 
 
 %!	false_negaives(+Results,+Positive,-PN) is det.
@@ -602,7 +623,11 @@ false_positives(Rs,Neg,NP):-
 %	in the set of positive predicted Results.
 %
 false_negatives(Rs,Pos,PN):-
-	ord_subtract(Pos,Rs,PN).
+	ground(Rs)
+	,!
+	,ord_subtract(Pos,Rs,PN).
+false_negatives(Rs,Pos,PN):-
+	subtract(Pos,Rs,PN).
 
 
 %!	true_positives(+Results,+Positive,-PP) is det.
@@ -614,7 +639,11 @@ false_negatives(Rs,Pos,PN):-
 %	examples and the set of positive predicated Results.
 %
 true_positives(Rs,Pos,PP):-
-	ord_intersection(Rs,Pos,PP).
+	ground(Rs)
+	,!
+	,ord_intersection(Rs,Pos,PP).
+true_positives(Rs,Pos,PP):-
+	intersection(Rs,Pos,PP).
 
 
 %!	true_negatives(+Results,+Negative,-TN) is det.
@@ -626,7 +655,11 @@ true_positives(Rs,Pos,PP):-
 %	in the set of positive reported Results.
 %
 true_negatives(Rs,Neg,NN):-
-	ord_subtract(Neg,Rs,NN).
+	ground(Rs)
+	,!
+	,ord_subtract(Neg,Rs,NN).
+true_negatives(Rs,Neg,NN):-
+	subtract(Neg,Rs,NN).
 
 
 %!	difference(+Xs,+Ys,-Difference) is det.
