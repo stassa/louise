@@ -3,7 +3,7 @@ library(Hmisc)
 source('louise_learning_rate_data.r', local=T)
 
 # Line types and colours
-# Two-value vectors because the first one is for Thelma.
+# Two-value vectors because the first one was originally for Thelma
 plot.type <- 'b'
 lin.typs <- 1:2
 pnt.typs <- 1:2
@@ -30,27 +30,19 @@ lwd <- 3.0
 # Increased errorbar sizes.
 cap <- 0.025
 
-# Last result index.
-lim <- length(learner.eval.mean)
-
-learner.eval.mean <- learner.eval.mean[1:lim]
-learner.eval.sd <- learner.eval.sd[1:lim]
-
-learner.size <- length(learner.eval.mean)
-#x.axis <- 1:learner.size
+results.size <- length(learner.eval.mean)
 x.axis <- learner.sampling.rates
 
 # Calculate standard errors.
-learner.eval.se <- learner.eval.mean / sqrt(learner.size)
+learner.eval.se <- learner.eval.mean / sqrt(results.size)
 
 # Calculate plot limits
 y.lim.max <- max(learner.eval.mean+learner.eval.se, learner.eval.mean+learner.eval.se) + 0.1 # Space for legend
 y.lim.min <- min(learner.eval.mean-learner.eval.se, learner.eval.mean-learner.eval.se)
 y.lim <- c(y.lim.min, y.lim.max)
-x.lim <- c(1, learner.size + 0.5)
+x.lim <- c(1, results.size + 0.5)
 
 p <- par()
-#par(mar=c(5.3,6.1,1.0,0.8), mgp=c(4,1,0) )
 par(mar=c(5.3,6.1,4.0,0.8), mgp=c(4,1,0) )
 
 plot(x.axis, main=title, learner.eval.mean, ylim=y.lim, type=plot.type, lty=lin.typs[2], pch=pnt.typs[2], col=systems.cols[2], xlab=x.lab, ylab=y.lab, xaxt='n', cex.axis=cex.axis, cex=cex, cex.main=cex, lwd=lwd, cex.lab=cex.lab, lwd.ticks=lwd.ticks)
