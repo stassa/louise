@@ -47,8 +47,8 @@ results.length <- length(thelma.eval.mean)
 x.axis <- thelma.sampling.rates
 
 # Calculate standard errors.
-thelma.eval.se <- thelma.eval.mean / sqrt(results.length)
-louise.eval.se <- louise.eval.mean / sqrt(results.length)
+thelma.eval.se <- thelma.eval.sd / sqrt(results.length)
+louise.eval.se <- louise.eval.sd / sqrt(results.length)
 
 y.lim.max <- max(thelma.eval.mean+thelma.eval.se, louise.eval.mean+louise.eval.se) + 0.1 # Space for legend
 y.lim.min <- min(thelma.eval.mean-thelma.eval.se, louise.eval.mean-louise.eval.se)
