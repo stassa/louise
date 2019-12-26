@@ -123,14 +123,14 @@ running the experiments for those two learners separately.
 % existence errors.
 :- learning_rate_configuration:logging_directory(D)
   ,(   \+ exists_directory(D)
-  ->   make_directory(D)
+  ->   make_directory_path(D)
    ;   true
    ).
 
 % Same for the R plotting scripts directory
 :- learning_rate_configuration:plotting_directory(D)
   ,(   \+ exists_directory(D)
-  ->   make_directory(D)
+  ->   make_directory_path(D)
    ;   true
    ).
 
