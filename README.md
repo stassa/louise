@@ -13,10 +13,6 @@ you encoutner unless you report them. Please use the author's email to contact
 the author regarding bugs and errors. Alternatively, you are welcome to open a
 github Issue or send a pull request. 
 
-The author specifically pledges to help the user with Louise and never to direct
-a user to RTFM or in any other way dismiss the user's problems with installing
-or using Louise as trivial.
-
 Table of contents
 -----------------
 
