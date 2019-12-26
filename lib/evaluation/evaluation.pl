@@ -317,9 +317,24 @@ list_results(T,Ps,Pos,Neg,BK,Rs):-
 %	are immediate consequences of the Program with respect to the
 %	background knowledge, BK.
 %
+program_results(_T,[],_BK,[]):-
+	!.
 program_results(T,Ps,BK,Rs):-
-	ground_background(T,BK,BK_)
+	configuration:success_set_generation(tp)
+	,!
+	,ground_background(T,BK,BK_)
 	,lfp_query(Ps,BK_,_Is,Rs).
+program_results(F/A,Ps,_BK,Rs):-
+	configuration:success_set_generation(sld)
+	,assert_program(user,Ps,Refs_Ps)
+	,G = (findall(H
+		     ,(functor(H,F,A)
+		      ,call(user:H)
+		      )
+		     ,Rs)
+	     )
+	,C = erase_program_clauses(Refs_Ps)
+	,call_cleanup(G,C).
 
 
 %!	ground_background(+Target,+BK,-Ground) is det.
