@@ -261,12 +261,13 @@ list_config(T,S):-
 		 ,functor(Opt,F,A)
 		 ,predicate_property(Opt, implementation_module(configuration))
 		 ,call(configuration:Opt)
-		 % Keep as list to sort by functor only
-		 % Standard order of terms sorts by arity also.
+		 % Convert to list to sort by functor only.
+		 % Standard order of terms also sorts by arity.
 		 ,Opt =.. Opt_
 		 )
 		,Opts)
-	,sort(1,@<,Opts, Opts_)
+	% Sort alphabetically
+	,sort(Opts, Opts_)
 	,forall(member(Opt, Opts_)
 	       ,(Opt_ =.. Opt
 		,print_or_debug(T,S,Opt_)
