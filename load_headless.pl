@@ -5,6 +5,7 @@ user:file_search_path(src, project_root(src)).
 user:file_search_path(lib, project_root(lib)).
 user:file_search_path(data, project_root(data)).
 user:file_search_path(output, project_root(output)).
+user:file_search_path(scripts, project_root(scripts)).
 
 :-use_module(configuration).
 :-use_module(src(louise)).
