@@ -112,12 +112,14 @@ running the experiments for those two learners separately.
 % Experiment logging
 % ================================================================================
 
-% Debug experiment steps
-:-debug(learning_rate).
+% Uncomment to echo logging to console
+%:-debug(learning_rate).
 
 % Uncomment to allow tracking progresss while logging to file.
 :-debug(progress).
 
+% Log learned hypotheses
+%:-debug(learning_rate_full).
 
 % Create the logging directory if it does not exist to avoid ugly
 % existence errors.
@@ -277,9 +279,13 @@ learning_rate(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 			 ,debug(progress,'Sampling size: ~w',[S])
 			 % Soft cut stops backtracking into multiple learning steps.
 			 % when training with Thelma or with reduction(subhypothesis)
-			 ,once(timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],_Ps,M,V))
+			 ,once(timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V))
+			 ,debug_clauses(learning_rate_full,'Learned:',Ps)
+			 ,debug(learning_rate_full,'Measured ~w: ~w',[M,V])
 			 )
 			,Vs)
+		,length(Vs, N)
+		,debug(learning_rate_full,'Hypothesis size: ~w',[N])
 		)
 	       ,Rs).
 
@@ -354,7 +360,8 @@ print_r_vectors(T,M,Ss,Ms,SDs):-
 	,C = close(S)
 	,call_cleanup(G,C)
 	,debug(learning_rate,'',[])
-	,debug(learning_rate,'R data written to ~w',[Fn]).
+	,debug(learning_rate,'R data written to ~w',[Fn])
+	,copy_scripts.
 
 
 %!	metric_name(?Metric,?Name) is semidet.
@@ -379,3 +386,22 @@ upcase_word(W,W_):-
 	atom_chars(W,[C|Cs])
 	,upcase_atom(C,U)
 	,atom_chars(W_,[U|Cs]).
+
+
+%!	copy_scripts is det.
+%
+%	Copy R plotting scripts to the plotting directory.
+%
+%	The source and destination paths for the copy operation are
+%	taken from the learning rate configuration options
+%	copy_plotting_scripts/1 and plotting_directory/1.
+%
+copy_scripts:-
+	learning_rate_configuration:copy_plotting_scripts(false)
+	,!.
+copy_scripts:-
+	learning_rate_configuration:copy_plotting_scripts(R)
+	,learning_rate_configuration:plotting_directory(D)
+	,absolute_file_name(R,R_)
+	,copy_directory(R_,D)
+	,debug(learning_rate,'R plotting scripts copied to ~w',[D]).
