@@ -326,15 +326,22 @@ program_results(T,Ps,BK,Rs):-
 	,lfp_query(Ps,BK_,_Is,Rs).
 program_results(F/A,Ps,_BK,Rs):-
 	configuration:success_set_generation(sld)
-	,assert_program(user,Ps,Refs_Ps)
+	,S = (table(user:F/A)
+	     ,assert_program(user,Ps,Refs_Ps)
+	     )
 	,G = (findall(H
 		     ,(functor(H,F,A)
 		      ,call(user:H)
+		      ,numbervars(H)
 		      )
-		     ,Rs)
+		     ,Rs_)
+	     ,sort(Rs_, Rs_S)
+	     ,varnumbers(Rs_S, Rs)
 	     )
-	,C = erase_program_clauses(Refs_Ps)
-	,call_cleanup(G,C).
+	,C = (erase_program_clauses(Refs_Ps)
+	     ,untable(user:F/A)
+	     )
+	,setup_call_cleanup(S,G,C).
 
 
 %!	ground_background(+Target,+BK,-Ground) is det.
@@ -355,7 +362,6 @@ ground_background(F/A,BK,BK_):-
 		 ,\+ functor(At,F,A)
 		 )
 		,BK_).
-
 
 
 %!	clause_count(+Hypothesis,-Size,-Definite,-Unit) is det.
