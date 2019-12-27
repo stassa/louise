@@ -238,7 +238,7 @@ print_or_debug(both,Str/Sub,C):-
 %	logged.
 %
 debug_config(S):-
-	print_config(debug,S,configuration).
+	print_config(debug,S,main).
 
 
 %!	list_config is det.
@@ -252,7 +252,7 @@ debug_config(S):-
 %	printed.
 %
 list_config:-
-	print_config(print,user_output,configuration).
+	print_config(print,user_output,main).
 
 
 %!	print_config(+Print_or_Debug,+Stream_or_Subject,+Scope) is det.
@@ -265,9 +265,9 @@ list_config:-
 %	Stream_or_Subject is either a stream alias or a debug subject,
 %	depending on the value of Print_or_Debug.
 %
-%	Scope is one of [configuration,all]. If Scope is
-%	"configuration", only configuration options whose implementation
-%	module is configuration are printed. If Scope is "all", all
+%	Scope is one of [main,all]. If Scope is "main", only
+%	configuration options whose implementation module is
+%	"configuration" are printed. If Scope is "all", all
 %	configuration options re-exported by configuration.pl are
 %	printed, which includes options defined elsewhere, e.g.
 %	configuration files of libraries that are re-exported by
@@ -276,12 +276,16 @@ list_config:-
 %	If Scope is "all" configuration options are prepended by the
 %	name of their implementation module, to help identification.
 %
+%	If Scope is something other than "main" or "all", print_config/3
+%	raised an existence error.
+%
 %	Configuration options are printed in alphabetical order, which
 %	includes the alphabetical order of their implementation modules'
 %	names.
 %
-print_config(T,S,W):-
-	module_property(configuration, exports(Es))
+print_config(T,S,Sc):-
+	must_be(oneof([main,all]), Sc)
+	,module_property(configuration, exports(Es))
 	,findall(M:Opt_
 		,(member(F/A,Es)
 		 ,\+ memberchk(F, [metarule,metarule_constraints])
@@ -295,15 +299,16 @@ print_config(T,S,W):-
 		,Opts)
 	% Sort alphabetically
 	,sort(Opts, Opts_)
-	,(   W = all
+	,(   Sc = all
 	 ->  true
-	 ;   Mod = configuration
+	 ;   Sc = main
+	 ->  Mod = configuration
 	 )
 	,forall(member(Mod:Opt, Opts_)
 	       ,(Opt_ =.. Opt
-		,(   W = all
+		,(   Sc = all
 		 ->  print_or_debug(T,S,Mod:Opt_)
-		 ;   W = configuration
+		 ;   Sc = main
 		 ->  print_or_debug(T,S,Opt_)
 		 )
 		)
