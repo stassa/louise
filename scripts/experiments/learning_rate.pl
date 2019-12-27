@@ -160,8 +160,8 @@ start_logging(F/A):-
 	,close_log(learning_rate)
 	,debug_timestamp(T)
 	,atomic_list_concat([L,learning_rate,F,A,T],'_',Bn)
-	,atom_concat(Bn,'.log',Fn)
-	,atom_concat(D,Fn,P)
+	,file_name_extension(Bn,'.log',Fn)
+	,directory_file_path(D,Fn,P)
 	,open(P,write,S,[alias(learning_rate)])
 	,debug(learning_rate>S).
 
@@ -192,7 +192,7 @@ log_experiment_setup(T,L,M,K,Ss):-
 	,debug(learning_rate,'Time limit (sec): ~w',[L])
 	,debug(learning_rate,'',[])
 	,debug(learning_rate,'Configuration options:',[])
-	,debug_config(learning_rate).
+	,print_config(debug,learning_rate,all).
 
 
 %!	log_experiment_setup(+Metric,+Means,+SDs) is det.
@@ -325,7 +325,7 @@ print_r_vectors(T,M,Ss,Ms,SDs):-
 	,learning_rate_configuration:r_data_file(Bn)
 	% Construct plotting file name
 	,atomic_list_concat([L,Bn],'_',Bn_)
-	,atom_concat(D,Bn_,Fn)
+	,directory_file_path(D,Bn_,Fn)
 	,metric_name(M,N)
 	% Create R vectors of results and sampling rates
 	,Ms_v =.. [c|Ms]
