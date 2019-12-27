@@ -1,10 +1,11 @@
- :-module(auxiliaries, [% Experiment auxiliaries
+:-module(auxiliaries, [% Experiment auxiliaries
 	               protocol_experiment/3
-	               % Printing auxiliaries
+		       % Printing auxiliaries
 		      ,print_or_debug/3
 		       % Configuration auxiliareis
 		      ,debug_config/1
 		      ,list_config/0
+		      ,print_config/3
 		      ,reset_defaults/0
 		      ,set_configuration_option/2
 		       % MIL Problem auxiliaries
@@ -96,6 +97,7 @@ Table of Contents
 2. Configuration auxiliaries [sec_config]
    * debug_config/1
    * list_config/0
+   * print_config/3
    * reset_defaults/0
    * set_configuration_option/2
 
@@ -229,37 +231,62 @@ print_or_debug(both,Str/Sub,C):-
 %
 %	Log configuration options to the debug stream for Subject.
 %
+%	Alias for print_config(print,user_output,configuration).
+%
 %	Only configuration options actually defined in the configuration
 %	module (i.e. not re-exported from other configuration files) are
 %	logged.
 %
 debug_config(S):-
-	list_config(debug,S).
+	print_config(debug,S,configuration).
 
 
 %!	list_config is det.
 %
 %	Print configuration options to the console.
 %
+%	Alias for print_config(print,user_output,configuration).
+%
 %	Only configuration options actually defined in the configuration
 %	module (i.e. not re-exported from other configuration files) are
 %	printed.
 %
 list_config:-
-	list_config(print,user_output).
+	print_config(print,user_output,configuration).
 
 
-%!	list_config(+Print_or_Debug,+Atom) is det.
+%!	print_config(+Print_or_Debug,+Stream_or_Subject,+Scope) is det.
 %
 %	Print or debug current configuration options.
 %
-list_config(T,S):-
+%	Print_or_Debug is one of [print,debug] which should be
+%	self-explanatory.
+%
+%	Stream_or_Subject is either a stream alias or a debug subject,
+%	depending on the value of Print_or_Debug.
+%
+%	Scope is one of [configuration,all]. If Scope is
+%	"configuration", only configuration options whose implementation
+%	module is configuration are printed. If Scope is "all", all
+%	configuration options re-exported by configuration.pl are
+%	printed, which includes options defined elsewhere, e.g.
+%	configuration files of libraries that are re-exported by
+%	configuration.pl to avoid cluttering it etc.
+%
+%	If Scope is "all" configuration options are prepended by the
+%	name of their implementation module, to help identification.
+%
+%	Configuration options are printed in alphabetical order, which
+%	includes the alphabetical order of their implementation modules'
+%	names.
+%
+print_config(T,S,W):-
 	module_property(configuration, exports(Es))
-	,findall(Opt_
+	,findall(M:Opt_
 		,(member(F/A,Es)
 		 ,\+ memberchk(F, [metarule,metarule_constraints])
 		 ,functor(Opt,F,A)
-		 ,predicate_property(Opt, implementation_module(configuration))
+		 ,predicate_property(Opt, implementation_module(M))
 		 ,call(configuration:Opt)
 		 % Convert to list to sort by functor only.
 		 % Standard order of terms also sorts by arity.
@@ -268,9 +295,17 @@ list_config(T,S):-
 		,Opts)
 	% Sort alphabetically
 	,sort(Opts, Opts_)
-	,forall(member(Opt, Opts_)
+	,(   W = all
+	 ->  true
+	 ;   Mod = configuration
+	 )
+	,forall(member(Mod:Opt, Opts_)
 	       ,(Opt_ =.. Opt
-		,print_or_debug(T,S,Opt_)
+		,(   W = all
+		 ->  print_or_debug(T,S,Mod:Opt_)
+		 ;   W = configuration
+		 ->  print_or_debug(T,S,Opt_)
+		 )
 		)
 	       ).
 
