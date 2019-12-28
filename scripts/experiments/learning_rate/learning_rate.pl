@@ -1,8 +1,10 @@
 :-module(learning_rate, [learning_rate/6
                         ]).
 
+:-use_module(configuration).
 :-use_module(learning_rate_configuration).
 :-use_module(lib(evaluation/evaluation)).
+:-use_module(src(auxiliaries)).
 
 /** <module> Experiment script for learnign rate experiments.
 
@@ -109,6 +111,41 @@ running the experiments for those two learners separately.
 */
 
 % ================================================================================
+% Experiment initialisation
+% ================================================================================
+
+%!	init_log_dir is det.
+%
+%	Create the logging directory if it does not exist.
+%
+init_log_dir:-
+	learning_rate_configuration:logging_directory(D)
+	,(    \+ exists_directory(D)
+	     ,debug(learning_rate_setup,'Did not find logging directory ~w',[D])
+	 ->   make_directory_path(D)
+	     ,debug(learning_rate_setup,'Created logging directory ~w',[D])
+	 ;    true
+	 ).
+
+
+%!	init_plot_dir is det.
+%
+%	Create the plotting directory if it does not exist.
+%
+init_plot_dir:-
+	learning_rate_configuration:plotting_directory(D)
+	,(    \+ exists_directory(D)
+	     ,debug(learning_rate_setup,'Did not find plotting directory ~w',[D])
+	 ->   make_directory_path(D)
+	     ,debug(learning_rate_setup,'Created plotting directory ~w',[D])
+	 ;    true
+	 ).
+
+:-initialization(init_log_dir, now).
+:-initialization(init_plot_dir, now).
+
+
+% ================================================================================
 % Experiment logging
 % ================================================================================
 
@@ -121,21 +158,7 @@ running the experiments for those two learners separately.
 % Log learned hypotheses
 %:-debug(learning_rate_full).
 
-% Create the logging directory if it does not exist to avoid ugly
-% existence errors.
-:- learning_rate_configuration:logging_directory(D)
-  ,(   \+ exists_directory(D)
-  ->   make_directory_path(D)
-   ;   true
-   ).
-
-% Same for the R plotting scripts directory
-:- learning_rate_configuration:plotting_directory(D)
-  ,(   \+ exists_directory(D)
-  ->   make_directory_path(D)
-   ;   true
-   ).
-
+:-debug(learning_rate_setup).
 
 %!	debug_timestamp(-Timestamp) is det.
 %
@@ -155,7 +178,13 @@ debug_timestamp(A):-
 %	Start logging to a new log file.
 %
 start_logging(F/A):-
-	configuration:learner(L)
+% initialize should work but causes run_learning_rate.pl to raise
+% errors on the existence of the two directories. So we call the two
+% initialisation goals again here.
+	%initialize
+	init_log_dir
+	,init_plot_dir
+	,configuration:learner(L)
 	,learning_rate_configuration:logging_directory(D)
 	,close_log(learning_rate)
 	,debug_timestamp(T)
@@ -242,7 +271,7 @@ log_experiment_results(M,Ms,SDs):-
 %
 learning_rate(T,M,K,Ss,Ms,SDs):-
 	start_logging(T)
-	,learning_rate_configuration:time_limit(L)
+	,learning_rate_configuration:learning_rate_time_limit(L)
 	,log_experiment_setup(T,L,M,K,Ss)
 	,experiment_data(T,Pos,Neg,BK,MS)
 	,learning_rate(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs)
@@ -260,7 +289,7 @@ learning_rate(T,M,K,Ss,Ms,SDs):-
 %
 %	Business end of learning_rates/6.
 %
-%	Limit is the time limit set in time_limit/1.
+%	Limit is the time limit set in learning_rate_time_limit/1.
 %
 %	Problem is a list [Pos,Neg,BK,MS] of the positive examples,
 %	negative examples, background knowledge symbols and metarule
