@@ -29,12 +29,9 @@ world_dimensions(4,4).
 
 %!	output_directory(?Root) is semidet.
 %
-%	Root directory for generated dataset module file.
+%	Name of Root directory for generated dataset file.
 %
-%       Make sure that Root starts with '/' and ends with '/' otherwise
-%       you will get errors.
-%
-output_directory('/worlds/').
+output_directory(worlds).
 
 
 %!	output_to(?Where) is semidet.

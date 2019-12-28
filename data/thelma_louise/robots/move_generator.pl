@@ -375,16 +375,16 @@ write_dataset:-
 %	Generate a Path for a grid world navigation dataset.
 %
 dataset_file_name(Bn,P):-
-	output_directory(O)
+	generator_configuration:output_directory(O)
+	,generator_configuration:experiment_world(Wr)
+	,generator_configuration:world_dimensions(W,H)
+	% Gets the absolute name of this module file
 	,module_property(move_generator, file(M))
 	,file_directory_name(M,D)
-	,experiment_world(Wr)
-	,world_dimensions(W,H)
 	,atomic_list_concat([Wr,W,H],'_',Bn)
-	,atom_concat(Bn,'.pl',Fn)
-	,atom_concat(D,O,R)
-	,atom_concat(R,Fn,P).
-
+	,file_name_extension(Bn,'.pl',Fn)
+	,atomic_list_concat([D,O],'/',R)
+	,directory_file_path(R,Fn,P).
 
 
 %!	list_dataset(+Stream,+Tasks,+Moves,+Locations) is det.
