@@ -330,6 +330,19 @@ M = 20.
 % ========================================
 
 
+%!	init_output_dir is det.
+%
+%	Initialise the dataset output directory.
+%
+init_output_dir:-
+	dataset_file_name(_Bn,Fn)
+	,file_directory_name(Fn,P)
+	,(   \+ exists_directory(P)
+	 ->   make_directory(P)
+	 ;   true
+	 ).
+
+
 %!	write_dataset is det.
 %
 %	Write a grid navigation dataset to a file.
@@ -354,7 +367,8 @@ M = 20.
 %	@tbd
 %
 write_dataset:-
-	dataset_file_name(Bn,Fn)
+	init_output_dir
+	,dataset_file_name(Bn,Fn)
 	,generate_problems(Ps)
 	,generate_moves(Ms)
 	,generate_locations(Ps,Ls)
