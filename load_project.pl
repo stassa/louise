@@ -5,6 +5,7 @@ user:file_search_path(src, project_root(src)).
 user:file_search_path(lib, project_root(lib)).
 user:file_search_path(data, project_root(data)).
 user:file_search_path(output, project_root(output)).
+user:file_search_path(scripts, project_root(scripts)).
 
 :-doc_browser.
 
@@ -24,11 +25,8 @@ edit_files:-
 	,edit(project_root(configuration))
 	,edit(src(mil_problem))
 	,edit(src(louise))
-	,edit(src(auxiliaries))
-	%,edit(lib(evaluation/evaluation))
 	,edit(src(dynamic_learning))
-	,edit(src(metagen))
-	,edit(src(examples_invention))
+	,edit(src(auxiliaries))
 	,edit(P)
 	.
 :-edit_files.
