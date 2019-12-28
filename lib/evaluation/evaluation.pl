@@ -15,9 +15,17 @@
 		     ]).
 
 :-use_module(configuration).
-:-use_module(lib(sampling/sampling)).
 :-use_module(src(auxiliaries)).
+
+:-if(learner(louise)).
+:-use_module(src(louise)).
+:-elif(learner(thelma)).
+:-use_module(src(thelma)).
+:-endif.
+
+:-use_module(lib(sampling/sampling)).
 :-use_module(lib(tp/tp)).
+
 
 /** <module> Evaluation metrics for experiment results.
 */
