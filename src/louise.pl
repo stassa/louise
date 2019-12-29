@@ -110,11 +110,13 @@ top_program(Pos,Neg,BK,MS,_Ts):-
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
-	,write_program(Pos,BK,Refs)
-	,debug(top_program,'Constructing Top program...',[])
-	,top_program_(Pos,Neg,BK,MS,Ms)
-	,applied_metarules(Ms,MS,Ts)
-	,erase_program_clauses(Refs).
+	,S = write_program(Pos,BK,Refs)
+	,G = (debug(top_program,'Constructing Top program...',[])
+	     ,top_program_(Pos,Neg,BK,MS,Ms)
+	     ,applied_metarules(Ms,MS,Ts)
+	     )
+	,C = erase_program_clauses(Refs)
+	,setup_call_cleanup(S,G,C).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(tp)
 	,examples_target(Pos,T)
@@ -151,7 +153,10 @@ top_program_(Pos,Neg,_BK,MS,Ss_Spec):-
 	generalise(Pos,MS,Ss_Gen)
 	,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
 	,specialise(Ss_Gen,Neg,Ss_Spec)
-	,debug_clauses(top_program,'Specialised Top program',Ss_Spec).
+	,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
+	,!.
+top_program_(_Pos,_Neg,_BK,_MS,[]).
+% If Top program construction fails return an empty program.
 
 
 %!	generalise(+Positive,+Metarules,-Generalised) is det.
