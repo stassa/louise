@@ -48,6 +48,8 @@ learn(T,Ps):-
 %
 %	Learn a Progam from a MIL problem.
 %
+learn([],_Neg,_BK,_MS,_Ts):-
+	throw('learn/5: No positive examples found. Cannot train.').
 learn(Pos,Neg,BK,MS,_Ts):-
 	(   var(Pos)
 	->  throw('learn/5: unbound positive examples list!')
