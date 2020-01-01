@@ -1,6 +1,10 @@
 :-module(evaluation_configuration, [decimal_places/1
+                                   ,evaluate_atomic_residue/1
                                    ,success_set_generation/1
                                    ]).
+
+/** <module> Configuration options for evaluation library.
+*/
 
 
 %!	decimal_places(?P) is semidet.
@@ -10,6 +14,43 @@
 %	@tbd Could use a better name...
 %
 decimal_places(2).
+
+
+%!      evaluate_atomic_residue(?How) is semidet.
+%
+%       How to evaluate atomic residue in a hypothesis, if at all.
+%
+%       How is one of: [include,exclude,isolate]. If How is "include",
+%       the learned hypothesis is evaluated without changes. If How is
+%       "exclude", atomic residue is removed from the learned hypothesis
+%       before evaluatio. If How is "isolate", only atomic residue is
+%       evaluated and other clauses discarded.
+%
+%       "Atomic residue" are ground unit clauses in a learned hypothesis
+%       that are identical to a positive example. Such atomic residue is
+%       left behind because of insufficiently strong reduction, or
+%       because the learned hypothesis does not fully "cover" the
+%       positive examples. Normally, the latter is the case either
+%       because some positive examples are misclassified (i.e. they are
+%       alse positives) or because the background konwledge or metarules
+%       are not sufficient to construct a hypothesis that entails all
+%       positive examples.
+%
+%       When atomic residue is the result of insufficient background
+%       knowledge or metarules or misclassified examples they contribute
+%       to the accuracy of the hypothesis and so should be included in
+%       the evaluation of a learned hypothesis. However, sometimes we
+%       just want to know how much of the accuracy of the hypothesis is
+%       down to non-unit clauses, i.e. to what extent the hypothesis has
+%       generalised the positive examples. Or, we may just know that the
+%       hypothesis was not reduced strongly enough and we want to know
+%       its accuracy anyway. Finally, we may want to evaluate atomic
+%       residue in isolation to determine what it contributes to the
+%       overall accuracy of the hypothesis.
+%
+evaluate_atomic_residue(include).
+%evaluate_atomic_residue(exclude).
+%evaluate_atomic_residue(isolate).
 
 
 %!	success_set_generation(?Type) is semidet.

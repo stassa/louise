@@ -327,8 +327,9 @@ program_results(T,Ps,BK,Rs):-
 	,lfp_query(Ps,BK_,_Is,Rs).
 program_results(F/A,Ps,_BK,Rs):-
 	configuration:success_set_generation(sld)
+	,manage_residue(F/A,Ps,Ps_)
 	,S = (table(user:F/A)
-	     ,assert_program(user,Ps,Refs_Ps)
+	     ,assert_program(user,Ps_,Refs_Ps)
 	     )
 	,G = (findall(H
 		     ,(functor(H,F,A)
@@ -343,6 +344,39 @@ program_results(F/A,Ps,_BK,Rs):-
 	     ,untable(user:F/A)
 	     )
 	,setup_call_cleanup(S,G,C).
+
+
+%!	manage_residue(+Target,+Program,-Managed) is det.
+%
+%	Keep or discard atomic residue in a Program.
+%
+%	Selects a subset of Program according to the value of
+%	evaluate_atomic_residue/1 that determines whether atomic residue
+%	is to be included, excluded or isolated from the learned Program
+%	before measure accuracy. For example, we might want to know what
+%	is the contribution to accuracy of non-atomic clauses in
+%	Program (option "exclude"), or, conversely, what is the
+%	contribution to accuracy of atomic residue (option "isolate").
+%
+%	@see evaluate_atomic_residue/1.
+%
+manage_residue(F/A,Ps,Ps_):-
+	configuration:evaluate_atomic_residue(R)
+	,(   R = include
+	 ->  Ps_ = Ps
+	 ;   R = exclude
+	 ->  findall(H:-B
+		    ,member(H:-B,Ps)
+		    ,Ps_)
+	 ;   R = isolate
+	 ->  findall(C
+		    ,(member(C,Ps)
+		     ,functor(C,F,A)
+		     )
+		    ,Ps_)
+	 ;   format(atom(E),'evaluate_atomic_residue/1: unknown option ~w',[R])
+	    ,throw(E)
+	 ).
 
 
 %!	ground_background(+Target,+BK,-Ground) is det.
