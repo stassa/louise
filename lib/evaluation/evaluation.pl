@@ -352,6 +352,8 @@ program_results(F/A,Ps,_BK,Rs):-
 %	If A and B unify Delta is =, otherwise compare(Delta,A,B) is
 %	true.
 %
+%	Suggested by Boris on the Swi-Prolog mailing list.
+%
 unifiable_compare(Delta, A, B) :-
     (   unifiable(A, B, _)
     ->  Delta = (=)
