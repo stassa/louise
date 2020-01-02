@@ -573,7 +573,7 @@ move_right([R,_G,W-H], move_right([R,G,W-H],[R_new,G,W-H])):-
 	!
 	,move(R,+,1/0,W-H,R_new)
 	% To print goal vars as underscores
-	,G = '$VAR'('_').
+	,G = '$VAR'('G').
 
 
 
@@ -584,7 +584,7 @@ move_right([R,_G,W-H], move_right([R,G,W-H],[R_new,G,W-H])):-
 move_left([R,_G,W-H],move_left([R,G,W-H],[R_new,G,W-H])):-
 	!
 	,move(R,-,1/0,W-H,R_new)
-	,G = '$VAR'('_').
+	,G = '$VAR'('G').
 
 
 %!	move_up(+State, -Move) is det.
@@ -594,7 +594,7 @@ move_left([R,_G,W-H],move_left([R,G,W-H],[R_new,G,W-H])):-
 move_up([R,_G,W-H],move_up([R,G,W-H],[R_new,G,W-H])):-
 	!
 	,move(R,+,0/1,W-H,R_new)
-	,G = '$VAR'('_').
+	,G = '$VAR'('G').
 
 
 %!	move_down(+State, -New) is det.
@@ -604,7 +604,7 @@ move_up([R,_G,W-H],move_up([R,G,W-H],[R_new,G,W-H])):-
 move_down([R,_G,W-H],move_down([R,G,W-H],[R_new,G,W-H])):-
 	!
 	,move(R,-,0/1,W-H,R_new)
-	,G = '$VAR'('_').
+	,G = '$VAR'('G').
 
 
 %!	move(+Point,+Delta,+Distance,+Limits,-End) is det.
