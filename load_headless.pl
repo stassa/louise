@@ -27,3 +27,11 @@ user:file_search_path(scripts, project_root(scripts)).
 :- set_prolog_flag(stack_limit, 2_147_483_648).
 :-current_prolog_flag(stack_limit, V)
  ,format('Global stack limit ~D~n',[V]).
+
+% Large hypotheses may require large table space.
+%:- set_prolog_flag(table_space, 2_147_483_648).
+%:-set_prolog_flag(table_space, 4_294_967_296).
+%:-set_prolog_flag(table_space, 8_589_934_592).
+%:-set_prolog_flag(table_space, 17_179_869_184).
+:-current_prolog_flag(table_space, V)
+ ,format('Table space ~D~n',[V]).
