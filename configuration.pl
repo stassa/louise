@@ -69,10 +69,8 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
 %experiment_file('data/examples/recipes.pl',recipes).
 %experiment_file('data/examples/examples_invention.pl',path).
-%experiment_file('data/thelma_louise/kinship/kin.pl',kin).
-%experiment_file('data/thelma_louise/mtg_fragment.pl',mtg_fragment).
-%experiment_file('data/thelma_louise/robots/robots.pl',robots).
-%experiment_file('data/thelma_louise/noise/heroes/detect_evil.pl',detect_evil).
+%experiment_file('data/examples/kin.pl',kin).
+%experiment_file('data/robots/robots.pl',robots).
 
 
 %!	max_invented(?Number) is semidet.
@@ -127,11 +125,6 @@ projection_12_abduce metarule 'P(X):- Q(X,X)'.
 precon_abduce metarule 'P(X,y):- Q(X), R(X,y)'.
 postcon_abduce metarule 'P(x,Y):- Q(x,Y), R(Y)'.
 
-
-% Used in noise/heroes/detect_evil.pl
-% Added here for Thelma compatibility
-double_identity metarule 'P(x,Y):- Q(x,Z), R(x,U)'.
-
 /*
 % H22 metarules redundnant given chain and inverse.
 % To avoid proliferation of vaguely descriptive names these are named
@@ -150,6 +143,7 @@ metarule(xy_zx_zy,P,Q,R):- m(P,X,Y), m(Q,Z,X), m(R,Z,Y).
 metarule(xy_zy_xz,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,X,Z).
 metarule(xy_zy_zx,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,Z,X).
 */
+
 
 %!	metarule_constraints(+Metasubstitution,+Goal) is nondet.
 %
