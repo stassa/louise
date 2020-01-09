@@ -1576,11 +1576,13 @@ assert_program(M,Ps,Rs):-
 assert_program(_,[],Rs,Rs):-
 	!.
 assert_program(M,[A|P],Acc,Bind):-
-	clause(M:A,true)
+	copy_term(A,A_)
+	,clause(M:A_,true)
 	,!
 	,assert_program(M,P,Acc,Bind).
-assert_program(M,[H:-B|P],Acc,Bind):-
-	clause(M:H,B)
+assert_program(M,[C|P],Acc,Bind):-
+	copy_term(C,H:-B)
+	,clause(M:H,B)
 	,!
 	,assert_program(M,P,Acc,Bind).
 assert_program(M,[C|P],Acc,Bind):-
