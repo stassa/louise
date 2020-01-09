@@ -39,34 +39,40 @@
 :-edit(generator_configuration).
 */
 
+/** <module> Grid worl navigation.
+
+Generates grid worlds with various elements as a learning environment
+for navigation strategies.
+
+Full documentation pending. Note that training with the full dataset can
+take a very long time. Try this kind of query instead:
+
+==
+?- train_and_test(move/2,1,_Ps,acc,V), print_clauses(_Ps).
+==
+
+Predictive accuracy should be very low, since a single example is
+selected, but learning will be quick and you'll have a chance to inspect
+the results. Training with multiple examples tends to generate _very_
+large programs! That's because each training example is a navigation
+task with multiple solutions (multiple paths between each two points A
+and B in the grid world, unless of course A = B) and each sub-hypothesis
+is a single clause. As the problem grows, so does the number of
+"alternatives", so this is even more evident in larger worlds. Training
+on a 4x4 grid with a 0.9 sampling rate can generate programs of more
+than 2k clauses. If you do that it's a good idea to not print the
+results in the console. You've been warned!
+
+*/
+
 % ========================================
 % MIL problem
 % ========================================
 
-% The metarule format for the two learners is currently different and
-% so needs disambiguation at load time.
-:-if(learner(thelma)).
-
-configuration:metarule(tri_chain_1,[P,Q,R,M],[X,Y,M,Z]
-		      ,(mec(P,X,Y):-mec(Q,M,X,Z),mec(R,Z,Y))).
-configuration:metarule(tri_chain_2,[P,Q,R,M],[X,Y,Z,M]
-		      ,(mec(P,X,Y):-mec(Q,X,Z),mec(R,M,Z,Y))).
-configuration:metarule(tri_chain_3,[P,Q,R,M,N],[X,Y,M,Z,N]
-		      ,(mec(P,X,Y):-mec(Q,M,X,Z),mec(R,N,Z,Y))).
-
-configuration:order_constraints(tri_chain_1,[P,Q,R,_M],_Fs,[P>Q,P>R],[]).
-configuration:order_constraints(tri_chain_2,[P,Q,R,_M],_Fs,[P>Q,P>R],[]).
-configuration:order_constraints(tri_chain_3,[P,Q,R,_M,_N],_Fs,[P>Q,P>R],[]).
-
-:-elif(learner(louise)).
-
-% Reverting to no-operators notation to accommodate Thelma (that doesn't
-% know metarule/2 is an operator).
-configuration:metarule(tri_chain_1, 'P(x,y):- Q(M,x,z), R(z,y)').
-configuration:metarule(tri_chain_2, 'P(x,y):- Q(x,z), R(M,z,y)').
-configuration:metarule(tri_chain_3, 'P(x,y):- Q(M,x,z), R(N,z,y)').
-
-:-endif.
+% Triadic metarules - allow higher-order moves to be used.
+configuration:tri_chain_1 metarule 'P(x,y):- Q(M,x,z), R(z,y)'.
+configuration:tri_chain_2 metarule 'P(x,y):- Q(x,z), R(M,z,y)'.
+configuration:tri_chain_3 metarule 'P(x,y):- Q(M,x,z), R(N,z,y)'.
 
 background_knowledge(move/2, [% Move primitives
 			      move_right/2

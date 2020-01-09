@@ -106,7 +106,7 @@ timed_train_and_test(T,S,L,Ps,M,V):-
 
 
 
-%!	timed_train_and_test(+Target,+Limit,+Sample,+Problem,-Prog,+Metric,-Val)
+%!	timed_train_and_test(+Target,+Sample,+Limit,+Problem,-Prog,+Metric,-Val)
 %!	is det.
 %
 %	Learn a program and evaluate the results by the given Metric.
