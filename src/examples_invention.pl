@@ -1,4 +1,5 @@
-:-module(examples_invention, [learn_with_examples_invention/2
+:-module(examples_invention, [learn_with_examples_invention/1
+			     ,learn_with_examples_invention/2
 			     ,examples_invention/2
 			     ,examples_invention/5
 			     ]).
@@ -12,6 +13,16 @@
 Documentation pending.
 
 */
+
+%!	learn_with_examples_invention(+Target) is det.
+%
+%	Learn a program for Target with invented examples
+%
+learn_with_examples_invention(T):-
+	learn_with_examples_invention(T,Ps)
+	,print_clauses(Ps).
+
+
 
 %!	learn_with_examples_invention(+Target,-Program) is det.
 %
