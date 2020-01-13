@@ -13,8 +13,8 @@ you encoutner unless you report them. Please use the author's email to contact
 the author regarding bugs and errors. Alternatively, you are welcome to open a
 github Issue or send a pull request. 
 
-What Louise, is
----------------
+What Louise is
+--------------
 
 Louise is a machine learning system that learns Prolog programs.
 
@@ -28,15 +28,15 @@ learning logic programs from examples and background knowledge. In ILP, the
 examples and background knowledge are also defined as logic programs. In MIL, in
 addition to examples and background knowledge, a set of clause templates called
 _metarules_ are also used. Examples, background knowledge and metarules are
-discussed later in this README file. 
+discussed in depth in the upcoming Louise manual. 
 
 What Louise does
 ----------------
 
 Louise learns Prolog programs from examples, background knowledge and second
 order clause templates called _metarules_. Together, examples, background
-knowledge and metarules form the elements of a learnign problem. The following
-are the elements of an example learning problem for Louise:
+knowledge and metarules form the elements of a _MIL problem_. The following are
+the elements of an example MIL problem for Louise:
 
 ```prolog
 % Positive examples of strings in the context-free a^nb^n language
@@ -46,8 +46,8 @@ are the elements of an example learning problem for Louise:
 
 % A notable absence of negative examples.
 
-% Background knowledge: the terminals in the a^nb^n language given as Definite
-% Clause Grammar productions.
+% Background knowledge: the two (pre-) terminals in the a^nb^n language given as
+% Definite Clause Grammar productions.
 'A' --> [a].
 'B' --> [b].
 
@@ -68,7 +68,7 @@ true.
 
 In the learned grammar above, the predicate `'$1'` is invented: it was not given
 to Louise at the start of learning. This is called _predicate invention_ and is
-a major feature of learners like Louise.
+a major feature of MIL-learners like Louise.
 
 Learning logic prorgams with Louise
 -----------------------------------
@@ -98,11 +98,13 @@ environment the Swi-Prolog IDE should start automaticaly when you open a Prolog
 file.
 
 In this section, we assume you have cloned this project into a directory called
-`louise`. Paths to various files will be given relative to the `louise` root
-directory.
+`louise`. Paths to various files will be given relative to the `louise` project
+root directory and queries at the Swi-Prolog top-level will assume your current
+working directory is `louise`.
 
 #### Learning the "ancestor" relation
 
+Louise expects its data to be in an _experiment file_ with a standard format.
 The following is an example showing how to use Louise to learn the "ancestor"
 relation from the examples, background knowledge and metarules defined in the
 experiment file `louise/data/examples/tiny_kinship.pl` using the learning
@@ -111,9 +113,10 @@ predicate `learn/1`.
 In summary, there are four steps to running the example: a) start Louise; b)
 edit the configuration file to select `tiny_kinship.pl` as the experiment file;
 c) load the experiment file into memory; d) run a learning query. These four
-steps are discussed in detail below.
+steps are described in detail below.
 
- 1. Start the project:
+ 1. Consult the project's load file into Swi-Prolog to load necessary files into
+    memory:
 
     In a graphical environment:
     
@@ -200,7 +203,7 @@ background knowledge defined by the user.
 
 The example of learning the `a^nb^n` language at the start of this README is an
 example of learning with dynamic learning. Below, we list the steps to run this
-example yourself. The steps to run this example are identical to the steps to
+example yourself. The steps to run this example are similar to the steps to
 run the `ancestor/2` example, only this time the learning predicate is
 `learn_dynamic/1`:
 
@@ -218,7 +221,8 @@ run the `ancestor/2` example, only this time the learning predicate is
     ?- [load_headless].
     ```
 
- 2. Edit the project's configuration file to select an experiment file.
+ 2. Edit the project's configuration file to select the `anbn.pl` experiment
+    file.
 
     ```prolog
     experiment_file('data/examples/anbn.pl',anbn).
@@ -230,7 +234,7 @@ run the `ancestor/2` example, only this time the learning predicate is
     ?- make.
     ```
 
- 4. Perform a learning attempt without Dynamic learning:
+ 4. Perform an initial learning attempt _without_ Dynamic learning:
     
     ```prolog
     ?- learn('S'/2).
@@ -241,14 +245,14 @@ run the `ancestor/2` example, only this time the learning predicate is
     ```
 
     The elements for the learning problem defined in the `anbn.pl` experiment
-    file only include three example strings in the `a^nb^n` language the
+    file only include three example strings in the `a^nb^n` language, the
     pre-terminals in the language, `'A' --> [a].` and `'B' --> [b].` (where
     `'A','B'` are nonterminal symbols and `[a],[b]` are terminals) and the
     _Chain_ metarule. Given this problem definition, Louise can only learn a
     single new clause of 'S/2' (the starting symbol in the grammar), that only
     covers its first example, the string 'ab'.
 
- 5. Perform a learning attemt with dynamic lerning:
+ 5. Perform a second learning attemt with dynamic lerning:
 
     ```prolog
     ?- learn_dynamic('S'/2).
@@ -259,18 +263,18 @@ run the `ancestor/2` example, only this time the learning predicate is
     ```
 
     With dynamic learning, Louise can re-use the first clause it learns (the one
-    covering 'ab', listed above) to invented a new nonterminal, `$1`, that it
+    covering 'ab', listed above) to invented a new nonterminal, `$1/2`, that it
     can then use to construct the full grammar.
 
 ### Examples invention
 
 Louise can perform _examples invention_ which is just what it sounds like.
 Examples invention works best when you have relevant background knowledge and
-metarules but insufficient positive examples. It works even better when you have
-at least some negative examples. If your background knowledge is irrelevant or
-you don't have "enough" negative examples (where "enough" depends on the
-dataset) then examples invention can over-generalise and produce spurious
-results.
+metarules but insufficient positive examples to learn a correct hypothesis. It
+works even better when you have at least some negative examples. If your
+background knowledge is irrelevant or you don't have "enough" negative examples
+(where "enough" depends on the MIL problem) then examples invention can
+over-generalise and produce spurious results.
 
 The learning predicate for examples invention in Louise is
 `learn_with_examples_invention/2`. Below is an example showing how to use it,
@@ -290,7 +294,8 @@ again following the structure of the examples shown previously.
     ?- [load_headless].
     ```
 
- 2. Edit the project's configuration file to select an experiment file.
+ 2. Edit the project's configuration file to select the `examples_invention.pl`
+    experiment file.
 
     ```prolog
     experiment_file('data/examples/examples_invention.pl',path).
@@ -302,7 +307,7 @@ again following the structure of the examples shown previously.
     ?- make.
     ```
 
- 4. Try learning without examples invention:
+ 4. Try a first learning attempt without examples invention:
     
     ```prolog
     ?- learn(path/2).
@@ -310,11 +315,11 @@ again following the structure of the examples shown previously.
     true.
     ```
 
-    The examples in `examples_invention.pl` are insufficient for Louise to learn
-    a general theory of `path/2`. Louise simply returns the single positive
-    example.
+    The single positive example in `examples_invention.pl` are insufficient for
+    Louise to learn a general theory of `path/2`. Louise simply returns the
+    single positive example, un-generalised.
 
- 5. Perform a learning attempt with examples invention:
+ 5. Perform a second learning attempt with examples invention:
 
     ```prolog
     ?- learn_with_examples_invention(path/2).
