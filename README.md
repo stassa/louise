@@ -471,7 +471,20 @@ results:
      (by copying the R data from a log file to an R data script and sourcing the
      plotting script).
 
+ 7. Source the plotting script in the console R to generate an image:
 
+    ```R
+    source("<path_to_louise>\\louise\\output\\learning_curve\\plot_learning_curve_results.r")
+    ```
+
+    You can save the plot from the R console: select the image and go to File >
+    Savea As > Png... (or other file format). Then choose a location to save the
+    file.
+ 
+    The figure below is the result of sourcing the R plotting script for the
+    learning curve experiment with the `mtg_fragment.pl` data.
+
+    <img src="https://user-images.githubusercontent.com/1269718/72377073-ffd98b80-3706-11ea-924c-8c53384fe4c7.png" alt="https://user-images.githubusercontent.com/1269718/72377073-ffd98b80-3706-11ea-924c-8c53384fe4c7.png" class="shrinkToFit" width="287" height="293">
 
 Coming soon
 -----------
