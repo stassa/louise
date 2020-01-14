@@ -350,11 +350,12 @@ m(path,e,f).
 true.
 ```
 
-Formalised experiments
-----------------------
+Experiment scripts
+------------------
 
-Louise includes experiment scripts for formalised experiments in the directory
-`data/scripts`. Currently, the only experiment script is a "learning curve"
+Louise stores experiment scripts in the directory `data/scripts`. An experiment
+script the code for an experiment that you want to repeat perhaps with different
+configuration options and parameters. Louise comes with a "learning curve"
 script that runs an experiment varying the number of examples (or sampling rate)
 while measuring accuracy. The script generates a file with some R data that can
 then be rendered into a learning curve plot by sourcing a plotting script, also
