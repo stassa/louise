@@ -350,6 +350,129 @@ m(path,e,f).
 true.
 ```
 
+Formalised experiments
+----------------------
+
+Louise includes experiment scripts for formalised experiments in the directory
+`data/scripts`. Currently, the only experiment script is a "learning curve"
+script that runs an experiment varying the number of examples (or sampling rate)
+while measuring accuracy. The script generates a file with some R data that can
+then be rendered into a learning curve plot by sourcing a plotting script, also
+included in the scripts directory, with R.
+
+The following are the steps to run a learning curve experiment with the data
+from the `mtg_fragment.pl` example experiment file and produce a plot of the
+results:
+
+ 1. Start the project:
+
+    In a graphical environment:
+
+    ```prolog
+    ?- [load_project].
+    ```
+
+    In a text-based environment:
+
+    ```prolog
+    ?- [load_headless].
+    ```
+
+ 2. Edit the project's configuration file to select the `mtg_fragment.pl`
+    experiment file.
+
+    ```prolog
+    experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
+    ```
+
+ 3. Edit the learning curve script's configuration file to select necessary
+    options and output directories:
+
+    ```prolog
+    copy_plotting_scripts(scripts(learning_curve/plotting)).
+    logging_directory('output/learning_curve/').
+    plotting_directory('output/learning_curve/').
+    r_data_file('learning_curve_data.r').
+    learning_curve_time_limit(300).
+    ```
+
+    The option `copy_plotting_scripts/1` tells the experiment script whether to
+    copy the R plotting script from the `scripts/learning_curve/plotting`
+    directory, to an output directory, listed in the option's single argument.
+    Setting this option to `false` means no plotting script is copied. You can
+    specify a different directory for plotting scripts to be copied from if you
+    want to write your own plotting scripts.
+
+    The options `logging_directory/1` and `plotting_directory/1` determine the
+    destination directory for output logs, R data files and plotting scripts.
+    They can be separate directories if you want. Above, they are the same which
+    is the most convenient.
+
+    The option `r_data_file/1` determines the name of the R data file generated
+    by the experiment script. Data files are clobbered each time the experiment
+    re-runs (it's a bit of a hassle to point the plotting script to them
+    otherwise) so you may want to output an experiment's R data script with a
+    different name to preserve it. You'd have to manually rename the R data file
+    so it can be used by the plotting script in that case.
+
+    The option `learning_curve_time_limit/1` sets a time limit for each learning
+    attempt in a learning curve experiment. If a hypothesis is not learned
+    successfully until this limit has expired, the accurracy (or error etc) of
+    the empty hypothesis is measured instead.
+
+ 4. Reload all configuration files to pick up the new options.
+
+    ```prolog
+    ?- make.
+    ```
+
+    Note that loading the main configuration file will turn off logging to the
+    console. The next step directs you to turn it back on again so you can watch
+    the experiment's progress.
+
+ 5. Enter the following queries to ensure logging to console is turned on.
+
+    The  console output will log the steps of the experiment so that you can
+    keep track of the experiment's progress (and know that it's running):
+
+    ```prolog
+    ?- debug(progress).
+    true.
+
+    ?- debug(learning_curve).
+    true.
+    ```
+
+    Logging for the learning curve experiment script will have been turned off
+    if you reloaded the main configuration file (because it includes the
+    directive `nodebug(_)`). The two queries above turn it back on.
+
+  6. Enter the following query to run the experiment script:
+
+     ```prolog
+     _T = ability/2, _M = acc, _K = 100, float_interval(1,9,1,_Ss), learning_curve(_T,_M,_K,_Ss,_Ms,_SDs), writeln(_Ms), writeln(_SDs).
+     ```
+
+     `_M = acc` tells the experiment code to measure accuracy. You can also
+     measure error, the reate of false positives, precision or recall, etc. `_K
+     = 100` runs the experiment for 100 steps. `float_interval(1,9,1,_Ss)`
+     generates a list of floating-point values used as sampling rates in each
+     step of the experiment: `[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]`.
+
+     The experiment code averages the accuracy of hypotheses learned with each
+     sampling rate for all steps and also calculates the standard deviations.
+     The query above will write the means (argument `_Ms` of `learning_curve/6`)
+     and standard deviations (`_SDs`) in the console so you can have a quick
+     look at the results. The same results are saved in a timestamped log file
+     saved in the logging directory chosen in `loggign_directory/1`. Log files
+     are _not_ clobbered (unlike R data files, that are) and they include a copy
+     of the R data saved to the R data file. That way you always have a record
+     of each experiment completed and you can reconstruct the plots if needed
+     (by copying the R data from a log file to an R data script and sourcing the
+     plotting script).
+
+
+
 Coming soon
 -----------
 
