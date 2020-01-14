@@ -13,6 +13,18 @@ you encoutner unless you report them. Please use the author's email to contact
 the author regarding bugs and errors. Alternatively, you are welcome to open a
 github Issue or send a pull request. 
 
+Table of contents
+-----------------
+
+[What Louise, is](#what-louise-is)
+[What Louise does](#what-louise-does)
+[Learning logic prorgams with Louise](#learning-logic-prorgams-with-louise)
+[Running examples in Swi-Prolog](#running-examples-in-swi-prolog)
+[Learning the "ancestor" relation](#learning-the-ancestor-relation)
+[Dynamic learning and predicate invention](#dynamic-learning-and-predicate-invention)
+[Examples invention](#examples-invention)
+[Experiment scripts](#experiment-scripts)
+
 What Louise is
 --------------
 
