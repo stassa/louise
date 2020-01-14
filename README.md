@@ -354,12 +354,12 @@ Experiment scripts
 ------------------
 
 Louise stores experiment scripts in the directory `data/scripts`. An experiment
-script the code for an experiment that you want to repeat perhaps with different
-configuration options and parameters. Louise comes with a "learning curve"
-script that runs an experiment varying the number of examples (or sampling rate)
-while measuring accuracy. The script generates a file with some R data that can
-then be rendered into a learning curve plot by sourcing a plotting script, also
-included in the scripts directory, with R.
+script is the code for an experiment that you want to repeat perhaps with
+different configuration options and parameters. Louise comes with a "learning
+curve" script that runs an experiment varying the number of examples (or
+sampling rate) while measuring accuracy. The script generates a file with some R
+data that can then be rendered into a learning curve plot by sourcing a plotting
+script, also included in the scripts directory, with R.
 
 The following are the steps to run a learning curve experiment with the data
 from the `mtg_fragment.pl` example experiment file and produce a plot of the
