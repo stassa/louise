@@ -484,7 +484,7 @@ results:
     The figure below is the result of sourcing the R plotting script for the
     learning curve experiment with the `mtg_fragment.pl` data.
 
-    <img src="https://user-images.githubusercontent.com/1269718/72377073-ffd98b80-3706-11ea-924c-8c53384fe4c7.png" alt="https://user-images.githubusercontent.com/1269718/72377073-ffd98b80-3706-11ea-924c-8c53384fe4c7.png" class="shrinkToFit" width="287" height="293">
+    <img src="https://user-images.githubusercontent.com/1269718/72377073-ffd98b80-3706-11ea-924c-8c53384fe4c7.png" alt="Learning curve experiment plot." class="shrinkToFit" width="287" height="293">
 
 Coming soon
 -----------
