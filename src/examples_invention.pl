@@ -8,7 +8,7 @@
 :-use_module(src(mil_problem)).
 :-use_module(lib(tp/tp)).
 
-/** <module> Examples invention for non-bias inductive shift.
+/** <module> Examples invention.
 
 Documentation pending.
 

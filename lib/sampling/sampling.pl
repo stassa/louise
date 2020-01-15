@@ -19,7 +19,7 @@
 /** <module> Random sampling from lists and goal results.
 
 Two types of Sampling
-=====================
+---------------------
 
 Predicates in this list perform two kinds of sampling:
 a) Simple random sampling, with or without replacement, or
@@ -51,7 +51,7 @@ elements of a list. Bernoulli sampling predicates may sample from the
 elements of a list, or from the results of a goal.
 
 The interface of simple random sampling predicates
-==================================================
+--------------------------------------------------
 
 The different purpose of predicates performing simple random sampling
 can be gleaned from their names. The following naming conventions are
@@ -79,7 +79,7 @@ that the first partition has exactly K elements of Ls and the second
 partition has all the remaining elements of Ls.
 
 The interface of Bernoulli sampling predicates
-==============================================
+----------------------------------------------
 
 Bernoulli sampling predicates always take a probability as the parameter
 that determines the size of the sample, or first partition. They observe
@@ -99,7 +99,7 @@ probability and returns an atom A in [true,false], depending on whether
 the trial succceeded (where A = true) or failed (A = false).
 
 Representation of probabilities
-===============================
+-------------------------------
 
 In both types of sampling predicates, where a probability is required,
 it can be represented in one of two ways:

@@ -32,11 +32,11 @@ A notable use of predicates in this module is to extract metarules from
 the definitions of predicates declared as background knowledge for a
 learning target.
 
-Examples
-========
+Examples of Use
+---------------
 
-1. program_metarules/2 is used to extract metarules from an arbitrary
-list of definite clauses:
+Predicate program_metarules/2 is used to extract metarules from an
+arbitrary list of definite clauses:
 
 ==
 ?- _Ps = [ p(_X,_Y):- q(_X,_Z), r(_Z,_Y), p(a,b) ]
@@ -46,8 +46,8 @@ m(metarule_1,A,B):-m(A,C,D),m(B,C,E).
 true.
 ==
 
-2. symbols_metarules/3 is used to extract metarules from a list of
-predicate symbols and arities. The second argument is the name of a
+Predicate symbols_metarules/3 is used to extract metarules from a list
+of predicate symbols and arities. The second argument is the name of a
 module where the given predicates are defined, or a module importing
 those predicates' definition module:
 
@@ -64,12 +64,12 @@ true.
 %	,program_metarules(Ps, MS).
 ==
 
-3. bk_metarules/2 is used to extract metarules from the definitions of
-predicates declared as background for a learning target. Below,
-metarules are extracted from the definitions of background predicates
-for grandfather/2, one of the learning targets in
-data/examples/tiny_kinship.pl (its BK predicates are also defined in
-the same module):
+Predicate bk_metarules/2 is used to extract metarules from the
+definitions of predicates declared as background for a learning target.
+Below, metarules are extracted from the definitions of background
+predicates for grandfather/2, one of the learning targets in
+data/examples/tiny_kinship.pl (its BK predicates are also defined in the
+same module):
 
 ==
 ?- bk_metarules(grandfather/2, _MS), print_clauses(_MS).
