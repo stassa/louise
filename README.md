@@ -24,6 +24,7 @@ Table of contents
 [Dynamic learning and predicate invention](#dynamic-learning-and-predicate-invention)  
 [Examples invention](#examples-invention)  
 [Experiment scripts](#experiment-scripts)  
+[Further documentation](#further-documentation)  
 
 What Louise is
 --------------
