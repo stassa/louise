@@ -499,12 +499,51 @@ results:
 
     <img src="https://user-images.githubusercontent.com/1269718/72377073-ffd98b80-3706-11ea-924c-8c53384fe4c7.png" alt="Learning curve experiment plot." class="shrinkToFit" width="287" height="293">
 
-Coming soon
------------
+Further documentation
+---------------------
 
-More instructions to use Louise are coming up in the project's manual. For the
-time being, you may get some useful information from the current draft of the
-manual stored in the file `MAN.md` in the directory `louise/doc`. Keep in mind
-that `MAN.md` is a _draft_ and as such may contain incomplete or inaccurate
-information. On the other hand, it will probably give a general idea of how to
-use Louise and what it can do.
+More informatin about Louise, how it works and how to use it are coming up in
+the project's manual. For the time being, you can peruse the structured comments
+in the project's source files. It's also possible to generate a `.pdf` file from
+structured documentation, as follows:
+
+ 1. Load the project as usual.
+
+ 2. Load the `doc/latex/maket_tex.pl` module:
+
+    ```prolog
+    ?- use_module(doc/latex/make_tex).
+    true.
+    ```
+
+ 3. Run the following query to generate latex files from structure documentation
+    in the project's source code:
+
+    ```prolog
+    ?- make_tex.
+    true.
+    ```
+
+ 4. Pass the main latex documentation file to pdflatex. By default the main
+    documentation file is `louise/doc/latex/documentation.tex`
+
+    ```
+    cd /doc/latex/
+    pdflatex -synctex=1 -interaction=nonstopmode .\documentation.tex
+    pdflatex -synctex=1 -interaction=nonstopmode .\documentation.tex
+    ```
+
+    Run the pdflatex command twice to generate a ToC and bookmarks. You will
+    probably see lots of errors but you will still get a .pdf file.
+    _Probably_ (this hasn't been tested extensively).
+
+
+Note that the structured documentation included in the Prolog source is a work
+in progress. Most of the time it is mostly accurate, but there are parts of it
+that are obsolte. Still- better than nothing.
+
+Additionally to all this you may get some useful information from the current
+draft of the manual stored in the file `MAN.md` in the directory `louise/doc`.
+Keep in mind that `MAN.md` is a _draft_ and as such may contain incomplete or
+inaccurate information. On the other hand, it will probably give a general idea
+of how to use Louise and what it can do.
