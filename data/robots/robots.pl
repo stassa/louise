@@ -2,6 +2,7 @@
 		 ,metarules/2
 		 ,positive_example/2
 		 ,negative_example/2
+		 ,learn_and_render_plan/2
 		 ,render_plan/3
 		 ,double_move/3
 		 ,triple_move/3
@@ -160,6 +161,9 @@ learn_and_render_plan(T,S):-
 %	predicates defined in render.pl. The default and currently only
 %	rendering mode is glorious ASCII. Other modes may be defined in
 %	the future.
+%
+%	@bug If a solution is left-recursive, render_plan/3 will get
+%	stuck in an infinite recursion.
 %
 render_plan(Ps,E,BK):-
 % Copy term to ignore variable bindings when printing.

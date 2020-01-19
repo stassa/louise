@@ -3,6 +3,7 @@
 				  ,output_directory/1
                                   ,output_to/1
                                   ,symbol/3
+                                  ,exported_moves/2
 				  ]).
 
 /** <module> Configuration parameters for move_generator.pl
@@ -63,3 +64,12 @@ symbol(ball,_,@).
 symbol(obstacle,_,o).
 symbol(goal,_,x).
 symbol(floor,_,.).
+
+
+%!      experiment(?World,?Moves) is semidet.
+%
+%       Set of Moves exported by a World dataset.
+%
+exported_moves(empty_world,[move_right/2,move_left/2,move_up/2,move_down/2]).
+exported_moves(simple_world,[move_right/2,move_left/2,move_up/2,move_down/2
+                            ,pick_up/2,put_down/2]).
