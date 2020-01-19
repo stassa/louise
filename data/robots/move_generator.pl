@@ -234,94 +234,20 @@ ASCII symbols for entities and locations in a grid world are listed in
 the predicate symbol/3 in render.pl. TODO: make these available at the
 configuration level.
 
-Printing a dataset to console
------------------------------
+Other worlds
+------------
 
-You can also inspect the results of task and primitive generation by
-printing on the console, but be careful of large worlds with a large
-number of tasks and moves that will take a very long time to print out.
+The world generator in worlds.pl can generate worlds with not just the
+robot but also a ball to be carried to a goal, a randomly placed
+obstacle, or an adversarial agent that moves to hinder the agent's
+plans. These are not yet fully handled in terms of dataset generation.
 
-The following query will generate (and print out in the console) all
-tasks, moves and locations in a 2-by-2 world (the dimensions of the
-world in the state "vector" are 1-1, but the grid is actually 2x2; it's
-an off-by-one error, OK?)
+The set of worlds for which a dataset can be generate with a complete
+extensional definition of primitive moves and with all possible
+navigation tasks is as follows:
 
-==
-?- generate_problems(_Ps), generate_moves(_Ms), generate_locations(_Ps, _Ls), print_clauses(_Ps), nl, length(_Ps,L), length(_Ms, N), print_clauses(_Ms), nl, print_clauses(_Ls), length(_Ls, M).
-move([0/0,0/0,1-1],[0/0,0/0,1-1]).
-move([0/0,0/1,1-1],[0/1,0/1,1-1]).
-move([0/0,1/0,1-1],[1/0,1/0,1-1]).
-move([0/0,1/1,1-1],[1/1,1/1,1-1]).
-move([0/1,0/0,1-1],[0/0,0/0,1-1]).
-move([0/1,0/1,1-1],[0/1,0/1,1-1]).
-move([0/1,1/0,1-1],[1/0,1/0,1-1]).
-move([0/1,1/1,1-1],[1/1,1/1,1-1]).
-move([1/0,0/0,1-1],[0/0,0/0,1-1]).
-move([1/0,0/1,1-1],[0/1,0/1,1-1]).
-move([1/0,1/0,1-1],[1/0,1/0,1-1]).
-move([1/0,1/1,1-1],[1/1,1/1,1-1]).
-move([1/1,0/0,1-1],[0/0,0/0,1-1]).
-move([1/1,0/1,1-1],[0/1,0/1,1-1]).
-move([1/1,1/0,1-1],[1/0,1/0,1-1]).
-move([1/1,1/1,1-1],[1/1,1/1,1-1]).
-
-move_down([0/1,0/0,1-1],[0/0,0/0,1-1]).
-move_down([0/1,0/1,1-1],[0/0,0/1,1-1]).
-move_down([0/1,1/0,1-1],[0/0,1/0,1-1]).
-move_down([0/1,1/1,1-1],[0/0,1/1,1-1]).
-move_down([1/1,0/0,1-1],[1/0,0/0,1-1]).
-move_down([1/1,0/1,1-1],[1/0,0/1,1-1]).
-move_down([1/1,1/0,1-1],[1/0,1/0,1-1]).
-move_down([1/1,1/1,1-1],[1/0,1/1,1-1]).
-move_left([1/0,0/0,1-1],[0/0,0/0,1-1]).
-move_left([1/0,0/1,1-1],[0/0,0/1,1-1]).
-move_left([1/0,1/0,1-1],[0/0,1/0,1-1]).
-move_left([1/0,1/1,1-1],[0/0,1/1,1-1]).
-move_left([1/1,0/0,1-1],[0/1,0/0,1-1]).
-move_left([1/1,0/1,1-1],[0/1,0/1,1-1]).
-move_left([1/1,1/0,1-1],[0/1,1/0,1-1]).
-move_left([1/1,1/1,1-1],[0/1,1/1,1-1]).
-move_right([0/0,0/0,1-1],[1/0,0/0,1-1]).
-move_right([0/0,0/1,1-1],[1/0,0/1,1-1]).
-move_right([0/0,1/0,1-1],[1/0,1/0,1-1]).
-move_right([0/0,1/1,1-1],[1/0,1/1,1-1]).
-move_right([0/1,0/0,1-1],[1/1,0/0,1-1]).
-move_right([0/1,0/1,1-1],[1/1,0/1,1-1]).
-move_right([0/1,1/0,1-1],[1/1,1/0,1-1]).
-move_right([0/1,1/1,1-1],[1/1,1/1,1-1]).
-move_up([0/0,0/0,1-1],[0/1,0/0,1-1]).
-move_up([0/0,0/1,1-1],[0/1,0/1,1-1]).
-move_up([0/0,1/0,1-1],[0/1,1/0,1-1]).
-move_up([0/0,1/1,1-1],[0/1,1/1,1-1]).
-move_up([1/0,0/0,1-1],[1/1,0/0,1-1]).
-move_up([1/0,0/1,1-1],[1/1,0/1,1-1]).
-move_up([1/0,1/0,1-1],[1/1,1/0,1-1]).
-move_up([1/0,1/1,1-1],[1/1,1/1,1-1]).
-
-end([0/0,0/0,1-1]).
-end([0/1,0/1,1-1]).
-end([1/0,1/0,1-1]).
-end([1/1,1/1,1-1]).
-start([0/0,0/0,1-1]).
-start([0/0,0/1,1-1]).
-start([0/0,1/0,1-1]).
-start([0/0,1/1,1-1]).
-start([0/1,0/0,1-1]).
-start([0/1,0/1,1-1]).
-start([0/1,1/0,1-1]).
-start([0/1,1/1,1-1]).
-start([1/0,0/0,1-1]).
-start([1/0,0/1,1-1]).
-start([1/0,1/0,1-1]).
-start([1/0,1/1,1-1]).
-start([1/1,0/0,1-1]).
-start([1/1,0/1,1-1]).
-start([1/1,1/0,1-1]).
-start([1/1,1/1,1-1]).
-L = 16,
-N = 32,
-M = 20.
-==
+* empty_world An agent and a goal location.
+* simple_world An agent, an object and a goal location.
 
 */
 
