@@ -157,8 +157,9 @@ top_program_(Pos,Neg,_BK,MS,Ss_Spec):-
 	,specialise(Ss_Gen,Neg,Ss_Spec)
 	,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
 	,!.
-top_program_(_Pos,_Neg,_BK,_MS,[]).
+top_program_(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
+	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
 %!	generalise(+Positive,+Metarules,-Generalised) is det.
