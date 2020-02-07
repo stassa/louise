@@ -222,6 +222,12 @@ hide_bk_closure(Cs,PS,Cs_):-
 %
 %	Business end of hide_bk_closure/3.
 %
+%	@tbd This sorts the lists of clauses in the end - why? Is it to
+%	remove duplicate clauses? That wouldn't work given that they're
+%	probably not ground. Is it to order clauses in a standard
+%	order? But that would change the semantics of a program. What's
+%	up?
+%
 hide_bk_closure([],_PS,Acc,Cs):-
 	sort(Acc,Cs)
 	,!.
