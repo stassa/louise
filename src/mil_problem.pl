@@ -8,6 +8,7 @@
 		      ,applied_metarules/3
 		      ,metarule_application/2
 		      ,excapsulated_clauses/3
+		      ,target_or_invention/2
 		      ]).
 
 :-use_module(configuration).

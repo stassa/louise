@@ -1,6 +1,7 @@
 :-module(dynamic_learning, [learn_dynamic/1
 			   ,learn_dynamic/2
 			   ,learn_dynamic/5
+			   ,top_program_dynamic/4
 			   ]).
 
 :-use_module(src(mil_problem)).
@@ -22,11 +23,19 @@ and D, are connected, iff one or more body literals of C unify with the
 head literal of D.
 
 In order to create sets of connected clauses, dynamic learning performs
-predicate invention. An invented predicate's symbol is then used in a
-subsequently constructed clause, to form a connected pair of clauses.
-More than two clauses can be connected in this way. It is possible both
-to connect one clause to multiple other clauses, or to connect multiple
-clauses in pairs in the same hypothesis.
+predicate invention. When proving a body literal of a metarule during
+the generalisation step of Top program construction fails, a new Top
+program is constructed, recursively, with that literal as the only
+positive example and with a new, invented predicate symbol. If a
+non-empty Top program is constructed this way, it is taken as a
+definition of the invented predicate.
+
+An invented predicate's symbol is then used in a subsequently
+constructed clause, to form a connected pair of clauses. More than two
+clauses can be connected in this way. The ability to connect clauses
+allows learning hypotheses that could otherwise only be learned by
+specifying long metarules, with a potentially large number of body
+literals.
 
 Besides making heavy use of the dynamic database, dynamic learning
 predicates also perform destructive updates of a counter used to keep
@@ -35,7 +44,7 @@ names by indexing the atom '$' with the current highest invented
 predicate index + 1.
 
 Dynamic learning essentially updates the background knowledge by adding
-each clause in the Top program (of the origional target or an invented
+each clause in the Top program (of the original target or an invented
 predicate) to the dynamic database as soon as it is constructed. Because
 of this, it relies very strongly on the order in which examples are
 given. For example, given the first ordering of examples, below, 'S'/2
@@ -130,14 +139,10 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,examples_target(Pos,T)
 	,table_encapsulated(T)
 	,debug(learn,'Constructing dynamic Top program...',[])
-	,top_program_dynamic(C,Pos_,Neg_,BK_,MS_,Ms)
-	% generalising_metasubstitution/6 leaves behind garbage
-	% that we don't have clause references for to remove them.
-	% TODO: don't let this hack become established. Fix!
-	,cleanup_experiment
+	,top_program_dynamic(C,T,Pos_,Neg_,BK_,MS_,Ts)
 	,untable_encapsulated(T)
 	,debug(learn,'Reducing dynamic Top program...',[])
-	,reduced_top_program_dynamic(Pos_,BK_,MS_,Ms,Rs)
+	,reduced_top_program_dynamic(Pos_,BK_,MS_,Ts,Rs)
 	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(T,Rs,Ps).
 
@@ -199,115 +204,114 @@ untable_encapsulated(_F/A):-
 %
 %	Construct the Top_Progam for a MIL problem dynamically.
 %
-top_program_dynamic(C,Pos,Neg,BK,MS,Ts):-
+top_program_dynamic(C,T,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,write_program(Pos,BK,Refs)
-	,top_program_dynamic(C,Pos,Neg,MS,Ms)
-	,applied_metarules(Ms,MS,Ts)
-	,erase_program_clauses(Refs).
+	,top_program_dynamic(C,Pos,Neg,MS)
+	,erase_program_clauses(Refs)
+	,collect_clauses(T,MS,Ts).
+top_program_dynamic(_C,_T,_Pos,_Neg,_BK,_MS,_Ts):-
+% If Top program construction fails return an empty program.
+	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
-%!	top_program(+Positive,+Negative,+BK,+Metarules,-Metasubstitutions)
+%!	top_program_dynamic(+Counter,+Positive,+Negative,Metarules)
 %!	is det.
 %
-%	Collect all correct Metasubstitutions in a MIL problem.
+%	Dynamically create the Top program for a MIL problem.
 %
-top_program_dynamic(C,Pos,Neg,MS,Ss_Spec):-
-	generalise_dynamic(C,Pos,Neg,MS,Ss_Gen)
-	,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
-	,specialise_dynamic(Ss_Gen,Neg,Ss_Spec)
-	,debug_clauses(top_program,'Specialised Top program',Ss_Spec).
+%	This predicate combines the generalisation and specialisation
+%	step that are implemented by separate predicates in "static"
+%	learning, in generalise/3 and specialise/3 in louise.pl.
+%
+%	top_program_dynamic/4 first attempts to generalise a positive
+%	example using a metarule. The generalision attempt binds the
+%	head of the metarule to the example and then proves each of the
+%	body literals of the metarule, in turn, by resolution with the
+%	positive examples and background knowledge.
+%
+%	If the proof of each body literal is successful, the resulting
+%	metasubstitution is tested against constraints.
+%
+%	If the constraint test passes, the metasubstitution is
+%	specialised against the negative examples. To specialise a
+%	metasubstitution, first a negative example is bound to the head
+%	of the metasubstitution, then its body literals are proven by
+%	resolution against the positive examples and background
+%	knowledge. If any such proof succeeds, which means that the
+%	metasubstitution entails a negative example, the
+%	metasubstitution is discarded.
+%
+%	During the generalisation step, if proof of a literal fails,
+%	predicate invention is performed. This happens during a call to
+%	prove_body_litearls_/3. The literal that cannot be proven given
+%	the positive examples and background knowledge is given a new
+%	predicate symbol, of the form '$n' where n is an integer from 1
+%	to the maximum number of invented predicates set in the
+%	configuration option max_invented/1. Then, a new Top program is
+%	constructed with that literal as the only positive example, no
+%	negative examples and the same background knowledge and
+%	metarules as the original Top program construction step.
+%
+%	When a Top program construction step, i.e. the combination of
+%	generalisation, specialisation and a constraint test, is
+%	completed successfully, the resulting metasubstitution is first
+%	applied to its corresponding metarule and written to the dynamic
+%	database. Applying the metasubstitution to a metarule results
+%	in a definite clause. The clause is encapsulated and so it
+%	becomes immediately available to the next Top program
+%	construction step, as a background predicate.
+%
+%	Metasubstitutions are later collected from the dynamic database
+%	with a call to collect_clauses/3 and the dynamic database
+%	cleaned of all encapsulated clauses.
+%
+top_program_dynamic(I,Pos,Neg,MS):-
+% A findall loop is the easiest, simplest way to do this.
+% Seriously. Tried a forall/2 loop but it ends up horribly convoluted
+% with a ton of conditionals that are also hard to read. So, forget it.
+        findall(C
+               ,(member(M,MS)
+                ,copy_term(M,M_1)
+                ,member(Ep,Pos)
+		,debug_clauses(dynamic,'Generalising example:',[Ep])
+                ,metasubstitution(I,Ep,M_1,MS,Sub)
+		,debug_clauses(dynamic,'Derived metasub:',[Sub])
+                ,constraints(Sub)
+		% M_1 is now partially bound to Ep's constants.
+		,copy_term(M,M_2)
+                ,\+((member(En,Neg)
+		    ,debug_clauses(dynamic,'Specialising metasub:',[Sub])
+                    ,metasubstitution(I,En,M_2,MS,Sub)
+                    ))
+		,metarule_application(Sub,M,C)
+		,assert_program(user,[C],_Rs)
+		,debug_clauses(dynamic,'Asserted clause',[C])
+                )
+               ,Cs)
+        %Fail if Top program is empty.
+	,Cs \= []
+	,debug_clauses(top_program,'Generalised and specialised Top program',Cs).
 
 
-%!	generalise_dynamic(+Positive,+Metarules,-Generalised) is det.
+%!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
+%!	nondet.
 %
-%	Generalisation step of dynamic Top program construction.
+%	Perform one Metasubstutition of Metarule initialised to Example.
 %
-%	Generalises a set of Positive examples by finding each
-%	metasubstitution of a metarule that entails a positive example.
+%	Example is either a positive example or a negative example. A
+%	positive example is a ground definite unit clause, while a
+%	negative example is a ground definite goal (i.e. a clause of the
+%	form :-Example).
 %
-%	Generalised is a set of key-value pairs where the keys are
-%	ground metasubstitution atoms and the values are a copy with
-%	free variables of the encapsulated head and body literals of the
-%	metarule corresponding to the metasubsitution.
-%
-generalise_dynamic(C,Pos,Neg,MS,Ss_Pos):-
-	findall(H-M
-	     ,(member(M,MS)
-	      ,copy_term(M,M_)
-	      ,member(Ep,Pos)
-	      ,generalising_metasubstitutions(C,Ep,M_,Neg,MS,Hs)
-	      ,member(H, Hs)
-	      )
-	     ,Ss_Pos_)
-	,sort(1,@<,Ss_Pos_,Ss_Pos).
-
-
-%!	specialise_dynamic(+Generalised,+Negatives,-Specialised) is det.
-%
-%	Specialisation step of dynamic Top program construction.
-%
-%	Specialises a set of metasubstitutions generalising the positive
-%	examples against the Negative examples by discarding each
-%	metasubstitution that entails a negative example.
-%
-specialise_dynamic(Ss_Pos,Neg,Ss_Neg):-
-	setof(H
-	     ,H^M^Ss_Pos^En^Neg^
-	      (member(H-M,Ss_Pos)
-	      ,\+((member(:-En,Neg)
-		  ,specialising_metasubstitution(En,M,H)
-		  )
-		 )
-	      )
-	     ,Ss_Neg).
-
-
-%!	generalising_metasubstitution(+Cntr,+Ex,+Metarule,+Neg,+Rules,-Metasubs)
-%	is nondet.
-%
-%	Find generalising metasubstitutions of a Metarule.
-%
-%	Cntr is a compound c(I,K) where I is the current highest index
-%	of an invented predicate's name and K is the maximum number of
-%	invented predicates to attempt to, well, invent.
-%
-%	Ex is a positive example, a ground definite unit clause.
-%
-%	Metarule is a non-ground, expanded metarule.
-%
-%	Neg is the set of negative examples and MS the set of metarules
-%	in a MIL problem.
-%
-%	Metasubs is a set of metasubstitutions of Metarule such that the
-%	first predicate symbol in each metasubstitution in Metasubs is
-%	either the predicate symbol of Ex, or an invented predicate
-%	symbol.
-%
-%	Generalising metasubstitutions does a lot of the heavy lifting
-%	(and heave it is) of predicate invention. It returns a list of
-%	metasubstitutions because a list might have been found in the
-%	Top program construction step that may be taken in order to
-%	produce invented predicates. It also checks that each
-%	metasubstitution in Metasubs conforms to any metarule
-%	constraints. Finally, it applies the metasubstitutions in
-%	Metasubs to their metarules and _writes the result to the
-%	dynamic database_ so that it may be reused later to learn
-%	connected clauses and whatnot.
-%
-generalising_metasubstitutions(C,E,M,Neg,MS,Ss):-
-	debug_clauses(dynamic,'Generalising example',[E])
-	,bind_head_literal(E,M,(Sub:-(E,Ls)))
-	,prove_body_literals(C,Ls,Neg,MS,Subs)
-	,findall(S
-		,(member(S,[Sub|Subs])
-		 ,constraints(S)
-		 )
-		,Ss)
-	,applied_metarules(Ss,MS,Cs)
-	,assert_program(user,Cs,_Refs)
-	,debug_clauses(dynamic,'Asserted new clauses:',Cs).
+metasubstitution(_C,:-E,M,_MS,Sub):-
+% No need for predicate invention if E is negative.
+	bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,user:call(Ls).
+metasubstitution(C,E,M,MS,Sub):-
+	bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,prove_body_literals(C,MS,Ls).
 
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
@@ -317,6 +321,8 @@ generalising_metasubstitutions(C,E,M,Neg,MS,Ss):-
 %	Abstracts the complex patterns of binding examples to the heads
 %	of metarules with and without body literals.
 %
+%	@tbd Copied unchanged from louise module.
+%
 bind_head_literal(E,M,(H:-(E,Ls))):-
 	M = (H:-(E,Ls))
 	,!.
@@ -324,56 +330,56 @@ bind_head_literal(E,M,(H:-(E,true))):-
 	M = (H:-E).
 
 
-%!	prove_body_literals(+Cntr,+Literals,+Neg,+Metarules,-Metasubs)
-%!	is nondet.
+%!	prove_body_literals(+Counter,+Metarules,+Literals) is nondet.
 %
-%	Prove the body Literals of a partially instantiated metarule.
+%	Prove the body Literals of a partiallly instantiated metarule.
 %
-prove_body_literals(C,Ls,Neg,MS,Ss):-
+%	Counter is the invented predicate counter, counting from 0 to
+%	the maximum number of invented predicates allowed for a MIL
+%	problem.
+%
+%	Metarules is the list of expanded metarules in the current MIL
+%	problem. They are used to construct a new Top program when the
+%	proof of a literal in Literals fails.
+%
+%	Literals is a list of at least partially instantiated body
+%	literals of a metarule.
+%
+%	This predicate performs predicate invention. First, each literal
+%	is Literals is resolved with the background knowledge and
+%	positive examples. If resolution fails, a new, invented symbol
+%	is created and bound to the existentially quantified
+%	second-order variable in the literal (if it's unbound). Then, a
+%	new Top program is constructed with the new literal as its only
+%	positive example, no negative examples, and with the same
+%	positive examples, background knowledge and metarules as in the
+%	original MIL problem (the examples and BK are already in the
+%	dynamic database, so only the list of Metarules need to be
+%	passed down as an argument).
+%
+prove_body_literals(C,MS,Ls):-
 	once(list_tree(Ls_,Ls))
-	,debug_clauses(dynamic,'Proving body literals:', [Ls])
-	,prove_body_literals(C,Ls_,Neg,MS,[],Ss).
+	,debug_clauses(dynamic,'Proving body literals:',[Ls_])
+	,prove_body_literals_(C,MS,Ls_).
 
-%!	prove_body_literals(+Cntr,+Literals,+Neg,+Metarules,+Acc,-Metasubs)
-%!	is nondet.
+%!	prove_body_literals_(+Counter,+Metarules,+Literals) is nondet.
 %
-%	Business end of prove_body_literals/5.
+%	Business end of prove_body_literals/3.
 %
-%	Follows more or less the following procedure:
-%
-%	1) For each literal, l, in Literals
-%	2) Try to prove l against the BK and examples
-%	3) If that fails, try to invent a new predicate
-%	4) Return all invented metasubstitutions
-%
-%	Inventing metasubstitutions is done by Top program construction
-%	where the set of positive examples contains only a single
-%	literal, a literal that could not be proven given the examples
-%	and background knowledge.
-%
-%	Note that the distantly-recursive Top program construction step
-%	in the second clause of this predicate goes through
-%	generalising_metasubstitutions/6, so each metasubstitution found
-%	by it is _written to the dynamic database_ so that it can be
-%	reused later.
-%
-prove_body_literals(_C,[],_Neg,_MS,Acc,Ss):-
-	flatten(Acc,Ss).
-prove_body_literals(C,[L|Ls],Neg,MS,Acc,Bind):-
-% L is an example atom or entailed by the BK and examples.
+prove_body_literals_(_C,_MS,[]).
+% Has to be nondet to allow backtracking over all proofs.
+prove_body_literals_(C,MS,[L|Ls]):-
 	debug_clauses(dynamic,'Proving literal:',[L])
 	,user:call(L)
 	,debug_clauses(dynamic,'Proved literal:',[L])
-	,prove_body_literals(C,Ls,Neg,MS,Acc,Bind).
-prove_body_literals(C,[L|Ls],Neg,MS,Acc,Bind):-
-% Try inventing a new predicate that entails L.
+	,prove_body_literals_(C,MS,Ls).
+prove_body_literals_(C,MS,[L|Ls]):-
 	\+ user:call(L)
 	,debug_clauses(dynamic,'Failed proving literal:',[L])
 	,new_atom(C,L,L_)
-	,debug_clauses(dynamic,'Generating new atom:',[L_])
-	,top_program_dynamic(C,[L_],Neg,MS,Ss)
-	,debug_clauses(dynamic,'Invented clauses:',Ss)
-	,prove_body_literals(C,Ls,Neg,MS,[Ss|Acc],Bind).
+	,debug_clauses(dynamic,'Invented new predicate:',[L_])
+	,top_program_dynamic(C,[L_],[],MS)
+	,prove_body_literals_(C,MS,Ls).
 
 
 %!	new_atom(+Counter,+Atom,-New) is det.
@@ -389,8 +395,25 @@ new_atom(C,L,L_):-
 %
 %	Bind a Symbol variable to a new, invented Symbol.
 %
+%	Counter is a counter, c(I) counting the number of invented
+%	predicates defined so far.
+%
+%	Symbol is a second-order existentially quantified variable to be
+%	bound to an invented predicate symbol.
+%
+%	new_symbol/2 is responsible for creating a new invented
+%	predicate symbol of the form '$I', where n is the value in
+%	Counter.
+%
 %	Counter is _destructively updated_ by a call to setarg/3 (and
-%	_not_ to nb_setarg/3) in this predicate.
+%	_not_ to nb_setarg/3) in this predicate. Invented symbols are
+%	created before an attempt is made to construct a definition for
+%	them and if a (non-empty) definition cannot be constructed, the
+%	same symbol (i.e. a symbol with the current index in Counter as
+%	an index) must be available for a subsequent attempt to define a
+%	different invented predicate. Therefore, new_symbol/2 must be
+%	allowed to backtrack over destructive assignment and
+%	re-crate a Symbol with an index previously tried (and failed).
 %
 new_symbol(C,P):-
 	arg(1,C,I)
@@ -401,26 +424,80 @@ new_symbol(C,P):-
 	,setarg(1,C,I_).
 
 
-%!	specialising_metasubstitution(+Example,-Metarule,+Metasubstitution)
-%	is nondet.
+%!	metarule_application(+Metasubstitution,+Metarule,-Clause) is det.
 %
-%	Specialise a Metasubstitution against a negative Example.
+%	Apply a Metasubstitution to its corresponding Metarule.
 %
-%	Example is a negative example, a ground definite goal (i.e. a
-%	clause of the form :-Example).
+%	@tbd Can't we use this in the place of that cumbersome
+%	applied_metarules/2, in mil_problem.pl?
 %
-%	Metarule is a non-ground metarule. This is actually the output
-%	argument (should go last; was second because this was copied
-%	from metasubstitution/3 where this makes sense).
+metarule_application(Sub,Sub:-(H,B),H:-B).
+
+
+%!	collect_clauses(+Target,+Metarules,-Clauses) is det.
 %
-%	Metasubstitution is a ground metasubstitution of Metarule.
-%	Metarule is ground according to the terms in Metasubstitution.
+%	Collect all instances of Metarules with	a Target symbol.
 %
-specialising_metasubstitution(E,M,Sub):-
-	debug_clauses(dynamic,'Specialising metasubstitution',[Sub])
-	,bind_head_literal(E,M,(Sub:-(E,Ls)))
-	,user:call(Ls)
-	,debug(dynamic,'Kept metasubstitution',[]).
+%	Target is the symbol and arity of a learning target.
+%
+%	Metarules is the list of encapsulated metarules in a MIL
+%	problem.
+%
+%	Clauses is the set of instances of the metarules in Metarules
+%	where the predicate symbol is the symbol of Target, or an
+%	invented predicate.
+%
+%	@tbd This sorts the collected clauses at the end usig predsort/2
+%	and unifiable_compare/3. This is not strictly necessary as only
+%	unique clauses will be collected from the database. However, the
+%	sorting orders clauses with the same predicate symbol so that
+%	shorter clauses (i.e. the ones with the fewer literals) come
+%	first. Ordering clauses in this way, by length, seems to make
+%	program reduction easier, or at least it's possible to achieve
+%	the same reduction strength with fewer resolutions. Program
+%	reduction should still work regardless of the ordering of
+%	clauses in hypotheses, but an inconvenient ordering will require
+%	a higher number of resolutions. That's probably something to do
+%	with how in recursive hypotheses the boundary condition will
+%	tend to be the shortest clause. So consider the sorting a kind
+%	of heuristic that will improve performance in the worst case and
+%	probably not worsen it in the worst case. Also note that static
+%	Top program construction sorts clauses - so the sorting also
+%	ensures consistency between the two methods.
+%
+collect_clauses(T/_,MS,Cs):-
+	findall(H:-B
+	       ,(member(_A:-(H,B),MS)
+		,clause(user:H,B)
+		%,print_clauses('New clause',[H:-B])
+		%,nl
+		%,B \= true
+		,H =.. [m,S|_As]
+		%,length(As,N)
+		,target_or_invention(T,S)
+		,user:retract(H:-B)
+		)
+	       ,Cs_)
+	,predsort(unifiable_compare,Cs_, Cs).
+
+
+%!	unifiable_compare(-Delta,+A,+B) is det.
+%
+%	Comparison predicate for predsort/3.
+%
+%	If A and B unify Delta is =, otherwise compare(Delta,A,B) is
+%	true.
+%
+%	Suggested by Boris on the Swi-Prolog mailing list.
+%
+%	@tbd Also used in evaluation module. Consider moving to
+%	auxiliaries or some other library.
+%
+unifiable_compare(Delta, A, B) :-
+    (   unifiable(A, B, _)
+    ->  Delta = (=)
+    ;   compare(Delta, A, B)
+    ).
 
 
 %!	reduced_top_program_dynamic(+Pos,+BK,+Metarules,+Top_Program,-Redued)
