@@ -16,19 +16,50 @@
 
 /* <module> Experiment file for learning cooking recipes.
 
-This experiment file also demonstrates the use of the auxiliary
-predicate set_configuration_option/2 to dynamically manipulate
-configuration options.
+Usage instructions
+------------------
 
-2. Note that the configuration option extend_metarules/1 is set
-dynamically using set_configuration_option/2 as a directive (at the
-start of the source code, below):
+1. Set configuration option max_invented/1 to 3 with a
+set_configuration_option/2 directive:
 
 ==
-:- set_configuration_option(extend_metarules, [1]).
+auxiliaries:set_configuration_option(max_invented, [3]).
 ==
 
-Note also that setting a configuration option dynamically using
+2. Run a learning query with a dynamic learning predicate to perform
+predicate invention:
+
+==
+?- learn_dynamic(recipe/2).
+recipe([egg_whisk,eggs,frying_pan,olive_oil,pepper,salt],[omelette]).
+'$1'(A,B):-whisk_eggs(A,C),'$2'(C,B).
+'$1'(A,B):-heat_oil(A,C),'$2'(C,B).
+'$1'(A,B):-break_eggs(A,C),'$2'(C,B).
+'$2'(A,B):-heat_oil(A,C),'$3'(C,B).
+'$2'(A,B):-whisk_eggs(A,C),'$3'(C,B).
+'$3'(A,B):-fry_eggs(A,C),season(C,B).
+recipe(A,B):-break_eggs(A,C),'$1'(C,B).
+recipe(A,B):-heat_oil(A,C),'$1'(C,B).
+true.
+==
+
+
+Dynamically setting configuration options
+-----------------------------------------
+
+This experiment file demonstrates the use of the auxiliary predicate
+set_configuration_option/2 to dynamically manipulate configuration
+options.
+
+The configuration option max_invented/1 is set dynamically using
+set_configuration_option/2 as a directive (at the start of the source
+code, below):
+
+==
+auxiliaries:set_configuration_option(max_invented, [3]).
+==
+
+Note that setting a configuration option dynamically using
 set_configuration_option/2 will _not_ reset the configuration option
 after any learning attempt. This means that subsequent learning attempts
 will retain the value of the dynamically changed option. This will
@@ -37,22 +68,12 @@ usually not be what is expected and may well cause some confusion.
 For the time being the only sure-fire way to reset a configuration
 option to its original value is to edit the value of that option in the
 configuration file and then reload the configuration file with make/0.
-
 */
 
-% Set to 4 and reduce recursion_depth_limit/2 to obtain alternatives.
 :- auxiliaries:set_configuration_option(max_invented, [3]).
-:- auxiliaries:set_configuration_option(recursion_depth_limit,[dynamic_learning,2000]).
-
-configuration: chain_abduce metarule 'P(x,Y):- Q(x,z), R(z,Y)'.
 
 % Tells list_learning_results/0 to use the right learning predicate.
 auxiliaries:learning_predicate(learn_dynamic/1).
-
-configuration:metarule_constraints(M,fail):-
-	M =.. [m,_Id,P|Ps]
-	,forall(member(P1,Ps)
-	       ,P1 == P).
 
 background_knowledge(recipe/2,[break_eggs/2
 			      ,whisk_eggs/2
@@ -63,6 +84,10 @@ background_knowledge(recipe/2,[break_eggs/2
 			      ]).
 
 metarules(recipe/2,[chain]).
+
+% Replace clause above with this one to obtain more specific recipes
+% only working for making omelette
+% metarules(recipe/2,[chain_abduce_y]).
 
 positive_example(recipe/2,E):-
 	member(E, [recipe([egg_whisk,eggs,frying_pan,olive_oil,pepper,salt],[omelette])
