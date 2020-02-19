@@ -1,5 +1,6 @@
 :-module(examples_invention, [learn_with_examples_invention/1
 			     ,learn_with_examples_invention/2
+			     ,learn_with_examples_invention/5
 			     ,examples_invention/2
 			     ,examples_invention/5
 			     ]).
@@ -16,7 +17,11 @@ Documentation pending.
 
 %!	learn_with_examples_invention(+Target) is det.
 %
-%	Learn a program for Target with invented examples
+%	Learn a program for Target with invented examples.
+%
+%	Prints the results to the console. Elements of the MIL problem
+%	for Target are obtained from the currently loaded experiment
+%	file.
 %
 learn_with_examples_invention(T):-
 	learn_with_examples_invention(T,Ps)
@@ -28,9 +33,22 @@ learn_with_examples_invention(T):-
 %
 %	Invent new positive examples of Target to learn a Program.
 %
+%	Elements of the MIL problem for Target are obtained from the
+%	currently loaded experiment file.
+%
 learn_with_examples_invention(T,Ps):-
 	experiment_data(T,Pos,Neg,BK,MS)
-	,debug(examples_invention,'Inventing examples',[])
+	,learn_with_examples_invention(Pos,Neg,BK,MS,Ps).
+
+
+
+%!	learn_with_examples_invention(+Pos,+Neg,+BK,+Metarules,-Program)
+%!	is det.
+%
+%	Invent new positive examples of Target to learn a Program.
+%
+learn_with_examples_invention(Pos,Neg,BK,MS,Ps):-
+	debug(examples_invention,'Inventing examples',[])
 	,examples_invention(Pos,Neg,BK,MS,Es)
 	,debug(examples_invention,'Given and invented examples',[])
 	,debug_clauses(examples_invention,Es)
@@ -41,6 +59,7 @@ learn_with_examples_invention(T,Ps):-
 	,debug(examples_invention,'Reducing Top program',[])
 	,reduced_top_program(Es,BK_,MS_,Ts,Rs)
 	,debug(examples_invention,'Excapsulating hypothesis',[])
+	,examples_target(Pos,T)
 	,excapsulated_clauses(T,Rs,Ps).
 
 
