@@ -369,19 +369,19 @@ program_results(T,Ps,BK,Rs):-
 program_results(F/A,Ps,_BK,Rs):-
 	configuration:success_set_generation(sld)
 	,manage_residue(F/A,Ps,Ps_)
-	,S = (table(user:F/A)
-	     ,assert_program(user,Ps_,Refs_Ps)
+	,S = (table(program_results:F/A)
+	     ,assert_program(program_results,Ps_,Refs_Ps)
 	     )
 	,G = (findall(H
 		     ,(functor(H,F,A)
-		      ,call(user:H)
+		      ,call(program_results:H)
 		      )
 		     ,Rs_)
-	     ,untable(user:F/A)
+	     ,untable(program_results:F/A)
 	     ,predsort(unifiable_compare,Rs_, Rs)
 	     )
 	,C = (erase_program_clauses(Refs_Ps)
-	     ,untable(user:F/A)
+	     ,untable(program_results:F/A)
 	     )
 	,setup_call_cleanup(S,G,C).
 
