@@ -73,7 +73,7 @@ configuration file and then reload the configuration file with make/0.
 :- auxiliaries:set_configuration_option(max_invented, [3]).
 
 % Tells list_learning_results/0 to use the right learning predicate.
-auxiliaries:learning_predicate(learn_dynamic/1).
+configuration:learning_predicate(learn_dynamic/1).
 
 background_knowledge(recipe/2,[break_eggs/2
 			      ,whisk_eggs/2
