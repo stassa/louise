@@ -1530,11 +1530,13 @@ assert_program(_,[],Rs,Rs):-
 	!.
 assert_program(M,[A|P],Acc,Bind):-
 	copy_term(A,A_)
+	,numbervars(A_)
 	,clause(M:A_,true)
 	,!
 	,assert_program(M,P,Acc,Bind).
 assert_program(M,[C|P],Acc,Bind):-
 	copy_term(C,H:-B)
+	,numbervars(H:-B)
 	,clause(M:H,B)
 	,!
 	,assert_program(M,P,Acc,Bind).
