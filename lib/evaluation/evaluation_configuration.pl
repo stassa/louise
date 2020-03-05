@@ -1,10 +1,32 @@
-:-module(evaluation_configuration, [decimal_places/1
+:-module(evaluation_configuration, [convert_examples/4
+                                   ,decimal_places/1
                                    ,evaluate_atomic_residue/1
                                    ,success_set_generation/1
                                    ]).
 
 /** <module> Configuration options for evaluation library.
 */
+
+
+%!	convert_examples(+Pos,+Neg,-Converted_Pos,-Converted_Neg) is
+%!	det.
+%
+%	Convert examples from a learner's internal representation.
+%
+%	Louise represents negative examples as Horn goals, i.e. Prolog
+%	terms without a head, .e.g :-p(a,b) etc. Predicates in the
+%	evaluation module test the overlap of negative examples with the
+%	success set of a learned hypothesis and so goal clauses must be
+%	transformed to atoms, without the :-/2 functor. This predicate
+%	handles this transformation, in order to work with Louise. Other
+%	learners may need to define their own convert_examples/4.
+%
+convert_examples(Pos,Neg,Pos,Neg_):-
+	configuration:learner(louise)
+	,!
+	,G = findall(E,member(:-E,Neg),Neg_)
+	,call(G).
+convert_examples(Pos,Neg,Pos,Neg).
 
 
 %!	decimal_places(?P) is semidet.

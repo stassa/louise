@@ -17,11 +17,12 @@
 :-use_module(configuration).
 :-use_module(src(auxiliaries)).
 
-:-if(learner(louise)).
-:-use_module(src(louise)).
-:-elif(learner(thelma)).
-:-use_module(src(thelma)).
-:-endif.
+% Ensure the learner module is loaded.
+% It should be located in project_root(src)
+% and have a configuration option learner/1
+% declaring its name.
+:- configuration:learner(L)
+  ,use_module(src(L)).
 
 :-use_module(lib(sampling/sampling)).
 :-use_module(lib(tp/tp)).
@@ -255,40 +256,6 @@ metric(tnr,[_ACC,_ERR,_FPR,_FNR,_TPR,TNR,_PRE,_FSC],TNR).
 metric(pre,[_ACC,_ERR,_FPR,_FNR,_TPR,_TNR,PRE,_FSC],PRE).
 metric(fsc,[_ACC,_ERR,_FPR,_FNR,_TPR,_TNR,_PRE,FSC],FSC).
 
-
-
-%!	convert_examples(+Pos,+Neg,-Converted_Pos,-Converted_Neg) is
-%!	det.
-%
-%	Convert examples from a learner's internal representation.
-%
-%	This predicate handles the necessary transformations from the
-%	internal representation used in the two MIL learners, Thelma and
-%	Louise, to unit clauses.
-%
-%	Examples are represented internally in Louise as definite
-%	clauses: unit clauses for positive examples, and goals, :-A, for
-%	negative examples. In Thelma both positive and negative examples
-%	are represented as lists [P,A1,...,An] of the predicate symbol
-%	and arguments of a unit clause. The predicates in this module
-%	expect both positive and negative examples to be given as unit
-%	clauses (with no negative literals) so some transformation is
-%	required.
-%
-%	@tbd This library is shared between Thelma and Louise, hence the
-%	use of learner/1 to identify the learning system and select the
-%	clause that performs the appropriate transformation.
-%
-%	@tbd It turns out the transformation is only necessary for
-%	Louise, currently.
-%
-convert_examples(Pos,Neg,Pos,Neg_):-
-	configuration:learner(louise)
-	,!
-	,G = findall(E,member(:-E,Neg),Neg_)
-	,call(G).
-convert_examples(Pos,Neg,Pos,Neg):-
-	configuration:learner(thelma).
 
 
 %!	list_results(+Target,+Program,+Results) is det.
