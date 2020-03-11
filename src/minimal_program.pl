@@ -135,8 +135,28 @@ minimal_program(_Pos,_Neg,_BK,_MS,[]):-
 %	clauses in the set entail the same positive examples. In this
 %	sense, the returned program is irredundant, or even minimal.
 %
-minimal_program_([],_Neg,_MS,Cs,Cs):-
-	!.
+%	@bug If generalising a positive example fails, the example atom
+%	is added to the Program as an "exception" (or "atomic residue").
+%	However, because generalisation proceeds nondeterministicaly
+%	until an example cannot be generalised any more, failure to
+%	generalis an example will happen exactly once for _every_
+%	positive example. Which means that, even given a set of examples
+%	for which there _does_ exist a minimal program entailing each
+%	example in the set, this predicate will eventually generate all
+%	hypotheses including sub-sets of the positive examples as
+%	"exceptions". More work needed.
+%
+minimal_program_([],_Neg,_MS,Acc,Cs):-
+% Sorting in descending order to move atomic residuet to the top of the
+% program. Other clauses will generally not be sorted, e.g.
+% alphabetically- at least not unless they are fully ground. That's
+% because the standard order of terms orders variables according to
+% their age (i.e. the order in which they were initialised in Prolog's
+% memory). For this reason, we're grounding or otherwise jumping through
+% hoops to sort, non-ground Prolog terms elsewhere in the project. See
+% for example program_results/4 in lib/evaluation/evaluation.pl etc.
+	!
+       ,sort(0,@>,Acc,Cs).
 minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
 	generalise_minimal(E,MS,M,Sub)
 	,constraints(Sub)
@@ -144,6 +164,9 @@ minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
 	,metarule_application(Sub,M,C)
 	,reduced_examples(Pos,C,Pos_)
 	,minimal_program_(Pos_,Neg,MS,[C|Acc],Bind).
+minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
+% If E cannot be generalised, add it to the program as an "exception".
+	minimal_program_(Pos,Neg,MS,[E|Acc],Bind).
 
 
 %!	generalise_minimal(+Example,+Metarules,-Metarule,-Metasubstitution)
