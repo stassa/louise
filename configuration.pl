@@ -102,11 +102,15 @@ learner(louise).
 %
 %	Learning_Predicate is a predicate indicator, the symbol and
 %	arity of one of the following learning predicates defined in
-%	Louise: learn/1, learn_dynamic/1 or
-%	learn_with_examples_invention/2. The specified predicate will be
-%	used to list the learning results for all learning targets
-%	defined in an experiment file with a call to
-%	list_learning_results/0.
+%       Louise:
+%       * learn/1
+%       * learn_dynamic/1
+%       * learn_with_examples_invention/2
+%       * learn_minimal/1
+%
+%       The specified predicate will be used to list the learning
+%       results for all learning targets defined in an experiment file
+%       with a call to list_learning_results/0.
 %
 %	learning_predicate/1 is declared as multifile. To specify the
 %	learning predicate to be used with list_learning_results/0, add
@@ -138,6 +142,11 @@ learner(louise).
 %	cause list_learning_results/0 to raise an error.
 %
 %	@see list_learning_results/0
+%
+%       @tbd learning_predicate/1 is also used in lib/evaluation to
+%       choose the learning predicate used to evaluate a learning
+%       result. Predicates in that library default to learn/1 when
+%       learning_predicate/1 is not defined.
 %
 :-dynamic learning_predicate/1.
 :-multifile learning_predicate/1.

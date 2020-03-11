@@ -19,17 +19,26 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(sampling/sampling)).
 :-use_module(src(dynamic_learning)).
+:-use_module(src(minimal_program)).
 :-use_module(src(metagen)).
 :-use_module(src(examples_invention)).
 
 edit_files:-
+% Uncomment, or add, the paths of files you want to open in the IDE when
+% the project loads, below.
 	configuration:experiment_file(P,_)
 	,edit(project_root(load_project))
 	,edit(project_root(configuration))
 	,edit(src(mil_problem))
 	,edit(src(louise))
 	,edit(src(auxiliaries))
+	%,edit(lib(evaluation/evaluation))
 	,edit(src(dynamic_learning))
+	%,edit(src(metagen))
+	,edit(src(examples_invention))
+	%,edit(src(metarules_parser))
+	%,edit(src(subhypothesis_selection))
+	,edit(src(minimal_program))
 	,edit(P)
 	.
 :-edit_files.

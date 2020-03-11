@@ -726,6 +726,7 @@ list_learning_results:-
 list_learning_results(P/N):-
 	\+ memberchk(P,[learn
 		       ,learn_dynamic
+		       ,learn_minimal
 		       ,learn_with_examples_invention
 		       ])
 	,format(atom(A),'Unknown learning predicate: ~w',[P/N])
