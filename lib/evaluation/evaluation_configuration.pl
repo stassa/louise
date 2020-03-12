@@ -21,6 +21,15 @@
 %	handles this transformation, in order to work with Louise. Other
 %	learners may need to define their own convert_examples/4.
 %
+convert_examples(Pos,Neg,Pos,_):-
+% This is here for the sake of print_config/3 which will call
+% convert_examples/3 without actually passing any examples and get into
+% a spot of bother. Failing silently will allow print_config/3 to
+% continue on its way. A different situation might require an exception
+% to be raised though. Not good.
+	(   \+ ground(Pos) ; \+ ground(Neg) )
+	,!
+	,fail.
 convert_examples(Pos,Neg,Pos,Neg_):-
 	configuration:learner(louise)
 	,!
