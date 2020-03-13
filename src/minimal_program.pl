@@ -5,6 +5,7 @@
 
 :-use_module(configuration).
 :-use_module(src(louise)).
+:-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).
 
 /** <module> Simultaneous construction and reduction of the Top program.
