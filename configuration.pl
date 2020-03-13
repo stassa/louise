@@ -1,6 +1,7 @@
 :-module(configuration, [experiment_file/2
 			,learner/1
                         ,learning_predicate/1
+                        ,minimal_program_size/2
 			,max_invented/1
 			,metarule/2
 			,metarule_constraints/2
@@ -56,6 +57,7 @@
 %:-debug(dynamic). % Debug dynamic learning.
 %:-debug(predicate_invention). % Debug predicate invention.
 %:-debug(examples_invention). % Debug examples invention.
+%:-debug(evaluation).
 
 
 %!	experiment_file(?Path,?Module) is semidet.
@@ -150,6 +152,17 @@ learner(louise).
 %
 :-dynamic learning_predicate/1.
 :-multifile learning_predicate/1.
+learning_predicate(learn_minimal/1).
+
+
+%!      minimal_program_size(?Minimum,?Maximum) is semidet.
+%
+%       Minimum and Maximum cardinality of a minimal program.
+%
+%       Each of Minimum, Maximum should be an integer between 1 and
+%       positive infinity ('inf' in Prolog).
+%
+minimal_program_size(2,inf).
 
 
 %!	metarule(?Id,?P,?Q) is semidet.
