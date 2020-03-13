@@ -145,7 +145,6 @@ learner(louise).
 %
 :-dynamic learning_predicate/1.
 :-multifile learning_predicate/1.
-learning_predicate(learn_minimal/1).
 
 
 %!	max_invented(?Number) is semidet.
