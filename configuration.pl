@@ -38,12 +38,6 @@
 % Needs fixing.
 :-multifile metarule/2.
 
-% Experiment files may or may not define metarule constraints to filter
-% the Top program for unwanted clause structures (e.g. I don't like
-% left-recursive clauses because they mess up evaluation).
-:- dynamic metarule_constraints/2.
-:- multifile metarule_constraints/2.
-
 /* Debug levels
  * Note that some of the debug topics below emit identical messages.
  * In particular, 'learn' debugs learn/5 that calls top program
@@ -229,6 +223,11 @@ metarule(xy_zy_zx,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,Z,X).
 %	metarule_constraints/2 is declared dynamic so a definition is
 %	not necessary to exist in this module (or anywhere).
 %
+% Experiment files may or may not define metarule constraints to filter
+% the Top program for unwanted clause structures (e.g. I don't like
+% left-recursive clauses because they mess up evaluation).
+:- dynamic metarule_constraints/2.
+:- multifile metarule_constraints/2.
 /*
 % Anti-recursion constraint - excludes recursive clauses
 % Does not take into account invented or metarules with existentially
