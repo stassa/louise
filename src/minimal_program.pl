@@ -147,7 +147,7 @@ minimal_program(_Pos,_Neg,_BK,_MS,[]):-
 %	"exceptions". More work needed.
 %
 minimal_program_([],_Neg,_MS,Acc,Cs):-
-% Sorting in descending order to move atomic residuet to the top of the
+% Sorting in descending order to move atomic residue to the top of the
 % program. Other clauses will generally not be sorted, e.g.
 % alphabetically- at least not unless they are fully ground. That's
 % because the standard order of terms orders variables according to
@@ -156,6 +156,7 @@ minimal_program_([],_Neg,_MS,Acc,Cs):-
 % hoops to sort, non-ground Prolog terms elsewhere in the project. See
 % for example program_results/4 in lib/evaluation/evaluation.pl etc.
 	!
+       ,minimal_program_constraints(Acc)
        ,sort(0,@>,Acc,Cs).
 minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
 	generalise_minimal(E,MS,M,Sub)
@@ -284,3 +285,44 @@ free_examples([E|Pos],C,Acc,Bind):-
 	,free_examples(Pos,C,Acc,Bind).
 free_examples([E|Pos],C,Acc,Bind):-
 	free_examples(Pos,C,[E|Acc],Bind).
+
+
+%!	minimal_program_constraints(+Program) is det.
+%
+%	True when Program does not violate minimal program constraints.
+%
+%	Cureently checked constraints:
+%
+%	a) Progam must not be a single, tautological clause. A clause is
+%	a tautology when it is a list of identical literals. Literals
+%	are first skolemised (by numbervars/1) before comparison.
+%
+%	b) Program must be a set of clauses of length n where k =< n
+%	=< j, and k, j are the minimum and maximum cardinality of
+%	minimum programs, specified in the configuration option
+%	minimal_program_size/1.
+%
+minimal_program_constraints(Ps):-
+	configuration:minimal_program_size(Min,Max)
+       ,\+ tautology(Ps)
+       ,length(Ps,N)
+       ,Min =< N
+       ,N =< Max.
+
+
+%!	tautology(+Hypothesis) is det.
+%
+%	True when a Hypothesis is a single tautology.
+%
+%	This predicate assumes that a clause is a tautology if a) it
+%	is not a unit clause and b) all its literals are identical.
+%
+%	For example, below, [1] is a tautology because all its literals
+%	are identical, including variables, whereas [2] is not a
+%	tautology because its three literals have different variables.
+%
+tautology([H:-B]):-
+	clause_literals(H:-B,Ls)
+	,copy_term(Ls,Ls_)
+	,numbervars(Ls_)
+	,sort(Ls_, [_]).
