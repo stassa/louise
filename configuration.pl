@@ -1,8 +1,8 @@
 :-module(configuration, [experiment_file/2
 			,learner/1
                         ,learning_predicate/1
-                        ,minimal_program_size/2
 			,max_invented/1
+                        ,minimal_program_size/2
 			,metarule/2
 			,metarule_constraints/2
 			,recursion_depth_limit/2
@@ -76,13 +76,6 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/robots/robots.pl',robots).
 
 
-%!	max_invented(?Number) is semidet.
-%
-%	Maximum number of invented predicates in dynamic learning.
-%
-max_invented(1).
-
-
 %!	learner(?Name) is semidet.
 %
 %	Name of the learning system this configuration is for.
@@ -153,6 +146,13 @@ learner(louise).
 :-dynamic learning_predicate/1.
 :-multifile learning_predicate/1.
 learning_predicate(learn_minimal/1).
+
+
+%!	max_invented(?Number) is semidet.
+%
+%	Maximum number of invented predicates in dynamic learning.
+%
+max_invented(1).
 
 
 %!      minimal_program_size(?Minimum,?Maximum) is semidet.
