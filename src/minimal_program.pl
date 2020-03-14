@@ -94,9 +94,11 @@ learn_minimal(Pos,Neg,BK,MS,Ps):-
 %
 %	Construct a minimal Program from the elements of a MIL problem.
 %
+minimal_program(_Pos,_Neg,_BK,_MS,_Ts):-
+	configuration:theorem_prover(tp)
+	,throw('theorem_prover(tp) not working with minimal program learning').
 minimal_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	,!
 	,S = write_program(Pos,BK,Refs)
 	,G = minimal_program_(Pos,Neg,MS,[],Ts)
 	,C = erase_program_clauses(Refs)
