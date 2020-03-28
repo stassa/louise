@@ -10,8 +10,6 @@ user:file_search_path(data, project_root(data)).
 :-use_module(clause_reduction).
 :-use_module(reduction_auxiliaries).
 
-:-doc_browser.
-
 edit_files:-
 	edit(project_root(load))
 	,edit(project_root(reduction_auxiliaries))
