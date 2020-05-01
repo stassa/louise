@@ -179,6 +179,7 @@ tailrec metarule 'P(x,y):- Q(x,z), P(z,y)'.
 precon metarule 'P(x,y):- Q(x), R(x,y)'.
 postcon metarule 'P(x,y):- Q(x,y), R(y)'.
 switch metarule 'P(x,y):- Q(x,z), R(y,z)'.
+swap metarule 'P(x,y):- Q(z,x), R(z,y)'.
 % Metarules with abductible first-order existentially quantified
 % variables. Also see abduce metarule above.
 chain_abduce_x metarule 'P(X,y):- Q(X,z), R(z,y)'.
