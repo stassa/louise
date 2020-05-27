@@ -227,6 +227,8 @@ subhypothesis_selection(Pos,[],_Es,Acc,Ss):-
 subhypothesis_selection(Pos,Hs,Es,[_Ci|Acc],Bind):-
 	select(Ck,Hs,Hs_)
 	,\+ tautology(Ck)
+	% Here I could just get Es_ entailed by Ck
+	% And then check that Es is a subset of Es_
 	,clause_entailed(Ck,Es,Es,[])
 	,clause_entailed(Ck,Pos,Es_,Pos_)
 	,!
@@ -235,7 +237,10 @@ subhypothesis_selection(Pos,Hs,_Es,Acc,Bind):-
 	select(C,Hs,Hs_)
 	,\+ tautology(C)
 	,clause_entailed(C,Pos,Es,Pos_)
+	%,!
 	,subhypothesis_selection(Pos_,Hs_,Es,[C|Acc],Bind).
+subhypothesis_selection_0(Pos,_,_Es,Acc,Ss):-
+	append(Acc,Pos,Ss).
 
 
 %!	tautology(+Clause) is det.
