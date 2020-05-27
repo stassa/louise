@@ -126,6 +126,12 @@ learning_query(Pos,Neg,BK,MS,Ps):-
 	,Q =.. [F,Pos,Neg,BK,MS,Ps]
 	,call(Q).
 learning_query(Pos,Neg,BK,MS,Ps):-
+% The learning predicate may need to be called by module.
+	configuration:learning_predicate(M:F/_A)
+	,!
+	,Q =.. [F,Pos,Neg,BK,MS,Ps]
+	,M:call(Q).
+learning_query(Pos,Neg,BK,MS,Ps):-
 % Default to learn/5.
 	Q =.. [learn,Pos,Neg,BK,MS,Ps]
 	,call(Q).
@@ -164,7 +170,9 @@ timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V):-
 	,G = learning_query(Pos_Train,Neg_Train,BK,MS,Ps)
 	,C = call_with_time_limit(L,G)
 	,catch(C,time_limit_exceeded,(Ps=[]
-				     ,cleanup_experiment)
+				     ,cleanup_experiment
+				     ,debug(evaluation,'Time limit exceeded',[])
+				     )
 	      )
 	,program_results(T,Ps,BK,Rs)
 	,evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
