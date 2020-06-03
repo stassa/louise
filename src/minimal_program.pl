@@ -99,7 +99,7 @@ minimal_program(_Pos,_Neg,_BK,_MS,_Ts):-
 	,throw('theorem_prover(tp) not working with minimal program learning').
 minimal_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	,S = write_program(Pos,BK,Refs)
+	,S = write_program(BK,Pos,Refs)
 	,G = minimal_program_(Pos,Neg,MS,[],Ts)
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C).
@@ -168,6 +168,12 @@ minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
 	,metarule_application(Sub,M,C)
 	,reduced_examples(Pos,C,Pos_)
 	,minimal_program_(Pos_,Neg,MS,[C|Acc],Bind).
+/*minimal_program_([_E|Pos],Neg,MS,Acc,Bind):-
+% Causes multiple backtrackings over the same clauses.
+% Probably backtracking over generalise_minimal/4 after
+% bouncing off minimal_program_constraints/1.
+	minimal_program_(Pos,Neg,MS,Acc,Bind).
+*/
 minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
 % If E cannot be generalised, add it to the program as an "exception".
 	minimal_program_(Pos,Neg,MS,[E|Acc],Bind).
