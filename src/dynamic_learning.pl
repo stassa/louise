@@ -83,27 +83,28 @@ true.
 */
 
 
-%!	learn_dynamic(+Target) is det.
+%!	learn_dynamic(+Targets) is det.
 %
-%	Learn a program for a Target using dynamic learning.
+%	Learn a program for one or more Targets using dynamic learning.
 %
-learn_dynamic(T):-
-	learn_dynamic(T,Ps)
+learn_dynamic(Ts):-
+	learn_dynamic(Ts,Ps)
 	,print_clauses(Ps).
 
 
 
-%!	learn_dynamic(+Target,-Program) is det.
+%!	learn_dynamic(+Targets,-Program) is det.
 %
-%	Learn a Program for a Target using dynamic learning.
+%	Learn a Program for one more more Targets with dynamic learning.
 %
-learn_dynamic(T,_Ps):-
-	(   var(T)
+learn_dynamic(Ts,_Ps):-
+% TODO: will need to properly deal with multiple target lists.
+	(   var(Ts)
 	->  throw('learn_dynamic/2: unbound target symbol!')
 	;   fail
 	).
-learn_dynamic(T, Ps):-
-	experiment_data(T,Pos,Neg,BK,MS,false)
+learn_dynamic(Ts,Ps):-
+	experiment_data(Ts,Pos,Neg,BK,MS,false)
 	,learn_dynamic(Pos,Neg,BK,MS,Ps).
 
 
@@ -147,27 +148,29 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,excapsulated_clauses(Ss,Rs,Ps).
 
 
-%!	table_encapsulated(+Target) is det.
+%!	table_encapsulated(+Targets) is det.
 %
-%	Prepare an encapsulated learning Target for tabling.
+%	Prepare one or more encapsulated learning Targets for tabling.
 %
-%	Target is a predicate indicator, F/A, the predicate symbol and
-%	arity of a target predicate. table_encapsulated/1 prepares for
-%	tabling the predicate m/N, where N is A+1. m/N is the predicate
-%	encapsulating Target (though not necessarily _only_ target).
+%	Targets is a list of predicate indicators, F/A, the predicate
+%	symbols and arities of a list of target predicates.
+%	table_encapsulated/1 prepares for tabling each predicate m/N,
+%	where N is A+1 for each target predicate in Targets. m/N is the
+%	predicate encapsulating each Target (though not necessarily
+%	_only_ target predicates).
 %
 %	Motivation
 %	----------
 %
-%	Tabling the predicate encapsulating a learning Target is a very
-%	convenient way to avoid entering infinite recursion during
+%	Tabling the predicates encapsulating each learning target is a
+%	very convenient way to avoid entering infinite recursion during
 %	dynamic learning. Because dynamic learning adds to the dynamic
 %	database clauses of the Top program learned in a previous
 %	iteration, so that they may be called in subsequent iterations,
 %	if a recursive clause is added to the dynamic database before a
 %	suitable "base case" for the recursion is added, it's likely
 %	that the learning procedure will enter an infinite recursion.
-%	Tabling, implementing SLG resolution, avoids this and guarantees
+%	Tabling, a.k.a. SLG resolution, avoids this and guarantees
 %	termination by precomputing the result of recursive calls and
 %	storing them in a table, so that execution does not have to
 %	descend infinitely, like it does with ordinary SLDNF resolution.
@@ -177,40 +180,29 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 %	works as intended. If tabling changes, this may have to change
 %	also.
 %
-/*
-table_encapsulated(_F/A):-
-	succ(A,A_)
-	,table(user:m/A_).
-*/
-
-table_encapsulated(Ps):-
-	forall(member(_F/A,Ps)
+table_encapsulated(Ts):-
+	forall(member(_F/A,Ts)
 	      ,(succ(A,A_)
 	       ,table(user:m/A_)
 	       )
 	      ).
 
 
-%!	untable_encapsulated(+Target) is det.
+%!	untable_encapsulated(+Targets) is det.
 %
-%	Remove tabling for an encapsulated learning Target.
+%	Remove tabling from all encapsulated learning Targets.
 %
 %	This is the counterpart to table_encapsulated/1.
 %
-%	Target is a predicate indicator, F/A, the predicate symbol and
-%	arity of a target predicate. untable_encapsulated/1 removes
-%	tabling from the predicate m/N, where N is A+1. m/N is the
-%	predicate encapsulating Target (though not necessarily _only_
-%	target).
+%	Targets is a list of predicate indicators, F/A, the predicate
+%	symbols and arities of each target predicate.
+%	untable_encapsulated/1 removes tabling from each predicate m/N,
+%	where N is A+1 for each predicate in Targets. m/N is the
+%	predicate encapsulating each Target (though not necessarily
+%	_only_ target predicates).
 %
-/*
-untable_encapsulated(_F/A):-
-	succ(A,A_)
-	,untable(user:m/A_).
-*/
-
-untable_encapsulated(Ps):-
-	forall(member(_F/A,Ps)
+untable_encapsulated(Ts):-
+	forall(member(_F/A,Ts)
 	      ,(succ(A,A_)
 	       ,untable(user:m/A_)
 	       )
@@ -218,19 +210,19 @@ untable_encapsulated(Ps):-
 
 
 
-%!	top_program_dynamic(+Counter,+Pos,+Neg,+BK,+MS,-Top_Progam) is
-%!	det.
+%!	top_program_dynamic(+Counter,Targets,+Pos,+Neg,+BK,+MS,-Top_Progam)
+%!	is det.
 %
 %	Construct the Top_Progam for a MIL problem dynamically.
 %
-top_program_dynamic(C,T,Pos,Neg,BK,MS,Ts):-
+top_program_dynamic(C,Ss,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,!
 	,write_program(Pos,BK,Refs)
 	,top_program_dynamic(C,Pos,Neg,MS)
 	,erase_program_clauses(Refs)
-	,collect_clauses(T,MS,Ts).
-top_program_dynamic(_C,_T,_Pos,_Neg,_BK,_MS,_Ts):-
+	,collect_clauses(Ss,MS,Ts).
+top_program_dynamic(_C,_Ss,_Pos,_Neg,_BK,_MS,_Ts):-
 % If Top program construction fails return an empty program.
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
@@ -453,17 +445,18 @@ new_symbol(C,P):-
 metarule_application(Sub,Sub:-(H,B),H:-B).
 
 
-%!	collect_clauses(+Target,+Metarules,-Clauses) is det.
+%!	collect_clauses(+Targets,+Metarules,-Clauses) is det.
 %
-%	Collect all instances of Metarules with	a Target symbol.
+%	Collect all instances of Metarules with	a symbol in Targets.
 %
-%	Target is the symbol and arity of a learning target.
+%	Targets is the list of symbols and arities of each learning
+%	target.
 %
 %	Metarules is the list of encapsulated metarules in a MIL
 %	problem.
 %
 %	Clauses is the set of instances of the metarules in Metarules
-%	where the predicate symbol is the symbol of Target, or an
+%	where the predicate symbol is a symbol in Targets, or an
 %	invented predicate.
 %
 %	@tbd This sorts the collected clauses at the end usig predsort/2
@@ -484,22 +477,6 @@ metarule_application(Sub,Sub:-(H,B),H:-B).
 %	Top program construction sorts clauses - so the sorting also
 %	ensures consistency between the two methods.
 %
-/*
-collect_clauses(T/_,MS,Cs):-
-	findall(H:-B
-	       ,(member(_A:-(H,B),MS)
-		,clause(user:H,B)
-		%,print_clauses('New clause',[H:-B])
-		%,nl
-		%,B \= true
-		,H =.. [m,S|_As]
-		%,length(As,N)
-		,target_or_invention(T,S)
-		,user:retract(H:-B)
-		)
-	       ,Cs_)
-	,predsort(unifiable_compare,Cs_, Cs).
-*/
 collect_clauses(Ts,MS,Cs):-
 	findall(H:-B
 	       ,(member(_A:-(H,B),MS)

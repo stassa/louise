@@ -92,9 +92,9 @@ subhypothesis_dynamic(Pos,BK,Hs,Ss):-
 %
 %	Separate the Clauses of a Hypothesis from Invented clauses.
 %
-%	Hypothesis is a set of clauses consituting the definition of a
-%	target predicate and possibly including definitions of invented
-%	predicates.
+%	Hypothesis is a set of clauses consituting the definition of one
+%	or more target predicates and possibly including definitions of
+%	invented predicates.
 %
 %	Clauses is the list of all clauses in Hypothesis whose head
 %	literal's predicate symbol is not the symbol of an invented

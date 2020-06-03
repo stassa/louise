@@ -35,30 +35,31 @@ shorter hypotheses are found before longer ones.
 
 */
 
-%!	learn_minimal(+Target) is nondet.
+%!	learn_minimal(+Targets) is nondet.
 %
-%	Learn a minimal definition of Target.
+%	Learn a minimal definition of one or more learning Targets.
 %
-learn_minimal(T):-
-	learn_minimal(T,Ps)
+learn_minimal(Ts):-
+	learn_minimal(Ts,Ps)
 	,print_clauses(Ps).
 
 
 
-%!	learn_minimal(+Target,+Program) is det.
+%!	learn_minimal(+Targets,+Program) is det.
 %
-%	Learn a minimal definition of a Target predicate.
+%	Learn a minimal definition of one or more learning Targets.
 %
 %	The elements of the MIL problem are taken from the current
 %	experiment file, via tp_safe_experiment_data/5.
 %
-learn_minimal(T,_Ps):-
-	(   var(T)
+learn_minimal(Ts,_Ps):-
+% TODO: should deal with lists of targets.
+	(   var(Ts)
 	->  throw('learn_minimal/2: unbound target symbol!')
 	;   fail
 	).
-learn_minimal(T,Ps):-
-	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
+learn_minimal(Ts,Ps):-
+	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS)
 	,learn_minimal(Pos,Neg,BK,MS,Ps).
 
 

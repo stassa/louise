@@ -15,26 +15,26 @@ Documentation pending.
 
 */
 
-%!	learn_with_examples_invention(+Target) is det.
+%!	learn_with_examples_invention(+Targets) is det.
 %
-%	Learn a program for Target with invented examples.
+%	Learn a program for one or more Targets with invented examples.
 %
 %	Prints the results to the console. Elements of the MIL problem
 %	for Target are obtained from the currently loaded experiment
 %	file.
 %
-learn_with_examples_invention(T):-
-	learn_with_examples_invention(T,Ps)
+learn_with_examples_invention(Ts):-
+	learn_with_examples_invention(Ts,Ps)
 	,print_clauses(Ps).
 
 
 
-%!	learn_with_examples_invention(+Target,-Program) is det.
+%!	learn_with_examples_invention(+Targets,-Program) is det.
 %
-%	Invent new positive examples of Target to learn a Program.
+%	Invent new positive examples of Targets to learn a Program.
 %
-%	Elements of the MIL problem for Target are obtained from the
-%	currently loaded experiment file.
+%	Elements of the MIL problem for each target predicate in Targets
+%	are obtained from the currently loaded experiment file.
 %
 learn_with_examples_invention(T,Ps):-
 	experiment_data(T,Pos,Neg,BK,MS)
@@ -45,7 +45,7 @@ learn_with_examples_invention(T,Ps):-
 %!	learn_with_examples_invention(+Pos,+Neg,+BK,+Metarules,-Program)
 %!	is det.
 %
-%	Invent new positive examples of Target to learn a Program.
+%	Invent new positive examples to learn a Program.
 %
 learn_with_examples_invention(Pos,Neg,BK,MS,Ps):-
 	debug(examples_invention,'Inventing examples',[])
@@ -64,12 +64,12 @@ learn_with_examples_invention(Pos,Neg,BK,MS,Ps):-
 
 
 
-%!	examples_invention(+Target,-Examples) is det.
+%!	examples_invention(+Targets,-Examples) is det.
 %
-%	Invent new positive Examples of a learning Target.
+%	Invent new positive Examples of one or more learning Targets.
 %
-examples_invention(T,Es):-
-	experiment_data(T,Pos,Neg,BK,MS)
+examples_invention(Ts,Es):-
+	experiment_data(Ts,Pos,Neg,BK,MS)
 	,examples_invention(Pos,Neg,BK,MS,Es).
 
 
@@ -78,11 +78,8 @@ examples_invention(T,Es):-
 %
 %	Invent a new set of positive Examples from a MIL problem.
 %
-/*
 examples_invention(Pos,Neg,BK,MS,Es):-
-	examples_target(Pos, T/A)
-	,functor(E,T,A)
-	,partial_examples(T/A,Pos,Es_)
+	partial_examples(Pos,Es_)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	% TODO: should Pos also be added in?
 	%,append(Es_,Pos_,Es_Pos)
@@ -92,27 +89,8 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 	,debug_clauses(examples_invention,Ts)
 	,flatten([Pos_,Neg_,BK_,Ts], Rs)
 	,lfp_query(Rs,[],As)
-	,encapsulated_clauses([E],[E_])
-	,setof(E_
-	      ,As^(member(E_,As)
-		  )
-	      ,Es).
-*/
-
-
-examples_invention(Pos,Neg,BK,MS,Es):-
-	examples_targets(Pos, Ss)
-	%,functor(E,T,A)
-	,partial_examples(Ss,Pos,Es_)
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	% TODO: should Pos also be added in?
-	%,append(Es_,Pos_,Es_Pos)
-	%,top_program(Es_Pos,Neg_,BK_,MS_,Ts)
-	,top_program(Es_,Neg_,BK_,MS_,Ts)
-	,debug(examples_invention,'Generalised partial examples:',[])
-	,debug_clauses(examples_invention,Ts)
-	,flatten([Pos_,Neg_,BK_,Ts], Rs)
-	,lfp_query(Rs,[],As)
+	,examples_targets(Pos, Ss)
+	% Kind of ugly. Can we beautify?
 	,findall(E
 		,(member(T/A,Ss)
 		 ,functor(E,T,A)
@@ -126,34 +104,21 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 	      ,Es).
 
 
-%!	partial_examples(+Target,+Positive,-Examples) is det.
+%!	partial_examples(+Examples,-Partial) is det.
 %
-%	Construct partial examples for examples invention.
+%	Construct Partial examples for examples invention.
 %
-%	Positive is a list of positive examples of Target. Examples is
-%	a list of partial examples of Target in Pos. A partial example
-%	is a a partially insantiated member of Positive, with a single
-%	argument ground and all others as free variables.
+%	Examples is a list of positive examples of each target predicate
+%	in a MIL problem. Partial is a list of partial examples of each
+%	target predicate in Examples. A partial example is a partially
+%	insantiated member of Examples, with a single argument ground
+%	and all others as free variables.
 %
-%	For example, if Positive includes an atom path(a,f), Examples
+%	For example, if Examples includes an atom path(a,f), Partial
 %	will include two atoms, path(a,X) and path(Y,f), each a partial
 %	example derived from path(a,f).
 %
-/*
-partial_examples(T/A,Pos,Es):-
-	findall(E_
-		,(member(E,Pos)
-		 ,E =.. [F|As]
-		 ,functor(E_,T,A)
-		 ,E_ =.. [F|As_]
-		 ,nth1(I,As,Ai)
-		 ,nth1(I,As_,Ai)
-		 )
-		,Es_)
-	,encapsulated_clauses(Es_,Es).
-*/
-
-partial_examples(_Ts,Pos,Es):-
+partial_examples(Pos,Es):-
 	findall(E_
 		,(member(E,Pos)
 		 ,E =.. [F|As]

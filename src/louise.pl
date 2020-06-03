@@ -19,27 +19,28 @@
 
 */
 
-%!	learn(+Target) is det.
+%!	learn(+Targets) is det.
 %
-%	Learn a deafinition of a Target predicate.
+%	Learn a deafinition of one or more learning Targets.
 %
-learn(T):-
-	learn(T,Ps)
+learn(Ts):-
+	learn(Ts,Ps)
 	,print_clauses(Ps).
 
 
 
-%!	learn(+Target,-Definition) is det.
+%!	learn(+Targets,-Definition) is det.
 %
-%	Learn a definition of a Target predicate.
+%	Learn a definition of one or more learning Targets.
 %
-learn(T,_Ps):-
-	(   var(T)
+learn(Ts,_Ps):-
+% TODO: will need to deal with target-lists.
+	(   var(Ts)
 	->  throw('learn/2: unbound target symbol!')
 	;   fail
 	).
-learn(T,Ps):-
-	tp_safe_experiment_data(T,Pos,Neg,BK,MS)
+learn(Ts,Ps):-
+	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS)
 	,learn(Pos,Neg,BK,MS,Ps).
 
 
