@@ -73,8 +73,8 @@ subhypothesis_dynamic(Pos,BK,Hs,Ss):-
 	,maplist(encapsulated_clauses,[Cs_,Is],[Cs_e,Is_e])
 	,flatten([Pos_e,BK_e,Cs_e,Is_e],Ps_e)
 	,subhypothesis_safe(Pos_e,Ps_e,Cs_e,Ss_e)
-	,examples_target(Pos,T)
-	,excapsulated_clauses(T,Ss_e,Ss_)
+	,examples_targets(Pos,Ts)
+	,excapsulated_clauses(Ts,Ss_e,Ss_)
 	,append(Ss_,Is,Ss).
 subhypothesis_dynamic(Pos,BK,Hs,Ss):-
 % Otherwise BK should be a list of clauses
@@ -169,8 +169,8 @@ subhypothesis(Pos,BK,Hs,Ss):-
 	,encapsulated_clauses(Hs_, Hs_e)
 	,flatten([Pos_e,BK_e],Ps_e)
 	,subhypothesis_safe(Pos_e,Ps_e,Hs_e,Ss_e)
-	,examples_target(Pos,T)
-	,excapsulated_clauses(T,Ss_e,Ss).
+	,examples_targets(Pos,Ts)
+	,excapsulated_clauses(Ts,Ss_e,Ss).
 subhypothesis(Pos,BK,Hs,Ss):-
 	BK \= [_F/_A|_]
 	,sort(Hs,Hs_)

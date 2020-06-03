@@ -3,7 +3,7 @@
 		      ,metarule_expansion/2
 		      ,encapsulated_problem/5
 		      ,encapsulated_bk/2
-		      ,examples_target/2
+		      ,examples_targets/2
 		      ,encapsulated_clauses/2
 		      ,applied_metarules/3
 		      ,metarule_application/2
@@ -285,11 +285,15 @@ hide_literals([L|Ls],PS,Acc,Bind):-
 
 
 
-%!	examples_target(+Examples,-Target) is det.
+%!	examples_targets(+Examples,-Targets) is det.
 %
-%	Extract the symbol and arity from Examples of a Target.
+%	Extract symbols and arities from Examples of Targets.
 %
-examples_target(Es,Ss):-
+%	Examples is a list of positive examples, encapsulated or not.
+%	Targets is a list of the predicate symbols and arities of the
+%	target predicates in that list of examples.
+%
+examples_targets(Es,Ss):-
         setof(S
              ,E^Es^(member(E,Es)
                    ,symbol(E,S)
@@ -474,47 +478,17 @@ excapsulated_clauses(T,[_C|Cs],Acc,Bind):-
 	excapsulated_clauses(T,Cs,Acc,Bind).
 
 
-%!	excapsulated_clause(+Target,+Clause,-Excapsulated) is det.
+%!	excapsulated_clause(+Targets,+Clause,-Excapsulated) is det.
 %
-%	Excapsulate a single Clause of the Target predicate.
+%	Excapsulate a single Clause of all learning Targets.
 %
 excapsulated_clause(T,C,C_):-
 	excapsulated_clause(T,C,[],C_).
 
-%!	excapsulated_clause(+Target,+Clause,+Acc,-Excapsulated) is det.
+%!	excapsulated_clause(+Targets,+Clause,+Acc,-Excapsulated) is det.
 %
 %	Business end of excapsulated_clause/3.
 %
-/*
-excapsulated_clause(T/A,H:-Bs,Acc,Bind):-
-% Definite clause; H is the head literal.
-	H =.. [m|[S|As]]
-	,target_or_invention(T,S)
-	,length(As,A)
-	,!
-	,H_ =.. [S|As]
-	,excapsulated_clause(T,Bs,[H_|Acc],Bind).
-excapsulated_clause(T,(L,Ls),Acc,Bind):-
-% Definite clause: L is the next body literal.
-	!
-	,L =.. [m|[F|As]]
-	,L_ =.. [F|As]
-	,excapsulated_clause(T,Ls,[L_|Acc],Bind).
-excapsulated_clause(T/A,L,[],L_):-
-% Unit clause: the accumulator is empty.
-	!
-        ,L =.. [m|[S|As]]
-	,target_or_invention(T,S)
-	,length(As, A)
-	,ground(S)
-	,L_ =.. [S|As].
-excapsulated_clause(_T,(L),Acc,(H:-Bs)):-
-% Definite clause: L is the last literal.
-	L =.. [m|[F|As]]
-	,L_ =.. [F|As]
-	,reverse([L_|Acc],Ls)
-	,once(list_tree(Ls,(H,Bs))).
-*/
 excapsulated_clause(Ts,H:-Bs,Acc,Bind):-
 % Definite clause; H is the head literal.
 	H =.. [m|[S|As]]
@@ -546,22 +520,24 @@ excapsulated_clause(_Ts,(L),Acc,(H:-Bs)):-
 	,once(list_tree(Ls,(H,Bs))).
 
 
-%!	target_or_invention(+Target,+Symbol) is det.
+%!	target_or_invention(+Targets,+Symbols) is det.
 %
-%	True when Symbol is Target or an invention from Target.
+%	True when Symbols are Targets or inventions from Targets.
 %
 %	@tbd This expects that invented predicates' symbols will have
 %	the same functor as the Target predicate but with a numeric
 %	index appended to it by an underscore, '_'. This could be
 %	enforced a little more strictly through the project.
 %
-/*
-target_or_invention(T,T):-
-	!.
-target_or_invention(_,S):-
+%	TODO: pluralise.
+%
+target_or_invention(Ts,F/A):-
+        memberchk(F/A,Ts)
+	,!.
+target_or_invention(_,S/_):-
 	atom_chars(S,['$'|As])
 	,number_chars(_N,As).
-*/
+
 /* Earlier format but might use again
 target_or_invention(T,S):-
 	atomic_list_concat([T,A],'_',S)
@@ -572,10 +548,3 @@ target_or_invention_(_,S):-
 	atomic_list_concat(['$',A],'_',S)
 	,atom_number(A,_N).
 */
-
-target_or_invention(Ts,F/A):-
-        memberchk(F/A,Ts)
-	,!.
-target_or_invention(_,S/_):-
-	atom_chars(S,['$'|As])
-	,number_chars(_N,As).

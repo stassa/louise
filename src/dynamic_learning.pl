@@ -136,15 +136,15 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,C = c(1,I)
 	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,examples_target(Pos,T)
-	,table_encapsulated(T)
+	,examples_targets(Pos,Ss)
+	,table_encapsulated(Ss)
 	,debug(learn,'Constructing dynamic Top program...',[])
-	,top_program_dynamic(C,T,Pos_,Neg_,BK_,MS_,Ts)
-	,untable_encapsulated(T)
+	,top_program_dynamic(C,Ss,Pos_,Neg_,BK_,MS_,Ts)
+	,untable_encapsulated(Ss)
 	,debug(learn,'Reducing dynamic Top program...',[])
 	,reduced_top_program_dynamic(Pos_,BK_,MS_,Ts,Rs)
 	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(T,Rs,Ps).
+	,excapsulated_clauses(Ss,Rs,Ps).
 
 
 %!	table_encapsulated(+Target) is det.

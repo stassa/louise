@@ -68,9 +68,9 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,top_program(Pos_,Neg_,BK_,MS_,Ms)
 	,debug(learn,'Reducing Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
-	,examples_target(Pos,T)
+	,examples_targets(Pos,Ss)
 	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(T,Rs,Ps).
+	,excapsulated_clauses(Ss,Rs,Ps).
 
 
 
@@ -121,8 +121,8 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,setup_call_cleanup(S,G,C).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(tp)
-	,examples_target(Pos,T)
-	,bind_target(MS,T,MS_)
+	,examples_targets(Pos,Ss)
+	,bind_target(MS,Ss,MS_)
 	,flatten([Pos,BK],Ps)
 	,debug(top_program,'Constructing Top program...',[])
 	,generalise(MS_,Ps,Is,Ts_Pos)

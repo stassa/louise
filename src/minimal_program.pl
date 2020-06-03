@@ -85,9 +85,9 @@ learn_minimal(Pos,Neg,BK,MS,Ps):-
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(minimal_program,'Constructing minimal program...',[])
 	,minimal_program(Pos_,Neg_,BK_,MS_,Ms)
-	,examples_target(Pos,T)
+	,examples_targets(Pos,Ss)
 	,debug(minimal_program,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(T,Ms,Ps).
+	,excapsulated_clauses(Ss,Ms,Ps).
 
 
 %!	minimal_program(+Pos,+Neg,+BK,+MS,-Program) is nondet.

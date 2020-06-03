@@ -59,8 +59,8 @@ learn_with_examples_invention(Pos,Neg,BK,MS,Ps):-
 	,debug(examples_invention,'Reducing Top program',[])
 	,reduced_top_program(Es,BK_,MS_,Ts,Rs)
 	,debug(examples_invention,'Excapsulating hypothesis',[])
-	,examples_target(Pos,T)
-	,excapsulated_clauses(T,Rs,Ps).
+	,examples_targets(Pos,Ss)
+	,excapsulated_clauses(Ss,Rs,Ps).
 
 
 
@@ -101,7 +101,7 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 
 
 examples_invention(Pos,Neg,BK,MS,Es):-
-	examples_target(Pos, Ss)
+	examples_targets(Pos, Ss)
 	%,functor(E,T,A)
 	,partial_examples(Ss,Pos,Es_)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
