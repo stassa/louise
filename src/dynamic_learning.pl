@@ -98,9 +98,8 @@ learn_dynamic(Ts):-
 %	Learn a Program for one more more Targets with dynamic learning.
 %
 learn_dynamic(Ts,_Ps):-
-% TODO: will need to properly deal with multiple target lists.
-	(   var(Ts)
-	->  throw('learn_dynamic/2: unbound target symbol!')
+	(   \+ ground(Ts)
+	->  throw('learn_dynamic/2: non-ground target symbol!')
 	;   fail
 	).
 learn_dynamic(Ts,Ps):-

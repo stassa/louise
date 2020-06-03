@@ -34,9 +34,8 @@ learn(Ts):-
 %	Learn a definition of one or more learning Targets.
 %
 learn(Ts,_Ps):-
-% TODO: will need to deal with target-lists.
-	(   var(Ts)
-	->  throw('learn/2: unbound target symbol!')
+	(   \+ ground(Ts)
+	->  throw('learn/2: non-ground target symbol!')
 	;   fail
 	).
 learn(Ts,Ps):-

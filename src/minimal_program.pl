@@ -53,9 +53,8 @@ learn_minimal(Ts):-
 %	experiment file, via tp_safe_experiment_data/5.
 %
 learn_minimal(Ts,_Ps):-
-% TODO: should deal with lists of targets.
-	(   var(Ts)
-	->  throw('learn_minimal/2: unbound target symbol!')
+	(   \+ ground(Ts)
+	->  throw('learn_minimal/2: non-ground target symbol!')
 	;   fail
 	).
 learn_minimal(Ts,Ps):-
