@@ -289,12 +289,30 @@ hide_literals([L|Ls],PS,Acc,Bind):-
 %
 %	Extract the symbol and arity from Examples of a Target.
 %
-examples_target([E|_Es],F/A):-
-	E =.. [m,F|As]
-	,!
-	,length(As,A).
-examples_target([E|_Es],F/A):-
-	functor(E,F,A).
+examples_target(Es,Ss):-
+        setof(S
+             ,E^Es^(member(E,Es)
+                   ,symbol(E,S)
+              )
+             ,Ss).
+
+
+%!	symbol(+Example,-Symbol) is det.
+%
+%	Derive the predicate symbol of an Example.
+%
+%	Example is a positive example. It might be encapsulated, or not.
+%	Symbol is a compound Symbol/Arity, the symbol and arity of the
+%	Example's predicate (not m/n if encapsulated).
+%
+symbol(E,F/A):-
+% Encapsulated example.
+        E =.. [m,F|As]
+        ,!
+        ,length(As,A).
+symbol(H,F/A):-
+% Not encapsulated example.
+        functor(H,F,A).
 
 
 
@@ -467,6 +485,7 @@ excapsulated_clause(T,C,C_):-
 %
 %	Business end of excapsulated_clause/3.
 %
+/*
 excapsulated_clause(T/A,H:-Bs,Acc,Bind):-
 % Definite clause; H is the head literal.
 	H =.. [m|[S|As]]
@@ -495,6 +514,36 @@ excapsulated_clause(_T,(L),Acc,(H:-Bs)):-
 	,L_ =.. [F|As]
 	,reverse([L_|Acc],Ls)
 	,once(list_tree(Ls,(H,Bs))).
+*/
+excapsulated_clause(Ts,H:-Bs,Acc,Bind):-
+% Definite clause; H is the head literal.
+	H =.. [m|[S|As]]
+	,length(As,A)
+	,target_or_invention(Ts,S/A)
+	,!
+	,H_ =.. [S|As]
+	,excapsulated_clause(Ts,Bs,[H_|Acc],Bind).
+excapsulated_clause(Ts,(L,Ls),Acc,Bind):-
+% Definite clause: L is the next body literal.
+	!
+	,L =.. [m|[F|As]]
+	,L_ =.. [F|As]
+	,excapsulated_clause(Ts,Ls,[L_|Acc],Bind).
+excapsulated_clause(Ts,L,[],L_):-
+% Unit clause: the accumulator is empty.
+	!
+        ,L =.. [m|[S|As]]
+	,length(As, A)
+	,target_or_invention(Ts,S/A)
+	,ground(S)
+	,L_ =.. [S|As].
+excapsulated_clause(_Ts,(L),Acc,(H:-Bs)):-
+% Definite clause: L is the last literal.
+% We don't need to check the symbol again.
+	L =.. [m|[F|As]]
+	,L_ =.. [F|As]
+	,reverse([L_|Acc],Ls)
+	,once(list_tree(Ls,(H,Bs))).
 
 
 %!	target_or_invention(+Target,+Symbol) is det.
@@ -506,11 +555,13 @@ excapsulated_clause(_T,(L),Acc,(H:-Bs)):-
 %	index appended to it by an underscore, '_'. This could be
 %	enforced a little more strictly through the project.
 %
+/*
 target_or_invention(T,T):-
 	!.
 target_or_invention(_,S):-
 	atom_chars(S,['$'|As])
 	,number_chars(_N,As).
+*/
 /* Earlier format but might use again
 target_or_invention(T,S):-
 	atomic_list_concat([T,A],'_',S)
@@ -521,3 +572,10 @@ target_or_invention_(_,S):-
 	atomic_list_concat(['$',A],'_',S)
 	,atom_number(A,_N).
 */
+
+target_or_invention(Ts,F/A):-
+        memberchk(F/A,Ts)
+	,!.
+target_or_invention(_,S/_):-
+	atom_chars(S,['$'|As])
+	,number_chars(_N,As).

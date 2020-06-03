@@ -177,9 +177,18 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 %	works as intended. If tabling changes, this may have to change
 %	also.
 %
+/*
 table_encapsulated(_F/A):-
 	succ(A,A_)
 	,table(user:m/A_).
+*/
+
+table_encapsulated(Ps):-
+	forall(member(_F/A,Ps)
+	      ,(succ(A,A_)
+	       ,table(user:m/A_)
+	       )
+	      ).
 
 
 %!	untable_encapsulated(+Target) is det.
@@ -194,9 +203,19 @@ table_encapsulated(_F/A):-
 %	predicate encapsulating Target (though not necessarily _only_
 %	target).
 %
+/*
 untable_encapsulated(_F/A):-
 	succ(A,A_)
 	,untable(user:m/A_).
+*/
+
+untable_encapsulated(Ps):-
+	forall(member(_F/A,Ps)
+	      ,(succ(A,A_)
+	       ,untable(user:m/A_)
+	       )
+	      ).
+
 
 
 %!	top_program_dynamic(+Counter,+Pos,+Neg,+BK,+MS,-Top_Progam) is
@@ -465,6 +484,7 @@ metarule_application(Sub,Sub:-(H,B),H:-B).
 %	Top program construction sorts clauses - so the sorting also
 %	ensures consistency between the two methods.
 %
+/*
 collect_clauses(T/_,MS,Cs):-
 	findall(H:-B
 	       ,(member(_A:-(H,B),MS)
@@ -475,6 +495,21 @@ collect_clauses(T/_,MS,Cs):-
 		,H =.. [m,S|_As]
 		%,length(As,N)
 		,target_or_invention(T,S)
+		,user:retract(H:-B)
+		)
+	       ,Cs_)
+	,predsort(unifiable_compare,Cs_, Cs).
+*/
+collect_clauses(Ts,MS,Cs):-
+	findall(H:-B
+	       ,(member(_A:-(H,B),MS)
+		,clause(user:H,B)
+		%,print_clauses('New clause',[H:-B])
+		%,nl
+		%,B \= true
+		,H =.. [m,S|As]
+		,length(As,N)
+		,target_or_invention(Ts,S/N)
 		,user:retract(H:-B)
 		)
 	       ,Cs_)

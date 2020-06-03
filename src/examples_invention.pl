@@ -78,6 +78,7 @@ examples_invention(T,Es):-
 %
 %	Invent a new set of positive Examples from a MIL problem.
 %
+/*
 examples_invention(Pos,Neg,BK,MS,Es):-
 	examples_target(Pos, T/A)
 	,functor(E,T,A)
@@ -96,6 +97,33 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 	      ,As^(member(E_,As)
 		  )
 	      ,Es).
+*/
+
+
+examples_invention(Pos,Neg,BK,MS,Es):-
+	examples_target(Pos, Ss)
+	%,functor(E,T,A)
+	,partial_examples(Ss,Pos,Es_)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	% TODO: should Pos also be added in?
+	%,append(Es_,Pos_,Es_Pos)
+	%,top_program(Es_Pos,Neg_,BK_,MS_,Ts)
+	,top_program(Es_,Neg_,BK_,MS_,Ts)
+	,debug(examples_invention,'Generalised partial examples:',[])
+	,debug_clauses(examples_invention,Ts)
+	,flatten([Pos_,Neg_,BK_,Ts], Rs)
+	,lfp_query(Rs,[],As)
+	,findall(E
+		,(member(T/A,Ss)
+		 ,functor(E,T,A)
+		 )
+		,Fs)
+	,encapsulated_clauses(Fs,Fs_)
+	,setof(E_
+	      ,As^Fs_^(member(E_,Fs_)
+		      ,member(E_,As)
+		      )
+	      ,Es).
 
 
 %!	partial_examples(+Target,+Positive,-Examples) is det.
@@ -111,6 +139,7 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 %	will include two atoms, path(a,X) and path(Y,f), each a partial
 %	example derived from path(a,f).
 %
+/*
 partial_examples(T/A,Pos,Es):-
 	findall(E_
 		,(member(E,Pos)
@@ -122,4 +151,17 @@ partial_examples(T/A,Pos,Es):-
 		 )
 		,Es_)
 	,encapsulated_clauses(Es_,Es).
+*/
 
+partial_examples(_Ts,Pos,Es):-
+	findall(E_
+		,(member(E,Pos)
+		 ,E =.. [F|As]
+		 ,length(As,A)
+		 ,functor(E_,F,A)
+		 ,E_ =.. [F|As_]
+		 ,nth1(I,As,Ai)
+		 ,nth1(I,As_,Ai)
+		 )
+		,Es_)
+	,encapsulated_clauses(Es_,Es).
