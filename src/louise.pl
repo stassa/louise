@@ -257,13 +257,16 @@ bind_head_literal(E,M,(H:-(E,true))):-
 %
 %	Bind the Target's symbol to the heads of Metarules.
 %
-%	Small optimisation to ensure that lefp/2 only considers
+%	Small optimisation to ensure that lfp/2 only considers
 %	metasubstitutions where the target predicate is the first
 %	predicate symbol, rather than all possible metasubstitutions.
 %
-bind_target(MS,T/_A,MS_):-
-	findall(H:-B
+bind_target(MS,Ts,MS_):-
+	is_list(Ts)
+	,!
+	,findall(H:-B
 	       ,(member(H:-B, MS)
+		,member(T/_,Ts)
 		,H =.. [m,_Id,T|_Ps]
 		)
 	       ,MS_).
