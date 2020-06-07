@@ -186,23 +186,6 @@ generalise(Pos,MS,Ss_Pos):-
 	,sort(1,@<,Ss_Pos_,Ss_Pos).
 
 
-/* Alternative version- only resolves metarules, without taking into
-%  account the examples except to bind the symbol of the target predicate.
-%  This one is a tiny bit faster but the one above is currently the one
-%  in the technical report on Louise.
-
-generalise(Pos,MS,Ss_Pos):-
-	Pos = [E|_Es]
-	,E =.. [m,T|_As]
-	,setof(M
-	     ,M^B^MS^N^T^Ps^
-	       (member(M:-B,MS)
-		     ,M =.. [m,N,T|Ps]
-		     ,call(M)
-		     )
-	     ,Ss_Pos).
-*/
-
 
 %!	specialise(+Generalised,+Negatives,-Specialised) is det.
 %
