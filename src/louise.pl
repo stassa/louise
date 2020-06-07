@@ -114,8 +114,11 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,!
 	,S = write_program(Pos,BK,Refs)
 	,G = (debug(top_program,'Constructing Top program...',[])
-	     ,top_program_(Pos,Neg,BK,MS,Ms)
-	     ,applied_metarules(Ms,MS,Ts)
+	     ,generalise(Pos,MS,Ss_Gen)
+	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
+	     ,specialise(Ss_Gen,Neg,Ss_Spec)
+	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
+	     ,applied_metarules(Ss_Spec,MS,Ts)
 	     )
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C).
@@ -128,6 +131,9 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,generalise(MS_,Ps,Is,Ts_Pos)
 	,applied_metarules(Ts_Pos,MS,Ts_Pos_)
 	,specialise(Ts_Pos_,Is,Neg,Ts).
+top_program(_Pos,_Neg,_BK,_MS,[]):-
+% If Top program construction fails return an empty program.
+	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
 %!	write_program(+Pos,+BK,+PS,-Refs) is det.
@@ -145,21 +151,6 @@ write_program(Pos,BK,Rs):-
 		,Rs_)
 	,flatten(Rs_,Rs).
 
-
-%!	top_program(+Positive,+Negative,+BK,+Metarules,-Metasubstitutions)
-%!	is det.
-%
-%	Collect all correct Metasubstitutions in a MIL problem.
-%
-top_program_(Pos,Neg,_BK,MS,Ss_Spec):-
-	generalise(Pos,MS,Ss_Gen)
-	,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
-	,specialise(Ss_Gen,Neg,Ss_Spec)
-	,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
-	,!.
-top_program_(_Pos,_Neg,_BK,_MS,[]):-
-% If Top program construction fails return an empty program.
-	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
 %!	generalise(+Positive,+Metarules,-Generalised) is det.
