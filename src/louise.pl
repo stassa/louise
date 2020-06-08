@@ -111,7 +111,6 @@ top_program(Pos,Neg,BK,MS,_Ts):-
 	).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	,!
 	,S = write_program(Pos,BK,Refs)
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise(Pos,MS,Ss_Gen)
@@ -121,7 +120,8 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,applied_metarules(Ss_Spec,MS,Ts)
 	     )
 	,C = erase_program_clauses(Refs)
-	,setup_call_cleanup(S,G,C).
+	,setup_call_cleanup(S,G,C)
+	,!.
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(tp)
 	,examples_targets(Pos,Ss)
@@ -130,7 +130,8 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,debug(top_program,'Constructing Top program...',[])
 	,generalise(MS_,Ps,Is,Ts_Pos)
 	,applied_metarules(Ts_Pos,MS,Ts_Pos_)
-	,specialise(Ts_Pos_,Is,Neg,Ts).
+	,specialise(Ts_Pos_,Is,Neg,Ts)
+	,!.
 top_program(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
