@@ -452,7 +452,8 @@ reduced_top_program(Pos,BK,_MS,Ps,Rs):-
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(true)
 	,!
-	,flatten([Pos,BK,Ps,MS],Fs_)
+	,flatten([Pos,BK,Ps,MS],Fs)
+	,list_to_set(Fs, Fs_)
 	,debug(reduction,'Reducing Top program recursively...',[])
 	,program_reduction(Fs_,Rs_,_)
 	,length(Fs_,M)
@@ -465,7 +466,8 @@ reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	,cleanup_experiment.
 reduced_top_program(Pos,BK,MS,Ps,Rs):-
 	configuration:recursive_reduction(false)
-	,flatten([Pos,BK,Ps,MS],Fs_)
+	,flatten([Pos,BK,Ps,MS],Fs)
+	,list_to_set(Fs,Fs_)
 	,debug(reduction,'Reducing Top program by Plotkin\'s algorithm...',[])
 	,program_reduction(Fs_,Rs,_)
 	,debug_clauses(reduction,'Reduced Top program:',Rs)
