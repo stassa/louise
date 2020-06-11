@@ -1798,12 +1798,13 @@ bk_or_metarules(B,M,Ts,Bs):-
 	is_list(Ts)
 	,!
 	,C =.. [B,T,Bs_]
-	,setof(E_
-	      ,T^Ts^M^C^Bs_^(member(T,Ts)
-			    ,M:C
-			    ,member(E_,Bs_)
-			    )
-	      ,Bs).
+	,findall(E_
+		,(member(T,Ts)
+		 ,M:C
+		 ,member(E_,Bs_)
+		 )
+	      ,Bs_)
+	,sort(Bs_, Bs).
 bk_or_metarules(B,M,T,Bs):-
 % T is a single learning target.
 	C =.. [B,T,Bs]
