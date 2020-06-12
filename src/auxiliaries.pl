@@ -1684,8 +1684,7 @@ experiment_data(T,Pos,Neg,BK,MS):-
 	     )
 	 ->  configuration_metarules(MS)
 	 ;   MS = MS_
-	 )
-	,!.
+	 ).
 
 
 %!	signed_examples(+Sign,+Module,+Targets,-Examples) is det.
