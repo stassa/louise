@@ -103,7 +103,7 @@ learn_dynamic(Ts,_Ps):-
 	;   fail
 	).
 learn_dynamic(Ts,Ps):-
-	experiment_data(Ts,Pos,Neg,BK,MS,false)
+	experiment_data(Ts,Pos,Neg,BK,MS)
 	,learn_dynamic(Pos,Neg,BK,MS,Ps).
 
 
