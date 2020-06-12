@@ -16,18 +16,18 @@
 %
 %	Report on the Reduction of a Program.
 %
-reduction_report(P,R,D):-
+reduction_report(Ps,Rs,Ds):-
 	writeln('Program clauses:')
 	,writeln('----------------')
-	,list_clauses(P)
+	,list_clauses(Ps)
 	,nl
 	,writeln('Program reduction:')
 	,writeln('------------------')
-        ,list_clauses(R)
+        ,list_clauses(Rs)
 	,nl
 	,writeln('Redundant clauses:')
 	,writeln('------------------')
-        ,list_clauses(D)
+        ,list_clauses(Ds)
 	,nl.
 
 
@@ -38,9 +38,9 @@ reduction_report(P,R,D):-
 %
 %       Top-level interface to program_reduction/3.
 %
-reduction_report(P):-
-	program_reduction(P,R,D)
-	,reduction_report(P,R,D).
+reduction_report(Ps):-
+	program_reduction(Ps,Rs,Ds)
+	,reduction_report(Ps,Rs,Ds).
 
 
 
@@ -48,15 +48,15 @@ reduction_report(P):-
 %
 %	Calculates a Program's Reduction set.
 %
-program_reduction(P, R, D):-
+program_reduction(Ps, Rs, Ds):-
 	configuration:program_module(M)
-	% 1) Set H' to H
-	% Sort, keeping duplicates, to allow
-	% set difference operations in program_reduction/6
-	,assert_program(M,P)
-	,program_reduction(M, P, [], R, [], D)
+	,assert_program(M,Ps)
+	,program_reduction(M,Ps,[],Rs,[],Ds)
+	% Uncomment to output reduction report.
+	% TODO: replace with proper debugging.
+	%,reduction_report(Ps_,Rs,Ds)
 	% Cleanup database between runs.
-	,retract_program(M, P).
+	,retract_program(M, Ps).
 
 
 
