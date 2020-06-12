@@ -180,7 +180,7 @@ timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V):-
 
 
 
-%!	print_evaluation(+Target,+Sample,+Program) is det.
+%!	print_evaluation(+Target,+Sample,-Program) is det.
 %
 %	Print evaluation metrics of a learned Program.
 %
@@ -194,8 +194,8 @@ print_evaluation(T,S,Ps):-
 
 
 
-%!	print_evaluation(+Target,+Sample,+Pos,+Neg,+BK,+Metarules,+Program)
-%!	is det.
+%!	print_evaluation(+Target,+Sample,+Pos,+Neg,+BK,+Metarules,-Program)
+%	is det.
 %
 %	Print evaluation metrics of a learned Program.
 %
