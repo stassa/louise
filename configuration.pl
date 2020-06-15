@@ -1,4 +1,5 @@
 :-module(configuration, [experiment_file/2
+                        ,example_clauses/1
 			,learner/1
                         ,learning_predicate/1
 			,max_invented/1
@@ -53,6 +54,36 @@
 %:-debug(predicate_invention). % Debug predicate invention.
 %:-debug(examples_invention). % Debug examples invention.
 %:-debug(evaluation).
+
+
+%!      example_clauses(?What) is semidet.
+%
+%       What to do with example clauses.
+%
+%       This option determines how Louise treats examples that are given
+%       as definite clauses with one or more body literals (rather than
+%       ground atoms), i.e. "example clauses".
+%
+%       What is one of [bind,call].
+%
+%       If What is "bind", example clauses are bound to each instance of
+%       a metarule where that is possible.
+%
+%       If What is "call", the head literal of each example clause is
+%       bound to the enapsulated head literal of a metarule, then the
+%       body literals of the example clause are called. This may
+%       result in the universally quantified variables in the head of
+%       the clause, and so the encapsulated head literal of the
+%       metarule, to be bound.
+%
+%       Use "bind" when you have a set of definite clauses that you want
+%       to transform to instances of a metarule.
+%
+%       Use "call" when you want to use a set of definite clauses with
+%       bodies to generate examples.
+%
+%example_clauses(bind).
+example_clauses(call).
 
 
 %!	experiment_file(?Path,?Module) is semidet.

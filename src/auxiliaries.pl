@@ -1713,10 +1713,10 @@ signed_examples(S,M,Ts,Es):-
 		 ,M:C
 		 ,(   S == negative
 		  % Negative examples must be signed.
-		  ->  Ep_ = (:-Ep)
+		  ->  negative_example(Ep,Ep_)
 		  ;   S == positive
 		  ->  Ep_ = Ep
-		  ;   throw('Unknown  example sign':S)
+		  ;   throw('Unknown example sign':S)
 		  )
 		 )
 		,Es_)
@@ -1728,13 +1728,29 @@ signed_examples(S,M,T,Es):-
 	,findall(Ep_
 		,(M:C
 		 ,(   S == negative
-		  ->  Ep_ = (:-Ep)
+		  ->  negative_example(Ep,Ep_)
 		  ;   S == positive
 		  ->  Ep_ = Ep
-		  ;   throw('Unknown  example sign':S)
+		  ;   throw('Unknown example sign':S)
 		  )
 		 )
 		,Es).
+
+
+%!	negative_example(+Example,-Negative) is nondet.
+%
+%	Ensure a negative Example is signed as nessary.
+%
+%	Negative examples declared in an experiment file as ground unit
+%	clauses or sets of literals must be prefixed with ":-" (so that
+%	they are properly definite goals).
+%
+%	Negative examples can also be definite clauses with a head
+%	literal, in which case it's not necessary to change them.
+%
+negative_example(H:-B,H:-B):-
+	!.
+negative_example(E,:-E).
 
 
 %!	bk_or_metarules(+Bias,+Module,+Targets,-Delarations) is det.

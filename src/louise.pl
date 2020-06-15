@@ -191,7 +191,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 	setof(H
 	     ,H^M^Ss_Pos^En^Neg^
 	      (member(H-M,Ss_Pos)
-	      ,\+((member(:-En,Neg)
+	      ,\+((member(En,Neg)
 		  ,metasubstitution(En,M,H)
 		  )
 		 )
@@ -210,7 +210,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	form :-Example).
 %
 metasubstitution(E,M,Sub):-
-	bind_head_literal(E,M,(Sub:-(E,Ls)))
+	bind_head_literal(E,M,(Sub:-(_H,Ls)))
 	,user:call(Ls).
 
 
@@ -221,16 +221,46 @@ metasubstitution(E,M,Sub):-
 %	Abstracts the complex patterns of binding examples to the heads
 %	of metarules with and without body literals.
 %
+bind_head_literal(H:-B,(Sub:-(H,B)),(Sub:-(H,B))):-
+% Positive or negative example given as a definite clause
+% with one or more body literals.
+	configuration:example_clauses(bind)
+	,!.
+bind_head_literal(H:-B,(Sub:-(H,Ls)),(Sub:-(H,Ls))):-
+	configuration:example_clauses(call)
+	,user:call(B)
+	,!.
 bind_head_literal(E,M,(H:-(E,Ls))):-
+% Positive example given as a unit clause.
+	M = (H:-(E,Ls))
+	,!.
+bind_head_literal(:-E,M,(H:-(E,Ls))):-
+% Negative example given as a unit clause
 	M = (H:-(E,Ls))
 	,!.
 bind_head_literal(E,M,(H:-(E,true))):-
-	M = (H:-E).
+% Positive example given as a unit clause.
+% M is the Abduce metarule, i.e. body-less clause.
+	M = (H:-E)
+	,!.
+bind_head_literal(:-E,M,(H:-(E,true))):-
+% Negative example given as a unit clause.
+% M is the Adbuce metarule, i.e. body-less clause.
+	M = (H:-E)
+	,!.
+bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
+% Negative example given as a Horn goal with no head literal.
+% In this case, metasubstitution/3 must fail if the head of the
+% metarule is entailed by its body literals.
+% Note that binding the example to the body literals of the metarule
+% will also bind the shared variables in the head of the metarule.
+	M = (S:-(H,L,Ls))
+	,!.
 
 
 %!	bind_target(+Metarules,+Target,-Bound) is det.
 %
-%	Bind the Target's symbol to the heads of Metarules.
+%	Bind the Target\'s symbol to the heads of Metarules.
 %
 %	Small optimisation to ensure that lfp/2 only considers
 %	metasubstitutions where the target predicate is the first

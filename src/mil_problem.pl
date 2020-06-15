@@ -309,6 +309,9 @@ examples_targets(Es,Ss):-
 %	Symbol is a compound Symbol/Arity, the symbol and arity of the
 %	Example's predicate (not m/n if encapsulated).
 %
+symbol(H:-_B,F/A):-
+	!
+	,symbol(H,F/A).
 symbol(E,F/A):-
 % Encapsulated example.
         E =.. [m,F|As]
@@ -350,19 +353,21 @@ encapsulated_clause(C, C_):-
 %
 %	Business end of encapsulated_clause/2.
 %
-encapsulated_clause(:-((L,Ls)),Acc,C_):-
+encapsulated_clause(:-(H:-Bs),Acc,:-C_):-
+% Negated definite clause; a negative example.
+	!
+	,encapsulated_clause(H:-Bs,Acc,C_).
+encapsulated_clause(:-((L,Ls)),Acc,:-C_):-
 % Definite goal; L is the first literal.
 	!
 	,L =.. [F|As]
 	,L_ =.. [m|[F|As]]
-	,encapsulated_clause(:-(Ls),[:-L_|Acc],C_).
-encapsulated_clause(:-(L),Acc,C):-
-% Definite goal: L is the single remaining literal.
+	,encapsulated_clause(Ls,[L_|Acc],C_).
+encapsulated_clause(:-(L),[],:-L_):-
+% Definite goal: L is the single literal.
 	!
 	,L =.. [F|As]
-	,L_ =.. [m|[F|As]]
-	,reverse([:-L_|Acc],Ls)
-	,once(list_tree(Ls,C)).
+	,L_ =.. [m|[F|As]].
 encapsulated_clause(H:-B,[],H:-B):-
 % Definite clause; H is the head of a built-in predicate.
 	built_in_or_library_predicate(H)
@@ -372,19 +377,20 @@ encapsulated_clause((L,Ls),Acc,C_):-
 	built_in_or_library_predicate(L)
 	,!
 	,encapsulated_clause(Ls,[L|Acc],C_).
-encapsulated_clause(L,Acc,(H:-Bs)):-
+encapsulated_clause(L,Acc,H:-Bs):-
 % Definite clause; L is an atom of a built-in predicate.
+% TODO: why H:-Bs? We might have a definite goal in Acc.
 	L \= (_,_)
 	,built_in_or_library_predicate(L)
 	,!
 	,reverse([L|Acc], Ls)
 	,once(list_tree(Ls,(H,Bs))).
-encapsulated_clause(L:-Ls,Acc,C_):-
-% Definite clause; L is the head literal.
+encapsulated_clause(H:-Bs,Acc,H_:-Bs_):-
+% Definite clause; H is the head literal.
 	!
-	,L =.. [F|As]
-	,L_ =.. [m|[F|As]]
-	,encapsulated_clause(Ls,[L_|Acc],C_).
+	,H =.. [F|As]
+	,H_ =.. [m|[F|As]]
+	,encapsulated_clause(Bs,Acc,Bs_).
 encapsulated_clause((L,Ls),Acc,C_):-
 % Definite clause; L is the next body literal.
 	!
@@ -396,12 +402,12 @@ encapsulated_clause(L,[],L_):-
 	!
 	,L =.. [F|As]
 	,L_ =.. [m|[F|As]].
-encapsulated_clause(L,Acc,(H:-Bs)):-
+encapsulated_clause(L,Acc,Ls_):-
 % Definite clause; L is the last body literal.
 	L =.. [F|As]
 	,L_ =.. [m|[F|As]]
 	,reverse([L_|Acc], Ls)
-	,once(list_tree(Ls,(H,Bs))).
+	,once(list_tree(Ls,Ls_)).
 
 
 
