@@ -161,7 +161,6 @@ useful as a dataset exploration and knowledge discovery tool.
 %
 %
 learn_incremental([Pos1,Neg1,BK1,MS1,K1],[Pos2,Neg2,BK2,MS2,K2],Ps):-
-	%auxiliaries:set_configuration_option(max_invented, [K1])
 	incremental_refinement(K1,Pos1,Neg1,BK1,MS1,Is)
 	,(   selectchk(append,BK2,BK2_1)
 	->   new_symbols(Is,Ss)
@@ -170,8 +169,8 @@ learn_incremental([Pos1,Neg1,BK1,MS1,K1],[Pos2,Neg2,BK2,MS2,K2],Ps):-
 	 )
 	,S = (assert_program(user,Is,Rs)
 	     )
-	,G = (%auxiliaries:set_configuration_option(max_invented, [K2])
-	     learn_dynamic(K2,Pos2,Neg2,BK_F,MS2,Ps)
+	,G = (auxiliaries:set_configuration_option(max_invented, [K2])
+	     ,learn_dynamic(Pos2,Neg2,BK_F,MS2,Ps)
 	     )
 	,C = (erase_program_clauses(Rs)
 	     )

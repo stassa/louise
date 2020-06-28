@@ -10,7 +10,30 @@
 Usage instructions
 ------------------
 
-1. Use incremental_refinement/5 to invent one or more predicates from
+1. Ensure the following constraint is uncommented in the configuration:
+
+==
+metarule_constraints(M,fail):-
+	M =.. [m,Id,P|Ps]
+	,Id \= projection
+	,left_recursive(P,Ps).
+
+left_recursive(T,[T|_Ps]):-
+	!.
+left_recursive(T,[T,T|_Ps]):-
+	!.
+left_recursive(T,[I,T|_Ps]):-
+	atom_chars(I,['$',A])
+	,atom_number(A,_N).
+==
+
+This will significantly restrict the number of clauses in invented
+predicates for this example (but not necessarily for other examples,
+i.e. don't assume you always need to prohibit left-recursion when
+performing incremental refinement).
+
+
+2. Use incremental_refinement/5 to invent one or more predicates from
 the elements of the MIL problem for path/2 defined in this experiment
 file. In the examples below, K is the maximum number of predicates to
 attempt to invent:
@@ -41,7 +64,8 @@ true.
 true.
 ==
 
-2. Use learn_incremental/[3,5] to perform predicate invention by
+
+3. Use learn_incremental/[3,5] to perform predicate invention by
 incremental refinement and learn a hypothesis reusing the predicates
 invented in the first step, possibly invented more new predicates:
 

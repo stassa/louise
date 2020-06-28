@@ -101,6 +101,7 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/kin.pl',kin).
 %experiment_file('data/robots/robots.pl',robots).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
+%experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
 
 
 %!	learner(?Name) is semidet.
