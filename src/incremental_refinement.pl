@@ -1,4 +1,4 @@
-:-module(incremental_refinement, [learn_incremental/3
+:-module(incremental_refinement, [learn_incremental/4
                                  ,learn_incremental/5
                                  ,incremental_refinement/5
                                  ,incremental_refinement/6
@@ -29,142 +29,290 @@ useful as a dataset exploration and knowledge discovery tool.
 */
 
 
-%!      learn_incremental(+Problem_1,+Problem_2,-Program) is det.
+%!      learn_incremental(+Problem_1,+Problem_2,-Invented,-Program) is
+%!      det.
 %
 %       Learn a Program by incremental refinement of a theory.
 %
-%       Problem_1 and Problem_2 are lists [P,N,B,M,K] each representing
-%       a MIL problem, where P is a set of positive examples, N is a set
-%       of negative examples, B is a set of predicate symbols and
-%       arities of background predicates, M is a set of atomic metarule
-%       identifiers and K an integer, the maximum number of predicates
-%       to invent.
+%	Problem_1 and Problem_2 are lists [P1,N1,B1,M1,K1] and
+%	[P2,N2,B2,M2,K2], respectively, each representing a MIL problem,
+%	where each Pi is a set of positive examples, each Ni is a set of
+%	negative examples, each Bi is a set of predicate symbols and
+%	arities of background predicates, each Mi is a set of atomic
+%	metarule identifiers and each Ki an integer, the maximum number
+%	of predicates to invent at each of the two stages of learning.
 %
-%       Program is a program learned in two stages from Problem_1 and
-%       Problem_2. In the first stage, the background knowledge, B, in
-%       Problem_1 is incrementally refined by incremental_refinement/5.
-%       In the secont stage, the refined background knowledge is added
-%       to, or replaces the background knowledge in Problem_2 and
-%       Program is learned by dynamic learning.
+%	Invented and Program are sets of clauses learned in two stages
+%	from the elements of Problem_1 and Problem_2.
 %
-%       The background knowledge, B, in Problem_2 can include the atom
-%       "append". In that case, the predicate symbols of any predicates
-%       invented in the first stage will be appended to the symbols in
-%       B.
+%	In the first stage the background knowlede, B1, given in
+%	Problem_1 is incrementally refined by a call to
+%	incremental_refinement/5. The maximum number of predicates
+%	invented in this stage is determined by K1. Clauses of any
+%	predicates learned in this stage are bound to Invented.
+%
+%	In the secont stage, the clauses of the refined background
+%	knowledge in Invented are combined with the background
+%	knowledge, B2, in Problem_2 and a new program is learned by
+%	dynamic learning. The maximun number of predicates invented in
+%	this stage is determined by K2. Clauses of any predicates
+%	learned in this stage are bound to Program.
+%
+%	The predicates in Invented and the background knowledge, B2, in
+%	Problem_2 is combined as determined by the value of B2, as
+%	follows.
+%
+%	If B2 is the atom "append" the contents of Invented are added to
+%	the background knowledge, B1, given in Problem_1.
+%
+%	If B2 is the atom "invented", the contents of Invented are used
+%	as background knowledge for the second stage.
+%
+%	If B2 is the term combine(Ls), where Ls is a list of predicates'
+%	symbols and arities, the definitions of all predicates in Ls are
+%	added to the contents of Invented and the resulting set is used
+%	as background knowledge for the second stage.
+%
+%	Using the examples as background knowledge
+%	------------------------------------------
+%
+%	In order for Louise to use the predicates of any of the
+%	positive examples, Pos_1, given in Problem_1, to invent new
+%	predicates in the first stage of incremental refinement, the
+%	symbols of those predicates must be added to the background
+%	knowledge, B1, given in Problem_1.
+%
+%	For example, in the following background declaration, the symbol
+%	of the learning target path/2 is added to the background
+%	predicate edge/2:
+%
+%	==
+%	background_knowledge(path/2,[path/2,edge/2]).
+%	==
+%
+%	This way, Louise can use the examples of path/2 as a partial
+%	definition of the target and any predicates invented in the
+%	first, refinement stage can be defined in terms of path/2.
+%
+%	The reason for this slight abuse of the experiment file format
+%	is to simplify the implementation of learn_incremental/4 and
+%	avoid serious abuse of the dynamic database in its
+%	implementation.
 %
 %       Examples of calls
-%       -----------------
+%       =================
+%
+%       Example experiment file
+%       -----------------------
 %
 %	The examples below use the elements of the MIL problem defined
 %	in data/examples/incremental_refinemnt.pl. The MIL problem
-%	includes a single example of a target predicate path/2 and
-%	background knowledge consisting of atoms of edge/2.
+%	includes a single positive example of a target predicate path/2
+%	and background knowledge consisting of atoms of edge/2. The
+%	background knowledge represents the edges of a graph and path/2
+%	reprsents a path between two nodes on that graph.
 %
-%       The following call performs incremental refinement of the
-%       background knowledge given for path/2 and an invented predicate
-%       limit of 5. Five predicates are invented with predicate symbols
-%       '$1'/2 to '$5'/2. These are appended to the original background
-%       knowledge for path/2 and a new learning attempt is made, with an
-%       invented predicate limit of 0 (so no new predicates are
-%       invented). The result is a hypothesis that uses all five
-%       predicates invented in the incremental refinement step.
+%	According to the note in the previous section, the single
+%	positive example atom of path/2 is also added to the background
+%	knowledge.
 %
-%       ==
-%       ?- experiment_data(path/2,_Pos,_Neg,_BK,_MS)
-%       ,learn_incremental([_Pos,_Neg,_BK,_MS,5],[_Pos,_Neg,[append|_BK],_MS,0],_Ps)
-%       ,print_clauses(_Ps).
-%       path(a,z).
-%       '$1'(A,B):-edge(A,B).
-%       '$1'(A,B):-edge(A,C),edge(C,B).
-%       '$2'(A,B):-'$1'(A,B).
-%       '$2'(A,B):-'$1'(A,C),'$1'(C,B).
-%       '$3'(A,B):-'$2'(A,B).
-%       '$3'(A,B):-'$2'(A,C),'$2'(C,B).
-%       '$4'(A,B):-'$3'(A,B).
-%       '$4'(A,B):-'$3'(A,C),'$3'(C,B).
-%       '$5'(A,B):-'$4'(A,B).
-%       '$5'(A,B):-'$4'(A,C),'$4'(C,B).
-%       path(A,B):-'$5'(A,B).
-%       path(A,B):-edge(A,C),path(C,B).
-%       path(A,B):-'$5'(A,C),'$5'(C,B).
-%       true.
-%       ==
+%	Note that while Louise can learn a hypothesis of path/2 with
+%	dynamic learning without incremental refinement, the definition
+%	learned requires 10 invented predicates. The definition learned
+%	with incremental refinement is much more compact, requiring a
+%	single invented predicate.
+%
+%	Example 1
+%	---------
+%
+%	This example demonstrates the use of the "invented" atom in BK2.
 %
 %	The following call performs incremental refinement of the
-%	background knowledge for path/2 with an invented predicate limit
-%	of 4. In the next stage, a new learning attempt is made
-%	appending all invented predicates to the initial background
-%	knowledge and with an invented predicate limit of 1, so one more
-%	predicate is invented during this learning attempt and used to
-%	construct the final hypothesis. This new invented predicate is
-%	named '$1'/2, as one of the predicates invented in the first
-%	step (the counters for invented predicates' names are not
-%	transferred between incremental refinement and dynamic learning,
-%	however the new clauses complete the definition of '$1'/2).
+%	background knowledge definitions of edge/2 and path/2 with an
+%	invented predicate limit of 1 (i.e. a single predicates is
+%	invented by incremental refinement). The definition of the
+%	single invented predicate, '$1'/2, learned in this way is used
+%	as the background knowledge for the second, dynamic learning,
+%	attempt. No new predicates are invented in this second learning
+%	attempt because the maximum number of invented predicates, J, is
+%	set to 0. The result is a hypothesis of the target predicate,
+%	path/2, defined in terms of '$1'/2.
 %
-%	This example demonstrates the combined use of incremental
-%	refinement and dynamic learning. Note that dynamic learning can
-%	also learn a definition of path/2 by inventing component
-%	predicates but currently this takes a lot longer because of
-%	inefficiencies in the implementation.
+%	==
+%	?- _K = 1, _J = 0
+%	,_BK2 = invented
+%	,experiment_data(path/2,_Pos,_Neg,_BK,_MS)
+%	,learn_incremental([_Pos,_Neg,_BK,_MS,_K],[_Pos,_Neg,_BK2,_MS,_J],_Is,_Ps)
+%	,print_clauses('Invented:',_Is), nl, print_clauses('Learned:',_Ps).
+%	Invented:
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
 %
-%       ==
-%       ?- experiment_data(path/2,_Pos,_Neg,_BK,_MS)
-%       ,learn_incremental([_Pos,_Neg,_BK,_MS,4],[_Pos,_Neg,[append|_BK],_MS,1],_Ps)
-%       ,print_clauses(_Ps).
-%       path(a,z).
-%       '$1'(A,B):-edge(A,B).
-%       '$1'(A,B):-edge(A,C),edge(C,B).
-%       '$2'(A,B):-'$1'(A,B).
-%       '$3'(A,B):-'$2'(A,B).
-%       '$4'(A,B):-'$3'(A,B).
-%       '$4'(A,B):-'$3'(A,C),'$3'(C,B).
-%       '$1'(A,B):-path(A,C),path(C,B).
-%       '$1'(A,B):-path(A,C),edge(C,B).
-%       '$1'(A,B):-path(A,C),'$4'(C,B).
-%       '$1'(A,B):-edge(A,C),'$1'(C,B).
-%       '$1'(A,B):-path(A,C),'$1'(C,B).
-%       '$1'(A,B):-'$3'(A,C),'$4'(C,B).
-%       '$1'(A,B):-'$4'(A,C),'$4'(C,B).
-%       path(A,B):-'$3'(A,B).
-%       path(A,B):-'$4'(A,B).
-%       path(A,B):-'$4'(A,C),'$4'(C,B).
-%       true.
-%       ==
+%	Learned:
+%	path(A,B):-'$1'(A,B).
+%	true.
+%	==
 %
-%       The following call performs incremental refinement of the
-%       background knowledge for path/2 with an invented predicate limit
-%       of 5. In the next stage, a new learning attempt is made
-%       replacing background knowledge with the invented predicate '$'/5
-%       and the initial metarules (including chain and identity) with
-%       chain only and with an invented predicate limit of 0.
+%	Example 2
+%	---------
 %
-%	This example demonstrates a more complex use of learning with
-%	incremental refinement that would normally require some
-%	exploration of the program, e.g. before the user has the
-%	certainty to choose only a subset of the predicates invented in
-%	the incremental refinement stage and a different set of
-%	metarules etc. Although learn_incremental/[3,5] can be used
-%	directly in this way, it is expected that a user will first
-%	conduct a few experiments with incremental_refinement/5 to find
-%	out "what works" for a particular dataset and whether
-%	incremental refinement is useful in the first place.
+%	This example demonsrates the use of the "append" atom in BK2.
 %
-%       ==
-%       ?- experiment_data(path/2,_Pos,_Neg,_BK,_MS)
-%       ,learn_incremental([_Pos,_Neg,_BK,_MS,5],[_Pos,_Neg,['$5'/2],[chain],0],_Ps)
-%       ,print_clauses(_Ps).
-%       path(a,z).
-%       path(A,B):-'$5'(A,C),'$5'(C,B).
-%       true.
-%       ==
+%	The following call is as in Example 1, except this time the
+%	definition of the single invented predicate '$1'/2 learned by
+%	incremental refinement is added to the background knowledge
+%	definitions of path/2 and edge/2 given in Problem_1.
+%
+%	==
+%	?- _K = 1, _J = 0
+%	,_BK2 = append
+%	,experiment_data(path/2,_Pos,_Neg,_BK,_MS)
+%	,learn_incremental([_Pos,_Neg,_BK,_MS,_K],[_Pos,_Neg,_BK2,_MS,_J],_Is,_Ps)
+%	,print_clauses('Invented:',_Is), nl, print_clauses('Learned:',_Ps).
+%	Invented:
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%
+%	Learned:
+%	path(a,z).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%	path(A,B):-'$1'(A,B).
+%	true.
+%	==
+%
+%	Example 3
+%	---------
+%
+%	This example demonstrates the use of the "combine" term in BK2.
+%
+%	The following call is as in Example 2, but this time the
+%	definition of the single invented predicate '$1'/2 learned by
+%	incremental refinement is added to the background knowledge
+%	definition of edge/2, only.
+%
+%	==
+%	?- _K = 1, _J = 0
+%	,_BK2 = combine([edge/2])
+%	,experiment_data(path/2,_Pos,_Neg,_BK,_MS)
+%	,learn_incremental([_Pos,_Neg,_BK,_MS,_K],[_Pos,_Neg,_BK2,_MS,_J],_Is,_Ps)
+%	,print_clauses('Invented:',_Is), nl, print_clauses('Learned:',_Ps).
+%	Invented:
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%
+%	Learned:
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%	path(A,B):-'$1'(A,B).
+%	true.
+%	==
+%
+%	The following call passes combines the definition of '$1'/2 with
+%	path/2 instead of edge/2:
+%
+%	==
+%	?- _K = 1, _J = 0
+%	,_BK2 = combine([path/2])
+%	,experiment_data(path/2,_Pos,_Neg,_BK,_MS)
+%	,learn_incremental([_Pos,_Neg,_BK,_MS,_K],[_Pos,_Neg,_BK2,_MS,_J],_Is,_Ps)
+%	,print_clauses('Invented:',_Is), nl, print_clauses('Learned:',_Ps).
+%	Invented:
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%
+%	Learned:
+%	path(a,z).
+%	'$1'(A,B):-path(A,B).
+%	path(A,B):-'$1'(A,B).
+%	true.
+%	==
+%
+%	Example 4
+%	---------
+%
+%	This example demonstrates the use of a different set of
+%	metarules in the second stage of learning with incremental
+%	refinement.
+%
+%	The call below is similar to the call in Example 1 in that
+%	"invented" is passed as the value of BK2, however in
+%	this call, learning in the first stage uses the set of metarules
+%	whose identifiers are given in _MS1, i.e. Chain and Identity,
+%	whereas learning in the second stage uses on Chain.:
+%
+%	==
+%	?- _K = 1, _J = 0
+%	,_BK2 = invented
+%	,_MS1 = [chain,identity], _MS2 = [chain]
+%	,experiment_data(path/2,_Pos,_Neg,_BK,_)
+%	,learn_incremental([_Pos,_Neg,_BK,_MS1,_K],[_Pos,_Neg,_BK2,_MS2,_J],_Is,_Ps)
+%	,print_clauses('Invented:',_Is), nl, print_clauses('Learned:',_Ps).
+%	Invented:
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%
+%	Learned:
+%	path(a,z).
+%	true.
+%	==
+%
+%	Learning in the second stage is not possible given only Chain
+%	and '$1'/2. Increasing the number of predicates invented in the
+%	first stage does the trick:
+%
+%	==
+%	?- _K = 4, _J = 0
+%	,_BK2 = invented
+%	,_MS1 = [chain,identity], _MS2 = [chain]
+%	,experiment_data(path/2,_Pos,_Neg,_BK,_)
+%	,learn_incremental([_Pos,_Neg,_BK,_MS1,_K],[_Pos,_Neg,_BK2,_MS2,_J],_Is,_Ps)
+%	,print_clauses('Invented:',_Is), nl, print_clauses('Learned:',_Ps).
+%	Invented:
+%	'$4'(A,B):-'$3'(A,B).
+%	'$4'(A,B):-'$3'(A,C),'$3'(C,B).
+%	'$3'(A,B):-'$2'(A,B).
+%	'$3'(A,B):-'$2'(A,C),'$2'(C,B).
+%	'$2'(A,B):-'$1'(A,B).
+%	'$2'(A,B):-'$1'(A,C),'$1'(C,B).
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%
+%	Learned:
+%	path(a,z).
+%	'$2'(A,B):-'$1'(A,B).
+%	'$3'(A,B):-'$2'(A,B).
+%	'$4'(A,B):-'$3'(A,B).
+%	'$2'(A,B):-'$1'(A,C),'$1'(C,B).
+%	'$3'(A,B):-'$2'(A,C),'$2'(C,B).
+%	'$4'(A,B):-'$3'(A,C),'$3'(C,B).
+%	path(A,B):-'$4'(A,C),'$4'(C,B).
+%	true.
+%	==
+%
+%	Unfortunately it's difficult to determine the necessary number
+%	of invented predicates beforehand for arbitrary programs. A
+%	first step of experimentation is recommended, where incremental
+%	refinement is essentially used for knowledge discovery.
 %
 %
-learn_incremental([Pos1,Neg1,BK1,MS1,K1],[Pos2,Neg2,BK2,MS2,K2],Ps):-
+learn_incremental([Pos1,Neg1,BK1,MS1,K1],[Pos2,Neg2,BK2,MS2,K2],Is,Ps):-
 	incremental_refinement(K1,Pos1,Neg1,BK1,MS1,Is)
-	,(   selectchk(append,BK2,BK2_1)
+	,(   BK2 = combine(BK2_)
 	->   new_symbols(Is,Ss)
-	    ,append(BK2_1,Ss,BK_F)
+	    ,append(BK2_,Ss,BK_F)
+	 ;   BK2 = append
+	 ->  new_symbols(Is,Ss)
+	    ,append(BK1,Ss,BK_F)
+	 ;   BK2 = invented
+	 ->  new_symbols(Is,BK_F)
 	 ;   BK_F = BK2
 	 )
 	,S = (assert_program(user,Is,Rs)
@@ -182,7 +330,7 @@ learn_incremental([Pos1,Neg1,BK1,MS1,K1],[Pos2,Neg2,BK2,MS2,K2],Ps):-
 %
 %       Learn a Program by incremental refinement of a theory.
 %
-%	As learn_incremental/3 but a) the first and second stage of
+%	As learn_incremental/4 but a) the first and second stage of
 %	learning Program are performed with the same elements of a MIL
 %	problem, b) any predicates invented in the first stage are
 %	added to the initial background knowledge before performing a
@@ -260,6 +408,43 @@ incremental_refinement(Pos,Neg,BK,MS,Ps):-
 %	process continues for K iterations or until a learning attempt
 %	fails, at which point the hypotheses learned until that
 %	iteration are returned as a list of clauses.
+%
+%	The following examples all use the elements of the path/2 MIL
+%	problem defined in data/examples/incremental_refinemnt.pl,
+%	described in the examples section of learn_incremental/4.
+%
+%	==
+%	?- _K = 1
+%	,experiment_data(path/2,_Pos,_Neg,_BK,_MS)
+%	,incremental_refinement(_K,_Pos,_Neg,_BK,_MS,_Is)
+%	,print_clauses(_Is).
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%	true.
+%
+%	?- _K = 2, experiment_data(path/2,_Pos,_Neg,_BK,_MS)
+%	,incremental_refinement(_K,_Pos,_Neg,_BK,_MS,_Is)
+%	,print_clauses(_Is).
+%	'$2'(A,B):-'$1'(A,B).
+%	'$2'(A,B):-'$1'(A,C),'$1'(C,B).
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%	true.
+%
+%	?- _K = 3
+%	,experiment_data(path/2,_Pos,_Neg,_BK,_MS)
+%	,incremental_refinement(_K,_Pos,_Neg,_BK,_MS,_Is),print_clauses(_Is).
+%	'$3'(A,B):-'$2'(A,B).
+%	'$3'(A,B):-'$2'(A,C),'$2'(C,B).
+%	'$2'(A,B):-'$1'(A,B).
+%	'$2'(A,B):-'$1'(A,C),'$1'(C,B).
+%	'$1'(A,B):-edge(A,B).
+%	'$1'(A,B):-path(A,B).
+%	'$1'(A,B):-edge(A,C),edge(C,B).
+%	true.
+%	==
 %
 incremental_refinement(K,Pos,Neg,BK,MS,Ps):-
 	incremental_refinement(K,0,Pos,Neg,BK,MS,[],Ps_,[])
