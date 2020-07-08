@@ -459,7 +459,8 @@ incremental_refinement(K,Pos,Neg,BK,MS,Ps):-
 incremental_refinement(K,I,Pos,Neg,BK,MS,Acc_Ps,Bind_Ps,Acc_Rs):-
 	succ(I,I_)
 	,generalise_examples(K,I_,Pos,Pos_)
-	,learn(Pos_,Neg,BK,MS,[_|Ps])
+	,learn(Pos_,Neg,BK,MS,Ps_)
+	,subtract(Ps_,Pos_,Ps)
 	,assert_program(user,Ps,Rs)
 	,new_symbols(Ps,Ss)
 	,dynamic_learning:table_encapsulated(Ss)
@@ -475,13 +476,19 @@ incremental_refinement(_K,_I,_Pos,_Neg,BK,_MS,Ps,Ps,Acc_Rs):-
 %
 %       Generalise a set of positive Examples.
 %
-generalise_examples(K,I,Es,Es_):-
-	I =< K
+generalise_examples(Max,K,Pos,Es):-
+	K =< Max
 	,findall(E_
-	       ,(member(E,Es)
-		,generalise_example(I,E,E_)
-		)
-	       ,Es_).
+		,(member(E,Pos)
+		 ,E =.. [_F|As]
+		 ,length(As,A)
+		 ,atom_concat('$',K,F_)
+		 ,functor(E_,F_,A)
+		 ,E_ =.. [F_|As_]
+		 ,nth1(I,As,Ai)
+		 ,nth1(I,As_,Ai)
+		 )
+		,Es).
 
 
 %!      generalise_example(+I,+Example,-Generalised) is det.
@@ -504,4 +511,3 @@ new_symbols(Cs,Ss):-
 	      ,functor(H,F,A)
 	      )
 	     ,Ss).
-
