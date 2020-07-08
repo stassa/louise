@@ -123,8 +123,6 @@ left_recursive(T,[I,T|_Ps]):-
 	,atom_number(A,_N).
 
 
-configuration:learning_predicate(learn_incremental/5).
-
 background_knowledge(path/2,[path/2,edge/2]).
 
 metarules(path/2,[chain,identity]).
