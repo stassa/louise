@@ -306,6 +306,8 @@ learning_curve(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 			 % Soft cut stops backtracking into multiple learning steps.
 			 % when training with reduction(subhypothesis)
 			 ,once(timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V))
+			 ,debug_clauses(progress,'Learned:',Ps)
+			 ,debug(progress,'Measured ~w: ~w',[M,V])
 			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
 			 ,debug(learning_curve_full,'Measured ~w: ~w',[M,V])
 			 )
