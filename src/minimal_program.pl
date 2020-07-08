@@ -166,6 +166,7 @@ minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
 	,constraints(Sub)
 	,specialise_minimal(Neg,M,Sub)
 	,metarule_application(Sub,M,C)
+	,\+ tautology(C)
 	,reduced_examples(Pos,C,Pos_)
 	,minimal_program_(Pos_,Neg,MS,[C|Acc],Bind).
 /*minimal_program_([_E|Pos],Neg,MS,Acc,Bind):-
@@ -302,18 +303,13 @@ free_examples([E|Pos],C,Acc,Bind):-
 %
 %	Cureently checked constraints:
 %
-%	a) Progam must not be a single, tautological clause. A clause is
-%	a tautology when it is a list of identical literals. Literals
-%	are first skolemised (by numbervars/1) before comparison.
-%
-%	b) Program must be a set of clauses of length n where k =< n
+%	a) Program must be a set of clauses of length n where k =< n
 %	=< j, and k, j are the minimum and maximum cardinality of
 %	minimum programs, specified in the configuration option
 %	minimal_program_size/1.
 %
 minimal_program_constraints(Ps):-
 	configuration:minimal_program_size(Min,Max)
-       ,\+ tautology(Ps)
        ,length(Ps,N)
        ,Min =< N
        ,N =< Max.
