@@ -100,6 +100,7 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/example_invention.pl',path).
 %experiment_file('data/examples/kin.pl',kin).
 %experiment_file('data/robots/robots.pl',robots).
+%experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
 %experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
 
@@ -288,7 +289,7 @@ left_recursive(T,[T|_Ps]):-
 	!.
 left_recursive(T,[T,T|_Ps]):-
 	!.
-left_recursive(T,[I,T|_Ps]):-
+left_recursive_(T,[I,T|_Ps]):-
 	atom_chars(I,['$',A])
 	,atom_number(A,_N).
 */
