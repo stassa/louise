@@ -216,12 +216,13 @@ untable_encapsulated(Ts):-
 %
 top_program_dynamic(C,Ss,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	,!
-	,write_program(Pos,BK,Refs)
-	,top_program_dynamic(C,Pos,Neg,MS)
-	,erase_program_clauses(Refs)
-	,collect_clauses(Ss,MS,Ts).
-top_program_dynamic(_C,_Ss,_Pos,_Neg,_BK,_MS,_Ts):-
+	,S = write_program(Pos,BK,Refs)
+	,G = (top_program_dynamic(C,Pos,Neg,MS)
+	     ,collect_clauses(Ss,MS,Ts))
+	,Cl = erase_program_clauses(Refs)
+	,setup_call_cleanup(S,G,Cl)
+	,!.
+top_program_dynamic(_C,_Ss,_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
