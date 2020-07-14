@@ -121,12 +121,25 @@ parsed_metarule(Id,M):-
 %
 parsed_metarule(Id,M,M1):-
 	atom_chars(M,Cs)
-	,once(phrase(clause_(Ls),Cs))
+	,remove_whitespace(Cs,Cs_)
+	,once(phrase(clause_(Ls),Cs_))
 	,existential_vars(Ls,Es)
 	,args_vars(Es,Es_)
 	,A =.. [m,Id|Es_]
 	,literals_clause(Ls, M_)
 	,varnumbers(A:-M_, M1).
+
+
+%!	remove_whitespace(+Chars,-Cleaned) is det.
+%
+%	Remove whitespace characters from a list of characters.
+%
+remove_whitespace(Cs,Cs_):-
+	findall(C
+	       ,(member(C,Cs)
+		,char_type(C,graph)
+		)
+	       ,Cs_).
 
 
 %!	existential_vars(+Literals,-Existential) is det.
@@ -280,8 +293,6 @@ head_(L) --> literal(L).
 %	both.
 %
 neck --> [:,-].
-neck --> [' ',:,-].
-neck --> [:,-,' '].
 
 %!	body// is nondet.
 %
@@ -339,6 +350,3 @@ right --> [')'].
 %	A comma.
 %
 comma --> [,].
-comma --> [' ',,].
-comma --> [,,' '].
-
