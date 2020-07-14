@@ -92,7 +92,10 @@ clause must obey the following rules:
 %	==
 %
 parsed_metarule(Id,M):-
-	configuration:metarule(Id, M_)
+	(   \+ configuration:metarule(Id, _)
+	->  throw('Unknown mearule ID':Id)
+	;   configuration:metarule(Id, M_)
+	)
 	,parsed_metarule(Id,M_,M).
 
 
