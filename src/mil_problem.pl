@@ -169,7 +169,14 @@ encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
 %	Encapsulate a list of Background definitions.
 %
 encapsulated_bk(BK,Es):-
-	closure(BK, user, Ps)
+	(   closure(BK, user, Ps)
+	 ->  true
+	 % Added to avoid errors in Swi 8.2.1
+	 ;   configuration:experiment_file(_,M)
+	    ,closure(BK, M, Ps)
+	 ->  true
+	 ;   throw('Missing BK definition of predicate in':BK)
+	 )
 	,findall(Cs_
 	       ,(member(Cs, Ps)
 		,encapsulated_clauses(Cs,Cs_)

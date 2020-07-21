@@ -1672,8 +1672,9 @@ experiment_data(T,_,_,_,_):-
 	,\+ memberchk(T,Ts)
 	,throw('Unknown learning target':T).
 experiment_data(T,Pos,Neg,BK,MS):-
-	configuration:experiment_file(P,M)
-	,user:use_module(P)
+	configuration:experiment_file(_P,M)
+	% Commented out to avoid errors in Swi 8.2.1.
+	%,user:use_module(P)
 	,signed_examples(positive,M,T,Pos_)
 	,signed_examples(negative,M,T,Neg_)
 	,maplist(list_to_set,[Pos_,Neg_],[Pos,Neg])
@@ -1819,8 +1820,9 @@ initialise_experiment:-
 %	file.
 %
 learning_targets(Ts):-
-	initialise_experiment
-	,experiment_file(_P, M)
+	% Commented out to avoid errors in Swi 8.2.1.
+	%initialise_experiment
+	experiment_file(_P, M)
 	,findall(T
 		,M:background_knowledge(T, _BK)
 		,Ts_)
