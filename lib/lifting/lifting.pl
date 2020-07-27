@@ -1,5 +1,4 @@
 :-module(lifting, [lifted_program/2
-		  ,treeverse/2
 		  ]).
 
 /** <module> Predicates to replace terms with numbered variables.
@@ -175,11 +174,15 @@ lifted_terms(I,J,[T|Ts],Acc,Bind):-
 % previously assigned numbervar terms. In that case, can't we just do:
 % lifted_terms(I,J,['$VAR'(K)|Ts],Acc,Bind)?
 	compound(T)
+	,\+ is_list(T)
 	,T = '$VAR'(K)
 	,!
 	,lifted_terms(I,J,Ts,['$VAR'(K)|Acc],Bind).
 lifted_terms(I, J, [T|Ts], Acc, Bind):-
+% Checking T is a compound but not a list avoids variabilising list
+% elements.
 	compound(T)
+	,\+ is_list(T)
 	,!
 	,T =.. [F|As]
 	,lifted_terms(I,J,As,[],As_)

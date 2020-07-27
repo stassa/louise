@@ -2,13 +2,15 @@
 			   ,learn_dynamic/2
 			   ,learn_dynamic/5
 			   ,top_program_dynamic/4
-			    ,unfold_invented/3
+			   ,unfold_invented/3
 			   ]).
 
 :-use_module(src(mil_problem)).
 :-use_module(src(auxiliaries)).
 :-use_module(src(louise)).
 :-use_module(src(subhypothesis_selection)).
+:-use_module(lib(lifting/lifting)).
+:-use_module(lib(term_utilities/term_utilities)).
 
 /** <module> Predicates for dynamic learning with predicate invention.
 
@@ -214,7 +216,9 @@ top_program_dynamic(C,Ss,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,S = write_program(Pos,BK,Refs)
 	,G = (top_program_dynamic(C,Pos,Neg,MS)
-	     ,collect_clauses(Ss,MS,Ts))
+	     ,collect_clauses(Ss,MS,Ts_)
+	     ,unfold_clauses(Ts_,Ss,Ts)
+	     )
 	,Cl = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,Cl)
 	,!.
@@ -508,6 +512,32 @@ unifiable_compare(Delta, A, B) :-
     ).
 
 
+%!	unfold_clauses(+Clauses,+Targets,-Unfolded) is det.
+%
+%	Unfold Clauses to remove invented predicates.
+%
+%	Clauses is a set of Clauses learned by top_program_dynamic/4,
+%	possibly including definitions of invented predicates.
+%
+%	Targets is a list of predicate symbols and arities of target
+%	predicates in Clauses.
+%
+%	Unfolded is the list of clauses in Clauses unfolded to remove
+%	invented predicates. See unfold_invented/3 for an explanation of
+%	unfolding invented predicates.
+%
+%	The clauses in Clauses are only unfolded if the configuration
+%	option unfold_invented/1 is set to "true". Otherwise, Unfolded
+%	is bound to Clauses.
+%
+unfold_clauses(Cs,Ss,Us):-
+	configuration:unfold_invented(true)
+	,!
+	,unfold_invented(Cs,Ss,Us).
+unfold_clauses(Cs,_Ss,Cs):-
+	configuration:unfold_invented(false).
+
+
 %!	reduced_top_program_dynamic(+Pos,+BK,+Metarules,+Top_Program,-Redued)
 %!	is det.
 %
@@ -535,7 +565,8 @@ reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
 %
 %	Program is a program learned by dynamic learning which may
 %	include definitions of one or more invented predicates with
-%	symbols such as '$1', '$2', etc.
+%	symbols such as '$1', '$2', etc. Program should be encapsulated
+%	of unfold_invented/3 will fail.
 %
 %	Targets is the list of predicate symbols and arities of the
 %	target predicates in Program, as F/A predicate indicators.
@@ -547,23 +578,27 @@ reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
 %	The following example should help clarify the above explanation:
 %
 %	==
-%	?- _T = 'S'/2, learn_dynamic(_T,_Ps)
-%	,unfold_invented(_Ps,[_T],_Us)
-%	,nl
-%	,print_clauses('Invented',_Ps)
-%	,nl
-%	,print_clauses('Unfolded',_Us).
+%	?- unfold_invented(Bool).
+%	Bool = false.
 %
-%	Invented
+%	?- learn_dynamic('S'/2).
 %	'$1'(A,B):-'S'(A,C),'B'(C,B).
 %	'S'(A,B):-'A'(A,C),'$1'(C,B).
 %	'S'(A,B):-'A'(A,C),'B'(C,B).
+%	true.
 %
-%	Unfolded
+%	?- unfold_invented(Bool).
+%	Bool = true.
+%
+%	?- learn_dynamic('S'/2).
 %	'S'(A,B):-'A'(A,C),'B'(C,B).
 %	'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
 %	true.
 %	==
+%
+%	Note that the positive examples and background knowledge _must_
+%	be in the dynamic database and accessible from the dynamic
+%	learning module, else unfold_invented/3 will fail.
 %
 %	Motivation
 %	----------
@@ -609,21 +644,66 @@ reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
 %	predicate, unfolding will produce a new clause without any
 %	literals of invented predicates.
 %
+%	Restricted unfolding
+%	--------------------
+%
+%	Unlike general unfolding this predicate does not
+%	indiscriminately generate all resolvents of the clauses of
+%	target predicates and invented predicates. Instead, only those
+%	resolvents that entail at least one positive example with
+%	respect to background knowledge are constructed, i.e. the
+%	process is driven by the positive examples.
+%
+%	For this reason, unfold_invented _cannot be used_ unless the
+%	positive examples and the background knowledge for a MIL problem
+%	from which Program was learned are in the dynamic database.
+%
+%	In other words, it is not possible to use unfold_invented/3 as a
+%	stand-alone predicate. It _must_ be used as part of learning
+%	with a dynamic learning predicate.
+%
 %	Limitations
 %	-----------
 %
-%	This predicate does not take into account the positive examples
+%	This predicate does not take into account the negative examples
 %	and instead generates the set of all resolvents of clauses in
-%	Program. As a result, Unfolded may include any number of clauses
-%	that do not entail any positive examples, or that entail
-%	negative examples. Work is underway to address this.
+%	Program that entail at least one positive example. As a result,
+%	Unfolded _may_ include any number of clauses that entail some
+%	negative examples. Whether this is really possible is to be
+%	determined.
 %
+%	@tbd Currently, unfold_clauses/5 (auxiliary to this predicate
+%	that does most of the actual unfolding) returns clauses ground
+%	to constants obtained during a refutation of a positive example.
+%	This is actually not that bad, because it incidentally forces
+%	unfold_clauses/3 to succeed or fail exactly once for each
+%	resolvent of a clause of a target predicate (whereas otherwise
+%	it would potentially backtrack over all positive examples).
+%	Unfortunately, this also requires the unfolded program to be
+%	"lifted" to variabilise its constants. Since Program is
+%	encapsulated, lifting it will variabilise the predicate symbols
+%	in literals, which will result in a nonsensical program with
+%	literals like m(P,X,Y,Z) where P should be a predicate symbol,
+%	rather than a variable. To avoid this, currently, the ground,
+%	unfolded program is first excapsulated so that predicate symbols
+%	dont' appear as constants in the bodies of m/n encapsulations,
+%	then the excapsulated program is variabilised, then it is
+%	_encapsulated again_ because we want to pass it on to the rest
+%	of the program. However this still doesn't fix everything
+%	because constants in the bodies of literals will still be
+%	variabilisted, so theories with constants cannot be learned (or
+%	at least, they can't be unfolded). This is clerarly not ideal.
+%	The ideal solution is to allow the lifting module to exclude
+%	some terms from variabilisation.
 %
 unfold_invented(Ps,Ts,Us):-
 	program_invented(Ps,Ts,Cs,Is)
 	,invented_symbols_(Is,Ss)
 	,unfold_clauses(Cs,Ss,Is,[],Us_)
-	,flatten(Us_,Us).
+	,flatten(Us_,Us_f)
+	,excapsulated_clauses(Ts,Us_f,Us_e)
+	,lifted_program(Us_e,Us_l)
+	,encapsulated_clauses(Us_l,Us).
 
 
 %!	program_invented(+Program,+Targets,-Clauses,-Invented) is det.
@@ -775,6 +855,7 @@ unfold_clauses([C|Cs],Ss,Is,Acc,Bind):-
 unfold_clause(H:-B,Ss,Is,H:-B_):-
 	must_be(nonvar,H)
 	,must_be(nonvar,B)
+	,clause(H,true)
 	,unfold_literals(B,Ss,Is,(H),U_)
 	,treeverse(U_,(H,B_)).
 
@@ -786,7 +867,7 @@ unfold_clause(H:-B,Ss,Is,H:-B_):-
 %
 %	Unfold a literal with a list of Invented clauses.
 %
-unfold_literals('()',_Ss,_Is,Us,Us):-
+unfold_literals(true,_Ss,_Is,Us,Us):-
 	!.
 unfold_literals((L,Ls),Ss,Is,Acc,Bind):-
 	unfold_literals(L,Ss,Is,Acc,Acc1)
@@ -797,10 +878,16 @@ unfold_literals(L,Ss,Is,Acc,Bind):-
 	,head_body(C,L,Ls)
 	,unfold_literals(Ls,Ss,Is,Acc,Bind).
 unfold_literals(L,Ss,Is,Acc,Bind):-
+% At this point, the clause of which L is a body literal may be any
+% resolvent of the original clause. We want to keep only clauses that
+% entail any positive examples, so we call L. The head of the parent
+% clause of L has been instantiated to a positive example, so L, too, is
+% instantiated accordingly, therefore call(L) will only succeed if L is
+% a literal in the refutation sequence of a positive example.
 	L \= (_,_)
 	,\+ clause_of(L,Ss)
-	% Try calling L with the head of the clause instantiated.
-	,unfold_literals('()',Ss,Is,(L,Acc),Bind).
+	,call(L)
+	,unfold_literals(true,Ss,Is,(L,Acc),Bind).
 
 
 %!	head_body(+Clause,+Literal,-Body) is det.

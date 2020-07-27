@@ -12,6 +12,7 @@
 			,resolutions/1
 			,symbol_range/2
 			,theorem_prover/1
+                        ,unfold_invented/1
 			,op(100,xfx,metarule)
 			]).
 
@@ -33,7 +34,8 @@
 	  ,recursive_reduction/1
 	  ,reduction/1
 	  ,resolutions/1
-	  ,theorem_prover/1.
+	  ,theorem_prover/1
+          ,unfold_invented/1.
 
 % Allows experiment files to define their own, special metarules.
 % BUG: Actually, this doesn't work- module quantifiers, again.
@@ -99,7 +101,6 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
 %experiment_file('data/examples/recipes.pl',recipes).
 %experiment_file('data/examples/example_invention.pl',path).
-%experiment_file('data/examples/kin.pl',kin).
 %experiment_file('data/robots/robots.pl',robots).
 %experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
@@ -491,6 +492,18 @@ symbol_range(variable, ['X','Y','Z','U','V','W']).
 %
 theorem_prover(resolution).
 %theorem_prover(tp).
+
+
+%!      unfold_invented(?Bool) is semidet.
+%
+%       Whether to unfold programs to remove invented symbols.
+%
+%       See the module dynamic_learning and unfold_invented/3 for an
+%       explanation of unfolding programs to remove invented symbols.
+%
+%       @tbd Document unfolding in this configuration option, also.
+%
+unfold_invented(false).
 
 
 % Loads the current experiment file in the Swi-Prolog IDE when the
