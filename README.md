@@ -1,7 +1,7 @@
 ﻿Louise - polynomial-time Meta-Interpretive Learning
 ===================================================
 
-The most important thing
+Getting help with Louise
 ------------------------
 
 Louise's author can be reached by email at ep2216@ic.ac.uk. Please use this
@@ -9,7 +9,7 @@ email to ask for any help you might need with using Louise.
 
 Louise is brand new and, should you choose to use it, you will most probably
 encounter errors and bugs. The author has no way to know of what bugs and errors
-you encoutner unless you report them. Please use the author's email to contact
+you encounter unless you report them. Please use the author's email to contact
 the author regarding bugs and errors. Alternatively, you are welcome to open a
 github Issue or send a pull request. 
 
@@ -46,44 +46,126 @@ discussed in depth in the upcoming Louise manual.
 What Louise does
 ----------------
 
-Louise learns Prolog programs from examples, background knowledge and second
-order clause templates called _metarules_. Together, examples, background
-knowledge and metarules form the elements of a _MIL problem_. The following are
-the elements of an example MIL problem for Louise:
+Here are some of the things that Louise can do.
 
-```prolog
-% Positive examples of strings in the context-free a^nb^n language
-'S'([a,b],[])
-'S'([a,a,b,b],[])
-'S'([a,a,a,b,b,b],[])
+1. Louise can learn recursive programs, including left-recursive programs:
 
-% A notable absence of negative examples.
+   ```prolog
+   ?- learn(ancestor/2).
+   ancestor(A,B):-parent(A,B).
+   ancestor(A,B):-ancestor(A,C),ancestor(C,B).
+   true.
+   ```
+   
+   See `data/examples/tiny_kinship.pl` for the `ancestor` example (and other
+   simple, toy examples of learning kinship relations, ideal for first time
+   users).
+   
+   See the section [Learning logic prorgams with
+   Louise](#learning-logic-prorgams-with-louise) for more information on
+   learning logic programs with Louise.
 
-% Background knowledge: the two (pre-) terminals in the a^nb^n language given as
-% Definite Clause Grammar productions.
-'A' --> [a].
-'B' --> [b].
+2. Louise can learn mutually recursive predicates in a multi-predicate learning
+   setting:
 
-% The metarule called "Chain"
-chain metarule 'P(x,y):- Q(x,z), R(z,y)'.
-```
+   ```
+   ?- learn([even/1,odd/1]).
+   even(0).
+   even(A):-predecessor(A,B),odd(B).
+   odd(A):-predecessor(A,B),even(B).
+   true.
+   ```
+   
+   See `data/examples/multi_pred.pl` for the `odd/1` and `even/1`
+   multi-predicate learning example. 
 
-Given the examples, background knowledge and metarules above, Louise will learn
-a grammar for the a^nb^n language, as follows:
+3. Louise can discover relevant background knowledge. In the `odd/1` and
+   `even/1` example above, each predicate is only explicitly given
+   `predecessor/2` as a background predicate. The following are the background
+   knowledge declarations for `even/1` and `odd/1` in
+   `data/examples/multi_pred.pl`:
 
-```prolog
-?- learn_dynamic('S'/2).
-'$1'(A,B):-'S'(A,C),'B'(C,B).
-'S'(A,B):-'A'(A,C),'$1'(C,B).
-'S'(A,B):-'A'(A,C),'B'(C,B).
-true.
-```
+   ```prolog
+   background_knowledge(even/1, [predecessor/2]).
+   background_knowledge(odd/1, [predecessor/2]).
+   
+   ```
 
-In the learned grammar above, the predicate `'$1'` is invented: it was not given
-to Louise at the start of learning. This is called _predicate invention_ and is
-a major feature of MIL-learners like Louise.
+   Louise figures out that `odd/1` is necessary to learn `even/1` and vice-versa
+   on its own.
 
-Learning logic prorgams with Louise
+4. Louise can learn programs with invented predicates:
+
+   ```prolog
+   ?- learn_dynamic('S'/2).
+   '$1'(A,B):-'S'(A,C),'B'(C,B).
+   'S'(A,B):-'A'(A,C),'$1'(C,B).
+   'S'(A,B):-'A'(A,C),'B'(C,B).
+   true.
+   ```
+   
+   See `data/examples/anbn.pl` for the `'S'/2` example.
+   
+   See the section [Dynamic learning and predicate
+   invention](#dynamic-learning-and-predicate-invention) for more information on
+   predicate invention in Louise. 
+
+5. Louise can unfold programs with invented predicates to eliminate their
+   invented predicates. This is a version of the `anbn` grammar in the previous
+   example with invented predicates eliminated by unfolding:
+   
+   ```prolog
+   ?- learn_dynamic('S'/2).
+   'S'(A,B):-'A'(A,C),'B'(C,B).
+   'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
+   true.
+   ```
+
+   Eliminating invented predicates can sometimes aid comprehensibility of the
+   learned program.
+
+6. Louise can invent some missing examples. In the following, a single example
+   of the target predicate `path/2` is given, which is insufficient to learn
+   without examples invention, as in the first query. In the second query
+   sufficient examples are invented to learn a full definition of the target
+   predicate. The third query learns with the examples invented with
+   `examples_invention/2`:
+
+   ```prolog
+   ?- learn(path/2).
+   path(a,f).
+   true.
+   
+   ?- examples_invention(path/2,_Es), print_clauses(_Es).
+   m(path,a,b).
+   m(path,a,c).
+   m(path,a,d).
+   m(path,a,e).
+   m(path,a,f).
+   m(path,b,c).
+   m(path,b,d).
+   m(path,b,e).
+   m(path,b,f).
+   m(path,c,d).
+   m(path,c,e).
+   m(path,c,f).
+   m(path,d,e).
+   m(path,d,f).
+   m(path,e,f).
+   true.
+   
+   ?- learn_with_examples_invention(path/2).
+   path(A,B):-edge(A,B).
+   path(A,B):-edge(A,C),path(C,B).
+   true.
+   ```
+   
+   See `data/examples/example_invention.pl` for the `path/2` example.
+   
+   See the section [Examples invention](#examples-invention) for more
+   information on examples invention in Louise.
+
+Learning logic programs with Louise
 -----------------------------------
 
 In this section we give a few examples of learning simple logic programs with
@@ -117,11 +199,15 @@ working directory is `louise`.
 
 #### Learning the "ancestor" relation
 
-Louise expects its data to be in an _experiment file_ with a standard format.
-The following is an example showing how to use Louise to learn the "ancestor"
-relation from the examples, background knowledge and metarules defined in the
-experiment file `louise/data/examples/tiny_kinship.pl` using the learning
-predicate `learn/1`.
+Louise learns Prolog programs from examples, background knowledge and second
+order clause templates called _metarules_. Together, examples, background
+knowledge and metarules form the elements of a _MIL problem_.
+
+Louise expects the elements of a MIL problem to be in an _experiment file_ with
+a standard format.  The following is an example showing how to use Louise to
+learn the "ancestor" relation from the examples, background knowledge and
+metarules defined in the experiment file `louise/data/examples/tiny_kinship.pl`
+using the learning predicate `learn/1`.
 
 In summary, there are four steps to running the example: a) start Louise; b)
 edit the configuration file to select `tiny_kinship.pl` as the experiment file;
@@ -214,11 +300,11 @@ learning also permits predicate invention, by inventing, and then re-using,
 definitions of new predicates that are necessary for learning but are not in the
 background knowledge defined by the user.
 
-The example of learning the `a^nb^n` language at the start of this README is an
-example of learning with dynamic learning. Below, we list the steps to run this
-example yourself. The steps to run this example are similar to the steps to
-run the `ancestor/2` example, only this time the learning predicate is
-`learn_dynamic/1`:
+The example of learning the `a^nb^n` language in section [What Louise
+does](#what-louise-does) is an example of learning with dynamic learning. Below,
+we list the steps to run this example yourself. The steps to run this example
+are similar to the steps to run the `ancestor/2` example, only this time the
+learning predicate is `learn_dynamic/1`:
 
  1. Start the project:
 
