@@ -48,6 +48,7 @@
 */
 :-nodebug(_). % Clear all debug topics.
 %:-debug(learn). % Debug learning steps.
+%:-debug(metasubstitution). % Debug metasubstitutions.
 %:-debug(top_program). % Debug Top program construction.
 %:-debug(reduction). % Debug Top program reduction.
 %:-debug(dynamic). % Debug dynamic learning.

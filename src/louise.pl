@@ -211,7 +211,9 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %
 metasubstitution(E,M,Sub):-
 	bind_head_literal(E,M,(Sub:-(_H,Ls)))
-	,user:call(Ls).
+	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
+	,user:call(Ls)
+	,debug(metasubstitution,'Succeeded',[]).
 
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
