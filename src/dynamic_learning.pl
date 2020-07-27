@@ -114,12 +114,7 @@ learn_dynamic(Ts,Ps):-
 %	Learn a Program using dynamic learning.
 %
 %	@tbd This makes heavy use of the dynamic database and of
-%	destructive updates with setarg/3. It is also terribly
-%	inefficient and a bit of a mess because it's basically
-%	copy/pasta from learn/5 and its auxiliaries in louise module. It
-%	would really be nice to have a more efficient and less dirty
-%	version. Perhaps even one so pure that SLG resolution can be
-%	used with it.
+%	destructive updates with setarg/3.
 %
 learn_dynamic(Pos,Neg,BK,MS,_Ts):-
 	(   var(Pos)
@@ -678,13 +673,38 @@ program_invented([C|Ps],Ts,Cs_Acc,Cs_Bind,Is_Acc,Is_Bind):-
 %	A call clause_of(C,Ss) succeeds when the symbol and arity of the
 %	head literal in clause C is S/A and S/A is in Ss.
 %
-clause_of(H:-_B,Ts):-
-	functor(H,F,A)
-	,memberchk(F/A,Ts)
-	,!.
-clause_of(L,Ts):-
-	functor(L,F,A)
+clause_of(C,Ts):-
+% Encapsulated clause
+        clause_symbol(C,F/A)
 	,memberchk(F/A,Ts).
+
+
+%!	clause_symbol(+Clause,-Symbol) is det.
+%
+%	The predicate Symbol and arity of a Clause.
+%
+%	@tbd This could be useful elsewhere in the project. Consider
+%	adding to auxiliaires, probably.
+%
+clause_symbol(H:-_B,F/N):-
+% Encapsulated clause
+	functor(H,m,_A)
+	,H =.. [m,F|As]
+	,length(As, N)
+	,!.
+clause_symbol(L,F/N):-
+% Encapsulated unit clause
+	functor(L,m,_A)
+	,L =.. [m,F|As]
+	,length(As,N)
+	,!.
+clause_symbol(H:-_B,F/A):-
+% Definite clause
+	functor(H,F,A)
+	,!.
+clause_symbol(L,F/A):-
+% Unit clause
+	functor(L,F,A).
 
 
 %!	invented_symbols_(+Invented,-Symbols) is det.
@@ -709,7 +729,7 @@ clause_of(L,Ts):-
 invented_symbols_(Is,Ss):-
 	setof(F/A
 	     ,B^Is^H^(member(H:-B,Is)
-		     ,functor(H,F,A)
+		     ,clause_symbol(H,F/A)
 		     )
 	     ,Ss).
 
