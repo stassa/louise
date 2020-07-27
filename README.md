@@ -61,8 +61,8 @@ Here are some of the things that Louise can do.
    simple, toy examples of learning kinship relations, ideal for first time
    users).
    
-   See the section [Learning logic prorgams with
-   Louise](#learning-logic-prorgams-with-louise) for more information on
+   See the section [Learning logic programs with
+   Louise](#learning-logic-programs-with-louise) for more information on
    learning logic programs with Louise.
 
 2. Louise can learn mutually recursive predicates in a multi-predicate learning
