@@ -2,6 +2,7 @@
 			   ,learn_dynamic/2
 			   ,learn_dynamic/5
 			   ,top_program_dynamic/4
+			    ,unfold_invented/3
 			   ]).
 
 :-use_module(src(mil_problem)).
@@ -530,3 +531,273 @@ reduced_top_program_dynamic(Pos,BK,_MS,Ps,Rs):-
 	,debug_clauses(reduction,'Reduced Top program:',Rs).
 reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
 	reduced_top_program(Pos,BK,MS,Ps,Rs).
+
+
+
+%!	unfold_invented(+Program,+Targets,-Unfolded) is det.
+%
+%	Unfold a Program, removing invented predicates.
+%
+%	Program is a program learned by dynamic learning which may
+%	include definitions of one or more invented predicates with
+%	symbols such as '$1', '$2', etc.
+%
+%	Targets is the list of predicate symbols and arities of the
+%	target predicates in Program, as F/A predicate indicators.
+%
+%	Unfolded is the set of resolvents of clauses of target
+%	predicates in Programs with the clauses of invented predicates'
+%	definitions. Unfolded does not include any invented predicates.
+%
+%	The following example should help clarify the above explanation:
+%
+%	==
+%	?- _T = 'S'/2, learn_dynamic(_T,_Ps)
+%	,unfold_invented(_Ps,[_T],_Us)
+%	,nl
+%	,print_clauses('Invented',_Ps)
+%	,nl
+%	,print_clauses('Unfolded',_Us).
+%
+%	Invented
+%	'$1'(A,B):-'S'(A,C),'B'(C,B).
+%	'S'(A,B):-'A'(A,C),'$1'(C,B).
+%	'S'(A,B):-'A'(A,C),'B'(C,B).
+%
+%	Unfolded
+%	'S'(A,B):-'A'(A,C),'B'(C,B).
+%	'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
+%	true.
+%	==
+%
+%	Motivation
+%	----------
+%
+%	The purpose of this predicate is to make programs learned with
+%	dynamic learning more comprehensible by removing invented
+%	predicates, while still maintaining programs' semantics.
+%
+%	Predicates invented by Louise with dynamic learning have
+%	automatically assigned symbols such as '$1', '$2' etc, so that
+%	their meaning is not immediately obvious. Although such
+%	predicate can sometimes make a program _more_ comprehensible by
+%	reducing its size, in general it's safe to assume that a program
+%	without invented predicates will be at least as comprehensible
+%	as a program of the same size and _with_ invented predicates.
+%
+%	The 'S'/2 example above is such a case. In the "Invented" form
+%	of the program, it's hard to say what the predicate '$1'/2 is
+%	meant to represent. Unfolding the program we obtain a version
+%	without '$1'/2 that is closer to (if not identical with) a
+%	proram that a human programmer would have written (indeed, the
+%	proram is a classic definition of a grammar for the anbn
+%	language).
+%
+%	Unfolding
+%	---------
+%
+%	Unfolding is the dual of folding, a program transformation that,
+%	in logic programs, replaces goals in the bodies of clauses with
+%	the body literals of the "called" clauses.
+%
+%	Procedurally, unfolding resolves the head literal of a clause C,
+%	with a body literal, L, of another clause, D, producing a new
+%	clause with the head literal of C and the body literals of C and
+%	D, except for L.
+%
+%	For example, suppose C = p:- q, r, D = q:- s, t and L = q. Then,
+%	unfolding D onto L in C would result in a new clause, E = p:-
+%	s,t,r.
+%
+%	As the 'S'/2 example in the prvious section demonstrates, if L
+%	is the literal of an invented predicate in a clause of a target
+%	predicate, unfolding will produce a new clause without any
+%	literals of invented predicates.
+%
+%	Limitations
+%	-----------
+%
+%	This predicate does not take into account the positive examples
+%	and instead generates the set of all resolvents of clauses in
+%	Program. As a result, Unfolded may include any number of clauses
+%	that do not entail any positive examples, or that entail
+%	negative examples. Work is underway to address this.
+%
+%
+unfold_invented(Ps,Ts,Us):-
+	program_invented(Ps,Ts,Cs,Is)
+	,invented_symbols_(Is,Ss)
+	,unfold_clauses(Cs,Ss,Is,[],Us_)
+	,flatten(Us_,Us).
+
+
+%!	program_invented(+Program,+Targets,-Clauses,-Invented) is det.
+%
+%	Partition a Program to clauses of target or Invented Predicates.
+%
+%	Program is a program learned by dynamic learning which may
+%	include the definitions of one or more invented predicates.
+%
+%	Targets is the list of predicate symbols and arities of the
+%	target predicates in Program, as F/A predicate indicators.
+%
+%	Clauses is the list of clauses of predicates in Targets, i.e.
+%	clauses with head literals having the predicate symbol and arity
+%	of a predicate indicator in Targets.
+%
+%	Invented is the list of clauses of invented predicates, i.e.
+%	clauses with head literals having an invented predicate symbol
+%	such as '$1', '$2', etc.
+%
+program_invented(Ps,Ts,Cs,Is):-
+	program_invented(Ps,Ts,[],Cs_,[],Is_)
+	,maplist(reverse,[Cs_,Is_],[Cs,Is]).
+
+%!	program_invented(+Program,+Targets,+Acc1,-Clauses,+Acc2,-Invented)
+%	is det.
+%
+%	Business end of program_invented/4.
+%
+program_invented([],_Ts,Cs,Cs,Is,Is):-
+	!.
+program_invented([C|Ps],Ts,Cs_Acc,Cs_Bind,Is_Acc,Is_Bind):-
+	clause_of(C,Ts)
+	,!
+	,program_invented(Ps,Ts,[C|Cs_Acc],Cs_Bind,Is_Acc,Is_Bind).
+program_invented([C|Ps],Ts,Cs_Acc,Cs_Bind,Is_Acc,Is_Bind):-
+	program_invented(Ps,Ts,Cs_Acc,Cs_Bind,[C|Is_Acc],Is_Bind).
+
+
+%!	clause_of(+Clause,+Signature) is det.
+%
+%	True when Clause is a clause of a predicate in Signature.
+%
+%	Clause is a definite clause. Signature is a list of predicate
+%	symbols and arities.
+%
+%	A call clause_of(C,Ss) succeeds when the symbol and arity of the
+%	head literal in clause C is S/A and S/A is in Ss.
+%
+clause_of(H:-_B,Ts):-
+	functor(H,F,A)
+	,memberchk(F/A,Ts)
+	,!.
+clause_of(L,Ts):-
+	functor(L,F,A)
+	,memberchk(F/A,Ts).
+
+
+%!	invented_symbols_(+Invented,-Symbols) is det.
+%
+%	Collect the Symbols of a list of clauses of Invented predicates.
+%
+%	Invented is a list of clauses of invented predicates'
+%	definitions as returned by program_invented/4. Symbols is a list
+%	of F/A terms where each F is the symbol of an invented predicate
+%	in Invented and each A is its arity.
+%
+%	@tbd there is a predicate, invented_symbols/2 in the auxiliaries
+%	module that does this kind of thing. The difference with this
+%	program is that invented_symbols/2 generates invented symbols
+%	directly from the configuration option max_invented/2 and so
+%	there may be situations in which Invented may contain symbols
+%	not generated by invented_symbols/2. This may happen, for
+%	example, if unfold_invented/3 is called manually with some
+%	arbitrary user-defined program, for testing. That said, do
+%	consider using invented_symbols/2 instead of this predicate.
+%
+invented_symbols_(Is,Ss):-
+	setof(F/A
+	     ,B^Is^H^(member(H:-B,Is)
+		     ,functor(H,F,A)
+		     )
+	     ,Ss).
+
+
+%!	unfold_clauses(+Clauses,+Symbols,+Invented,+Acc,-Unfolded) is
+%!	det.
+%
+%	Unfold a set of Clauses with a set of Invented definitions.
+%
+%	Clauses are the clauses of the target predicates collected from
+%	a program learned by Louise with dynamic learning and that may
+%	include one or more clauses with body litearls having invented
+%	predicate symbols. Clauses will typically be returned by
+%	program_invented/4 as its third argument.
+%
+%	Invented is a list of the clauses of definitions of invented
+%	predicates originally in the same program as Clauses. Invented
+%	will typically be the result returned by program_invented/4 as
+%	its last argument.
+%
+%	Symbols is the set of predicate symbols and arities of
+%	predicates in Invented.
+%
+%	Unfolded is the set of resolvents of each clause in Clauses with
+%	the clauses in Invented. Unfolding results in a set of clauses
+%	without any body literals of invented predicates.
+%
+unfold_clauses([],_Ss,_Is,Us,Us):-
+	!.
+unfold_clauses([C|Cs],Ss,Is,Acc,Bind):-
+	findall(C_
+	       ,unfold_clause(C,Ss,Is,C_)
+	       ,Us)
+	,unfold_clauses(Cs,Ss,Is,[Us|Acc],Bind).
+
+
+%!	unfold_clause(+Clause,+Symbols,+Invented,-Unfolded) is nondet.
+%
+%	Auxiliary to unfold_clauses/5, operating on a single Clause.
+%
+%	Unfold a Clause with a list of Invented clauses.
+%
+unfold_clause(H:-B,Ss,Is,H:-B_):-
+	must_be(nonvar,H)
+	,must_be(nonvar,B)
+	,unfold_literals(B,Ss,Is,(H),U_)
+	,treeverse(U_,(H,B_)).
+
+
+%!	unfold_literals(+Literals,+Symbols,+Invented,+Acc,-Unfolded) is
+%!	nondet.
+%
+%	Auxiliary to unfold_clause/4, operating on each of its Literals.
+%
+%	Unfold a literal with a list of Invented clauses.
+%
+unfold_literals('()',_Ss,_Is,Us,Us):-
+	!.
+unfold_literals((L,Ls),Ss,Is,Acc,Bind):-
+	unfold_literals(L,Ss,Is,Acc,Acc1)
+	,unfold_literals(Ls,Ss,Is,Acc1,Bind).
+unfold_literals(L,Ss,Is,Acc,Bind):-
+	L \= (_,_)
+	,member(C,Is)
+	,head_body(C,L,Ls)
+	,unfold_literals(Ls,Ss,Is,Acc,Bind).
+unfold_literals(L,Ss,Is,Acc,Bind):-
+	L \= (_,_)
+	,\+ clause_of(L,Ss)
+	% Try calling L with the head of the clause instantiated.
+	,unfold_literals('()',Ss,Is,(L,Acc),Bind).
+
+
+%!	head_body(+Clause,+Literal,-Body) is det.
+%
+%	Auxiliary to unfold_literals/5.
+%
+%	Bind the head of a Clause to a Literal and return its Body.
+%
+%	The purpose of this is similar to the call to clause/2 in a
+%	classic Prolog meta-interpreter: we want to recursively evaluate
+%	the body literals of a clause, so for every body literal we find
+%	its parent clause and replace the literal with the body literals
+%	of the parent.
+%
+head_body(C,L,B):-
+% Avoid binding variables in the clause to terms in the literal.
+	copy_term(C,L:-B)
+	,!.
+head_body(A,L,'()'):-
+	copy_term(A,L).

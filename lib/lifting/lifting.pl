@@ -1,4 +1,5 @@
 :-module(lifting, [lifted_program/2
+		  ,treeverse/2
 		  ]).
 
 /** <module> Predicates to replace terms with numbered variables.
@@ -230,4 +231,3 @@ treeverse((X,Xs),Acc,Bind):-
 	!
 	,treeverse(Xs,(X,Acc),Bind).
 treeverse(X,Ys,(X,Ys)).
-
