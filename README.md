@@ -69,7 +69,7 @@ Here are some of the things that Louise can do.
 2. Louise can learn mutually recursive predicates in a multi-predicate learning
    setting:
 
-   ```
+   ```prolog
    ?- learn([even/1,odd/1]).
    even(0).
    even(A):-predecessor(A,B),odd(B).
