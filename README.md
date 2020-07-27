@@ -111,9 +111,9 @@ Here are some of the things that Louise can do.
    invention](#dynamic-learning-and-predicate-invention) for more information on
    predicate invention in Louise. 
 
-5. Louise can unfold programs with invented predicates to eliminate their
-   invented predicates. This is a version of the `anbn` grammar in the previous
-   example with invented predicates eliminated by unfolding:
+5. Louise can unfold programs to eliminate their invented predicates. This is a
+   version of the `anbn` grammar in the previous example with invented
+   predicates eliminated by unfolding:
    
    ```prolog
    ?- learn_dynamic('S'/2).
@@ -122,8 +122,8 @@ Here are some of the things that Louise can do.
    true.
    ```
 
-   Eliminating invented predicates can sometimes aid comprehensibility of the
-   learned program.
+   Eliminating invented predicates can sometimes improve comprehensibility of
+   the learned program.
 
 6. Louise can invent some missing examples. In the following, a single example
    of the target predicate `path/2` is given, which is insufficient to learn
