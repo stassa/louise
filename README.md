@@ -595,7 +595,7 @@ results:
 Further documentation
 ---------------------
 
-More informatin about Louise, how it works and how to use it are coming up in
+More information about Louise, how it works and how to use it is coming up in
 the project's manual. For the time being, you can peruse the structured comments
 in the project's source files. It's also possible to generate a `.pdf` file from
 structured documentation, as follows:
