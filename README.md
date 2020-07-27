@@ -95,7 +95,8 @@ Here are some of the things that Louise can do.
    Louise figures out that `odd/1` is necessary to learn `even/1` and vice-versa
    on its own.
 
-4. Louise can learn programs with invented predicates:
+4. Louise can learn programs with invented predicates. In the following example
+   the predicate `'$1'/2` is invented:
 
    ```prolog
    ?- learn_dynamic('S'/2).
