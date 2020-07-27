@@ -1,4 +1,5 @@
 :-module(lifting, [lifted_program/2
+		  ,lifted_program/3
 		  ]).
 
 /** <module> Predicates to replace terms with numbered variables.
@@ -15,6 +16,8 @@
 %!	lifted_program(+P, -L) is det.
 %
 %	Replace constants in clauses of P with variables.
+%
+%	Same as lifted_program(P,[],L).
 %
 %	Best explained with an example:
 %	==
@@ -41,8 +44,21 @@
 %	varnumbers/2 ensuring this.
 %
 lifted_program(P, P_):-
-	lifted_clauses(-1, P, [], P1)
+	lifted_clauses(-1, P, [], [], P1)
 	,varnumbers(P1,P_)
+	,retractall(term_var(_,_)).
+
+
+%!	lifted_program(+Program,+Constants,-Lifted) is det.
+%
+%	Lift a program, except for a set of Constants.
+%
+%	As lifted_program/2 but excludes the constants in list Constants
+%	from variabilisation.
+%
+lifted_program(Ps,Cs,Ps_):-
+	lifted_clauses(-1,Ps,Cs,[],Ps_1)
+	,varnumbers(Ps_1,Ps_)
 	,retractall(term_var(_,_)).
 
 
@@ -55,12 +71,12 @@ lifted_program(P, P_):-
 %	I is an index of the last variable number assigned to a term in
 %	a clause in Cs, used to maintain consistency.
 %
-lifted_clauses(_, [], Cs, Cs_):-
+lifted_clauses(_, [], _Es, Cs, Cs_):-
 	reverse(Cs, Cs_)
 	,!.
-lifted_clauses(I,[C|Cs],Acc,Bind):-
-	lifted_clause(I,J,C,C_)
-	,lifted_clauses(J,Cs,[C_|Acc],Bind).
+lifted_clauses(I,[C|Cs],Es,Acc,Bind):-
+	lifted_clause(I,J,C,Es,C_)
+	,lifted_clauses(J,Cs,Es,[C_|Acc],Bind).
 
 
 %!	lifted_clause(+I,-K,+C,-C_lifted) is det.
@@ -73,13 +89,13 @@ lifted_clauses(I,[C|Cs],Acc,Bind):-
 %	first literal in C; K is the last variable number assigned to a
 %	literal by this predicate.
 %
-lifted_clause(I, K, (H:-B), (H_:-B_)):-
+lifted_clause(I, K, (H:-B), Es, (H_:-B_)):-
 	!
-	,lifted_literal(I,J,H,H_)
-	,lifted_literals(J,K,B,(H_),Ls)
+	,lifted_literal(I,J,H,Es,H_)
+	,lifted_literals(J,K,B,Es,(H_),Ls)
 	,treeverse(Ls, (H_,B_)).
-lifted_clause(I, J, (L), L_):-
-	lifted_literal(I, J, L, L_).
+lifted_clause(I, J, (L), Es, L_):-
+	lifted_literal(I, J, L, Es, L_).
 
 
 %!	lifted_literals(+I,-K,+Ls,+Acc,-Bind) is det.
@@ -96,12 +112,12 @@ lifted_clause(I, J, (L), L_):-
 %	probably possible to do this in lifted_clause/4 itself and avoid
 %	the complication of additional predicates.
 %
-lifted_literals(I, K, (L,Ls), Acc, Bind):-
+lifted_literals(I, K, (L,Ls), Es, Acc, Bind):-
 	!
-	,lifted_literal(I, J, L, L_)
-	,lifted_literals(J, K, Ls, (L_,Acc), Bind).
-lifted_literals(I, J, (L), Acc, (L_,Acc)):-
-	lifted_literal(I, J, L, L_).
+	,lifted_literal(I, J, L, Es, L_)
+	,lifted_literals(J, K, Ls, Es, (L_,Acc), Bind).
+lifted_literals(I, J, (L), Es, Acc, (L_,Acc)):-
+	lifted_literal(I, J, L, Es, L_).
 
 
 %!	lifted_literal(+I, -J, +L, -Li) is det.
@@ -125,9 +141,9 @@ lifted_literals(I, J, (L), Acc, (L_,Acc)):-
 %	Vs = p(B, b(C, X, D), E).
 %	==
 %
-lifted_literal(I, J, L, L_):-
+lifted_literal(I, J, L, Es, L_):-
 	L =.. [F|As]
-	,lifted_terms(I, J, As, As_)
+	,lifted_terms(I, J, As, Es, As_)
 	,L_ =.. [F|As_].
 
 
@@ -140,8 +156,8 @@ lifted_literal(I, J, L, L_):-
 %	numbered variables in previous literals and the parent literal
 %	of Ts.
 %
-lifted_terms(I, J, As, As_):-
-	lifted_terms(I, J, As, [], As_).
+lifted_terms(I, J, As, Es, As_):-
+	lifted_terms(I, J, As, Es, [], As_).
 
 
 %!	lifted_terms(+I, -J, +Ts, +Acc, -Bind) is det.
@@ -163,10 +179,16 @@ lifted_terms(I, J, As, As_):-
 %	L = [(enc(A, B, C):-enc(D, C, B)), enc(E, B, F)].
 %	==
 %
-lifted_terms(I, I, [], Ts, Ts_):-
+lifted_terms(I, I, [], _Es, Ts, Ts_):-
 	reverse(Ts, Ts_)
 	,!.
-lifted_terms(I,J,[T|Ts],Acc,Bind):-
+lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
+% T is a theory constant that must be excluded from variabilisation.
+	memberchk(T,Es)
+	,!
+	,lifted_terms(I, J, Ts, Es, [T|Acc], Bind).
+
+lifted_terms(I,J,[T|Ts],Es,Acc,Bind):-
 % TODO: I'm not sure how this makes sense. It seems to fail when T
 % is a compound term that is not '$VAR'(K) at which point it will
 % fall over to the next clause and variabilise the compound recursively
@@ -177,8 +199,8 @@ lifted_terms(I,J,[T|Ts],Acc,Bind):-
 	,\+ is_list(T)
 	,T = '$VAR'(K)
 	,!
-	,lifted_terms(I,J,Ts,['$VAR'(K)|Acc],Bind).
-lifted_terms(I, J, [T|Ts], Acc, Bind):-
+	,lifted_terms(I,J,Ts,Es,['$VAR'(K)|Acc],Bind).
+lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 % Checking T is a compound but not a list avoids variabilising list
 % elements.
 	compound(T)
@@ -187,21 +209,21 @@ lifted_terms(I, J, [T|Ts], Acc, Bind):-
 	,T =.. [F|As]
 	,lifted_terms(I,J,As,[],As_)
 	,T_ =.. [F|As_]
-	,lifted_terms(J,_,Ts, [T_|Acc], Bind).
-lifted_terms(I, J, [T|Ts], Acc, Bind):-
+	,lifted_terms(J,_,Ts, Es, [T_|Acc], Bind).
+lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 	var(T)
 	,increment(I,I_)
 	,T = '$VAR'(I_)
 	,!
-	,lifted_terms(I_, J, Ts, [T|Acc], Bind).
-lifted_terms(I,J,[T|Ts],Acc,Bind):-
+	,lifted_terms(I_, J, Ts, Es, [T|Acc], Bind).
+lifted_terms(I,J,[T|Ts],Es,Acc,Bind):-
 	term_var(T, K)
 	,!
-	,lifted_terms(I, J, Ts, ['$VAR'(K)|Acc], Bind).
-lifted_terms(I, J, [T|Ts], Acc, Bind):-
+	,lifted_terms(I, J, Ts, Es, ['$VAR'(K)|Acc], Bind).
+lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 	increment(I, I_)
 	,asserta(term_var(T, I_))
-	,lifted_terms(I_, J, Ts, ['$VAR'(I_)|Acc], Bind).
+	,lifted_terms(I_, J, Ts, Es, ['$VAR'(I_)|Acc], Bind).
 
 
 

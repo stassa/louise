@@ -684,26 +684,29 @@ reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
 %	encapsulated, lifting it will variabilise the predicate symbols
 %	in literals, which will result in a nonsensical program with
 %	literals like m(P,X,Y,Z) where P should be a predicate symbol,
-%	rather than a variable. To avoid this, currently, the ground,
-%	unfolded program is first excapsulated so that predicate symbols
-%	dont' appear as constants in the bodies of m/n encapsulations,
-%	then the excapsulated program is variabilised, then it is
-%	_encapsulated again_ because we want to pass it on to the rest
-%	of the program. However this still doesn't fix everything
-%	because constants in the bodies of literals will still be
-%	variabilisted, so theories with constants cannot be learned (or
-%	at least, they can't be unfolded). This is clerarly not ideal.
-%	The ideal solution is to allow the lifting module to exclude
-%	some terms from variabilisation.
+%	rather than a variable. To avoid this, we utilise a predicate
+%	encapsulated_signature/2 to collect all constants in the
+%	encapsulated input Program, which, since Program is
+%	encapsulated, includes not only predicate symbols but also
+%	constants of the learned theory. The whole process is a little
+%	fiddly and not exactly the most efficient thing in the world,
+%	but the alternative is even fiddlier and includes passing around
+%	metasubstitutions and instantiating their existentially
+%	quantified variables. While this is doable, honestly, I don't
+%	have the heart to do it. Too much work. So unfolding a program
+%	will be slow if we have too many clauses with too many damn
+%	literals. OK.
 %
 unfold_invented(Ps,Ts,Us):-
 	program_invented(Ps,Ts,Cs,Is)
 	,invented_symbols_(Is,Ss)
+	,!
 	,unfold_clauses(Cs,Ss,Is,[],Us_)
 	,flatten(Us_,Us_f)
-	,excapsulated_clauses(Ts,Us_f,Us_e)
-	,lifted_program(Us_e,Us_l)
-	,encapsulated_clauses(Us_l,Us).
+	,encapsulated_signature(Ps,Ps_Cs)
+	,lifted_program(Us_f,Ps_Cs,Us).
+unfold_invented(Ps,Ts,Ps):-
+	program_invented(Ps,Ts,_Cs,[]).
 
 
 %!	program_invented(+Program,+Targets,-Clauses,-Invented) is det.
@@ -853,7 +856,20 @@ unfold_clauses([C|Cs],Ss,Is,Acc,Bind):-
 %	Unfold a Clause with a list of Invented clauses.
 %
 unfold_clause(H:-B,Ss,Is,H:-B_):-
-	must_be(nonvar,H)
+% The call to clause/2 binds the head of the clause to an example in the
+% dynamic database. Remember that, since unfold_invented/3 is called at
+% the end of a dynamic learning attempt, but _before_ the elements of a
+% MIL problem are retracted from the dynamic database, the clauses of
+% positive examples are still available. The clauses of the learned
+% hypothesis are _not_ also still in the dynamic database - but even if
+% they were, the "true" bound to the second argument of the clause
+% restricts the search for clauses unifying with H only to unit clauses
+% "facts"). Which are _probably_ examples.
+%
+% TODO: Actually, all of the above means that we can't process arbitrary
+% definite clause examples. For those we'd have to modify this code
+% slightly.
+must_be(nonvar,H)
 	,must_be(nonvar,B)
 	,clause(H,true)
 	,unfold_literals(B,Ss,Is,(H),U_)
@@ -908,3 +924,60 @@ head_body(C,L,B):-
 	,!.
 head_body(A,L,'()'):-
 	copy_term(A,L).
+
+
+%!	encapsulated_signature(+Encapsulated,-Signature) is det.
+%
+%	Collect constants in an Encapsulated program.
+%
+%	Encapsulated is a list of encapsulated clauses of a program
+%	learned with dynamic learning.
+%
+%	Signature is the list of constants of in all clauses in
+%	Encapsulated.
+%
+%	Note well: since Encapsulated is, well, encapsulated, its
+%	constants are actually constants _and_ predicate symbols. This
+%	is as it should be because we want to collect both of those for
+%	use in lifting an unfolded program, where we want to preserve
+%	both symbols and constants in a theory.
+%
+%	Use this predicate to collect symbols and constants in a program
+%	that must be excluded from variabilisation when unfolded clauses
+%	are variabilised at the end of unfold_invented/3.
+%
+encapsulated_signature(Ps,Ss):-
+% Below, we collect each result in each findall/3 loop with a subsequent
+% call to member/2 to avoid flattening the final list of constants after
+% the outer loop exits. Flattening the list of all constants also
+% flattens lists that are actually constants - we don't want that. Lists
+% found as terms in a theory are constants of the theory, they should be
+% kept intact.
+%
+% Note that the work below would look a lot better as a	recursive
+% predicate but this is much easier to write and we'd have to call at
+% least one member/2 anyway. So it looks awful. So sue me.
+%
+% Actually, it looks like a stairway to heaven. A bit.
+%
+% Outer loop: find all constants in all clauses.
+	findall(Cn
+	       ,(member(C,Ps)
+		,clause_literals(C,Ls)
+		% Median loop: find all constants in all literals
+		,findall(Cn_
+			,(member(L,Ls)
+			 ,L =.. [_F|As]
+			 % Inner loop: find all constants in one literal
+			 ,findall(A
+				 ,(member(A,As)
+				  ,nonvar(A)
+				  )
+				 ,Cs)
+			 ,member(Cn_,Cs)
+			 )
+			,CS)
+		,member(Cn,CS)
+		)
+	       ,Ss_)
+	,sort(Ss_,Ss).
