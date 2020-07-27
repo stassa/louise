@@ -1,9 +1,11 @@
 :-module(defaults, [default_max_invented/1
+                   ,default_minimal_program_size/1
 		   ,default_recursion_depth_limit/1
 		   ,default_recursive_reduction/1
 		   ,default_reduction/1
 		   ,default_resolutions/1
 		   ,default_theorem_prover/1
+                   ,default_unfold_invented/1
 		   ]).
 
 /** <module> Default values for dynamic configuration options.
@@ -21,6 +23,15 @@ dynamic configuration options to the values specified in this file.
 %	The default value is "1".
 %
 default_max_invented(1).
+
+
+%!      default_minimal_program_size(?Default) is semidet.
+%
+%       Default value for minimal_program_size/2.
+%
+%       The default value is [2,inf].
+%
+default_minimal_program_size([2,inf]).
 
 
 %!	default_recursion_depth_limit(?Default) is semidet.
@@ -68,3 +79,12 @@ default_resolutions(5000).
 %	The default value is "resolution".
 %
 default_theorem_prover(resolution).
+
+
+%!      default_unfold_invented(?Default) is semidet.
+%
+%       Default value for unfold_invented/1 option.
+%
+%       The default value is "false".
+%
+default_unfold_invented(false).

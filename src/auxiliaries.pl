@@ -346,7 +346,9 @@ reset_defaults:-
 	module_property(configuration, exports(Es))
 	,forall(member(F/A, Es)
 	       ,(functor(P,F,A)
-		,(  \+ memberchk(F, [metarule,metarule_constraints])
+		,(  \+ memberchk(F, [learning_predicate
+				    ,metarule
+				    ,metarule_constraints])
 		   ,predicate_property(P, dynamic))
 		   ,predicate_property(P, implementation_module(configuration))
 		->  atom_concat(default_,F,DF)
