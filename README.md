@@ -32,7 +32,8 @@ What Louise is
 Louise is a machine learning system that learns Prolog programs.
 
 Louise is based on a new Meta-Interpretive Learning algorithm that runs in
-polynomial time. Louise can learn recursive programs and perform predicate
+polynomial time. Louise can learn recursive programs, including left-recursive
+and mutually recursive programs and perform multi-predicate learning, predicate
 invention and examples invention, among other things.
 
 Meta-Interpretive Learning (MIL) is a new paradigm for Inductive Logic
@@ -164,6 +165,11 @@ Here are some of the things that Louise can do.
    
    See the section [Examples invention](#examples-invention) for more
    information on examples invention in Louise.
+
+7. Louise comes with a number of libraries for tasks that are useful when
+   learning programs with MIL, e.g. metarule generation, program reduction,
+   lifting of ground predicates, etc. These will be discussed in detail in the
+   upcoming Louise manual.
 
 Learning logic programs with Louise
 -----------------------------------
