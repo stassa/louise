@@ -113,8 +113,8 @@ Here are some of the things that Louise can do.
    predicate invention in Louise. 
 
 5. Louise can unfold programs to eliminate their invented predicates. This is a
-   version of the `anbn` grammar in the previous example with invented
-   predicates eliminated by unfolding:
+   version of the `anbn` grammar in the previous example with the invented
+   predicate `'$1'/2` eliminated by unfolding:
    
    ```prolog
    ?- learn_dynamic('S'/2).
