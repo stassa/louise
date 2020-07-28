@@ -1006,6 +1006,7 @@ encapsulated_signature(Ps,Ss):-
 pseudo_unfold_invented(Ps,Ts,Us):-
 	program_invented(Ps,Ts,Cs,Is)
 	,invented_symbols_(Is,Ss)
+	,!
 	,pseudo_unfold_clauses(Cs,Ss,Is,[],Us_)
 	,flatten(Us_,Us).
 pseudo_unfold_invented(Ps,Ts,Ps):-
