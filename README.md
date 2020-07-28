@@ -1,5 +1,5 @@
-﻿Louise - polynomial-time Meta-Interpretive Learning
-===================================================
+﻿Louise - polynomial-time Program Learning
+=========================================
 
 Getting help with Louise
 ------------------------
@@ -16,8 +16,8 @@ github Issue or send a pull request.
 Table of contents
 -----------------
 
-[What Louise, is](#what-louise-is)  
-[What Louise does](#what-louise-does)  
+[Overwiew](#overview)  
+[Capabilities](#capabilities)  
 [Learning logic programs with Louise](#learning-logic-programs-with-louise)  
 [Running examples in Swi-Prolog](#running-examples-in-swi-prolog)  
 [Learning the "ancestor" relation](#learning-the-ancestor-relation)  
@@ -26,26 +26,43 @@ Table of contents
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
 
-What Louise is
---------------
+Overwiew
+--------
 
 Louise is a machine learning system that learns Prolog programs.
 
-Louise is based on a new Meta-Interpretive Learning algorithm that runs in
-polynomial time. Louise can learn recursive programs, including left-recursive
-and mutually recursive programs and perform multi-predicate learning, predicate
-invention and examples invention, among other things.
+Louise is based on a new program learning algorithm that runs in polynomial
+time. Louise can learn recursive programs, including left-recursive and mutually
+recursive programs and perform multi-predicate learning, predicate invention and
+examples invention, among other things.
 
-Meta-Interpretive Learning (MIL) is a new paradigm for Inductive Logic
-Programming (ILP). ILP is the branch of machine learning that studies algorithms
-learning logic programs from examples and background knowledge. In ILP, the
-examples and background knowledge are also defined as logic programs. In MIL, in
-addition to examples and background knowledge, a set of clause templates called
-_metarules_ are also used. Examples, background knowledge and metarules are
-discussed in depth in the upcoming Louise manual. 
+Louise is a Meta-Interpretive Learning (MIL) system. MIL is a new setting for
+Inductive Logic Programming (ILP). ILP is the branch of machine learning that
+studies algorithms learning logic programs from examples, background knowledge
+and a language bias that determines the structure of learned programs. In MIL,
+the language bias is defined by a set of second-order clause templates called
+_metarules_. Examples, background knowledge and metarules must be provided by
+the user, but Louise can perform predicate invention to extend its background
+knowledge and metarules and so learn programs that are impossible to learn only
+from its initial data.
 
-What Louise does
-----------------
+In this manual we show simple examples where Louise is trained on small, "toy"
+problems, designed to demonstrate its use. However, Louise's learning algorithm,
+_Top Program Construction_, is efficient enough to learn very large programs. In
+one of the example datasets included with Louise, a program of more than 25,000
+clauses is learned in under 5 minutes (and, yes, that is a correct program with
+perfect accuracy). This is most likely larger than any program learned by an ILP
+system, or indeed by any program learning system, to date. 
+
+In general, Louise's novelty means that it has so far primarily been applied to
+artificial datasets designed to demonstrate its working principles rather than
+realise its full potential. Work is underway to apply Louise on more challenging
+problems, including more real-world applications. Keep in mind however that
+Louise is maintained by a single PhD student. New developments should be
+expected to come at a leisurely pace.
+
+Capabilities
+------------
 
 Here are some of the things that Louise can do.
 
@@ -313,11 +330,11 @@ learning also permits predicate invention, by inventing, and then re-using,
 definitions of new predicates that are necessary for learning but are not in the
 background knowledge defined by the user.
 
-The example of learning the `a^nb^n` language in section [What Louise
-does](#what-louise-does) is an example of learning with dynamic learning. Below,
-we list the steps to run this example yourself. The steps to run this example
-are similar to the steps to run the `ancestor/2` example, only this time the
-learning predicate is `learn_dynamic/1`:
+The example of learning the `a^nb^n` language in section
+[Capabilities](#capabilities) is an example of learning with dynamic learning.
+Below, we list the steps to run this example yourself. The steps to run this
+example are similar to the steps to run the `ancestor/2` example, only this time
+the learning predicate is `learn_dynamic/1`:
 
  1. Start the project:
 
