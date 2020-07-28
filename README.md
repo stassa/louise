@@ -60,14 +60,15 @@ Here are some of the things that Louise can do.
    
    See `data/examples/tiny_kinship.pl` for the `ancestor` example (and other
    simple, toy examples of learning kinship relations, ideal for first time
-   users).
+   use).
    
    See the section [Learning logic programs with
    Louise](#learning-logic-programs-with-louise) for more information on
    learning logic programs with Louise.
 
-2. Louise can learn mutually recursive predicates in a multi-predicate learning
-   setting:
+2. Louise can simultaneously learn multiple dependent programs, including
+   mutuallly recursive programs. This is called multi-predicate learning:
+
 
    ```prolog
    ?- learn([even/1,odd/1]).
@@ -95,8 +96,9 @@ Here are some of the things that Louise can do.
    Louise figures out that `odd/1` is necessary to learn `even/1` and vice-versa
    on its own.
 
-4. Louise can learn programs with invented predicates. In the following example
-   the predicate `'$1'/2` is invented:
+4. Louise can perform _predicate invention_ to incrase its background knowledge
+   with new predicates that are necessary for learning. In the following example
+   the predicate `'$'1/2` is an invented predicate:
 
    ```prolog
    ?- learn_dynamic('S'/2).
@@ -105,16 +107,20 @@ Here are some of the things that Louise can do.
    'S'(A,B):-'A'(A,C),'B'(C,B).
    true.
    ```
-   
+
+   With predicate invention Louise can shift its inductive bias to learn
+   programs that are not possible to learn from its initial set of background
+   knowledge and metarules.
+
    See `data/examples/anbn.pl` for the `'S'/2` example.
-   
+
    See the section [Dynamic learning and predicate
    invention](#dynamic-learning-and-predicate-invention) for more information on
    predicate invention in Louise. 
 
-5. Louise can unfold programs to eliminate their invented predicates. This is a
-   version of the `anbn` grammar in the previous example with the invented
-   predicate `'$1'/2` eliminated by unfolding:
+5. Louise can unfold programs to eliminate invented predicates. This is a
+   version of the program in the previous example with the invented predicate
+   `'$1'/2` eliminated by unfolding:
    
    ```prolog
    ?- learn_dynamic('S'/2).
