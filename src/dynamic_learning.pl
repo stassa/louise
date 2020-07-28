@@ -1008,6 +1008,8 @@ pseudo_unfold_invented(Ps,Ts,Us):-
 	,invented_symbols_(Is,Ss)
 	,pseudo_unfold_clauses(Cs,Ss,Is,[],Us_)
 	,flatten(Us_,Us).
+pseudo_unfold_invented(Ps,Ts,Ps):-
+	program_invented(Ps,Ts,_Cs,[]).
 
 
 %!	pseudo_unfold_clauses(+Clauses,+Symbols,+Invented,+Acc,-Unfolded) is
