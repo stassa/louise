@@ -16,7 +16,7 @@ github Issue or send a pull request.
 Table of contents
 -----------------
 
-[Overwiew](#overview)  
+[Overview](#overview)  
 [Capabilities](#capabilities)  
 [Learning logic programs with Louise](#learning-logic-programs-with-louise)  
 [Running examples in Swi-Prolog](#running-examples-in-swi-prolog)  
@@ -26,7 +26,7 @@ Table of contents
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
 
-Overwiew
+Overview
 --------
 
 Louise is a machine learning system that learns Prolog programs.
