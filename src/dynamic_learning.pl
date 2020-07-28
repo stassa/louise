@@ -922,7 +922,7 @@ head_body(C,L,B):-
 % Avoid binding variables in the clause to terms in the literal.
 	copy_term(C,L:-B)
 	,!.
-head_body(A,L,'()'):-
+head_body(A,L,true):-
 	copy_term(A,L).
 
 
