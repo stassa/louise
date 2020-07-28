@@ -3,6 +3,7 @@
 			   ,learn_dynamic/5
 			   ,top_program_dynamic/4
 			   ,unfold_invented/3
+			   ,pseudo_unfold_invented/3
 			   ]).
 
 :-use_module(src(mil_problem)).
@@ -981,3 +982,94 @@ encapsulated_signature(Ps,Ss):-
 		)
 	       ,Ss_)
 	,sort(Ss_,Ss).
+
+
+
+%!	pseudo_unfold_invented(+Program,+Targets,-Unfolded) is det.
+%
+%	As unfold_invented/3 but ignores positive examples.
+%
+%	This predicate generates all resolvents of the clauses of target
+%	predicates in Program with the clauses of invented predicates
+%	and returns the full set of such resolvents regardless of
+%	whether such a clause entails a positive example or not.
+%
+%	unfold_invented/3 cannot be used as a stand-alone predicate,
+%	without the elements of a MIL problem in the dynamic database.
+%	This predicate addresses this limitation and can be useful for
+%	testing, especially when trying to understand the behaviour of
+%	unfold_invented/3, e.g. by observing the full set of resolvents
+%	of clauses of target predicates and clauses of invented
+%	predicates that can be generated regardless of whether they
+%	entail any positive examples.
+%
+pseudo_unfold_invented(Ps,Ts,Us):-
+	program_invented(Ps,Ts,Cs,Is)
+	,invented_symbols_(Is,Ss)
+	,pseudo_unfold_clauses(Cs,Ss,Is,[],Us_)
+	,flatten(Us_,Us).
+
+
+%!	pseudo_unfold_clauses(+Clauses,+Symbols,+Invented,+Acc,-Unfolded) is
+%!	det.
+%
+%	Unfold a set of Clauses with a set of Invented definitions.
+%
+%	Counterpart to unfold_clauses/5, but ignoring positive examples.
+%
+pseudo_unfold_clauses([],_Ss,_Is,Us,Us):-
+	!.
+pseudo_unfold_clauses([C|Cs],Ss,Is,Acc,Bind):-
+	findall(C_
+	       ,pseudo_unfold_clause(C,Ss,Is,C_)
+	       ,Us)
+	,pseudo_unfold_clauses(Cs,Ss,Is,[Us|Acc],Bind).
+
+
+%!	pseudo_unfold_clause(+Clause,+Symbols,+Invented,-Unfolded) is nondet.
+%
+%	Auxiliary to pseudo_unfold_clauses/5, operating on a single Clause.
+%
+%	Counterpart to unfold_clause/4, but ignoring positive examples.
+%
+%	@tbd The only difference of this predicate and unfold_clause/4
+%	is a missing call to clause/2 to instantiate the head of a
+%	clause to a positive example. The alternatives are all fiddly
+%	and would make the code harder to read so this is it.
+%
+pseudo_unfold_clause(H:-B,Ss,Is,H:-B_):-
+	must_be(nonvar,H)
+	,must_be(nonvar,B)
+	,pseudo_unfold_literals(B,Ss,Is,(H),U_)
+	,treeverse(U_,(H,B_)).
+
+
+%!	pseudo_unfold_literals(+Literals,+Symbols,+Invented,+Acc,-Unfolded) is
+%!	nondet.
+%
+%	Auxiliary to pseudo_unfold_clause/4, operating on each of its Literals.
+%
+%	Counterpart to unfold_literals/5, ignoring positive examples.
+%
+%	@tbd the only difference between this and unfold_literals/5 is a
+%	single missing goal in their last clause. That's the goal that
+%	calls a body literal before adding it to the set of body
+%	literals in a clause. So this is pretty much copy/pasta but the
+%	alternatives include all sorts of silly fiddly things to merge
+%	the two programs that are only going to make the code harder to
+%	read and understand. Let it be.
+%
+pseudo_unfold_literals(true,_Ss,_Is,Us,Us):-
+	!.
+pseudo_unfold_literals((L,Ls),Ss,Is,Acc,Bind):-
+	pseudo_unfold_literals(L,Ss,Is,Acc,Acc1)
+	,pseudo_unfold_literals(Ls,Ss,Is,Acc1,Bind).
+pseudo_unfold_literals(L,Ss,Is,Acc,Bind):-
+	L \= (_,_)
+	,member(C,Is)
+	,head_body(C,L,Ls)
+	,pseudo_unfold_literals(Ls,Ss,Is,Acc,Bind).
+pseudo_unfold_literals(L,Ss,Is,Acc,Bind):-
+	L \= (_,_)
+	,\+ clause_of(L,Ss)
+	,pseudo_unfold_literals(true,Ss,Is,(L,Acc),Bind).
