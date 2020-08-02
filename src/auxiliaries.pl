@@ -901,7 +901,11 @@ list_top_program(T,U,E):-
 %	be excapsulated unless it's applied to its metarules.
 %
 write_and_count(T,Msg,MS,Cs,U,E):-
-	(   U = true
+	(   \+ is_list(T)
+	->  Ts = [T]
+	;   Ts = T
+	)
+	,(   U = true
 	->  expanded_metarules(MS, MS_)
 	   ,applied_metarules(Cs, MS_, Cs_1)
 	;   U = false
@@ -910,7 +914,7 @@ write_and_count(T,Msg,MS,Cs,U,E):-
 	)
 	,(   E = true
 	    ,U = true % Can't excapsulate applied meatasubs!
-	 ->  excapsulated_clauses(T,Cs_1,Cs_2)
+	 ->  excapsulated_clauses(Ts,Cs_1,Cs_2)
 	 ;   Cs_2 = Cs_1
 	 )
 	,length(Cs_2, N)
