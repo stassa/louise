@@ -313,21 +313,3 @@ minimal_program_constraints(Ps):-
        ,length(Ps,N)
        ,Min =< N
        ,N =< Max.
-
-
-%!	tautology(+Hypothesis) is det.
-%
-%	True when a Hypothesis is a single tautology.
-%
-%	This predicate assumes that a clause is a tautology if a) it
-%	is not a unit clause and b) all its literals are identical.
-%
-%	For example, below, [1] is a tautology because all its literals
-%	are identical, including variables, whereas [2] is not a
-%	tautology because its three literals have different variables.
-%
-tautology([H:-B]):-
-	clause_literals(H:-B,Ls)
-	,copy_term(Ls,Ls_)
-	,numbervars(Ls_)
-	,sort(Ls_, [_]).

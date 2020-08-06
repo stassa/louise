@@ -11,6 +11,7 @@
 			,reduction/1
 			,resolutions/1
 			,symbol_range/2
+                        ,tautology/1
 			,theorem_prover/1
                         ,unfold_invented/1
 			,op(100,xfx,metarule)
@@ -459,6 +460,75 @@ symbol_range(variable, ['X','Y','Z','U','V','W']).
 % Silly. Don't use.
 %symbol_range(predicate, ['Alice','Bob','Carol']).
 %symbol_range(variable, ['Smith','Brown','Carpenter','Miller','Green']).
+
+
+%!      tautology(+Clause) is det.
+%
+%       True when Clause is a tautology.
+%
+%       This configuration option formalises the concept of a
+%       tautological clause as it is used in Louise. In short, a clause
+%       is a tautology if it is a definite clause with one or more body
+%       literals and all its literals are identical.
+%
+%       For example, the following clause is considered to be a
+%       tautology:
+%       ==
+%       p(A,B):- p(A,B), p(A,B)
+%       ==
+%
+%       Whereas the following clauses are not considered to be
+%       tautologies:
+%       ==
+%       p(a,b)
+%       p(A,B):- p(B,A)
+%       ==
+%
+%       And so on. Formalising the concept of tautology in Louise is
+%       useful because of the way the Top Proram Construction (TPC)
+%       algorithm works. TPC adds to the background knowledge the set of
+%       positive examples, which then functions as an extensional,
+%       partial definition of each target predicate. TPC then
+%       generalises each example to a clause that entails the example
+%       with respect to the background knowledge. Since the background
+%       knowledge includes each positive example, it is possible and in
+%       fact common to end up with clauses generalising an example by
+%       creating an implication of an atom of the example's predicate by
+%       one or more instances of itself. For example, if p(a,b) is a
+%       positive example, p(A,B):- p(A,B) is a clause tautologically
+%       expressing the fact that each atom of p/2 entails itself.
+%
+%       Such tautologies are removed from the Top program by Plotkin's
+%       program reduction algorithm since they are always entailed by
+%       the rest of the Top program (and by anything else, ever really).
+%       However, alternative reduction methods, such as subhypothesis
+%       selection or minimal program learning do not rely on entailment
+%       of a clause by the rest of the program and so may not be able to
+%       get rid of tautologies as simply as Plotkin's reduction. For
+%       such reduction methods, a tautology check is needed. This
+%       predicate forms the basis of such a check.
+%
+%       Note that tautological clause generally only arise when the
+%       Identity metarule, or one of its specialisations is in the set
+%       of metarules for a MIL problem. The Identity metarule is P(x,y)
+%       :- Q(x,y) where {P,Q} are second-order existentially quantified
+%       variables that are not constrainted to be different. If P = Q
+%       then the resulting clause is a tautology, but this is not always
+%       the case, so Identity is generally useful (in fact,
+%       indispensible, given that it represents one third of the
+%       properties necessary to construct an equivalence relation). A
+%       specialisation of Identity is a metarule with multiple clauses
+%       having identical literals up to renaming of their second order
+%       existentially quantified variables, for example the following is
+%       a specialisation of Identity: P(x,y):- Q(x,y), R(x,y) and if P =
+%       Q = R the resulting clause would be a tautology as defined by
+%       this predicate.
+%
+tautology(H:-B):-
+        copy_term(H:-B,C_)
+        ,clause_literals(C_,Ls)
+        ,numbervars(Ls)
+        ,sort(Ls,[_]).
 
 
 %!	theorem_prover(?Algorithm) is semidet.

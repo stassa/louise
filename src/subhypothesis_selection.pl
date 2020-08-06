@@ -2,6 +2,7 @@
 				  ,subhypothesis/4
 				  ]).
 
+:-use_module(configuration).
 :-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).
 
@@ -241,22 +242,6 @@ subhypothesis_selection(Pos,Hs,_Es,Acc,Bind):-
 	,subhypothesis_selection(Pos_,Hs_,Es,[C|Acc],Bind).
 subhypothesis_selection_0(Pos,_,_Es,Acc,Ss):-
 	append(Acc,Pos,Ss).
-
-
-%!	tautology(+Clause) is det.
-%
-%	True when a clause is a tautology.
-%
-%	This predicate assumes that a clause is a tautology if a) it
-%	is not a unit clause and b) all its literals are identical.
-%
-%	For example, below, [1] is a tautology because all its literals
-%	are identical, including variables, whereas [2] is not a
-%	tautology because its three literals have different variables.
-%
-tautology(H:-B):-
-	clause_literals(H:-B,Ls)
-	,sort(Ls, [_]).
 
 
 %!	clause_entailed(+Clause,+Atoms,-Entailed,-Remaining) is det.
