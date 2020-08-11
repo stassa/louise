@@ -286,7 +286,7 @@ print_config(T,S,Sc):-
 	,module_property(configuration, exports(Es))
 	,findall(M:Opt_
 		,(member(F/A,Es)
-		 ,\+ memberchk(F, [metarule,metarule_constraints])
+		 ,\+ memberchk(F/A, [metarule/2,metarule_constraints/2,tautology/1])
 		 ,functor(Opt,F,A)
 		 ,predicate_property(Opt, implementation_module(M))
 		 ,call(configuration:Opt)
