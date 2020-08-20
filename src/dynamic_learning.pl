@@ -322,9 +322,12 @@ top_program_dynamic(I,Pos,Neg,MS):-
 metasubstitution(_C,:-E,M,_MS,Sub):-
 % No need for predicate invention if E is negative.
 	bind_head_literal(E,M,(Sub:-(E,Ls)))
-	,user:call(Ls).
+	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
+	,user:call(Ls)
+	,debug(metasubstitution,'Succeeded',[]).
 metasubstitution(C,E,M,MS,Sub):-
 	bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,prove_body_literals(C,MS,Ls).
 
 
