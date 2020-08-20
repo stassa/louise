@@ -380,18 +380,26 @@ encapsulated_clause(H:-B,[],H:-B):-
 	built_in_or_library_predicate(H)
 	,!.
 encapsulated_clause((L,Ls),Acc,C_):-
-% Definite clause; L is an atom of a built-in predicate.
+% Definite clause; L is a body literal that is an atom of a built-in
+% predicate.
 	built_in_or_library_predicate(L)
 	,!
 	,encapsulated_clause(Ls,[L|Acc],C_).
 encapsulated_clause(L,Acc,H:-Bs):-
-% Definite clause; L is an atom of a built-in predicate.
-% TODO: why H:-Bs? We might have a definite goal in Acc.
+% Definite clause; L is a literal that is an atom of a built-in
+% predicate.
+%TODO: why H:-Bs? We might have a definite goal in Acc.
 	L \= (_,_)
 	,built_in_or_library_predicate(L)
-	,!
 	,reverse([L|Acc], Ls)
-	,once(list_tree(Ls,(H,Bs))).
+	,once(list_tree(Ls,(H,Bs)))
+	,!.
+encapsulated_clause(L,[],L):-
+% Definite clause; L is an atom of a built-in predicate.
+% The accumulator is empty
+	L \= (_,_)
+	,built_in_or_library_predicate(L)
+	,!.
 encapsulated_clause(H:-Bs,Acc,H_:-Bs_):-
 % Definite clause; H is the head literal.
 	!
