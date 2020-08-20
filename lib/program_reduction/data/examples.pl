@@ -4,7 +4,6 @@
 
 */
 
-
 /*
 Little gotcha: when a set of clauses is given as a list,
 identically-named variables will unify and numbervars will bind them to
@@ -20,6 +19,27 @@ not sure what is the best thing to do with _numeric_ constants.
 %
 %	An example of a Program to be reduced.
 %
+
+example(recipe, [m(recipe,[egg_whisk,eggs,frying_pan,olive_oil,pepper,salt],[omelette])
+                ,(m(_P1,A1,B1):-m(whisk_eggs,A1,C1),m(_Q1,C1,B1))
+                ,(m(_P2,A2,B2):-m(heat_oil,A2,C2),m(_Q2,C2,B2))
+                ,(m(_P3,A3,B3):-m(break_eggs,A3,C3),m(_Q3,C3,B3))
+                ,(m(_Q4,A4,B4):-m(heat_oil,A4,C4),m(_R4,C4,B4))
+                ,(m(_Q5,A5,B5):-m(whisk_eggs,A5,C5),m(_R5,C5,B5))
+                ,(m(_R6,A6,B6):-m(fry_eggs,A6,C6),m(season,C6,B6))
+                ,(m(recipe,A7,B7):-m(break_eggs,A7,C7),m(_P7,C7,B7))
+                ,(m(recipe,A8,B8):-m(heat_oil,A8,C8),m(_P8,C8,B8))
+                ,(m(break_eggs,Xs1,Ys1):- m(replace,[eggs],Xs1,[egg_whites,egg_yolks],Ys1))
+                ,(m(whisk_eggs,Xs2,Ys2):- m(replace,[egg_whisk,egg_whites,egg_yolks],Xs2,[whisked_eggs],Ys2))
+                ,(m(heat_oil,Xs3,Ys3):- m(replace,[frying_pan,olive_oil],Xs3,[frying_oil],Ys3))
+                ,(m(fry_eggs,Xs4,Ys4):- m(replace,[frying_oil,whisked_eggs],Xs4,[frying_eggs],Ys4))
+                ,(m(season,Xs5,Ys5):- m(replace,[frying_eggs,pepper,salt],Xs5,[omelette],Ys5))
+                ,(m(replace,Xs6,Is6,Ys6,Os6):- m(ground,Xs6) ,m(ground,Is6) ,m(ground,Ys6) ,m(ord_subset,Xs6,Is6) ,m(ord_subtract,Is6,Xs6,Zs_) ,m(ord_union,Ys6,Zs_,Os6))
+                ,(m(ground,X7):-ground(X7))
+                ,(m(ord_subset,X8,Y8):-ord_subset(X8,Y8))
+                ,(m(ord_subtract,X9,Y9,Z9):- ord_subtract(X9,Y9,Z9))
+                ,(m(ord_union,X10,Y10,Z10) :- ord_union(X10,Y10,Z10))
+                ]).
 
 
 % Forgot to standardise apart but still get correct reduction.
