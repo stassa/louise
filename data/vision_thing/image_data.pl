@@ -15,6 +15,7 @@ image(S,E):-
                      ,square
                      ,line
                      ,rectangle
+                     ,point
                      ])
         ,I =.. [S,E]
         ,call(I).
@@ -40,6 +41,18 @@ square(E):-
                    ,[1,1,0]
                    ,[0,0,0]
                    ]
+                  ,[[0,1,1]
+                   ,[0,1,1]
+                   ,[0,0,0]
+                   ]
+                  ,[[0,0,0]
+                   ,[0,1,1]
+                   ,[0,1,1]
+                   ]
+                  ,[[0,0,0]
+                   ,[1,1,0]
+                   ,[1,1,0]
+                   ]
                   ]).
 
 %!      line(-Line) is nondet.
@@ -62,9 +75,21 @@ line(E):-
 %       Examples of images containing rectangles.
 %
 rectangle(E):-
-        member(E, [[[1,1,0,2,2]
-                   ,[1,1,0,2,2]
-                   ,[3,3,3,0,0]
-                   ,[3,3,3,0,4]
+        member(E, [[[1,1,1,0,0]
+                   ,[1,1,1,0,0]
+                   ,[0,3,3,3,3]
+                   ,[0,3,3,3,3]
+                   ]
+                  ]).
+
+%!      rectangle(-Rectangle) is nondet.
+%
+%       Examples of images containing rectangles.
+%
+point(E):-
+        member(E, [[[1,0,2,0,0]
+                   ,[0,3,0,4,0]
+                   ,[0,0,5,0,6]
+                   ,[7,0,8,0,9]
                    ]
                   ]).
