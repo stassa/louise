@@ -657,7 +657,7 @@ structured documentation, as follows:
 
 Note that the structured documentation included in the Prolog source is a work
 in progress. Most of the time it is mostly accurate, but there are parts of it
-that are obsolte. Still- better than nothing.
+that are obsolete. Still- better than nothing.
 
 Additionally to all this you may get some useful information from the current
 draft of the manual stored in the file `MAN.md` in the directory `louise/doc`.
