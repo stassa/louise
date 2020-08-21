@@ -3,6 +3,7 @@
                 ,objects/2
                 ,within_limits/2
                 ,foreground_object/1
+                ,ordered_object/2
                 ]).
 
 /** <module> Represntation of images in vision_thing dataset.
@@ -213,7 +214,9 @@ objects([_|Cs],Acc,Bind):-
 %       contiguous cells forming the shape.
 %
 contiguous(C,Cs,[C|Os],Ds):-
-        contiguous(C,Cs,[],Ds,[],Os).
+        contiguous(C,Cs,[],Ds_,[],Os_)
+        ,ordered_object(Os_,Os)
+        ,ordered_object(Ds_,Ds).
 
 %!      contiguous(+Cell,+Imag,+Acc1,-Cont,+Acc2,-Discont) is det.
 %
@@ -224,13 +227,13 @@ contiguous(_C,[],Ds,Ds,Os,Os):-
 contiguous(C1,[C1|Cs],Ds_Acc,Ds_Bind,Acc,Bind):-
         !
         ,contiguous(C1,Cs,Ds_Acc,Ds_Bind,Acc,Bind).
-contiguous(C1,[C2|Cs],Ds_Acc,Ds_Bind,Acc,[C2|Bind]):-
+contiguous(C1,[C2|Cs],Ds_Acc,Ds_Bind,Acc,Bind):-
         contiguous_(C1,C2)
         ,!
-        ,contiguous(C1,Cs,Ds_Acc,Ds_Acc1,Acc,Acc2)
+        ,contiguous(C1,Cs,Ds_Acc,Ds_Acc1,[C2|Acc],Acc2)
         ,contiguous(C2,Ds_Acc1,[],Ds_Bind,Acc2,Bind).
-contiguous(C1,[C2|Cs],Ds_Acc,[C2|Ds_Bind],Acc,Bind):-
-        contiguous(C1,Cs,Ds_Acc,Ds_Bind,Acc,Bind).
+contiguous(C1,[C2|Cs],Ds_Acc,Ds_Bind,Acc,Bind):-
+        contiguous(C1,Cs,[C2|Ds_Acc],Ds_Bind,Acc,Bind).
 
 
 %!      contiguous_(+Cell1,+Cell2) is det.
@@ -289,3 +292,37 @@ foreground_object(Os):-
         findall(1
                ,member(cell(0,_),Os)
                ,[]).
+
+
+%!      ordered_object(+Object,-Reordered) is det.
+%
+%       Order an object in the starndard object order.
+%
+%       Object is a list of image cells, cell(C,X/Y), where C a colour
+%       and X/Y the x and y axis coordinates of the cell in an image
+%       greid.
+%
+%       Reordered is the list of cells in Object reordered by the
+%       standard order of objects in this project. The standard order
+%       for objects is ascending on the y axis then ascending on the x
+%       axis. For example, the following is a list of object cells
+%       ordered in the standard order for objects:%
+%       ==
+%       cell(1,3/0)
+%       cell(1,3/1)
+%       cell(1,1/2)
+%       cell(1,2/2)
+%       cell(1,3/2)
+%       cell(1,4/2)
+%       cell(1,5/2)
+%       cell(1,3/3)
+%       cell(1,3/4)
+%       ==
+%
+ordered_object(Os,Os_):-
+        findall(cell(C,X/Y)
+               ,order_by([asc(Y)
+                         ,asc(X)]
+                        ,member(cell(C,X/Y),Os)
+                        )
+               ,Os_).
