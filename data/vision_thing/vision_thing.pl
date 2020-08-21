@@ -12,16 +12,16 @@
                        ,go_west/2
                        ,go_north_west/2
                        ,stop/2
-                        % Primitive moves
-                       ,move_north/2
-                       ,move_north_east/2
-                       ,move_east/2
-                       ,move_south_east/2
-                       ,move_south/2
-                       ,move_south_west/2
-                       ,move_west/2
-                       ,move_north_west/2
-                       ,stay/2
+                        % Cardinal moves
+                       ,north/2
+                       ,north_east/2
+                       ,east/2
+                       ,south_east/2
+                       ,south/2
+                       ,south_west/2
+                       ,west/2
+                       ,north_west/2
+                       ,here/2
                        ,move/4
                        ]).
 
@@ -157,82 +157,82 @@ positive_example(S/2,E):-
 negative_example(_/2,_):-
         fail.
 
-go_north, [C2] --> [C1,C2], { move_north(C1,C2) }.
-go_north_east, [C2] --> [C1,C2], { move_north_east(C1,C2) }.
-go_east, [C2] --> [C1,C2], { move_east(C1,C2) }.
-go_south_east, [C2] --> [C1,C2], { move_south_east(C1,C2) }.
-go_south, [C2] --> [C1,C2], { move_south(C1,C2) }.
-go_south_west, [C2] --> [C1,C2], { move_south_west(C1,C2) }.
-go_west, [C2] --> [C1,C2], { move_west(C1,C2) }.
-go_north_west, [C2] --> [C1,C2], { move_north_west(C1,C2) }.
-stop, [C] --> [C], { stay(C,C) }.
+go_north, [C2] --> [C1,C2], { north(C1,C2) }.
+go_north_east, [C2] --> [C1,C2], { north_east(C1,C2) }.
+go_east, [C2] --> [C1,C2], { east(C1,C2) }.
+go_south_east, [C2] --> [C1,C2], { south_east(C1,C2) }.
+go_south, [C2] --> [C1,C2], { south(C1,C2) }.
+go_south_west, [C2] --> [C1,C2], { south_west(C1,C2) }.
+go_west, [C2] --> [C1,C2], { west(C1,C2) }.
+go_north_west, [C2] --> [C1,C2], { north_west(C1,C2) }.
+stop, [C] --> [C], { here(C,C) }.
 
 
-%!      move_north(+Cell1,-Cell2) is det.
+%!      north(+Cell1,-Cell2) is det.
 %
-%       Move towards the image north.
+%       True when Cell2 is north of Cell1.
 %
-move_north(cell(C,P1),cell(C,P2)):-
+north(cell(C,P1),cell(C,P2)):-
         move(P1,-,0/1,P2).
 
-%!      move_north_east(+Cell1,-Cell2) is det.
+%!      north_east(+Cell1,-Cell2) is det.
 %
-%       Move towards the image north-east.
+%       True when Cell2 is north-east of Cell1.
 %
-move_north_east(cell(C,P1),cell(C,P2)):-
+north_east(cell(C,P1),cell(C,P2)):-
         move(P1,+,1/0,P_)
         ,move(P_,-,0/1,P2).
 
-%!      move_east(+Cell1,-Cell2) is det.
+%!      east(+Cell1,-Cell2) is det.
 %
-%       Move towards the image east.
+%       True when Cell2 is east of Cell1.
 %
-move_east(cell(C,P1),cell(C,P2)):-
+east(cell(C,P1),cell(C,P2)):-
         move(P1,+,1/0,P2).
 
-%!      move_south_east(+Cell1,-Cell2) is det.
+%!      south_east(+Cell1,-Cell2) is det.
 %
-%       Move towards the image south-east.
+%       True when Cell2 is south-east of Cell1.
 %
-move_south_east(cell(C,P1),cell(C,P2)):-
+south_east(cell(C,P1),cell(C,P2)):-
         move(P1,+,1/0,P_)
         ,move(P_,+,0/1,P2).
 
-%!      move_south(+Cell1,-Cell2) is det.
+%!      south(+Cell1,-Cell2) is det.
 %
-%       Move towards the image south.
+%       True when Cell2 is south of Cell1.
 %
-move_south(cell(C,P1),cell(C,P2)):-
+south(cell(C,P1),cell(C,P2)):-
         move(P1,+,0/1,P2).
 
-%!      move_south_west(+Cell1,-Cell2) is det.
+%!      south_west(+Cell1,-Cell2) is det.
 %
-%       Move towards the image south-west.
+%       True when Cell2 is south-west of Cell1.
 %
-move_south_west(cell(C,P1),cell(C,P2)):-
+south_west(cell(C,P1),cell(C,P2)):-
         move(P1,-,1/0,P_)
         ,move(P_,+,0/1,P2).
 
-%!      move_west(+Cell1,-Cell2) is det.
+%!      west(+Cell1,-Cell2) is det.
 %
-%       Move towards the image west.
+%       True when Cell2 is west of Cell1.
 %
-move_west(cell(C,P1),cell(C,P2)):-
+west(cell(C,P1),cell(C,P2)):-
         move(P1,-,1/0,P2).
 
-%!      move_north_west(+Cell1,-Cell2) is det.
+%!      north_west(+Cell1,-Cell2) is det.
 %
-%       Move towards the image north-west.
+%       True when Cell2 is north-west of Cell1.
 %
-move_north_west(cell(C,P1),cell(C,P2)):-
+north_west(cell(C,P1),cell(C,P2)):-
         move(P1,-,1/0,P_)
         ,move(P_,-,0/1,P2).
 
-%!      stay(+Cell1,-Cell2) is det.
+%!      here(+Cell1,-Cell2) is det.
 %
-%       Stay put.
+%       True when Cell1 and Cell2 are the same cell.
 %
-stay(C,C).
+here(C,C).
 
 
 %!      move(+Current,+Delta,+Distance,-New) is det.
