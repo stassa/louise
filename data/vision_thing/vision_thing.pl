@@ -2,7 +2,14 @@
                        ,metarules/2
                        ,positive_example/2
                        ,negative_example/2
-
+                        % Background knowledge productions
+                       ,vertical_line//0
+                       ,horizontal_line//0
+                       ,single_point//0
+                        % Elementary shapes
+                       ,vertical_line/3
+                       ,horizontal_line/3
+                       ,single_point/3
                         % Cardinal directions
                        ,north/2
                        ,north_east/2
@@ -13,16 +20,6 @@
                        ,west/2
                        ,north_west/2
                        ,here/2
-                       ,move/4
-
-                       ,vertical_line//0
-                       ,horizontal_line//0
-                       ,single_point//0
-
-                       ,vertical_line/3
-                       ,horizontal_line/3
-                       ,single_point/3
-
                        ]).
 
 :-user:use_module(rendering).
@@ -404,61 +401,61 @@ horizontal_line([C1,C2|Cs],Ls_Acc,Ls,Rs_Acc,Rs):-
 %
 %       True when Cell2 is north of Cell1.
 %
-north(cell(C,P1),cell(C,P2)):-
-        move(P1,-,0/1,P2).
+north(cell(C,D,P1),cell(C,D,P2)):-
+        move(P1,D,-,0/1,P2).
 
 %!      north_east(+Cell1,-Cell2) is det.
 %
 %       True when Cell2 is north-east of Cell1.
 %
-north_east(cell(C,P1),cell(C,P2)):-
-        move(P1,+,1/0,P_)
-        ,move(P_,-,0/1,P2).
+north_east(cell(C,D,P1),cell(C,D,P2)):-
+        move(P1,D,+,1/0,P_)
+        ,move(P_,D,-,0/1,P2).
 
 %!      east(+Cell1,-Cell2) is det.
 %
 %       True when Cell2 is east of Cell1.
 %
-east(cell(C,P1),cell(C,P2)):-
-        move(P1,+,1/0,P2).
+east(cell(C,D,P1),cell(C,D,P2)):-
+        move(P1,D,+,1/0,P2).
 
 %!      south_east(+Cell1,-Cell2) is det.
 %
 %       True when Cell2 is south-east of Cell1.
 %
-south_east(cell(C,P1),cell(C,P2)):-
-        move(P1,+,1/0,P_)
-        ,move(P_,+,0/1,P2).
+south_east(cell(C,D,P1),cell(C,D,P2)):-
+        move(P1,D,+,1/0,P_)
+        ,move(P_,D,+,0/1,P2).
 
 %!      south(+Cell1,-Cell2) is det.
 %
 %       True when Cell2 is south of Cell1.
 %
-south(cell(C,P1),cell(C,P2)):-
-        move(P1,+,0/1,P2).
+south(cell(C,D,P1),cell(C,D,P2)):-
+        move(P1,D,+,0/1,P2).
 
 %!      south_west(+Cell1,-Cell2) is det.
 %
 %       True when Cell2 is south-west of Cell1.
 %
-south_west(cell(C,P1),cell(C,P2)):-
-        move(P1,-,1/0,P_)
-        ,move(P_,+,0/1,P2).
+south_west(cell(C,D,P1),cell(C,D,P2)):-
+        move(P1,D,-,1/0,P_)
+        ,move(P_,D,+,0/1,P2).
 
 %!      west(+Cell1,-Cell2) is det.
 %
 %       True when Cell2 is west of Cell1.
 %
-west(cell(C,P1),cell(C,P2)):-
-        move(P1,-,1/0,P2).
+west(cell(C,D,P1),cell(C,D,P2)):-
+        move(P1,D,-,1/0,P2).
 
 %!      north_west(+Cell1,-Cell2) is det.
 %
 %       True when Cell2 is north-west of Cell1.
 %
-north_west(cell(C,P1),cell(C,P2)):-
-        move(P1,-,1/0,P_)
-        ,move(P_,-,0/1,P2).
+north_west(cell(C,D,P1),cell(C,D,P2)):-
+        move(P1,D,-,1/0,P_)
+        ,move(P_,D,-,0/1,P2).
 
 %!      here(+Cell1,-Cell2) is det.
 %
@@ -471,14 +468,16 @@ here(C,C).
 %
 %       Make a move from a Current cell.
 %
-%       As move/5 but does not take into account the limits of the
-%       image.
+%       As move/5 in image.pl but does not automatically modify the
+%       width and height dimensions to change rows!
 %
-move(X/Y,D,Dx/Dy,Ex/Ey):-
+move(X/Y,W-H,D,Dx/Dy,Ex/Ey):-
 	ground(X/Y)
 	,ground(Dx/Dy)
 	,ground(D)
 	,Mv_x =.. [D,X,Dx]
 	,Mv_y =.. [D,Y,Dy]
 	,Ex is Mv_x
-	,Ey is Mv_y.
+	,Ey is Mv_y
+	,within_limits(Ex,W)
+	,within_limits(Ey,H).

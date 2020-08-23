@@ -67,9 +67,10 @@ image_dimensions([Cs|Rs],W,H):-
 %       image, where each sub-list is a row and each element of a
 %       sub-list is the colour of a cell in that row.
 %
-%       Cells is a list of compounds cell(C,X/Y) representing cells,
+%       Cells is a list of compounds cell(C,W-H,X/Y) representing cells,
 %       where C is an integer from 0-9 representing the colour of the
-%       cell and X/Y is a coordinate in the image.
+%       cell, W-H are the width and height dimensions of the image and
+%       X/Y is a coordinate in the image.
 %
 image_scan(Rs,Cs):-
         image_dimensions(Rs,W,H)
@@ -84,7 +85,7 @@ image_scan(Rs,Cs):-
 %
 image_scan([[]],_D,_P,Cs,Cs):-
         !.
-image_scan(Rs,D,P,Acc,[cell(C,P)|Bind]):-
+image_scan(Rs,D,P,Acc,[cell(C,D,P)|Bind]):-
         right_scan([Rs,D,P,C],[Rs_,D,P_,_C_])
         ,image_scan(Rs_,D,P_,Acc,Bind).
 
@@ -200,10 +201,11 @@ objects([_|Cs],Acc,Bind):-
 %
 %       Collect cells Contiguous to a Cell in an Image.
 %
-%       Cell is a compound cell(C,X/Y) where C is the colour and X/Y the
-%       coordinates of a cell in an Image. Image is a list of cells.
-%       Contiguous is the list of cells in Image contiguous to Cell and
-%       Discontiguous the list of remaining cells in the Image.
+%       Cell is a compound cell(C,W-H,X/Y) where C is the colour, W-H
+%       the dimensions of an Image and X/Y the coordinates of a cell in
+%       the Image. Image is a list of cells. Contiguous is the list of
+%       cells in Image contiguous to Cell and Discontiguous the list of
+%       remaining cells in the Image.
 %
 %       Two cells are considered to be contiguous iff they have the same
 %       colour and their X/Y dimensions have a Euclidean distance
@@ -249,14 +251,14 @@ contiguous_(C1,C2):-
 %
 %       True when Cell1 and Cell2 have the same colour.
 %
-same_colour(cell(C,_),cell(C,_)).
+same_colour(cell(C,_,_),cell(C,_,_)).
 
 
 %!      adjacent_cell(+Cell1,+Cell2) is det.
 %
 %       True when Cell1 is adjacent to Cell2.
 %
-adjacent_cell(cell(_,P1),cell(_,P2)):-
+adjacent_cell(cell(_,_,P1),cell(_,_,P2)):-
         adjacent(P1,P2).
 
 
@@ -290,7 +292,7 @@ euclidean_distance(X1/Y1, X2/Y2, D):-
 %
 foreground_object(Os):-
         findall(1
-               ,member(cell(0,_),Os)
+               ,member(cell(0,_,_),Os)
                ,[]).
 
 
@@ -298,31 +300,31 @@ foreground_object(Os):-
 %
 %       Order an object in the starndard object order.
 %
-%       Object is a list of image cells, cell(C,X/Y), where C a colour
-%       and X/Y the x and y axis coordinates of the cell in an image
-%       greid.
+%       Object is a list of image cells, cell(C,W-H,X/Y), where C a
+%       colour, W-H the dimensions of an image and X/Y the x and y axis
+%       coordinates of the cell in an image grid.
 %
 %       Reordered is the list of cells in Object reordered by the
 %       standard order of objects in this project. The standard order
 %       for objects is ascending on the y axis then ascending on the x
 %       axis. For example, the following is a list of object cells
-%       ordered in the standard order for objects:%
+%       ordered in the standard order for objects:
 %       ==
-%       cell(1,3/0)
-%       cell(1,3/1)
-%       cell(1,1/2)
-%       cell(1,2/2)
-%       cell(1,3/2)
-%       cell(1,4/2)
-%       cell(1,5/2)
-%       cell(1,3/3)
-%       cell(1,3/4)
+%       cell(0,3-3,0/0).
+%       cell(1,3-3,1/0).
+%       cell(0,3-3,2/0).
+%       cell(0,3-3,0/1).
+%       cell(1,3-3,1/1).
+%       cell(0,3-3,2/1).
+%       cell(0,3-3,0/2).
+%       cell(1,3-3,1/2).
+%       cell(0,3-3,2/2).
 %       ==
 %
 ordered_object(Os,Os_):-
-        findall(cell(C,X/Y)
+        findall(cell(C,D,X/Y)
                ,order_by([asc(Y)
                          ,asc(X)]
-                        ,member(cell(C,X/Y),Os)
+                        ,member(cell(C,D,X/Y),Os)
                         )
                ,Os_).
