@@ -539,6 +539,7 @@ unifiable_compare(Delta, A, B) :-
 unfold_clauses(Cs,Ss,Us):-
 	configuration:unfold_invented(true)
 	,!
+	,debug(top_program,'Unfolding invented Top Progam',[])
 	,unfold_invented(Cs,Ss,Us).
 unfold_clauses(Cs,_Ss,Cs):-
 	configuration:unfold_invented(false).
