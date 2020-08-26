@@ -1,5 +1,6 @@
-:-module(rendering_config, [colour_symbol/2
-                           ]).
+:-module(vision_thing_config, [colour_symbol/2
+                              ,line_segmentation_grammar/1
+                              ]).
 
 /** <module> Configuration options for rendering.pl.
 */
@@ -23,3 +24,12 @@ colour_symbol(7, o).
 colour_symbol(8, t).
 colour_symbol(9, w).
 colour_symbol(-1, #).
+
+
+%!      line_segmentation_grammar(?Path) is semidet.
+%
+%       Output Path to write line segmentation grammars.
+%
+%       Path is relative to Louise project root.
+%
+line_segmentation_grammar('data/vision_thing/output/lines.pl').

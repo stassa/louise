@@ -14,7 +14,7 @@
 			,end/2
                         ]).
 
-:-reexport(vision_thing).
+:-use_module(vision_thing).
 :-use_module(output/lines).
 :-use_module(configuration).
 
