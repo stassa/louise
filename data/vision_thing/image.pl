@@ -8,18 +8,24 @@
 
 /** <module> Represntation of images in vision_thing dataset.
 
-We expect an "image" to be represented as a grid of cells each with a
-distinct colour, as for the ARC dataset (rather than a matrix of pixel
-values).
+Predicates in this module perform operations on images in the ARC
+dataset format, in particular operations to extract objects from an
+image.
 
-We represent an ARC "image" as a list of lists, where each sublist is a
-row in the image grid and each element of a sublist is a cell in the
-row represented by the sublist. For example, the following Prolog list
-is an ARC image with a single blue line of two-cells length in the
-middle:
+Images
+------
+
+An ARC dataset "image" is represented as a grid of cells each with a
+distinct colour (rather than a matrix of full-on pixel values).
+
+In this project we represent an ARC image as a list of lists, where each
+sublist is a row in the image grid and each element of a sublist is a
+cell in the row represented by the sublist. For example, the following
+Prolog list is an ARC image with a single blue line of two-cells length
+in the middle:
 
 ==
-Is = [[0,0,0]
+Is = [[0,1,0]
      ,[0,1,0]
      ,[0,1,0]
      ]
@@ -41,6 +47,33 @@ And of any 3 x 3 image of course. To confuse matters further and pour
 epater les bourjeois, we count each dimension of an image starting at 1
 rather than 0, so a 3 x 3 image starts at the upper left corner in the
 0/0 coordinate and ends in the lower right corner in the 2/2 coordinate.
+
+Objects in images
+-----------------
+
+The predicate image_scan/2 defined in this module takes as input an ARC
+image in our list-of-lists representation, described above, and returns
+a list of compounds of the form cell(C,W-H,X/Y) representing cells in
+the image, where C is the cell's colour, W-H are the width and height
+dimensions of the image and X/Y are the x and y coordinates of the cell
+in the image. The list of cells returned by image_scan/2 can then be
+passed as the first argument of objects/2 to retrieve lists of
+contiguous cells of the same colour, i.e. objects in the image.
+
+For example, the following is the list of cells and the single object of
+the single vertical line in the above example, as returned by
+image_scan/2 and object/2:
+
+==
+?- Is = [[[0,1,0],[0,1,0],[0,1,0]]], image_scan(Is,Cs), objects(Cs,Os).
+Is = [[[0, 1, 0], [0, 1, 0], [0, 1, 0]]],
+Cs = [cell([0, 1, 0], 3-1, 0/0), cell([0, 1, 0], 3-1, 1/0), cell([0, 1, 0], 3-1, 2/0)],
+Os = [[cell([0, 1, 0], 3-1, 0/0), cell([0, 1, 0], 3-1, 1/0), cell([0, 1, 0], 3-1, 2/0)]].
+==
+
+Note that, since there is a single object in our example image, the list
+of objects returned by objects/2 has a single element and that element
+has all the cells scanned from the image by image_scan/2.
 
 */
 

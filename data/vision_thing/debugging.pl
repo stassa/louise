@@ -1,7 +1,30 @@
-:-module(debugging, [debug_learned/3
+:-module(debugging, [debug_lines/3
                     ]).
 
 /** <module> Debugging facilities for vision_thing dataset.
+
+Example of use:
+
+==
+?- _N = 4, _Ts = [line,cross,square,rectangle,point], member(_T,_Ts), learn_dynamic(_T/_N,_Ps), reduce_unfolded(_Ps,_Rs), experiment_data(_T/_N,_Pos,_Neg,_BK,_MS), debug_lines(_Pos,_BK,_Rs).
+Learned shape grammar:
+line(A,B,C,D):-horizontal_line(A,B,C,D).
+line(A,B,C,D):-vertical_line(A,B,C,D).
+
+Object cells:
+[cell(1,3-3,1/0),cell(1,3-3,1/1),cell(1,3-3,1/2)].
+. b .
+. b .
+. b .
+
+Parsed vertical line:
+[cell(1,3-3,1/0),cell(1,3-3,1/1),cell(1,3-3,1/2)].
+. b .
+. b .
+. b .
+
+true .
+==
 
 */
 
@@ -14,40 +37,32 @@
 %
 debugging_module('$debugging').
 
-%!      experiment_file_module(?Module) is semidet.
-%
-%       Name of the experiment file Module.
-%
-%       Used to collect background predicates' definitions.
-%
-experiment_file_module(vision_thing).
 
-
-%!      debug_learned(+Examples,+BK,+Program) is det.
+%!      debug_lines(+Examples,+BK,+Grammar) is det.
 %
-%       Debug a learned Program showing how Examples are parsed.
+%       Debug a segmentation Grammar showing how Examples are parsed.
 %
 %       Examples is a list of examples for a learning target. BK is the
 %       set of predicate symbols and arities of background knowledge
-%       predicates for that target. Program is a list of clauses in a
-%       hypothesis learned from the given Examples.
+%       predicates for that target. Grammar is a list of clauses in a
+%       hypothesis, representing a line segmentation grammar for the
+%       shapes in the given Examples.
 %
-%       debug_learned/3 calls the learned Program to parse each example
+%       debug_lines/3 calls the learned Grammar to parse each example
 %       in Examples and prints out the resulting sub-objects parsed from
-%       that example by Program.
+%       that example by Grammar.
 %
-debug_learned(Es,BK,Ps):-
+debug_lines(Es,BK,Ps):-
         debugging_module(MD)
-        ,experiment_file_module(ME)
+        ,experiment_file(_,ME)
         ,print_clauses('Learned shape grammar:', Ps)
         ,nl
         ,closure(BK,ME,Bs)
         ,flatten([Es,Ps,Bs],Ts)
         ,S = assert_program(MD,Ts,Rs)
-        ,G = forall(member(E,Es)
-                   ,(parse_shape(MD,E)
-                    )
-                   )
+        ,G = (member(E,Es)
+             ,parse_shape(MD,E)
+             )
         ,C = erase_program_clauses(Rs)
         ,setup_call_cleanup(S,G,C).
 
@@ -61,7 +76,8 @@ parse_shape(M,E):-
         ,clause(M:E,B)
         ,B \= true
         ,call(M:B)
-        ,debug_lines(E).
+        ,debug_lines(E)
+        ,!.
 parse_shape(_M,_E):-
         debug_lines([]).
 
@@ -72,7 +88,7 @@ parse_shape(_M,_E):-
 %
 debug_cells(E):-
         example_cells(E,Cs)
-        ,writeln('Example cells:')
+        ,writeln('Object cells:')
         ,portray_object(Cs)
         ,nl.
 
@@ -81,10 +97,13 @@ debug_cells(E):-
 %       Portray the cells in a shape parsed from an Example.
 %
 debug_lines(E):-
-        example_lines(E,Ls)
+        example_lines(E,Ls_)
+        % Lines are reversed in the accumulator in examples.
+        ,reverse(Ls_,Ls)
         ,forall(member(Ls_i,Ls)
-               ,(writeln('Parsed lines:')
-                ,portray_object(Ls_i)
+               ,(phrase(shape(T,O,Cs),[Ls_i])
+                ,format('Parsed ~w ~w:~n',[T,O])
+                ,portray_object(Cs)
                 ,nl
                 )
                )
@@ -116,3 +135,24 @@ example_lines(E,Ls):-
 example_lines(E,[Cs]):-
         E =.. [_S,[Cs],_].
         %E =.. [_S,[Cs],[[]]].
+
+
+%!      shape(-Orientation,-Type,-Cells)// is nondet.
+%
+%       Determine a parsed object's shape.
+%
+shape(O,line,Cs) --> line(O,Cs).
+shape(single,point,Cs) --> point(Cs).
+
+%!      line(-Orientation,-Type)// is nondet.
+%
+%       Determine a parsed line's Orientation and Type.
+%
+line(vertical,Cs) --> [vl(Cs)].
+line(horizontal,Cs) --> [hl(Cs)].
+
+%!      point(-Cells)// is nondet.
+%
+%       The parsed object is a single point.
+%
+point(Cs) --> [pt(Cs)].

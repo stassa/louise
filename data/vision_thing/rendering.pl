@@ -9,6 +9,9 @@
 
 /** <module> Render two-dimensional images.
 
+Predicates in this module are used to visualise objects in ARC format
+images, by printing them out to the console in glorious ASCII.
+
 Examples of use:
 
 ==
