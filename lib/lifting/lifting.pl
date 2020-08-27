@@ -2,6 +2,8 @@
 		  ,lifted_program/3
 		  ]).
 
+:-use_module(lifting_configuration).
+
 /** <module> Predicates to replace terms with numbered variables.
 
 */
@@ -170,13 +172,47 @@ lifted_terms(I, J, As, Es, As_):-
 %	literal to be lifted. I, J index the last terms numbered for
 %	previous literals or the parent literal of Ts.
 %
-%	Example:
+%	Configuration options lift_compounds/1 and lift_lists/1 control
+%	how compound Prolog terms and lists found as arguments to
+%	literals are lifted. The two options combine to give some
+%	fine control over the lifting. This is again best explained with
+%	a few examples:
+%
+%	Examples of lifting compound terms:
 %	==
-%	?- _P = [(enc(p,X,Y):-enc(q,Y,X)), enc(r,X,Z) ], lifted_program(_P, L).
-%	X = B,
-%	Y = C,
-%	Z = F,
-%	L = [(enc(A, B, C):-enc(D, C, B)), enc(E, B, F)].
+%	?- _Ps = [ p([a(1),b(2),c(3),d(4,e(5))]) ]
+%	,lifted_program(_Ps,_Ls)
+%	,print_clauses(_Ls)
+%	,lift_compounds(Comp)
+%	,lift_lists(Lists).
+%	p(A).
+%	Comp = Lists, Lists = once.
+%
+%	?- _Ps = [ p([a(1),b(2),c(3),d(4,e(5))]) ]
+%	,lifted_program(_Ps,_Ls)
+%	,print_clauses(_Ls)
+%	,lift_compounds(Comp)
+%	,lift_lists(Lists).
+%	p(A).
+%	Comp = recursively,
+%	Lists = once.
+%
+%	?- _Ps = [ p([a(1),b(2),c(3),d(4,e(5))]) ]
+%	,lifted_program(_Ps,_Ls)
+%	,print_clauses(_Ls)
+%	,lift_compounds(Comp)
+%	,lift_lists(Lists).
+%	p([A,B,C,D]).
+%	Comp = once,
+%	Lists = recursively.
+%
+%	?- _Ps = [ p([a(1),b(2),c(3),d(4,e(5))]) ]
+%	,lifted_program(_Ps,_Ls)
+%	,print_clauses(_Ls)
+%	,lift_compounds(Comp)
+%	,lift_lists(Lists).
+%	p([a(A),b(B),c(C),d(D,e(E))]).
+%	Comp = Lists, Lists = recursively.
 %	==
 %
 lifted_terms(I, I, [], _Es, Ts, Ts_):-
@@ -192,10 +228,31 @@ lifted_terms(I,J,['$VAR'(K)|Ts],Es,Acc,Bind):-
 	!
 	,lifted_terms(I,J,Ts,Es,['$VAR'(K)|Acc],Bind).
 lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
-% Checking T is a compound but not a list avoids variabilising list
-% elements.
-	compound(T)
+% T is a compound term and may need to be lifted recursively.
+% Checking T not a list avoids variabilising list elements.
+	lifting_configuration:lift_compounds(H)
+	,compound(T)
 	,\+ is_list(T)
+	,(   H == recursively
+	 ->  true
+	 ;   H == once
+	    ,fail % Regrettable, but pragmatic.
+	 )
+	,!
+	,T =.. [F|As]
+	% Note the new variable - else we get an earlier value of J.
+	,lifted_terms(I, K, As, Es, [], As_)
+	,T_ =.. [F|As_]
+	,lifted_terms(K, J, Ts, Es, [T_|Acc], Bind).
+lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
+% T is a list and may need to lifted recursively.
+	lifting_configuration:lift_lists(H)
+	,is_list(T)
+	,(   H == recursively
+	 ->  true
+	 ;   H == once
+	    ,fail
+	 )
 	,!
 	,T =.. [F|As]
 	% Note the new variable - else we get an earlier value of J.
