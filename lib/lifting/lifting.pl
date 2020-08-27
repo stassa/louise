@@ -187,17 +187,9 @@ lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 	memberchk(T,Es)
 	,!
 	,lifted_terms(I, J, Ts, Es, [T|Acc], Bind).
-lifted_terms(I,J,[T|Ts],Es,Acc,Bind):-
-% TODO: I'm not sure how this makes sense. It seems to fail when T
-% is a compound term that is not '$VAR'(K) at which point it will
-% fall over to the next clause and variabilise the compound recursively
-% (which is correct). So this clause seems to only want to match
-% previously assigned numbervar terms. In that case, can't we just do:
-% lifted_terms(I,J,['$VAR'(K)|Ts],Acc,Bind)?
-	compound(T)
-	,\+ is_list(T)
-	,T = '$VAR'(K)
-	,!
+lifted_terms(I,J,['$VAR'(K)|Ts],Es,Acc,Bind):-
+% TODO: When is this ^^ ever the case?
+	!
 	,lifted_terms(I,J,Ts,Es,['$VAR'(K)|Acc],Bind).
 lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 % Checking T is a compound but not a list avoids variabilising list
