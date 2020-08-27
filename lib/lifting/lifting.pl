@@ -187,7 +187,6 @@ lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 	memberchk(T,Es)
 	,!
 	,lifted_terms(I, J, Ts, Es, [T|Acc], Bind).
-
 lifted_terms(I,J,[T|Ts],Es,Acc,Bind):-
 % TODO: I'm not sure how this makes sense. It seems to fail when T
 % is a compound term that is not '$VAR'(K) at which point it will
@@ -207,9 +206,10 @@ lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 	,\+ is_list(T)
 	,!
 	,T =.. [F|As]
-	,lifted_terms(I,J,As,[],As_)
+	% Note the new variable - else we get an earlier value of J.
+	,lifted_terms(I, K, As, Es, [], As_)
 	,T_ =.. [F|As_]
-	,lifted_terms(J,_,Ts, Es, [T_|Acc], Bind).
+	,lifted_terms(K, J, Ts, Es, [T_|Acc], Bind).
 lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 	var(T)
 	,increment(I,I_)
@@ -224,7 +224,6 @@ lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 	increment(I, I_)
 	,asserta(term_var(T, I_))
 	,lifted_terms(I_, J, Ts, Es, ['$VAR'(I_)|Acc], Bind).
-
 
 
 %!	increment(+I, -Ipp) is det.
