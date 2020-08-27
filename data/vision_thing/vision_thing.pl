@@ -314,7 +314,8 @@ version of line_segmentation.pl, with the listed queries and assuming
 the listed configuration options and MIL problem elements:
 
 ==
-?- list_config.example_clauses(call)
+?- list_config.
+example_clauses(call)
 experiment_file(data/vision_thing/shape_drawing.pl,shape_drawing)
 learner(louise)
 max_invented(2)
@@ -326,7 +327,7 @@ resolutions(5000)
 symbol_range(predicate,[P,Q,R,S,T])
 symbol_range(variable,[X,Y,Z,U,V,W])
 theorem_prover(resolution)
-unfold_invented(false)
+unfold_invented(true)
 true.
 
 ?- list_problem_statistics(_/2).
@@ -336,15 +337,13 @@ Background knowledge: 7 [write_vertical_line/2,write_horizontal_line/2,write_poi
 Metarules:            2 [chain,identity]
 true.
 
-?- _N = 2, _Ts = [line,cross,square,rectangle,point], member(_T,_Ts), learn_dynamic(_T/_N,_Ps), reduce_unfolded(_Ps,_Rs), print_clauses(_Rs).%, experiment_data(_T/_N,_Pos,_Neg,_BK,_MS), debug_learned(_Pos, _BK, _Rs).
+?- _N = 2, _Ts = [line,cross,square,rectangle,point], member(_T,_Ts), learn_dynamic(_T/_N,_Ps), reduce_unfolded(_Ps,_Rs), print_clauses(_Rs).
 line(A,B):-write_vertical_line(A,B).
 line(A,B):-write_horizontal_line(A,B).
 true ;
 []
 true ;
-square(A,B):-write_horizontal_line(A,C),'$1'(C,B).
-'$1'(A,B):-read_west(A,C),'$2'(C,B).
-'$2'(A,B):-read_south(A,C),write_horizontal_line(C,B).
+square(A,B):-write_horizontal_line(A,C),read_west(C,D),read_south(D,E),write_horizontal_line(E,B).
 true ;
 []
 true ;

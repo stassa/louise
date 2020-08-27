@@ -101,7 +101,7 @@ left_recursive(T,[T,T|_Ps]):-
 	!.
 
 :- auxiliaries:set_configuration_option(max_invented, [2]).
-:- auxiliaries:set_configuration_option(unfold_invented, [false]).
+:- auxiliaries:set_configuration_option(unfold_invented, [true]).
 
 background_knowledge(_/2,[write_vertical_line/2
 			 ,write_horizontal_line/2
