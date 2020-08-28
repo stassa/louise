@@ -37,6 +37,7 @@
 		      ,initialise_experiment/0
 		      ,learning_targets/1
 		      ,load_experiment_file/0
+		      ,edit_experiment_file/0
 		      ,tp_safe_experiment_data/5
 		       % Program auxiliaries
 		      ,built_in_or_library_predicate/1
@@ -130,6 +131,7 @@ Table of Contents
    * initialise_experiment/0
    * learning_targets/1
    * load_experiment_file/0
+   * edit_experiment_file/0
    * tp_safe_experiment_data/5
 
 7. Program auxiliaries [sec_prog]
@@ -1846,6 +1848,16 @@ load_experiment_file:-
 
 
 
+%!	edit_experiment_file is det.
+%
+%	Open the current experiment file in the Swi-Prolog IDE.
+%
+edit_experiment_file:-
+	configuration:experiment_file(P,_M)
+	,edit(P).
+
+
+
 %!	tp_safe_experiment_data(+Target,-Pos,-Neg,-BK,-MS) is det.
 %
 %	Ensure experiment data is safe for TP operator predicates.
@@ -1951,7 +1963,12 @@ closure([F/A|Ss],Ps_Acc,Ps_Bind,M,Acc,Bind):-
 closure([S|Ss],Ps_Acc,Ps_Bind,M,Acc,Bind):-
 	\+ memberchk(S,Ps_Acc)
 	,!
+	,debug(closure,'Looking for definition of ~w in module ~w.', [S,M])
 	,program(S,M,Cs)
+	,(   Cs \= []
+	 ->  debug(closure,'Found definition of ~w in module ~w.~n', [S,M])
+	 ;   debug(closure,'Found empty definition of ~w in module ~w.~n', [S,M])
+	 )
 	,closure(Ss,[S|Ps_Acc],Ps_Acc_,M,[Cs|Acc],Acc_)
 	,program_symbols(Cs,Ss_)
 	,closure(Ss_,Ps_Acc_,Ps_Bind,M,Acc_,Bind).
