@@ -259,6 +259,27 @@ line_segmentation.pl and shape_drawing.pl, each with its own background
 knowledge. The line segmentation grammars learned from the MIL problems
 defined in line_segmentation.pl are added to the BK of shape_drawing.pl.
 
+From grammars to languages and from plans to strategies
+-------------------------------------------------------
+
+Line segmentation grammars and shape drawing plans can be learned in two
+configurations, depending on the type of examples. Examples of objects
+of a single shape can be used to learn segmentation grammars and drawing
+plans for objects of that specific shape. Examples of objects of mixed
+shapes can be used to learn generic segmentation grammars and plans, for
+objects of any shape represented in the examples (and probably some
+combinations thereof not directly represented in the examples as a
+result of generalisation).
+
+To distinguish between the two configurations, we call a generic line
+segmentation grammar a line segmentation "language" and a generic shape
+drawing plan a shape drawing "strategy". Individual shapes' grammars and
+plans can be learned from fewer examples and can be expected to be
+smaller in size, while generic languages and plans will grow in size and
+generality with the number of examples. We expect generic languages and
+strategies to end up being quite large- but for the purposes of the ARC
+dataset smaller grammars and plans will probably suffice.
+
 Current progress in learning line segementation grammars
 --------------------------------------------------------
 
@@ -283,14 +304,14 @@ theorem_prover(resolution)
 unfold_invented(true)
 true.
 
-?- list_problem_statistics(_/4).
-Positive examples:    24
+?- list_problem_statistics(_/4).Positive examples:    24
 Negative examples:    0
 Background knowledge: 3 [vertical_line/4,horizontal_line/4,single_point/4]
 Metarules:            2 [double_chain,double_identity]
 true.
 
-?- _N = 4, _Ts = [line,cross,square,rectangle,point], member(_T,_Ts), learn_dynamic(_T/_N,_Ps), reduce_unfolded(_Ps,_Rs), print_clauses(_Rs).%, experiment_data(_T/_N,_Pos,_Neg,_BK,_MS), debug_learned(_Pos, _BK, _Rs).
+% Individual shape segmentation grammars.
+?- _N = 4, _Ts = [line,cross,square,rectangle,point], member(_T,_Ts), learn_dynamic(_T/_N,_Ps), reduce_unfolded(_Ps,_Rs), print_clauses(_Rs).
 line(A,B,C,D):-horizontal_line(A,B,C,D).
 line(A,B,C,D):-vertical_line(A,B,C,D).
 true ;
@@ -303,6 +324,18 @@ rectangle(A,B,C,D):-horizontal_line(A,E,C,F),horizontal_line(E,B,F,D).
 rectangle(A,B,C,D):-vertical_line(A,E,C,F),rectangle(E,B,F,D).
 true ;
 point(A,B,C,D):-single_point(A,B,C,D).
+true.
+
+% General shape segmentation language.
+?- learn_dynamic(lines/4,_Ps),reduce_unfolded(_Ps,_Rs),print_clauses(_Rs).lines(A,B,C,D):-horizontal_line(A,E,C,F),horizontal_line(E,B,F,D).
+lines(A,B,C,D):-horizontal_line(A,B,C,D).
+lines(A,B,C,D):-vertical_line(A,E,C,F),horizontal_line(E,G,F,H),horizontal_line(G,B,H,D).
+lines(A,B,C,D):-horizontal_line(A,E,C,F),horizontal_line(E,B,F,D).
+lines(A,B,C,D):-vertical_line(A,E,C,F),horizontal_line(E,G,F,H),horizontal_line(G,B,H,D).
+lines(A,B,C,D):-single_point(A,B,C,D).
+lines(A,B,C,D):-vertical_line(A,B,C,D).
+lines(A,B,C,D):-vertical_line(A,E,C,F),lines(E,B,F,D).
+lines(A,B,C,D):-vertical_line(A,E,C,F),vertical_line(E,B,F,D).
 true.
 ==
 
@@ -330,27 +363,34 @@ theorem_prover(resolution)
 unfold_invented(true)
 true.
 
-?- list_problem_statistics(_/2).
-Positive examples:    46
+?- list_problem_statistics(draw_shape/2).
+Positive examples:    23
 Negative examples:    0
 Background knowledge: 7 [write_vertical_line/2,write_horizontal_line/2,write_point/2,read_north/2,read_south/2,read_east/2,read_west/2]
 Metarules:            2 [chain,identity]
 true.
 
-?- _N = 2, _Ts = [line,cross,square,rectangle,point], member(_T,_Ts), learn_dynamic(_T/_N,_Ps), reduce_unfolded(_Ps,_Rs), print_clauses(_Rs).
-line(A,B):-write_vertical_line(A,B).
-line(A,B):-write_horizontal_line(A,B).
+% Individual shape drawing plans.
+?- _N = 2, _Ts = [draw_line,draw_cross,draw_square,draw_rectangle,draw_point], member(_T,_Ts), learn_dynamic(_T/_N,_Ps), reduce_unfolded(_Ps,_Rs), print_clauses(_Rs).
+draw_line(A,B):-write_vertical_line(A,B).
+draw_line(A,B):-write_horizontal_line(A,B).
 true ;
 []
 true ;
-square(A,B):-write_horizontal_line(A,C),read_west(C,D),read_south(D,E),write_horizontal_line(E,B).
+draw_square(A,B):-write_horizontal_line(A,C),read_west(C,D),read_south(D,E),write_horizontal_line(E,B).
 true ;
 []
 true ;
-point(A,B):-write_point(A,B).
+draw_point(A,B):-write_point(A,B).
+true.
+
+% General shape drawing strategy.
+?- learn_dynamic(draw_shape/2,_Ps),reduce_unfolded(_Ps,_Rs),print_clauses(_Rs).draw_shape(A,B):-write_point(A,B).
+draw_shape(A,B):-write_horizontal_line(A,B).
+draw_shape(A,B):-write_vertical_line(A,B).
+draw_shape(A,B):-write_horizontal_line(A,C),read_west(C,D),read_south(D,E),write_horizontal_line(E,B).
 true.
 ==
-
 
 Comments on current progress
 ----------------------------

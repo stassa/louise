@@ -22,13 +22,16 @@
 
 This experiment file defines MIL problems used to learn plans for
 drawing the shapes of objects in raw images. The following is an example
-of a plan learned for a very simple square shape:
+of a plan learned for a very simple square shape (whitespace added to
+output by hand, for readability):
 
 ==
-?- learn_dynamic(square/2).
-'$1'(A,B):-read_west(A,C),'$2'(C,B).
-'$2'(A,B):-read_south(A,C),write_horizontal_line(C,B).
-square(A,B):-write_horizontal_line(A,C),'$1'(C,B).
+?- learn_dynamic(draw_square/2,_Ps),reduce_unfolded(_Ps,_Rs),print_clauses(_Rs).
+draw_square(A,B):-
+	write_horizontal_line(A,C)
+	,read_west(C,D)
+	,read_south(D,E)
+	,write_horizontal_line(E,B).
 true.
 ==
 
@@ -62,29 +65,28 @@ far. Drawing a shape is not complete until all lines have been moved
 from Ls to Ws.
 
 Learning targets for the MIL problems defined in this experiment file
-represent either: a) specific shapes, like line, cross, square,
-rectangle, etc, or, b) generic objects of arbitrary shape. In both
-cases, examples are given as compounds T(S1,S2), where T is the
-predicate symbol of the learning target (the name of a shape or "objct",
-without "e", for generic objects) and S1, S2 are the start and end
-states of a plan for drawing the object represented by the learning
-target.
+represent plans for drawing either: a) specific shapes, like line,
+cross, square, rectangle, etc, or, b) generic objects of arbitrary
+shape. In both cases, examples are given as compounds T(S1,S2), where T
+is the predicate symbol of the learning target (the name of a shape,
+prepended with "draw_", e.g. "draw_line" or "draw_shape" for plans
+encompassing multiple shapes) and S1, S2 are the start and end states of
+a plan for drawing the object represented by the learning target.
 
 In the case that the learning target is a generic object of arbitrary
 shape, the learned plans subsume the drawing plans of all individual
 shapes that can be learned from this experiment file. For example, if
-separate learning targets for line, cross, square and rectangle shapes
-exist, setting a generic object target will direct Louise to learn a
-plan able to draw any of the above shapes. In a sense, a generic plan
-approximates a general shape drawing strategy (and is more accurate the
-more examples of different shapes are given). However, such a plan
-can grow to be very, very large (several tens of thousands clauses) and
-may take a long time to learn. Further, there is a tradeoff between the
-generality of an all-encompassing strategy and the specificity provided
-by a plan that can draw named shapes, whose names can be used to reason
-about them using specific background knowledge (e.g. a "circle" can
-encompass other objects, a "triangle" has three corners, etc).
-
+separate learning targets for drawing line, cross, square and rectangle
+shapes exist, setting a generic "draw_shape" target will direct Louise
+to learn a plan able to draw any of the above shapes. In a sense, a
+generic plan approximates a general shape drawing strategy (and is more
+accurate the more examples of different shapes are given). However, such
+a plan can grow to be very, very large, given a large set of examples
+and may take a long time to learn. Further, there is a tradeoff between
+the generality of an all-encompassing strategy and the specificity
+provided by a plan that can draw named shapes, whose names can be used
+to reason about them using specific background knowledge (e.g. that a
+circle can encompass other objects, a triangle has three corners, etc).
 */
 
 % McCarthyite constraint - excludes left-recursive metasubstitutions
@@ -115,8 +117,11 @@ background_knowledge(_/2,[write_vertical_line/2
 metarules(_/2,[chain,identity]).
 
 positive_example(S/2,E):-
-	pos_ex(S,E).
-positive_example(objct/2,objct(S1,S2)):-
+	atom_concat('draw_',S_,S)
+	,pos_ex(S_,E_)
+	,E_ =.. [S_|As]
+	,E =.. [S|As].
+positive_example(draw_shape/2,draw_shape(S1,S2)):-
        pos_ex(_,E_)
        ,E_ =.. [_,S1,S2].
 
@@ -127,18 +132,18 @@ negative_example(_/2,_E):-
 %
 %	Abstracts away collection of examples from images.
 %
-%	Target is either objct/2 (note the absence of "e") or the name
-%	of a shape represented in a raw image in image_data.pl.
-%	Appropriate shape names can be retrieved in the first argument
-%	of image/2.
+%	Target is either draw_shape/2 or the name of a shape represented
+%	in a raw image in image_data.pl prepended by the atom 'draw_',
+%	e.g. draw_line, draw_square, etc. Appropriate shape names can be
+%	retrieved from the first argument of image/2 in image_data.pl.
 %
 %	Example is a two-arity atom of Target where the first argument
 %	is the starting state and the second the end state of a plan to
-%	draw the Target shape, or a generic objct (in which case the
-%	plan encompasses every known object shape).
+%	draw the Target shape, or a generic shape (in which case the
+%	plan encompasses every known object's shape).
 %
 %	The learning targets in this experiment file represent plans for
-%	drawing objcts with specific shapes, or generic object drawing
+%	drawing objects with specific shapes, or generic shape drawing
 %	plans. The examples for those targets are states of a program
 %	operating on objects parsed into lines from raw images in
 %	image_data.pl. In order to be used as examples, the raw images
@@ -152,7 +157,6 @@ negative_example(_/2,_E):-
 %	This predicate abstracts this fairly complicated process so that
 %	it doesn't have to be duplicated for each and every learning
 %	target defined in this experiment file.
-%
 %
 pos_ex(S,E):-
 	image(S,Is)
