@@ -42,6 +42,7 @@
 		       % Program auxiliaries
 		      ,built_in_or_library_predicate/1
 		      ,closure/3
+		      ,program_symbols/2
 		      ,debug_clauses/3
 		      ,debug_clauses/2
 		      ,print_clauses/2
@@ -137,6 +138,7 @@ Table of Contents
 7. Program auxiliaries [sec_prog]
    * built_in_or_library_predicate/1
    * closure/3
+   * program_symbols/2
    * debug_clauses/2
    * print_clauses/1
    * program/3
@@ -1974,6 +1976,7 @@ closure([S|Ss],Ps_Acc,Ps_Bind,M,Acc,Bind):-
 	,closure(Ss_,Ps_Acc_,Ps_Bind,M,Acc_,Bind).
 closure([_S|Ss],Ps,Ps_Acc,M,Acc,Bind):-
 	closure(Ss,Ps,Ps_Acc,M,Acc,Bind).
+
 
 
 %!	program_symbols(+Program,-Symbols) is det.

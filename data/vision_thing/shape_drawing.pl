@@ -89,6 +89,9 @@ to reason about them using specific background knowledge (e.g. that a
 circle can encompass other objects, a triangle has three corners, etc).
 */
 
+:- auxiliaries:set_configuration_option(max_invented, [2]).
+:- auxiliaries:set_configuration_option(unfold_invented, [true]).
+
 % McCarthyite constraint - excludes left-recursive metasubstitutions
 % Allows for invented predicates. Does not take into account existentially
 % quantified secod-order variables in metarules.
@@ -101,9 +104,6 @@ left_recursive(T,[T|_Ps]):-
 	!.
 left_recursive(T,[T,T|_Ps]):-
 	!.
-
-:- auxiliaries:set_configuration_option(max_invented, [2]).
-:- auxiliaries:set_configuration_option(unfold_invented, [true]).
 
 background_knowledge(_/2,[write_vertical_line/2
 			 ,write_horizontal_line/2

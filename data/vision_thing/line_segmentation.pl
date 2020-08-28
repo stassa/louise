@@ -1,5 +1,4 @@
-:-module(line_segmentation, [write_segmentation_grammar/1
-			    ,background_knowledge/2
+:-module(line_segmentation, [background_knowledge/2
                             ,metarules/2
                             ,positive_example/2
                             ,negative_example/2
@@ -122,30 +121,8 @@ articulate, as expalined above.
 */
 
 
-%!	write_segmentation_grammar(+Rules) is det.
-%
-%	Write a learned grammar to an output file.
-%
-write_segmentation_grammar(Rs):-
-	vision_thing_config:line_segmentation_grammar(P)
-	,S = open(P,write,Str,[])
-	,G = (format(Str,':-module(lines, [lines//2]).~n~n',[])
-	     ,format(Str,':-use_module(\'../line_segmentation.pl\').~n~n',[])
-	     ,forall(member(R,Rs)
-		    ,(copy_term(R,R_)
-		     ,numbervars(R_)
-		     ,write_term(Str,R_,[fullstop(true)
-					 ,nl(true)
-					 ,numbervars(true)
-					 ,quoted(true)
-					])
-		     )
-		    )
-	     )
-	,C = close(Str)
-	,setup_call_cleanup(S,G,C).
-
-
+:- auxiliaries:set_configuration_option(max_invented, [3]).
+:- auxiliaries:set_configuration_option(unfold_invented, [true]).
 
 % McCarthyite constraint - excludes left-recursive metasubstitutions
 % Allows for invented predicates. Does not take into account existentially
@@ -159,9 +136,6 @@ left_recursive(T,[T|_Ps]):-
 	!.
 left_recursive(T,[T,T|_Ps]):-
 	!.
-
-:- auxiliaries:set_configuration_option(max_invented, [3]).
-:- auxiliaries:set_configuration_option(unfold_invented, [true]).
 
 configuration:double_chain metarule 'P(x,y,a,b):- Q(x,z,a,c), R(z,y,c,b)'.
 configuration:double_identity metarule 'P(x,y,a,b):- Q(x,y,a,b)'.

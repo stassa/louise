@@ -1,5 +1,6 @@
-:-module(vision_thing, [% Cardinal directions
-                        north/2
+:-module(vision_thing, [write_segmentation_grammar/1
+                       % Cardinal directions
+                       ,north/2
                        ,north_east/2
                        ,east/2
                        ,south_east/2
@@ -15,6 +16,7 @@
 :-user:use_module(image).
 :-user:use_module(image_data).
 :-user:use_module(debugging).
+:-use_module(src(auxiliaries)).
 :-use_module(configuration).
 
 /** <module> Object identification in an ARC dataset image.
@@ -327,7 +329,8 @@ point(A,B,C,D):-single_point(A,B,C,D).
 true.
 
 % General shape segmentation language.
-?- learn_dynamic(lines/4,_Ps),reduce_unfolded(_Ps,_Rs),print_clauses(_Rs).lines(A,B,C,D):-horizontal_line(A,E,C,F),horizontal_line(E,B,F,D).
+?- learn_dynamic(lines/4,_Ps),reduce_unfolded(_Ps,_Rs),print_clauses(_Rs).
+lines(A,B,C,D):-horizontal_line(A,E,C,F),horizontal_line(E,B,F,D).
 lines(A,B,C,D):-horizontal_line(A,B,C,D).
 lines(A,B,C,D):-vertical_line(A,E,C,F),horizontal_line(E,G,F,H),horizontal_line(G,B,H,D).
 lines(A,B,C,D):-horizontal_line(A,E,C,F),horizontal_line(E,B,F,D).
@@ -385,7 +388,8 @@ draw_point(A,B):-write_point(A,B).
 true.
 
 % General shape drawing strategy.
-?- learn_dynamic(draw_shape/2,_Ps),reduce_unfolded(_Ps,_Rs),print_clauses(_Rs).draw_shape(A,B):-write_point(A,B).
+?- learn_dynamic(draw_shape/2,_Ps),reduce_unfolded(_Ps,_Rs),print_clauses(_Rs).
+draw_shape(A,B):-write_point(A,B).
 draw_shape(A,B):-write_horizontal_line(A,B).
 draw_shape(A,B):-write_vertical_line(A,B).
 draw_shape(A,B):-write_horizontal_line(A,C),read_west(C,D),read_south(D,E),write_horizontal_line(E,B).
@@ -426,6 +430,43 @@ would like to avoid - in general, we want to keep the hand-crafting of
 background knowledge and metarueles to a minimum.
 
 */
+
+%!	write_segmentation_grammar(+Rules) is det.
+%
+%	Write a learned segmentation grammar to an output file.
+%
+write_segmentation_grammar(Rs):-
+	vision_thing_config:line_segmentation_grammar(P)
+	,program_symbols(Rs,Ss_)
+	,selectchk(lines/4,Ss_,Ss)
+        ,closure(Ss,line_segmentation,Cs_)
+	,flatten(Cs_,Cs)
+	,S = open(P,write,Str,[])
+	,G = (format(Str,':-module(lines, [lines//2]).~n~n',[])
+	     %,format(Str,':-use_module(\'../line_segmentation.pl\').~n~n',[])
+             ,write_clauses(Str,Rs)
+             ,nl(Str)
+             ,write_clauses(Str,Cs)
+             )
+	,C = close(Str)
+	,setup_call_cleanup(S,G,C).
+
+
+%!	write_clauses(+Stream,+Clauses) is det.
+%
+%	Write a list of Clauses to an open write Stream.
+%
+write_clauses(Str,Rs):-
+        forall(member(R,Rs)
+		    ,(copy_term(R,R_)
+		     ,numbervars(R_)
+		     ,write_term(Str,R_,[fullstop(true)
+					 ,nl(true)
+					 ,numbervars(true)
+					 ,quoted(true)
+					])
+		     )
+              ).
 
 
 % ========================================
