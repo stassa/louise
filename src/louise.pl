@@ -213,7 +213,7 @@ metasubstitution(E,M,Sub):-
 	bind_head_literal(E,M,(Sub:-(_H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,user:call(Ls)
-	,debug(metasubstitution,'Succeeded',[]).
+	,debug_clauses(metasubstitution,'Succeeded:',Ls).
 
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
