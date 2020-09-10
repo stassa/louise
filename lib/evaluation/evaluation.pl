@@ -343,9 +343,12 @@ program_results(T,Ps,BK,Rs):-
 	,lfp_query(Ps,BK_,_Is,Rs).
 program_results(F/A,Ps,_BK,Rs):-
 	configuration:success_set_generation(sld)
+	,configuration:experiment_file(_P, M)
 	,manage_residue(F/A,Ps,Ps_)
 	,S = (table(program_results:F/A)
 	     ,assert_program(program_results,Ps_,Refs_Ps)
+	     % Ensure BK definitions are visible to program_results.
+	     ,add_import_module(program_results,M,start)
 	     )
 	,G = (findall(H
 		     ,(functor(H,F,A)
@@ -357,6 +360,7 @@ program_results(F/A,Ps,_BK,Rs):-
 	     )
 	,C = (erase_program_clauses(Refs_Ps)
 	     ,untable(program_results:F/A)
+	     ,delete_import_module(program_results,M)
 	     )
 	,setup_call_cleanup(S,G,C).
 
