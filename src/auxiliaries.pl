@@ -15,6 +15,7 @@
 		      ,invented_symbols/2
 		      ,known_metarules/1
 		      ,predicate_signature/2
+		      ,background_predicate/2
 		      ,same_metarule/2
 		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
@@ -109,6 +110,7 @@ Table of Contents
    * invented_symbols/2
    * known_metarules/1
    * predicate_signature/2
+   * background_predicate/2
    * same_metarule/2
    * write_encapsulated_problem/1
    * write_encapsulated_problem/4
@@ -517,7 +519,7 @@ known_metarules(Ids):-
 %	Construct the predicate Signature given a learning Target.
 %
 %	Target is the predicate indicator of a learning target defined
-%	in the current experiment file.
+%	in the current experiment file (which must be loaded).
 %
 %	Signature is a list of predicate indicators: [Target, I1, ...,
 %	In, B1, ..., Bm], where each Ii is an invented symbol and n is
@@ -534,11 +536,34 @@ known_metarules(Ids):-
 %
 predicate_signature(T/A,[T/A|Ss]):-
 	configuration:max_invented(I)
-	,configuration:experiment_file(P,M)
-	,user:use_module(P)
+	,configuration:experiment_file(_P,M)
 	,M:background_knowledge(T/A,BK)
 	,invented_symbols(I,A,Is)
 	,append(Is,BK,Ss).
+
+
+
+%!	background_predicate(?Target,?Predicate) is nondet.
+%
+%	True when Predicate is declared as a BK predicate for Target.
+%
+%	Target and Predicate are predicate indicators, F/A.
+%
+%	Mode (+,-) generates all predicates declared as BK for Target.
+%	Mode (-,+) generates all Target prediates for which Predicate is
+%	declared as BK.
+%	Mode (-,-) nondeterministically generates all pairs of Target
+%	and Predicate.
+%
+%	BK declarations are retrieved from the background_knowledge/2
+%	clauses in the current experiment file. That means that an
+%	experiment file must be loaded into memory (as normally done by
+%	starting the project with a clause of experiment_file/2 in
+%	configuration.pl).
+%
+background_predicate(T,P):-
+	predicate_signature(T,Ss)
+	,memberchk(P,Ss).
 
 
 
