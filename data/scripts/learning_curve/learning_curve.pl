@@ -311,15 +311,14 @@ learning_curve(_T,L,[Pos,Neg,BK,MS],time,K,Ss,Rs):-
 			 ,learn_timing([Pos_Train,Neg_Train,BK,MS],L,Ps,D)
 			 ,debug_clauses(progress,'Learned:',Ps)
 			 ,debug(progress,'Duration: ~w sec',[D])
-			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
 			 ,debug(learning_curve_full,'Duration: ~w sec',[D])
+			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
+			 ,length(Ps, N)
+			 ,debug(learning_curve_full,'Hypothesis size: ~w',[N])
 			 )
 			,Vs)
-		,length(Vs, N)
-		,debug(learning_curve_full,'Hypothesis size: ~w',[N])
 		)
 	       ,Rs).
-
 learning_curve(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 	findall(Vs
 	       ,(between(1,K,J)
@@ -334,10 +333,10 @@ learning_curve(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 			 ,debug(progress,'Measured ~w: ~w',[M,V])
 			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
 			 ,debug(learning_curve_full,'Measured ~w: ~w',[M,V])
+			 ,length(Ps, N)
+			 ,debug(learning_curve_full,'Hypothesis size: ~w',[N])
 			 )
 			,Vs)
-		,length(Vs, N)
-		,debug(learning_curve_full,'Hypothesis size: ~w',[N])
 		)
 	       ,Rs).
 
