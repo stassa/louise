@@ -49,6 +49,9 @@
 		      ,print_clauses/2
 		      ,print_clauses/1
 		      ,program/3
+	              % Timing auxiliaries
+	              ,timing/2
+		      ,timing/3
 		      ]).
 
 :-use_module(configuration).
@@ -144,6 +147,10 @@ Table of Contents
    * debug_clauses/2
    * print_clauses/1
    * program/3
+
+8. Timing auxiliaries [sec_time]
+   * timing/2
+   * timing/3
 
 */
 
@@ -2117,3 +2124,40 @@ program(Ss,M,Ps):-
 		 )
 		)
 	       ,Ps).
+
+
+
+
+% [sec_time]
+% ================================================================================
+% Timing auxiliaries
+% ================================================================================
+% Predicates to time the execution of a goal.
+
+%!	timing(+Goal,-Time) is det.
+%
+%	Call a Goal and report the Time it took.
+%
+%	@tbd: If Goal fails, no Time is reported. Wrap in a conditional?
+%
+timing(G, T):-
+	S is cputime
+	,call(G)
+	,E is cputime
+	,T is E - S.
+
+
+
+%!	timing(+Goal,+Limit,-Time) is det.
+%
+%	Call a Goal with a time Limit and report the Time it took.
+%
+%	@tbd: If Goal fails, no Time is reported. Wrap in a conditional?
+%
+timing(G, L, T):-
+	S is cputime
+	,C = call_with_time_limit(L,G)
+	,R = debug(learning_curve_full,'Exceeded Time limit: ~w sec',[L])
+	,catch(C,time_limit_exceeded,R)
+	,E is cputime
+	,T is E - S.
