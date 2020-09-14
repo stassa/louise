@@ -345,9 +345,25 @@ learning_curve(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 %
 %	Learn with a time limit and report the time it took.
 %
+%	Problem is a list [Pos,Neg,BK,MS], holding the elements of a MIL
+%	problem.
+%
+%	Limit is a floating point number, the number of seconds to set
+%	as a time limit for a learning attempt with Problem.
+%
+%	Program is the output of the current learning_predicate/1 given
+%	Problem.
+%
+%	Time is a floating point number, the time, in seconds, that the
+%	learning predicate took to complete one learning attempt on
+%	Problem.
+%
+%	Note that Time is at most equal to Limit. If Limit is exceeded,
+%	Time is equal to Limit and Program is empty.
+%
 learn_timing([Pos,Neg,BK,MS],L,Ps,T):-
 	S is cputime
-	,G = (   learn(Pos,Neg,BK,MS,Ps)
+	,G = (   evaluation:learning_query(Pos,Neg,BK,MS,Ps)
 	     ->  true
 	     ;   Ps = []
 	     )
