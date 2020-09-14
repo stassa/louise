@@ -296,6 +296,30 @@ learning_curve(T,M,K,Ss,Ms,SDs):-
 %	each sub-list is the lits of values of the chosen Metric for
 %	the corresponding Sample size.
 %
+learning_curve(_T,L,[Pos,Neg,BK,MS],time,K,Ss,Rs):-
+	!
+	,findall(Vs
+	       ,(between(1,K,J)
+		,debug(progress,'Step ~w of ~w',[J,K])
+		,findall(S-D
+			,(member(S,Ss)
+			 ,debug(progress,'Sampling size: ~w',[S])
+			 ,evaluation:train_test_splits(S,Pos,Pos_Train,_Pos_Test)
+			 ,evaluation:train_test_splits(S,Neg,Neg_Train,_Neg_Test)
+			 % Learn timing soft-cuts learning predicate goal
+			 % avoiding backtracking over nondet learning predicates.
+			 ,learn_timing([Pos_Train,Neg_Train,BK,MS],L,Ps,D)
+			 ,debug_clauses(progress,'Learned:',Ps)
+			 ,debug(progress,'Duration: ~w sec',[D])
+			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
+			 ,debug(learning_curve_full,'Duration: ~w sec',[D])
+			 )
+			,Vs)
+		,length(Vs, N)
+		,debug(learning_curve_full,'Hypothesis size: ~w',[N])
+		)
+	       ,Rs).
+
 learning_curve(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 	findall(Vs
 	       ,(between(1,K,J)
@@ -303,8 +327,8 @@ learning_curve(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 		,findall(S-V
 			,(member(S,Ss)
 			 ,debug(progress,'Sampling size: ~w',[S])
-			 % Soft cut stops backtracking into multiple learning steps.
-			 % when training with reduction(subhypothesis)
+			 % Soft cut stops backtracking into multiple learning
+			 % steps when training with nondet learning predicates
 			 ,once(timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V))
 			 ,debug_clauses(progress,'Learned:',Ps)
 			 ,debug(progress,'Measured ~w: ~w',[M,V])
@@ -316,6 +340,23 @@ learning_curve(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 		,debug(learning_curve_full,'Hypothesis size: ~w',[N])
 		)
 	       ,Rs).
+
+
+%!	learn_timig(+Problem,+Limit,-Program,-Time) is det.
+%
+%	Learn with a time limit and report the time it took.
+%
+learn_timing([Pos,Neg,BK,MS],L,Ps,T):-
+	S is cputime
+	,G = (   learn(Pos,Neg,BK,MS,Ps)
+	     ->  true
+	     ;   Ps = []
+	     )
+	,C = call_with_time_limit(L,G)
+	,R = debug(learning_curve_full,'Exceeded Time limit: ~w sec',[L])
+	,catch(C,time_limit_exceeded,R)
+	,E is cputime
+	,T is E - S.
 
 
 
@@ -404,6 +445,7 @@ metric_name(tpr,'True Positive Rate (Recall)').
 metric_name(tnr,'True Negative Rate').
 metric_name(pre,'Precision').
 metric_name(fsc,'F-Score').
+metric_name(time,'Time').
 
 
 %!	upcase_word(+Word,-Upcased) is det.
