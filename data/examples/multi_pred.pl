@@ -19,6 +19,10 @@ learn a hypothesis of all target predicates. learn/5 does not need any
 special syntax- passing a list of examples of multiple predicates as the
 first argument to learn/5 is all that's needed.
 
+Note that the two MIL problems in this file represent natural numbers as
+peano numbers where 0 is the first natural number and each natural
+number after zero is a successor of the previous natural number: 0,
+s(0), s(s(0)), ... and so on.
 
 Running the experiment
 ----------------------
@@ -28,10 +32,11 @@ following configuration options:
 
 ==
 ?- list_config.
+example_clauses(call)
 experiment_file(data/examples/multi_pred.pl,multi_pred)
 learner(louise)
 max_invented(1)
-minimal_program_size(1,inf)
+minimal_program_size(2,inf)
 recursion_depth_limit(dynamic_learning,500)
 recursive_reduction(false)
 reduction(plotkins)
@@ -39,11 +44,12 @@ resolutions(5000)
 symbol_range(predicate,[P,Q,R,S,T])
 symbol_range(variable,[X,Y,Z,U,V,W])
 theorem_prover(resolution)
+unfold_invented(false)
 true.
 ==
 
 2. This experiment file defines the elements of the MIL problems for two
-learning targets, even/1 and odd/1. Louise can learn mutually depending
+learning targets, even/1 and odd/1. Louise can learn mutually recursive
 definitions of the two target predicates simultaneously i.e. it can
 perform multi-predicate learning.
 
@@ -60,12 +66,12 @@ true.
 ==
 ?- learn(even/1).
 even(0).
-even(2).
+even(s(s(0))).
 true.
 
 ?- learn(odd/1).
-odd(1).
-odd(3).
+odd(s(0)).
+odd(s(s(s(0)))).
 true.
 ==
 
@@ -80,7 +86,7 @@ even(A):-predecessor(A,B),'$1'(B).
 true.
 
 ?- learn_dynamic(odd/1).
-odd(1).
+odd(s(0)).
 '$1'(A):-predecessor(A,B),odd(B).
 odd(A):-predecessor(A,B),'$1'(B).
 true.
@@ -94,67 +100,39 @@ Note that multi-predicate learning results in a more compact definition
 of both targets than predicate invention. This is not _always_ the case,
 but it might be a consideration when deciding which learning predicate
 to use.
-
-Other learning predicates
--------------------------
-
-Currently, multi-predicate learning is only well-supported for the
-default learning predicates, learn/[1,2,5]. Other learning predicates,
-such as learn_with_examples_invention/[1,2,5], learn_dynamic/[1,2,5] etc
-may or may not work well when attempting multi-predicate learning. This
-will usually depend on the MIL problem.
-
-For example, while dynamic learning can be used to learn a mutually
-dependent definition of even/1 and odd/1, there is no need to invent any
-sub-programs, so using learn_dynamic/[1,2,5] will not have a different
-result than learn/[1,2,5]:
-
-==
-?- learn_dynamic([even/1,odd/1]).
-even(0).
-even(A):-predecessor(A,B),odd(B).
-odd(A):-predecessor(A,B),even(B).
-true.
-==
-
-And the same goes for learn_with_examples_invention/[1,2,5]:
-
-==
-?- learn_with_examples_invention([even/1,odd/1]).
-even(0).
-even(A):-predecessor(A,B),odd(B).
-odd(A):-predecessor(A,B),even(B).
-true.
-==
-
 */
 
 :-use_module(configuration).
 
 configuration:postcon_unit metarule 'P(x):- Q(x,y), R(y)'.
+configuration:abduce_unit metarule 'P(X)'.
 
 background_knowledge(even/1, [predecessor/2]).
 background_knowledge(odd/1, [predecessor/2]).
 
-metarules(even/1,[postcon_unit]).
-metarules(odd/1,[postcon_unit]).
+metarules(even/1,[postcon_unit,abduce_unit]).
+metarules(odd/1,[postcon_unit,abduce_unit]).
 
 positive_example(even/1,even(X)):-
-        member(X,[0,2]).
+        member(X,[0,s(s(0))]).
 positive_example(odd/1,odd(X)):-
-        member(X,[1,3]).
+        member(X,[s(0),s(s(s(0)))]).
 
 negative_example(even/1,even(X)):-
-        member(X,[1,3]).
+        member(X,[s(0),s(s(s(0)))]).
 negative_example(odd/1,odd(X)):-
-        member(X,[0,2]).
+        member(X,[0,s(s(0))]).
 
 
 %!      predecessor(?X,?Y) is nondet.
 %
-%       True when X is a natural number and Y is X - 1.
+%       True Y is the predecessor of X.
 %
-predecessor(X,Y):-
-        number(X)
-        ,between(0,inf,X)
-        ,Y is X - 1.
+%       The predecessor relation is defined recursively as follows:
+%
+%       0 is the predecessor of s(0).
+%       s(N) is the predecessor of s(s(N)).
+%
+predecessor(s(0),0).
+predecessor(s(s(N)),s(N)):-
+        predecessor(s(N),N).
