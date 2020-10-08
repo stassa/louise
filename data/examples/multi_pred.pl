@@ -100,6 +100,86 @@ Note that multi-predicate learning results in a more compact definition
 of both targets than predicate invention. This is not _always_ the case,
 but it might be a consideration when deciding which learning predicate
 to use.
+
+Abduction metarules
+-------------------
+
+Note that the abduce_unit metarule, P(X), used below is not strictly
+necessary. Without it, Louise learns the same programs listed above. The
+difference is that the base-case of each recursive program, e.g.
+even(0), odd(s(0)), etc, are actually examples that are not entailed by
+the rest of the program (a.k.a. "atomic residue").
+
+This is possible to see by turning on debugging in the configuration
+module. Uncomment the following lines:
+==
+:-debug(learn). % Debug learning steps.
+:-debug(top_program). % Debug Top program construction.
+==
+
+Then call learn/1 on the multi-predicate problem:
+==
+?- learn([odd/1,even/1]).
+% Encapsulating problem
+% Constructing Top program...
+% Constructing Top program...
+% Generalised Top program
+% m(abduce_unit,even,0)-(m(abduce_unit,A,B):-m(A,B)).
+% m(abduce_unit,even,s(s(0)))-(m(abduce_unit,A,B):-m(A,B)).
+% m(abduce_unit,odd,s(0))-(m(abduce_unit,A,B):-m(A,B)).
+% m(abduce_unit,odd,s(s(s(0))))-(m(abduce_unit,A,B):-m(A,B)).
+% m(postcon_unit,even,predecessor,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,odd,predecessor,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% Specialised Top program
+% m(abduce_unit,even,0).
+% m(abduce_unit,even,s(s(0))).
+% m(abduce_unit,odd,s(0)).
+% m(abduce_unit,odd,s(s(s(0)))).
+% m(postcon_unit,even,predecessor,odd).
+% m(postcon_unit,odd,predecessor,even).
+% Reducing Top program...
+% Excapsulating hypothesis
+even(0).
+even(A):-predecessor(A,B),odd(B).
+odd(A):-predecessor(A,B),even(B).
+true.
+==
+
+Note that the generalised and specialised Top program includes
+metasubstitutions of unit_abduce. Now, remove unit_abduce from the
+metarules of the two target predicates:
+
+==
+metarules(even/1,[postcon_unit]).
+metarules(odd/1,[postcon_unit]).
+==
+
+And call learn/1 again:
+==
+?- learn([odd/1,even/1]).
+% Encapsulating problem
+% Constructing Top program...
+% Constructing Top program...
+% Generalised Top program
+% m(postcon_unit,even,predecessor,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,odd,predecessor,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% Specialised Top program
+% m(postcon_unit,even,predecessor,odd).
+% m(postcon_unit,odd,predecessor,even).
+% Reducing Top program...
+% Excapsulating hypothesis
+even(0).
+even(A):-predecessor(A,B),odd(B).
+odd(A):-predecessor(A,B),even(B).
+true.
+==
+
+Note that, while this time there are no metasubstitutions of
+unit_abduced in the generalised and specialised Top program, the single
+atom of even/1 is kept in the output because it can't be reduced by
+Plotkin's algorithm, since it is not entailed by the rest of the learned
+program.
+
 */
 
 :-use_module(configuration).
@@ -134,5 +214,5 @@ negative_example(odd/1,odd(X)):-
 %       s(N) is the predecessor of s(s(N)).
 %
 predecessor(s(0),0).
-predecessor(s(s(N)),s(N)):-
-        predecessor(s(N),N).
+predecessor(s(N),s(M)):-
+        predecessor(N,M).
