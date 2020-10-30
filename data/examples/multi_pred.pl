@@ -2,15 +2,18 @@
                      ,metarules/2
                      ,positive_example/2
                      ,negative_example/2
-                     ,predecessor/2
+                     ,f/2
                      ]).
+
+:-use_module(configuration).
 
 /** <module> Example of multi-predicate learning in Louise.
 
-The two MIL problems in this file are set-up to demonstrate how to use
-Louise's ability for multi-predicate learning. In multi-predicate
-learning, a learner is given examples of more than one target predicate
-and must learn a hypothesis that represents all learning targets.
+This experiment file shows how to use Louise's ability for
+multi-predicate learning to jointly learn mutually recursive hypotheses
+of the predicates "odd" and "even". In multi-predicate learning, a
+learner is given examples of more than one target predicate and must
+learn a hypothesis that represents all learning targets.
 
 There is no special configuration necessary to use multi-predicate
 learning in Louise. The learning predicates learn/[1,2] accept a list
@@ -56,12 +59,13 @@ perform multi-predicate learning.
 ==
 ?- learn([even/1,odd/1]).
 even(0).
-even(A):-predecessor(A,B),odd(B).
-odd(A):-predecessor(A,B),even(B).
+even(A):-f(A,B),odd(B).
+odd(A):-f(A,B),even(B).
 true.
 ==
 
-3. Neither target can be learned independently as defined:
+
+4. Neither target can be learned independently as defined:
 
 ==
 ?- learn(even/1).
@@ -75,34 +79,108 @@ odd(s(s(s(0)))).
 true.
 ==
 
-4. It _is_ possible to learn odd/1 by inventing even/1 and vice-versa,
-using dynamic learning:
+
+5. It is possible to learn odd/1 on its own by inventing even/1 and
+vice-versa, using dynamic learning:
 
 ==
 ?- learn_dynamic(even/1).
 even(0).
-'$1'(A):-predecessor(A,B),even(B).
-even(A):-predecessor(A,B),'$1'(B).
+'$1'(A):-f(A,B),even(B).
+even(A):-f(A,B),'$1'(B).
 true.
 
 ?- learn_dynamic(odd/1).
 odd(s(0)).
-'$1'(A):-predecessor(A,B),odd(B).
-odd(A):-predecessor(A,B),'$1'(B).
+'$1'(A):-f(A,B),odd(B).
+odd(A):-f(A,B),'$1'(B).
 true.
 ==
 
-However, in the case of the learning targets defined in this experiment
-file, we have examples of both so it's possible to perform
-multi-predicate learning instead.
+In fact, dynamic learning is necessary to learn even with
+multi-predicate learning, if sufficient examples are not needed.
 
-Note that multi-predicate learning results in a more compact definition
-of both targets than predicate invention. This is not _always_ the case,
-but it might be a consideration when deciding which learning predicate
-to use.
+Suppose that instead of {even(0), odd(s(0)), even(s^2(0)), odd(s^3(0))}
+we give as examples {even(0), odd(s(0)), even(s^2(0)), odd(s^3(0))}, so
+that now there is, e.g. no even predecessor of the only odd/1 example,
+s^5(0):
 
-Abduction metarules
--------------------
+==
+?- list_encapsulated_problem([even/1,odd/1]).
+Positive examples
+-----------------
+m(even,0).
+m(even,s(s(0))).
+m(odd,s(s(s(s(s(0)))))).
+
+Negative examples
+-----------------
+:-m(even,s(s(s(s(s(0)))))).
+:-m(odd,0).
+:-m(odd,s(s(0))).
+
+Background knowledge
+--------------------
+m(f,A,B):-A=..[C,B].
+
+Metarules
+---------
+m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E).
+m(abduce_unit,A,B):-m(A,B).
+true.
+==
+
+In that case, "static" multi-predicate learning fails to construct a
+hypothesis, because it is only "calling" the atomic examples of odd/1
+and even/1:
+
+==
+?- learn([even/1,odd/1]).
+even(0).
+even(s(s(0))).
+odd(s(s(s(s(s(0)))))).
+true.
+==
+
+Dynamic learning instead invents an intensional definition of odd/1 (as
+'$1'/1) and then re-uses it to define even/1:
+
+==
+?- learn_dynamic([even/1,odd/1]).
+even(0).
+'$1'(A):-f(A,B),even(B).
+even(A):-f(A,B),'$1'(B).
+odd(A):-f(A,B),even(B).
+true.
+==
+
+
+6. Background knowledge
+
+The only predicate defined as background knowledge in this experiment
+file is f/2, a "function evaluation" predicate that takes as the first
+argument a Prolog "function" and binds to the second argument the
+function's output value. The word "function" is in scare quotes because
+Prolog doesn't really have a formal concept of "function". More to the
+point, Prolog doesn't enforce separate alphabets for function and
+predicate symbols, which means that predicate atoms and functions, that
+are syntactically identical, cannot be distinguished. For example, in
+the following we may suspect that "f(x)" is a function but only because
+of function naming conventions ("f"):
+
+==
+p(x):- r(f(x)).
+==
+
+We might observe that if f/1 has a definition, then it's a predicate.
+But if it has no definition- is it a predicate, or is it a function?
+
+In any case, Louise does not allow function symbols in metarules and in
+order to evaluate a function, a helper predicate is needed- in this
+case, f/2.
+
+
+7. abduce_unit metarule
 
 Note that the abduce_unit metarule, P(X), used below is not strictly
 necessary. Without it, Louise learns the same programs listed above. The
@@ -128,25 +206,25 @@ Then call learn/1 on the multi-predicate problem:
 % m(abduce_unit,even,s(s(0)))-(m(abduce_unit,A,B):-m(A,B)).
 % m(abduce_unit,odd,s(0))-(m(abduce_unit,A,B):-m(A,B)).
 % m(abduce_unit,odd,s(s(s(0))))-(m(abduce_unit,A,B):-m(A,B)).
-% m(postcon_unit,even,predecessor,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
-% m(postcon_unit,odd,predecessor,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,even,f,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,odd,f,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
 % Specialised Top program
 % m(abduce_unit,even,0).
 % m(abduce_unit,even,s(s(0))).
 % m(abduce_unit,odd,s(0)).
 % m(abduce_unit,odd,s(s(s(0)))).
-% m(postcon_unit,even,predecessor,odd).
-% m(postcon_unit,odd,predecessor,even).
+% m(postcon_unit,even,f,odd).
+% m(postcon_unit,odd,f,even).
 % Reducing Top program...
 % Excapsulating hypothesis
 even(0).
-even(A):-predecessor(A,B),odd(B).
-odd(A):-predecessor(A,B),even(B).
+even(A):-f(A,B),odd(B).
+odd(A):-f(A,B),even(B).
 true.
 ==
 
 Note that the generalised and specialised Top program includes
-metasubstitutions of unit_abduce. Now, remove unit_abduce from the
+metasubstitutions of abduce_unit. Now, remove abduce_unit from the
 metarules of the two target predicates:
 
 ==
@@ -161,34 +239,33 @@ And call learn/1 again:
 % Constructing Top program...
 % Constructing Top program...
 % Generalised Top program
-% m(postcon_unit,even,predecessor,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
-% m(postcon_unit,odd,predecessor,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,even,f,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,odd,f,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
 % Specialised Top program
-% m(postcon_unit,even,predecessor,odd).
-% m(postcon_unit,odd,predecessor,even).
+% m(postcon_unit,even,f,odd).
+% m(postcon_unit,odd,f,even).
 % Reducing Top program...
 % Excapsulating hypothesis
 even(0).
-even(A):-predecessor(A,B),odd(B).
-odd(A):-predecessor(A,B),even(B).
+even(A):-f(A,B),odd(B).
+odd(A):-f(A,B),even(B).
 true.
 ==
 
 Note that, while this time there are no metasubstitutions of
-unit_abduced in the generalised and specialised Top program, the single
-atom of even/1 is kept in the output because it can't be reduced by
-Plotkin's algorithm, since it is not entailed by the rest of the learned
-program.
+abduce_unit in the generalised and specialised Top program, the single
+atom of even/1 is kept in the output. That is because it can't be
+reduced by Plotkin's algorithm, since it is not entailed by the rest of
+the learned program.
+
 
 */
-
-:-use_module(configuration).
 
 configuration:postcon_unit metarule 'P(x):- Q(x,y), R(y)'.
 configuration:abduce_unit metarule 'P(X)'.
 
-background_knowledge(even/1, [predecessor/2]).
-background_knowledge(odd/1, [predecessor/2]).
+background_knowledge(even/1, [f/2]).
+background_knowledge(odd/1, [f/2]).
 
 metarules(even/1,[postcon_unit,abduce_unit]).
 metarules(odd/1,[postcon_unit,abduce_unit]).
@@ -197,22 +274,29 @@ positive_example(even/1,even(X)):-
         member(X,[0,s(s(0))]).
 positive_example(odd/1,odd(X)):-
         member(X,[s(0),s(s(s(0)))]).
+        %member(X,[s(s(s(s(s(0)))))]).
 
 negative_example(even/1,even(X)):-
         member(X,[s(0),s(s(s(0)))]).
+        %member(X,[s(s(s(s(s(0)))))]).
 negative_example(odd/1,odd(X)):-
         member(X,[0,s(s(0))]).
 
 
-%!      predecessor(?X,?Y) is nondet.
+%!      f(+Function,?Value) is nondet.
 %
-%       True Y is the predecessor of X.
+%       The output Value of a Function.
 %
-%       The predecessor relation is defined recursively as follows:
+%       Uses =../2 to decompose Function into a functor and single
+%       argument (i.e. assumes each "function" has exactly one return
+%       Value).
 %
-%       0 is the predecessor of s(0).
-%       s(N) is the predecessor of s(s(N)).
+%       Example:
+%       ==
+%       ?- F = s(s(0)), multi_pred:f(F, V).
+%       F = s(s(0)),
+%       V = s(0).
+%       ==
 %
-predecessor(s(0),0).
-predecessor(s(N),s(M)):-
-        predecessor(N,M).
+f(F,V):-
+        F =.. [_F|[V]].
