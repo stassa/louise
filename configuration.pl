@@ -244,6 +244,23 @@ metarule(xy_zx_yz,P,Q,R):- m(P,X,Y), m(Q,Z,X), m(R,Y,Z).
 metarule(xy_zx_zy,P,Q,R):- m(P,X,Y), m(Q,Z,X), m(R,Z,Y).
 metarule(xy_zy_xz,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,X,Z).
 metarule(xy_zy_zx,P,Q,R):- m(P,X,Y), m(Q,Z,Y), m(R,Z,X).
+
+Converted to new format.
+TODO: create new lump category called h22 for all these plus identity
+and inverse. And chain. I think chain is missing from this list.
+
+xy_xy_xy metarule 'P(x,y):- Q(x,y), R(x,y)'.
+xy_xy_yx metarule 'P(x,y):- Q(x,y), R(y,x)'.
+xy_xz_yz metarule 'P(x,y):- Q(x,z), R(y,z)'. % switch
+xy_yx_xy metarule 'P(x,y):- Q(y,x), R(x,y)'.
+xy_yx_yx metarule 'P(x,y):- Q(y,x), R(y,x)'.
+xy_yz_xz metarule 'P(x,y):- Q(y,z), R(x,z)'.
+xy_yz_zx metarule 'P(x,y):- Q(y,z), R(z,x)'.
+xy_zx_yz metarule 'P(x,y):- Q(z,x), R(y,z)'.
+xy_zx_zy metarule 'P(x,y):- Q(z,x), R(z,y)'. % swap
+xy_zy_xz metarule 'P(x,y):- Q(z,y), R(x,z)'.
+xy_zy_zx metarule 'P(x,y):- Q(z,y), R(z,x)'.
+
 */
 
 
@@ -355,16 +372,26 @@ previous(S1,S2,[S1,S2|_Ss]).
 %
 %	Recursion depth Limit for the given Purpose.
 %
-%	Limit is an integer, which is passed as
+%	Limit can be either an integer, which is passed as
 %	the second argument to call_with_depth_limit/3 in order to
-%	limit recursion in the listed Purpose.
+%       limit recursion in the listed Purpose, or the atom 'none' in
+%       which case no limit is placed recursion depth for the listed
+%       Purpose.
 %
 %	Known purposes are as follows:
 %
 %	* dyamic_learning: Limits recursion during Top program
 %	construction in dynamic learning.
 %
-recursion_depth_limit(dynamic_learning,500).
+%       @tbd Actually, the only known purpose, dynamic_learning, uses an
+%       _inference_ limit, rather than a recursion depth limit. This
+%       should probably be reflected in the name of this option.
+%
+recursion_depth_limit(dynamic_learning,none).
+%recursion_depth_limit(dynamic_learning,50000).
+%recursion_depth_limit(dynamic_learning,100_000).
+%recursion_depth_limit(dynamic_learning,150000).
+%recursion_depth_limit(dynamic_learning,500_000_000_000).
 
 
 %!	recursive_reduction(?Bool) is semidet.
@@ -574,6 +601,7 @@ theorem_prover(resolution).
 %       @tbd Document unfolding in this configuration option, also.
 %
 unfold_invented(false).
+%unfold_invented(true).
 
 
 % Loads the current experiment file in the Swi-Prolog IDE when the

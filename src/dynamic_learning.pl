@@ -375,9 +375,15 @@ bind_head_literal(E,M,(H:-(E,true))):-
 %	passed down as an argument).
 %
 prove_body_literals(C,MS,Ls):-
-	once(list_tree(Ls_,Ls))
+	configuration:recursion_depth_limit(dynamic_learning, DL)
+	,once(list_tree(Ls_,Ls))
 	,debug_clauses(dynamic,'Proving body literals:',[Ls_])
-	,prove_body_literals_(C,MS,Ls_).
+	,G = prove_body_literals_(C,MS,Ls_)
+	,(   DL = none
+	 ->  call(G)
+	 ;   call_with_inference_limit(G,DL,_R)
+	 ).
+
 
 %!	prove_body_literals_(+Counter,+Metarules,+Literals) is nondet.
 %
