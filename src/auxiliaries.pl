@@ -800,7 +800,8 @@ list_learning_results(P/2):-
 %	MIL problem to be listed.
 %
 list_mil_problem(T):-
-	experiment_data(T,Pos,Neg,BK,MS)
+	configuration:experiment_file(_P,M)
+	,experiment_data(T,Pos,Neg,BK,MS)
 	,format_underlined('Positive examples')
 	,print_clauses(Pos)
 	,nl
@@ -809,20 +810,14 @@ list_mil_problem(T):-
 	,nl
 	,format_underlined('Background knowledge')
 	,forall(member(P,BK)
-	       ,(program(P,user,Ps)
+	       ,(program(P,M,Ps)
 		,format('~w:~n',[P])
 		,print_clauses(Ps)
 		,format('~n',[])
 		)
 	       )
 	,format_underlined('Metarules')
-	,forall(member(Id,MS)
-	       ,(configuration:current_predicate(metarule,H)
-		,H =.. [metarule,Id|_]
-		,clause(H, B)
-		,print_clauses([H:-B])
-		)
-	       ).
+	,print_quantified_metarules(MS).
 
 
 %!	format_underlined(+Atom) is det.
