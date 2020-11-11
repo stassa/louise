@@ -1372,39 +1372,6 @@ print_quantified_metarule(M):-
 	,format('(~w) ~w~w: ~w',[Id_,Es,Us,M_]).
 
 
-%!	metarule_quantifiers(+Metarule,-Existential,-Universal) is det.
-%
-%	Collect quantifiers and quantified variables in a Metarule.
-%
-%	Metarule is an expanded metarule.
-%
-%	Existential is an atomic represention of the existentially
-%	quantified variables in Metarule, preceded by an existential
-%	quantifier, in the form \exists.P,Q,R... etc.
-%
-%	Univerasl is a film studio in Hollywood. Also, in this
-%	predicate, it's an atomic representation of the universally
-%	quantified variables in Metarule, preceeded by a universal
-%	quantifier, in the form \forall.X,Y,Z... etc.
-%
-metarule_quantifiers(M,Es,Us):-
-	metarule_variables(M,_Ss,Fs)
-	,existential_vars(M,Es_)
-	,subtract(Fs,Es_,Us_)
-	,maplist(arg(1),Es_,Ss_E)
-	,maplist(arg(1),Us_,Ss_U)
-	,atomic_list_concat(Ss_E,',',Es_1)
-	,atomic_list_concat(Ss_U,',',Us_1)
-	,format(atom(Es),'\u2203.~w',[Es_1])
-	,(   Ss_U = [_]
-	 ->  format(atom(Us),' \u2200~w',[Us_1])
-	 ;   Ss_U = [_|_]
-	 ->  format(atom(Us),' \u2200.~w',[Us_1])
-	 ;   Ss_U = []
-	 ->  Us = ''
-	 ).
-
-
 %!	metarule_symbols(+Metarule) is det.
 %
 %	Assign common names to the variables in a Metarule.
@@ -1542,6 +1509,39 @@ excapsulated_literals([L|Ls],Acc,Bind):-
 %
 metarule_Id(A:-_M,Id):-
 	A =.. [m,Id|_Ps].
+
+
+%!	metarule_quantifiers(+Metarule,-Existential,-Universal) is det.
+%
+%	Collect quantifiers and quantified variables in a Metarule.
+%
+%	Metarule is an expanded metarule.
+%
+%	Existential is an atomic represention of the existentially
+%	quantified variables in Metarule, preceded by an existential
+%	quantifier, in the form \exists.P,Q,R... etc.
+%
+%	Univerasl is a film studio in Hollywood. Also, in this
+%	predicate, it's an atomic representation of the universally
+%	quantified variables in Metarule, preceeded by a universal
+%	quantifier, in the form \forall.X,Y,Z... etc.
+%
+metarule_quantifiers(M,Es,Us):-
+	metarule_variables(M,_Ss,Fs)
+	,existential_vars(M,Es_)
+	,subtract(Fs,Es_,Us_)
+	,maplist(arg(1),Es_,Ss_E)
+	,maplist(arg(1),Us_,Ss_U)
+	,atomic_list_concat(Ss_E,',',Es_1)
+	,atomic_list_concat(Ss_U,',',Us_1)
+	,format(atom(Es),'\u2203.~w',[Es_1])
+	,(   Ss_U = [_]
+	 ->  format(atom(Us),' \u2200~w',[Us_1])
+	 ;   Ss_U = [_|_]
+	 ->  format(atom(Us),' \u2200.~w',[Us_1])
+	 ;   Ss_U = []
+	 ->  Us = ''
+	 ).
 
 
 %!	pretty_metarule_id(+Id,-Pretty) is det.
