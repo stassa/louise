@@ -1368,9 +1368,7 @@ print_quantified_metarule(M):-
 	,excapsulated_metarule(M,M_)
 	,metarule_Id(M, Id)
 	,metarule_quantifiers(M,Es,Us)
-	,atom_chars(Id,[C|Cs])
-	,upcase_atom(C, C_)
-	,atom_chars(Id_,[C_|Cs])
+	,pretty_metarule_id(Id,Id_)
 	,format('(~w) ~w~w: ~w',[Id_,Es,Us,M_]).
 
 
@@ -1544,6 +1542,30 @@ excapsulated_literals([L|Ls],Acc,Bind):-
 %
 metarule_Id(A:-_M,Id):-
 	A =.. [m,Id|_Ps].
+
+
+%!	pretty_metarule_id(+Id,-Pretty) is det.
+%
+%	Prettify a metarule Id.
+%
+%	The prettified Id has its first letter up-cased and each
+%	underscore turned to a hyphen.
+%
+%	@tbd  Other prettifications may need to be added later.
+%
+pretty_metarule_id(Id,Id_):-
+	atom_chars(Id, [C|Cs])
+	,upcase_atom(C,C_)
+	,findall(Ck
+		,(member(Ci,Cs)
+		 ,(   Ci == '_'
+		  ->  Ck = -
+		  ;   Ck = Ci
+		  )
+		 )
+		,Cs_)
+	,atom_chars(Id_,[C_|Cs_]).
+
 
 
 
