@@ -49,10 +49,10 @@ from its initial data.
 In this manual we show simple examples where Louise is trained on small, "toy"
 problems, designed to demonstrate its use. However, Louise's learning algorithm,
 _Top Program Construction_, is efficient enough to learn very large programs. In
-one of the example datasets included with Louise, a program of more than 25,000
-clauses is learned in under 5 minutes (and, yes, that is a correct program with
-perfect accuracy). This is most likely larger than any program learned by an ILP
-system, or indeed by any program learning system, to date. 
+one of the example datasets included with Louise, a program of more than 2,500
+clauses is learned in under 5 minutes. This is most likely larger than any
+program learned by an ILP system, or indeed by any program learning system, to
+date. 
 
 In general, Louise's novelty means that it has so far primarily been applied to
 artificial datasets designed to demonstrate its working principles rather than
