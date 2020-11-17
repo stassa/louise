@@ -909,10 +909,9 @@ list_top_program(T,U,E):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,write_program(Pos_,BK_,Refs)
-	,generalise(Pos_,MS_,Ss_Pos)
-	,pairs_keys_values(Ss_Pos,Ss_Pos_,_)
+	,generalise(Pos_,MS_,Ss_Pos_)
 	,write_and_count(T,'Generalisation:',MS,Ss_Pos_,U,E)
-	,specialise(Ss_Pos,Neg_,Ss_Neg)
+	,specialise(Ss_Pos_,Neg_,Ss_Neg)
 	,nl
 	,erase_program_clauses(Refs)
 	,write_and_count(T,'Specialisation:',MS,Ss_Neg,U,E).

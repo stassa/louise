@@ -188,7 +188,7 @@ generalise(Pos,MS,Ss_Pos):-
 %	metasubstitution that entails a negative example.
 %
 specialise(Ss_Pos,Neg,Ss_Neg):-
-	setof(H
+	setof(H-M
 	     ,H^M^Ss_Pos^En^Neg^
 	      (member(H-M,Ss_Pos)
 	      ,\+((member(En,Neg)

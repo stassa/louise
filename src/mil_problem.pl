@@ -434,19 +434,12 @@ encapsulated_clause(L,Acc,Ls_):-
 %	The list of Metasubstitutions is normally the specialised Top
 %	program.
 %
-%	@tbd To avoid having to write the Metarules to the dynamic
-%	database just after we went to all this trouble to not do
-%	that, this predicate could just operate on a list of key-value
-%	pairs similar to the one returned by generalise/3.
-%
-applied_metarules(Ss,MS,Ms):-
-	assert_program(user,MS,Rs)
-	,findall(P
-		,(member(S,Ss)
-		 ,metarule_application(S,P)
+applied_metarules(Ss,_MS,Ms):-
+	findall(H:-B
+		,(member(Sub-(Sub:-(H,B)),Ss)
 		 )
-		,Ms)
-	,erase_program_clauses(Rs).
+		,Ms).
+
 
 
 %!	metarule_application(+Metasubstitution,-Projection) is det.
