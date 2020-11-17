@@ -6,7 +6,6 @@
 		      ,examples_targets/2
 		      ,encapsulated_clauses/2
 		      ,applied_metarules/3
-		      ,metarule_application/2
 		      ,excapsulated_clauses/3
 		      ,target_or_invention/2
 		      ]).
@@ -439,30 +438,6 @@ applied_metarules(Ss,_MS,Ms):-
 		,(member(Sub-(Sub:-(H,B)),Ss)
 		 )
 		,Ms).
-
-
-
-%!	metarule_application(+Metasubstitution,-Projection) is det.
-%
-%	Project a Metasubstitution onto a fitting metarule.
-%
-%	@tbd This is not strictly necessary and is left behind after
-%	work to remove signature atoms from expanded metarules. The
-%	right way to do this would now be to call metarule_parts/5, but
-%	that will cause problems with extended metarules and
-%	theorem_prover(tp) so it stays for now.
-%
-metarule_application_(S,H:-B):-
-% TODO: is this needed, after switching to the metarule/2 format?
-	S =.. [m,Id|Ps]
-	,Mh =.. [metarule,Id|Ps]
-	,clause(Mh,(H,B))
-	,!.
-metarule_application(S,H:-B):-
-% Extended metarules don't have metarule/n heads!
-% They're only in the database as m/n clauses.
-	S =.. [m,_Id|_Ps]
-	,clause(S,(H,B)).
 
 
 
