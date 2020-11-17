@@ -764,6 +764,7 @@ list_learning_results(P/N):-
 		       ,learn_dynamic
 		       ,learn_minimal
 		       ,learn_with_examples_invention
+		       ,learn_meta
 		       ])
 	,format(atom(A),'Unknown learning predicate: ~w',[P/N])
 	,throw(A)

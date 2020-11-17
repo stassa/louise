@@ -106,6 +106,7 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
 %experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
+%experiment_file('data/examples/tiny_kinship_meta.pl',tiny_kinship_meta).
 
 
 %!	learner(?Name) is semidet.
@@ -226,6 +227,15 @@ projection_21_abduce metarule 'P(X,X):- Q(X)'.
 projection_12_abduce metarule 'P(X):- Q(X,X)'.
 precon_abduce metarule 'P(X,y):- Q(X), R(X,y)'.
 postcon_abduce metarule 'P(x,Y):- Q(x,Y), R(Y)'.
+
+% Meta-metarules. Use only with meta_learning.pl
+% WARNING Comment these out when learing with [all] metarules!
+meta_dyadic metarule 'P(x,y):- Q(z,u), R(v,w)'.
+meta_monadic metarule 'P(x,y):- Q(z,u)'.
+meta_precon metarule 'P(x,y):- Q(z),R(u,v)'.
+meta_postcon metarule 'P(x,y):- Q(z,u),R(v)'.
+meta_projection_21 metarule 'P(x,y):- Q(z)'.
+meta_projection_12 metarule 'P(x):- Q(y,z)'.
 
 /*
 % H22 metarules redundnant given chain and inverse.
