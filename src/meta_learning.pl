@@ -90,9 +90,9 @@ generalise_meta(Pos,MS,Ss_Pos,MS_):-
 	     ,(member(M,MS)
 	      ,copy_term(M,M_)
 	      ,member(Ep,Pos)
+	      ,debug(new_metarules,'',[])
 	      ,metasubstitution(Ep,M_,Sub)
 	      ,constraints(Sub)
-	      ,debug(new_metarules,'',[])
 	      ,debug_clauses(new_metarules,'Ground metarule',[M_])
 	      ,new_metarule(M_,Sub,M_n)
 	      ,debug_clauses(new_metarules,'New metarule',[M_n])
@@ -152,7 +152,8 @@ prove_body_literals(Li,[Lk|Bs],C,Cs):-
 %	Instantiate the Variables in a Literal to a set of Constants.
 %
 variable_instantiations(L,Cs,Vs):-
-	term_variables(L,[_P|Vs])
+	L =.. [m,_P|As]
+	,term_variables(As,Vs)
 	,member(C-_N,Cs)
 	,member(C,Vs).
 
