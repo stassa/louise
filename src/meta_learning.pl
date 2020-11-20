@@ -11,6 +11,7 @@
 
 */
 
+:-debug(new_metarules).
 
 %!	learn_meta(+Targets) is det.
 %
@@ -91,6 +92,7 @@ generalise_meta(Pos,MS,Ss_Pos,MS_):-
 	      ,copy_term(M,M_)
 	      ,member(Ep,Pos)
 	      ,debug(new_metarules,'',[])
+	      ,debug_clauses(new_metarules,'New example',[Ep])
 	      ,metasubstitution(Ep,M_,Sub)
 	      ,constraints(Sub)
 	      ,debug_clauses(new_metarules,'Ground metarule',[M_])
@@ -123,27 +125,91 @@ metasubstitution(E,M,Sub):-
 	louise:bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,once(list_tree(Ls_,Ls))
-	,prove_body_literals(E,Ls_,E:-Ls).
+	,prove_body_literals(E,Ls_,Ls_).
 
 
 %!	prove_body_literals(+Head,+Body,-Metasubstitution) is nondet.
 %
 %	Prove a set of Body literals in a Metasubstitution.
 %
-prove_body_literals(H,Bs,C):-
+%	@tbd Document this properly.
+%
+prove_body_literals(H,Bs,Gs):-
 	H =.. [m,_P|Ts]
 	,counts(Ts,[],Cs)
-	,prove_body_literals(H,Bs,C,Cs).
+	,prove_body_literals(Bs,Gs,[H],Cs).
 
-prove_body_literals(_L,[],_,Cs):-
+%!	prove_body_literals(?Literals,?Clause,+Current,+Constants) is
+%!	nondet.
+%
+%	Business end of prove_body_literals/3.
+%
+%	Literals is the set of literals in the body of a metarule.
+%	Current is the body literal that will be ground in the current
+%	step by resolution with the BK. Constants is the constants
+%	buffer, a list of the constatns used to ground the members of
+%	Literals in previous steps associated with the number of times
+%	each constant has been used to ground a variable in Literals.
+%
+%	Constants is used to keep track of how many times a constant is
+%	used. We want to produce a grounding such that when the grounded
+%	clause is lifted, to extract the structure of a specialised
+%	metarule, the resulting metarule has no free variables. For this
+%	to be the case, each constant in the ground clause must be used
+%	at least twice.
+%
+%	Clause is the instance of the most-general metarule to be
+%	grounded. This is only useful for debugging and should be
+%	removed in later stages of development.
+%
+prove_body_literals([],_Gs,_Ls,Cs):-
 	forall(member(_C-N,Cs)
 	      ,N > 1).
-prove_body_literals(Li,[Lk|Bs],C,Cs):-
-	variable_instantiations(Lk,Cs,Is)
+prove_body_literals([Lk|Bs],Gs,Ls,Cs):-
+	grounding_constraints(Cs,Gs)
+	,variable_instantiations(Lk,Cs,Is)
+	%,debug_clauses(new_metarules,'Variable instantiations',[Is])
 	,call(Lk)
-	,Lk \== Li
+	,new_literal(Lk,Ls)
+	%,debug_clauses(new_metarules,'Ground literal',[Lk])
 	,counts(Is,Cs,Cs_)
-	,prove_body_literals(Lk,Bs,C,Cs_).
+	%,debug_clauses(new_metarules,'Constant counts',[Cs_])
+	,prove_body_literals(Bs,Gs,[Lk|Ls],Cs_).
+
+
+%!	grounding_constraints(+Constants,+Literals) is det.
+%
+%	Apply clause grounding constraints to a set of Literals.
+%
+%	Constants is the constants buffer, the list of constants used
+%	so-far in grounding an instance of a most-general metarule and
+%	their associated counts, i.e. the number of times each constant
+%	is used in grounding a variable.
+%
+%	Literals is the partially ground instance of a most-general
+%	metarule that is currently being ground.
+%
+%	grounding_constraints/2 fails if there are more elements of
+%	Constants with a count of 1 than there are free existentially
+%	quantified first-order variables in Literals.
+%
+%	In other words, this checks that we haven't gathered up too many
+%	one-use constants to ground a most-general metarule to a
+%	metarule with free variables.
+%
+grounding_constraints(Cs,Ls):-
+	findall(N
+	       ,(member(L,Ls)
+		,L =.. [m,_P|As]
+		,term_variables(As,Vs)
+		,length(Vs,N)
+		)
+	       ,Ns)
+	,findall(1
+		,member(_-1,Cs)
+		,Ss)
+	,maplist(sumlist,[Ns,Ss],[F,C])
+	,C =< F.
 
 
 %!	variable_instantiations(+Literal,+Costants,?Variables) is
@@ -156,6 +222,29 @@ variable_instantiations(L,Cs,Vs):-
 	,term_variables(As,Vs)
 	,member(C-_N,Cs)
 	,member(C,Vs).
+
+
+%!	new_literal(+Literal,+Last,+All) is det.
+%
+%	True when Literal is a new ground literal.
+%
+%	Literal is the current ground literal. Last is the literal to
+%	the left of this literal, ground in the previous step. All is
+%	the list of all literals ground so far.
+%
+%	This performs a test to ensure that we are not adding the same
+%	literal twice to a clause, to avoid generating tautologies and
+%	redundancies.
+%
+new_literal(Lk,Ls):-
+	copy_term([Lk|Ls],[Lk_|Ls_])
+	,length([Lk_|Ls_],N)
+	,setof(L
+	     ,(member(L,[Lk_|Ls_])
+	      ,numbervars(L)
+	      )
+	     ,Ls_s)
+	,length(Ls_s,N).
 
 
 %!      counts(+Terms,?Counts,-Updated) is det.
