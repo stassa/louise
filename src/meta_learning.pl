@@ -11,7 +11,7 @@
 
 */
 
-:-debug(new_metarules).
+%:-debug(new_metarules).
 
 %!	learn_meta(+Targets) is det.
 %
@@ -71,39 +71,52 @@ learn_meta(Pos,Neg,BK,MS,Ps):-
 meta_top_program(Pos,Neg,BK,MS,Ts):-
         S = write_program(Pos,BK,Refs)
         ,G = (debug(top_program,'Constructing Top program...',[])
-	     ,generalise_meta(Pos,MS,Ss_Gen,MS_)
-	     ,specialise(Ss_Gen,Neg,Ss_Spec)
-	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
-	     ,applied_metarules(Ss_Spec,MS_,Ts)
+	     ,meta_top_program(Pos,Neg,MS,Ss)
+	     ,applied_metarules(Ss,_,Ts)
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C)
 	,!.
+meta_top_program(_Pos,_Neg,_BK,_MS,[]):-
+% If Top program construction fails return an empty program.
+	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
-%!	generalise_meta(+Pos,+MS,-Top,-Metarules) is det.
+%!	meta_top_program(+Pos,+MS,-Top,-Metarules) is det.
 %
-%	Generalisation step for meta-Top program construction.
+%	Meta-learning Generalisation and Specialisation step.
 %
-generalise_meta(Pos,MS,Ss_Pos,MS_):-
+meta_top_program(Pos,Neg,MS,Ss):-
 	findall(Sub-M_n
-	     ,(member(M,MS)
-	      ,copy_term(M,M_)
-	      ,member(Ep,Pos)
-	      ,debug(new_metarules,'',[])
-	      ,debug_clauses(new_metarules,'New example',[Ep])
-	      ,metasubstitution(Ep,M_,Sub)
-	      ,constraints(Sub)
-	      ,debug_clauses(new_metarules,'Ground metarule',[M_])
-	      ,new_metarule(M_,Sub,M_n)
-	      ,debug_clauses(new_metarules,'New metarule',[M_n])
-	      ,numbervars(M_n)
-	      )
-	     ,Ss_Pos_)
-	,sort(Ss_Pos_,Ss_Pos_s)
-	,maplist(varnumbers,Ss_Pos_s,Ss_Pos)
-	,MS_ = nil.
+	       ,(member(M,MS)
+		,copy_term(M,M_)
+		,member(Ep,Pos)
+		,debug(new_metarules,'',[])
+		,debug_clauses(new_metarules,'New example',[Ep])
+		,once(meta_grounding(Ep,Neg,M_,Sub,M_n))
+		,numbervars(M_n)
+		)
+	       ,Ss_)
+	,sort(Ss_,Ss_s)
+	,maplist(varnumbers,Ss_s,Ss).
+
+
+%!	meta_grounding(+E,+Neg,+Metarule,+Metasub,-Specialised) is
+%!	nondet.
+%
+%	Ground a most-general metarule and return its Specialisation.
+%
+meta_grounding(Ep,Neg,M,Sub,M_n):-
+	metasubstitution(Ep,M,Sub)
+	,constraints(Sub)
+	,debug_clauses(new_metarules,'Ground metarule',[M])
+	,new_metarule(M,Sub,M_n)
+	,debug_clauses(new_metarules,'New metarule',[M_n])
+	,\+((member(En,Neg)
+	    ,metasubstitution(En,M_n,Sub)
+	    )
+	   ).
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
