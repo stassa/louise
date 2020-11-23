@@ -434,10 +434,23 @@ encapsulated_clause(L,Acc,Ls_):-
 %	program.
 %
 applied_metarules(Ss,_MS,Ms):-
-	findall(H:-B
-		,(member(Sub-(Sub:-(H,B)),Ss)
+	findall(Msub
+		,(member(Sub,Ss)
+		 ,applied_metasubstitution(Sub,Msub)
 		 )
 		,Ms).
+
+
+%!	applied_metasubstitution(+Metasubstitution,-Applied) is det.
+%
+%	Apply a Metasubstitution atom to its corresponding metarule.
+%
+%	Abstracts the application of a Metasubstitution atom to its
+%	corresponding metarule which may or may not have a body.
+%
+applied_metasubstitution(Sub-(Sub:-(H,B)), H:-B):-
+	!.
+applied_metasubstitution(Sub-(Sub:-(L)), L).
 
 
 
