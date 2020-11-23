@@ -118,6 +118,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,specialise(Ss_Gen,Neg,Ss_Spec)
 	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
 	     ,applied_metarules(Ss_Spec,MS,Ts)
+	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C)
