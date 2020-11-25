@@ -95,11 +95,13 @@ meta_top_program(Pos,Neg,MS,Ss):-
 		,debug(new_metarules,'',[])
 		,debug_clauses(new_metarules,'New example',[Ep])
 		,once(meta_grounding(Ep,Neg,M_,Sub,M_n))
+		%,meta_grounding(Ep,Neg,M_,Sub,M_n)
 		,numbervars(M_n)
 		)
 	       ,Ss_)
 	,sort(Ss_,Ss_s)
-	,maplist(varnumbers,Ss_s,Ss).
+	,maplist(varnumbers,Ss_s,Ss)
+	,debug_clauses(new_metarules,'New metasubstitutions',Ss).
 
 
 %!	meta_grounding(+E,+Neg,+Metarule,+Metasub,-Specialised) is
@@ -110,13 +112,14 @@ meta_top_program(Pos,Neg,MS,Ss):-
 meta_grounding(Ep,Neg,M,Sub,M_n):-
 	metasubstitution(Ep,M,Sub)
 	,constraints(Sub)
-	,debug_clauses(new_metarules,'Ground metarule',[M])
+	,debug_clauses(new_metarules,'Ground instance',[M])
 	,new_metarule(M,Sub,M_n)
 	,debug_clauses(new_metarules,'New metarule',[M_n])
 	,\+((member(En,Neg)
 	    ,metasubstitution(En,M_n,Sub)
 	    )
-	   ).
+	   )
+	,debug(new_metarules,'Entails 0 negative examples',[]).
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
@@ -147,9 +150,12 @@ metasubstitution(E,M,Sub):-
 %
 %	@tbd Document this properly.
 %
+prove_body_literals(_H,[true],_Gs):-
+	!.
 prove_body_literals(H,Bs,Gs):-
 	H =.. [m,_P|Ts]
 	,counts(Ts,[],Cs)
+	,debug_clauses(grounding,'Grounding clause',[[H|Gs]])
 	,prove_body_literals(Bs,Gs,[H],Cs).
 
 %!	prove_body_literals(?Literals,?Clause,+Current,+Constants) is
@@ -181,12 +187,13 @@ prove_body_literals([],_Gs,_Ls,Cs):-
 prove_body_literals([Lk|Bs],Gs,Ls,Cs):-
 	grounding_constraints(Cs,Gs)
 	,variable_instantiations(Lk,Cs,Is)
-	%,debug_clauses(new_metarules,'Variable instantiations',[Is])
+	,debug_clauses(grounding,'Variable instantiations',[Is])
+	,debug_clauses(grounding,'Grounding literal',[Lk])
 	,call(Lk)
 	,new_literal(Lk,Ls)
-	%,debug_clauses(new_metarules,'Ground literal',[Lk])
+	,debug_clauses(grounding,'Ground literal',[Lk])
 	,counts(Is,Cs,Cs_)
-	%,debug_clauses(new_metarules,'Constant counts',[Cs_])
+	,debug_clauses(grounding,'Constant counts',[Cs_])
 	,prove_body_literals(Bs,Gs,[Lk|Ls],Cs_).
 
 
