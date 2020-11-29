@@ -493,6 +493,11 @@ metarule_application(Sub,Sub:-H,H):-
 %	Top program construction sorts clauses - so the sorting also
 %	ensures consistency between the two methods.
 %
+%	@bug This will leave behind uncollected clauses as garbage in
+%	the dynamic db if it fails before retracting all clauses.
+%	Perhaps have a dedicated cleanup procedure to call in that
+%	eventuality?
+%
 collect_clauses(Ts,MS,Cs):-
 	findall(C
 	       ,(member(Sub,MS)
