@@ -220,6 +220,7 @@ top_program_dynamic(C,Ss,Pos,Neg,BK,MS,Ts):-
 	,S = write_program(Pos,BK,Refs)
 	,G = (top_program_dynamic(C,Pos,Neg,MS)
 	     ,collect_clauses(Ss,MS,Ts_)
+	     ,debug_clauses(dynamic,'Collected clauses:',Ts_)
 	     ,unfold_clauses(Ts_,Ss,Ts)
 	     )
 	,Cl = erase_program_clauses(Refs)
@@ -454,7 +455,10 @@ new_symbol(C,P):-
 %	@tbd Can't we use this in the place of that cumbersome
 %	applied_metarules/2, in mil_problem.pl?
 %
-metarule_application(Sub,Sub:-(H,B),H:-B).
+metarule_application(Sub,Sub:-(H,B),H:-B):-
+	!.
+metarule_application(Sub,Sub:-H,H):-
+	H \= (_,_).
 
 
 %!	collect_clauses(+Targets,+Metarules,-Clauses) is det.
@@ -490,19 +494,40 @@ metarule_application(Sub,Sub:-(H,B),H:-B).
 %	ensures consistency between the two methods.
 %
 collect_clauses(Ts,MS,Cs):-
-	findall(H:-B
-	       ,(member(_A:-(H,B),MS)
-		,clause(user:H,B)
-		%,print_clauses('New clause',[H:-B])
+	findall(C
+	       ,(member(Sub,MS)
+		,sub_clause_head(Sub,C,H)
+		%,print_clauses('New clause',[C])
 		%,nl
 		%,B \= true
 		,H =.. [m,S|As]
 		,length(As,N)
 		,target_or_invention(Ts,S/N)
-		,user:retract(H:-B)
+		,once(user:retract(C))
+		%,print_clauses('Retracted',[C])
 		)
 	       ,Cs_)
-	,predsort(unifiable_compare,Cs_, Cs).
+	%,print_clauses('Collected',Cs_)
+	,predsort(unifiable_compare,Cs_, Cs)
+	%,print_clauses('Sorted',Cs)
+	.
+
+%!	sub_clause_head(+Metarule,-Clause,-Head) is nondet.
+%
+%	Collect a ground instance of a Metarule from the dynamic db.
+%
+%	Metarule is an encapsulated metarule. Clause is the encapsulated
+%	head and body literals of the metarule and Head is its
+%	encapsulated head literal.
+%
+%	The purpose of this predicate is to correctly behead clauses
+%	without a body. Sounds tricky, innit.
+%
+sub_clause_head(_Sub:-(H,B),(H:-B),H):-
+	clause(user:H,B).
+sub_clause_head(_Sub:-H,H,H):-
+	H \= (_,_)
+	,clause(user:H,true).
 
 
 %!	unifiable_compare(-Delta,+A,+B) is det.
