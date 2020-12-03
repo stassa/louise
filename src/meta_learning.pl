@@ -31,7 +31,8 @@
 %	Make it so.
 %
 meta_learning(Pos,Neg,BK,MS_G,Ps):-
-	debug(learn,'Encapsulating problem',[])
+	configuration:learning_predicate(learn/_)
+	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
 	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
@@ -42,9 +43,10 @@ meta_learning(Pos,Neg,BK,MS_G,Ps):-
 	,reduced_top_program(Pos_,BK_,MS_,Ts,Rs)
 	,examples_targets(Pos,Ss)
 	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(Ss,Rs,Ps)	.
+	,excapsulated_clauses(Ss,Rs,Ps).
 meta_learning(Pos,Neg,BK,MS_G,Ps):-
-	debug(learn,'Encapsulating problem',[])
+	configuration:learning_predicate(learn_dynamic/_)
+	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
 	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
