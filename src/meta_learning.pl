@@ -1,10 +1,14 @@
-:-module(meta_learning, [learn_meta/1
+:-module(meta_learning, [meta_learning/5
+			,new_metarules/1
+			,new_metarules/2
+			,new_metarules/5
+			,learn_meta/1
 			,learn_meta/2
 			,learn_meta/5
                         ]).
 
 :-use_module(configuration).
-:-use_module(src(metarule_extraction)).
+:-use_module(src(minimal_program)).
 :-use_module(lib(lifting/lifting)).
 
 /** <module> Learning while learning new metarules.
@@ -12,6 +16,157 @@
 */
 
 %:-debug(new_metarules).
+
+%!	meta_learning(+Pos,+Neg,+BK,+Meta,-Program) is det.
+%
+%	Learn a Program while learning a set of new metarules.
+%
+%	Combines learning of new metarules, as in new_metarules/[1,2,5],
+%	with learning predicates.
+%
+%	@tbd Currently only learn/5 and learn_dynamic/5 can be the
+%	learning predicate.
+%
+%	@tbd Awful hacky ad-hoc mess that can take a lot of refactoring.
+%	Make it so.
+%
+meta_learning(Pos,Neg,BK,MS_G,Ps):-
+	debug(learn,'Encapsulating problem',[])
+	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
+	,debug(learn,'Constructing Top program...',[])
+	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
+
+	,top_program(Pos_,Neg_,BK_,MS_n,Ts)
+	,debug(learn,'Reducing Top program...',[])
+
+	,reduced_top_program(Pos_,BK_,MS_,Ts,Rs)
+	,examples_targets(Pos,Ss)
+	,debug(learn,'Excapsulating hypothesis',[])
+	,excapsulated_clauses(Ss,Rs,Ps)	.
+meta_learning(Pos,Neg,BK,MS_G,Ps):-
+	debug(learn,'Encapsulating problem',[])
+	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
+	,debug(learn,'Constructing Top program...',[])
+	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
+
+	,configuration:max_invented(I)
+	,C = c(1,I)
+	,examples_targets(Pos,Ss)
+	,top_program_dynamic(C,Ss,Pos_,Neg_,BK_,MS_n,Ts)
+
+	,debug(learn,'Reducing Top program...',[])
+	,reduced_top_program(Pos_,BK_,MS_,Ts,Rs)
+	,debug(learn,'Excapsulating hypothesis',[])
+	,excapsulated_clauses(Ss,Rs,Ps).
+
+
+
+%!	new_metarules(+Targets) is det.
+%
+%	Derive specialised metarules from a list of learning Targets.
+%
+new_metarules(Ts):-
+	new_metarules(Ts,MS)
+	,print_clauses(MS).
+
+
+%!	new_metarules(+Targets,-Metarules) is det.
+%
+%	Derive specialised Metarules from a list of learning Targets.
+%
+new_metarules(Ts,MS):-
+	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS_G)
+	,new_metarules(Pos,Neg,BK,MS_G,MS).
+
+
+%!	new_metarules(+Pos,+Neg,+BK,+Templates,-Metarules) is det.
+%
+%	Derive specialised Metarules from a list of learning Targets.
+%
+%	Templates is a list of most-general metarules in a language
+%	class. Metarules is a set of specialisations of the metarules in
+%	Templates.
+%
+new_metarules(Pos,Neg,BK,MS,MS_n):-
+	debug(learn,'Encapsulating problem',[])
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,debug(learn,'Constructing Top program...',[])
+	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n).
+
+
+%!	specialised_metarules_(+Pos,+Neg,+BK,+General,-Special) is det.
+%
+%	Setup helper for specialised_metarules/5).
+%
+specialised_metarules_(Pos,Neg,BK,MS,MS_):-
+	Ci = c(1)
+        ,S = write_program(Pos,BK,Refs)
+        ,G = (debug(top_program,'Constructing Top program...',[])
+	     ,specialised_metarules(Ci,Pos,Neg,MS,[],MS_)
+	     )
+	,C = erase_program_clauses(Refs)
+	,setup_call_cleanup(S,G,C)
+	,!.
+specialised_metarules_(_Pos,_Neg,_BK,_MS,[]):-
+% If Top program construction fails return an empty program.
+	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
+
+
+%!	specialised_metarules_(+Pos,+Neg,+General,+Acc,-Special) is det.
+%
+%	Specialise a list of most General metarules.
+%
+specialised_metarules(_,_Pos,_Neg,[],MS,MS):-
+	!.
+specialised_metarules(C,Pos,Neg,[M|MS],Acc,Bind):-
+	debug_clauses(new_metarules,'Specialising metarule',[M])
+	,specialised_metarule(C,Pos,Neg,M,Acc,Acc_)
+	,specialised_metarules(C,Pos,Neg,MS,Acc_,Bind).
+
+
+%!	specialised_metarules(+Pos,+Neg,+General,+Acc,-Special) is det.
+%
+%	Specialise one most General metarule.
+%
+specialised_metarule(_,[],_Neg,_M,MS,MS):-
+	!.
+specialised_metarule(Ci,[E|Pos],Neg,M,Acc,Bind):-
+	debug_clauses(new_metarules,'New example',[E])
+	,copy_term(M,M_)
+	,meta_grounding(E,Neg,M_,_,M_n)
+	,encapsulated_metarule(M_n,C)
+	,!
+	,renamed_metarule(Ci,M_n,M_s)
+	,reduced_examples(Pos,C,Pos_)
+	,maplist(length,[Pos,Pos_],[N,N_])
+	,debug(new_metarules,'Reduced ~w examples to ~w',[N,N_])
+	,specialised_metarule(Ci,Pos_,Neg,M,[M_s|Acc],Bind).
+specialised_metarule(Ci,[_E|Pos],Neg,M,Acc,Bind):-
+	specialised_metarule(Ci,Pos,Neg,M,Acc,Bind).
+
+
+%!	encapsulated_metarule(+Metarule,-Body) is det.
+%
+%	Extract the encapsulated Body literals of a Metarule.
+%
+encapsulated_metarule(_Sub:-(H,B),H:-B):-
+	!.
+encapsulated_metarule(_Sub:-L,L).
+
+
+%!	renamed_metarule(+Counter,+Metarule,-Renamed) is det.
+%
+%	Rename a new Metarule.
+%
+renamed_metarule(C,Sub:-M,Sub_:-M):-
+	C = c(I)
+	,Sub =.. [m,Id|Ps]
+	,atomic_list_concat([Id,I],'_',Id_i)
+	,Sub_ =.. [m,Id_i|Ps]
+	,succ(I,I_)
+	,nb_setarg(1,C,I_).
+
+
 
 %!	learn_meta(+Targets) is det.
 %

@@ -1,6 +1,7 @@
 :-module(dynamic_learning, [learn_dynamic/1
 			   ,learn_dynamic/2
 			   ,learn_dynamic/5
+			   ,top_program_dynamic/7
 			   ,top_program_dynamic/4
 			   ,unfold_invented/3
 			   ,pseudo_unfold_invented/3
