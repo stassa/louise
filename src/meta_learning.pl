@@ -67,9 +67,36 @@ meta_learning(Pos,Neg,BK,MS_G,Ps):-
 %
 %	Derive specialised metarules from a list of learning Targets.
 %
+%	New metarules are printed at the top-level. The printing can be
+%	controlled by setting the value of the configuration option
+%	new_metarules_printing/1 to "pretty" or "prolog".
+%
+%	Option "pretty" invokes the preint_quantified_metarules/1
+%	pretty-printer to print learned metarules in a human-readable
+%	format with quantifiers. Use this option when you want to
+%	inspect the metarules learned with this predicate (and its
+%	higher-arity brethren).
+%
+%	Option "prolog" invokes the less pretty printer
+%	print_metarules/1 that prints learned metarules in their
+%	encapsulated form as Prolog terms, but with variables renamed
+%	according to their existential or universal quantification to
+%	make them easier to read. Metarules printed to the top-level
+%	with option "prolog" can be passed to a top-program construction
+%	predicate like top_program/5 or top_program_dynamic/7 to learn a
+%	hypothesis. Use this option when you want to inspect the
+%	metarules learned with this predicate before passing them to a
+%	top-program construction predicate.
+%
 new_metarules(Ts):-
-	new_metarules(Ts,MS)
-	,print_clauses(MS).
+	configuration:new_metarules_printing(H)
+	,new_metarules(Ts,MS)
+	,(   H = pretty
+	 ->  print_quantified_metarules(MS)
+	 ;   H = prolog
+	 ->  print_metarules(MS)
+	 ;   throw('Unknown new_metarules_printing/1 option':H)
+	 ).
 
 
 %!	new_metarules(+Targets,-Metarules) is det.

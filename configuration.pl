@@ -6,6 +6,7 @@
                         ,minimal_program_size/2
 			,metarule/2
 			,metarule_constraints/2
+                        ,new_metarules_printing/1
 			,recursion_depth_limit/2
 			,recursive_reduction/1
 			,reduction/1
@@ -58,7 +59,6 @@
 %:-debug(predicate_invention). % Debug predicate invention.
 %:-debug(examples_invention). % Debug examples invention.
 %:-debug(evaluation).
-
 
 %!      example_clauses(?What) is semidet.
 %
@@ -376,6 +376,30 @@ above(S1,S2,[_|Ss]):-
 %
 previous(S1,S2,[S1,S2|_Ss]).
 */
+
+
+%!      new_metarules_printing(?How) is semidet.
+%
+%       How to print metarules learned with new_metarules/1.
+%
+%       One of: [pretty,prolog]. Option "pretty" calls the metarule
+%       pretty-printer, print_quantified_metarules/1. Option "prolog"
+%       calls the encapsulated metarule printer, print_metarules/1.
+%
+%       Choose option "pretty" when you want the learned metarules to be
+%       printed nicely for inspection by a human user. Choose option
+%       "prolog" when you want to copy the learned metarules by hand and
+%       use them directly as Prolog terms.
+%
+%       @tbd This set of options should include one to print the learned
+%       metarules in Louise's user-level format, i.e. as
+%       configuration:metarule/2 terms. This will need to be implemented
+%       from scratch, probably, as the metarules parser only goes "one
+%       way" (it can only parse user-level metarules to learner-leve
+%       metarules but not the other way around).
+%
+%new_metarules_printing(pretty).
+new_metarules_printing(prolog).
 
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
