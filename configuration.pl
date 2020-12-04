@@ -1,14 +1,15 @@
 :-module(configuration, [experiment_file/2
                         ,example_clauses/1
 			,learner/1
+                        ,learned_metarules_printing/1
                         ,learning_predicate/1
 			,max_invented/1
                         ,minimal_program_size/2
 			,metarule/2
 			,metarule_constraints/2
-                        ,new_metarules_printing/1
 			,recursion_depth_limit/2
 			,recursive_reduction/1
+                        ,reduce_learned_metarules/1
 			,reduction/1
 			,resolutions/1
 			,symbol_range/2
@@ -94,7 +95,7 @@ example_clauses(call).
 %
 %	The Path and Module name of an experiment file.
 %
-experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
+%experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/anbn.pl',anbn).
 %experiment_file('data/examples/abduced.pl',abduced).
 %experiment_file('data/examples/user_metarules.pl',user_metarules).
@@ -106,7 +107,25 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
 %experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
-%experiment_file('data/examples/tiny_kinship_meta.pl',tiny_kinship_meta).
+experiment_file('data/examples/tiny_kinship_meta.pl',tiny_kinship_meta).
+
+%experiment_file('data/drafts/mtg/targeting_grammar/mtg_targeting.pl',mtg_targeting).
+%experiment_file('data/drafts/shrdlu/parser.pl',parser).
+%experiment_file('data/vision_thing/vision_thing.pl',vision_thing).
+%experiment_file('data/vision_thing/arc/pipeline/line_segmentation.pl',line_segmentation).
+%experiment_file('data/vision_thing/arc/pipeline/shape_drawing.pl',shape_drawing).
+%experiment_file('data/vision_thing/l_systems/l_systems.pl',l_systems).
+%experiment_file('data/vision_thing/l_systems/algae.pl',algae).
+%experiment_file('data/vision_thing/l_systems/algae4.pl',algae4).
+%experiment_file('data/vision_thing/l_systems/algae_functions.pl',algae_functions).
+%experiment_file('data/vision_thing/l_systems/algae_functions_2.pl',algae_functions_2).
+%experiment_file('data/vision_thing/l_systems/algae.pl',algae).
+%experiment_file('data/vision_thing/l_systems/koch_curve.pl',koch_curve).
+%experiment_file('data/drafts/functions/functions.pl',functions).
+%experiment_file('data/drafts/functions/functions_meta.pl',functions_meta).
+%experiment_file('data/drafts/functions/ordered.pl',ordered).
+%experiment_file('data/drafts/functions/pred_succ.pl',pred_succ).
+%experiment_file('data/drafts/functions/pred_succ_meta.pl',pred_succ_meta).
 
 
 %!	learner(?Name) is semidet.
@@ -122,6 +141,30 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %	Thelma etc).
 %
 learner(louise).
+
+
+%!      learned_metarules_printing(?How) is semidet.
+%
+%       How to print metarules learned with new_metarules/1.
+%
+%       One of: [pretty,prolog]. Option "pretty" calls the metarule
+%       pretty-printer, print_quantified_metarules/1. Option "prolog"
+%       calls the encapsulated metarule printer, print_metarules/1.
+%
+%       Choose option "pretty" when you want the learned metarules to be
+%       printed nicely for inspection by a human user. Choose option
+%       "prolog" when you want to copy the learned metarules by hand and
+%       use them directly as Prolog terms.
+%
+%       @tbd This set of options should include one to print the learned
+%       metarules in Louise's user-level format, i.e. as
+%       configuration:metarule/2 terms. This will need to be implemented
+%       from scratch, probably, as the metarules parser only goes "one
+%       way" (it can only parse user-level metarules to learner-leve
+%       metarules but not the other way around).
+%
+learned_metarules_printing(pretty).
+%learned_metarules_printing(prolog).
 
 
 %!	learning_predicate(+Learning_Predicate) is semidet.
@@ -236,6 +279,8 @@ meta_precon metarule 'P(x,y):- Q(z),R(u,v)'.
 meta_postcon metarule 'P(x,y):- Q(z,u),R(v)'.
 meta_projection_21 metarule 'P(x,y):- Q(z)'.
 meta_projection_12 metarule 'P(x):- Q(y,z)'.
+
+%partially_named metarule 'P(x,y):- member(x,y)'.
 
 /*
 % H22 metarules redundnant given chain and inverse.
@@ -378,30 +423,6 @@ previous(S1,S2,[S1,S2|_Ss]).
 */
 
 
-%!      new_metarules_printing(?How) is semidet.
-%
-%       How to print metarules learned with new_metarules/1.
-%
-%       One of: [pretty,prolog]. Option "pretty" calls the metarule
-%       pretty-printer, print_quantified_metarules/1. Option "prolog"
-%       calls the encapsulated metarule printer, print_metarules/1.
-%
-%       Choose option "pretty" when you want the learned metarules to be
-%       printed nicely for inspection by a human user. Choose option
-%       "prolog" when you want to copy the learned metarules by hand and
-%       use them directly as Prolog terms.
-%
-%       @tbd This set of options should include one to print the learned
-%       metarules in Louise's user-level format, i.e. as
-%       configuration:metarule/2 terms. This will need to be implemented
-%       from scratch, probably, as the metarules parser only goes "one
-%       way" (it can only parse user-level metarules to learner-leve
-%       metarules but not the other way around).
-%
-%new_metarules_printing(pretty).
-new_metarules_printing(prolog).
-
-
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
 %
 %	Recursion depth Limit for the given Purpose.
@@ -447,6 +468,18 @@ recursion_depth_limit(dynamic_learning,none).
 %	from it.
 %
 recursive_reduction(false).
+%recursive_reduction(true).
+
+
+%!      reduce_learned_metarules(?Bool) is semidet.
+%
+%       Whether to reduce learned metarules.
+%
+%       Reduction is by application of Plotkin's program reduction,
+%       only.
+%
+reduce_learned_metarules(false).
+%reduce_learned_metarules(true).
 
 
 %!	reduction(?Method) is semidet.

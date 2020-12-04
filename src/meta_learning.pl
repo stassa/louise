@@ -105,7 +105,7 @@ meta_learning(Pos,Neg,BK,MS_G,Ps):-
 %	top-program construction predicate.
 %
 learn_metarules(Ts):-
-	configuration:new_metarules_printing(H)
+	configuration:learned_metarules_printing(H)
 	,learn_metarules(Ts,MS)
 	,(   H = pretty
 	 ->  print_quantified_metarules(MS)
@@ -132,11 +132,19 @@ learn_metarules(Ts,MS):-
 %	class. Metarules is a set of specialisations of the metarules in
 %	Templates.
 %
-learn_metarules(Pos,Neg,BK,MS,MS_n):-
-	debug(learn,'Encapsulating problem',[])
+learn_metarules(Pos,Neg,BK,MS,MS_f):-
+	configuration:reduce_learned_metarules(B)
+	,Ci = c(1)
+	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
-	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n).
+	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
+	,(   B == true
+	 ->  program_reduction(MS_n,MS_r,_MS_d)
+	 ;   B == false
+	 ->  MS_r = MS_n
+	 )
+	,maplist(renamed_metarule(Ci),MS_r,MS_f).
 
 
 %!	specialised_metarules_(+Pos,+Neg,+BK,+General,-Special) is det.
@@ -181,11 +189,10 @@ specialised_metarule(Ci,[E|Pos],Neg,M,Acc,Bind):-
 	,meta_grounding(E,Neg,M_,_,M_n)
 	,encapsulated_metarule(M_n,C)
 	,!
-	,renamed_metarule(Ci,M_n,M_s)
 	,reduced_examples(Pos,C,Pos_)
 	,maplist(length,[Pos,Pos_],[N,N_])
 	,debug(new_metarules,'Reduced ~w examples to ~w',[N,N_])
-	,specialised_metarule(Ci,Pos_,Neg,M,[M_s|Acc],Bind).
+	,specialised_metarule(Ci,Pos_,Neg,M,[M_n|Acc],Bind).
 specialised_metarule(Ci,[_E|Pos],Neg,M,Acc,Bind):-
 	specialised_metarule(Ci,Pos,Neg,M,Acc,Bind).
 
