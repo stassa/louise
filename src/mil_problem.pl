@@ -1,6 +1,7 @@
 :-module(mil_problem, [metarule_parts/5
 		      ,expanded_metarules/2
 		      ,metarule_expansion/2
+		      ,encapsulated/1
 		      ,encapsulated_problem/5
 		      ,encapsulated_bk/2
 		      ,examples_targets/2
@@ -83,7 +84,7 @@ metarule_parts_(Id,M,Sub,H,B):-
 
 
 
-%!	expanded_metarules(+Ids,-Encapsulated) is det.
+%!	expanded_metarules(?Ids,-Encapsulated) is det.
 %
 %	Encapsulate a set of metarules.
 %
@@ -96,6 +97,15 @@ metarule_parts_(Id,M,Sub,H,B):-
 %	If Ids is a free variable, it is bound to a list of the names of
 %	all Metarules known to the system.
 %
+%	@tbd The mode (?,-) seems a little dangerous and in any case
+%	there's the "all" option that does the same thing more or less.
+%	Is it really necessary to allow Ids to be unbound on entry?
+%
+expanded_metarules(MS,MS):-
+% Already expanded and encapsulated.
+	\+ var(MS)
+	,encapsulated(MS)
+	,!.
 expanded_metarules(Ids,Ms):-
 	var(Ids)
 	,!
@@ -135,6 +145,38 @@ metarule_expansion(Id, M):-
 	parsed_metarule(Id,M).
 
 
+
+%!	encapsulated(+Terms) is det.
+%
+%	True when Terms is a list of encapsulated Prolog terms.
+%
+%	Used by auxiliaries of encapsulated_problem/5 to allow the
+%	elements of an already encapsulated MIL problem being passed to
+%	learning predicates.
+%
+%	@tbd Similar analysis of a (Prolog) term to see if it's
+%	encapsulaed is done ad-hoc in many places in the code. Perhaps
+%	find them and replace them? For instance, see symbol/2 which
+%	extracts the predicate symbol of a possible encapsulated term.
+%	This could definitely be combined with this predicate, for
+%	insance this predicate could return the encapsulated predicate
+%	symbol.
+%
+encapsulated(Ts):-
+	Ts = [H:-_B|_]
+	,functor(H,m,_)
+	,!.
+encapsulated(Ts):-
+% A negated term - probably a negative example.
+	Ts = [:-T|_]
+	,functor(T,m,_)
+	,!.
+encapsulated(Ts):-
+	Ts = [T|_]
+	,functor(T,m,_).
+
+
+
 %!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Ps)
 %!	is det.
 %
@@ -167,6 +209,10 @@ encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
 %
 %	Encapsulate a list of Background definitions.
 %
+encapsulated_bk(BK,BK):-
+% Already encapsulated.
+	encapsulated(BK)
+	,!.
 encapsulated_bk(BK,Es):-
 	(   closure(BK, user, Ps)
 	 ->  true
@@ -333,6 +379,10 @@ symbol(H,F/A):-
 %
 %	Encapsulate a list of Clauses.
 %
+encapsulated_clauses(Cs,Cs):-
+% Already encapsulated.
+	encapsulated(Cs)
+	,!.
 encapsulated_clauses(Cs,Cs_):-
 	encapsulated_clauses(Cs, [], Cs_).
 
