@@ -1,9 +1,9 @@
 :-module(meta_learning, [meta_learning/1
 			,meta_learning/2
 			,meta_learning/5
-			,new_metarules/1
-			,new_metarules/2
-			,new_metarules/5
+			,learn_metarules/1
+			,learn_metarules/2
+			,learn_metarules/5
 			,learn_meta/1
 			,learn_meta/2
 			,learn_meta/5
@@ -51,7 +51,7 @@ meta_learning(Ts,Ps):-
 %
 %	Learn a Program while learning a set of new metarules.
 %
-%	Combines learning of new metarules, as in new_metarules/[1,2,5],
+%	Combines learning of new metarules, as in learn_metarules/[1,2,5],
 %	with learning predicates.
 %
 %	@tbd Currently only learn/5 and learn_dynamic/5 can be the
@@ -74,12 +74,12 @@ meta_learning(Pos,Neg,BK,MS_G,Ps):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
-	,new_metarules(Pos_,Neg_,BK_,MS_,MS_n)
+	,learn_metarules(Pos_,Neg_,BK_,MS_,MS_n)
 	,learning_query(Pos_,Neg_,BK_,MS_n,Ps).
 
 
 
-%!	new_metarules(+Targets) is det.
+%!	learn_metarules(+Targets) is det.
 %
 %	Derive specialised metarules from a list of learning Targets.
 %
@@ -104,9 +104,9 @@ meta_learning(Pos,Neg,BK,MS_G,Ps):-
 %	metarules learned with this predicate before passing them to a
 %	top-program construction predicate.
 %
-new_metarules(Ts):-
+learn_metarules(Ts):-
 	configuration:new_metarules_printing(H)
-	,new_metarules(Ts,MS)
+	,learn_metarules(Ts,MS)
 	,(   H = pretty
 	 ->  print_quantified_metarules(MS)
 	 ;   H = prolog
@@ -115,16 +115,16 @@ new_metarules(Ts):-
 	 ).
 
 
-%!	new_metarules(+Targets,-Metarules) is det.
+%!	learn_metarules(+Targets,-Metarules) is det.
 %
 %	Derive specialised Metarules from a list of learning Targets.
 %
-new_metarules(Ts,MS):-
+learn_metarules(Ts,MS):-
 	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS_G)
-	,new_metarules(Pos,Neg,BK,MS_G,MS).
+	,learn_metarules(Pos,Neg,BK,MS_G,MS).
 
 
-%!	new_metarules(+Pos,+Neg,+BK,+Templates,-Metarules) is det.
+%!	learn_metarules(+Pos,+Neg,+BK,+Templates,-Metarules) is det.
 %
 %	Derive specialised Metarules from a list of learning Targets.
 %
@@ -132,7 +132,7 @@ new_metarules(Ts,MS):-
 %	class. Metarules is a set of specialisations of the metarules in
 %	Templates.
 %
-new_metarules(Pos,Neg,BK,MS,MS_n):-
+learn_metarules(Pos,Neg,BK,MS,MS_n):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
