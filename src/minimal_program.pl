@@ -1,6 +1,7 @@
 :-module(minimal_program, [learn_minimal/1
 			  ,learn_minimal/2
 			  ,learn_minimal/5
+			  ,reduced_examples/3
 			  ]).
 
 :-use_module(configuration).
