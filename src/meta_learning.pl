@@ -8,6 +8,7 @@
                         ]).
 
 :-use_module(configuration).
+:-use_module(src(auxiliaries)).
 :-use_module(src(minimal_program)).
 :-use_module(lib(lifting/lifting)).
 
@@ -27,39 +28,12 @@
 %	@tbd Currently only learn/5 and learn_dynamic/5 can be the
 %	learning predicate.
 %
-%	@tbd Awful hacky ad-hoc mess that can take a lot of refactoring.
-%	Make it so.
-%
 meta_learning(Pos,Neg,BK,MS_G,Ps):-
-	configuration:learning_predicate(learn/_)
-	,debug(learn,'Encapsulating problem',[])
+	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
-	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
-
-	,top_program(Pos_,Neg_,BK_,MS_n,Ts)
-	,debug(learn,'Reducing Top program...',[])
-
-	,reduced_top_program(Pos_,BK_,MS_,Ts,Rs)
-	,examples_targets(Pos,Ss)
-	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(Ss,Rs,Ps).
-meta_learning(Pos,Neg,BK,MS_G,Ps):-
-	configuration:learning_predicate(learn_dynamic/_)
-	,debug(learn,'Encapsulating problem',[])
-	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
-	,debug(learn,'Constructing Top program...',[])
-	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
-
-	,configuration:max_invented(I)
-	,C = c(1,I)
-	,examples_targets(Pos,Ss)
-	,top_program_dynamic(C,Ss,Pos_,Neg_,BK_,MS_n,Ts)
-
-	,debug(learn,'Reducing Top program...',[])
-	,reduced_top_program(Pos_,BK_,MS_,Ts,Rs)
-	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(Ss,Rs,Ps).
+	,new_metarules(Pos_,Neg_,BK_,MS_,MS_n)
+	,learning_query(Pos_,Neg_,BK_,MS_n,Ps).
 
 
 
