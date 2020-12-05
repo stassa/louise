@@ -1,5 +1,6 @@
 :-module(configuration, [experiment_file/2
                         ,example_clauses/1
+                        ,generalise_learned_metarules/1
 			,learner/1
                         ,learned_metarules_printing/1
                         ,learning_predicate/1
@@ -91,11 +92,36 @@
 example_clauses(call).
 
 
+%!      generalise_learned_metarules(?Bool) is semidet.
+%
+%       Whether to generalise learned metarules.
+%
+%       "Genearlisation" heare means that second-order variables in
+%       learned metarules are "named apart", so for example a learned
+%       metarule "P(x,,y):- Q(x,z), P(z,y)" is genealised by replacing
+%       each instance of the second-order variables P and Q with new,
+%       free variables, resulting in the metarule "P(x,y):- Q(x,z),
+%       R(z,y)".
+%
+%       The new metarule is more general than the original in the sense
+%       that its instances may or may not be recursive clauses- while
+%       the first metarule forces the head and last body literal to have
+%       the same predicate symbol.
+%
+%       The motivation of this option is to allow learning metarules
+%       that better generalise to unseen examples. Set this option to
+%       true if learn_metarules/[1,2,5] returns overly-specific
+%       metarules that can only represent the training examples well.
+%
+%generalise_learned_metarules(true).
+generalise_learned_metarules(false).
+
+
 %!	experiment_file(?Path,?Module) is semidet.
 %
 %	The Path and Module name of an experiment file.
 %
-%experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
+experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/anbn.pl',anbn).
 %experiment_file('data/examples/abduced.pl',abduced).
 %experiment_file('data/examples/user_metarules.pl',user_metarules).
@@ -107,25 +133,7 @@ example_clauses(call).
 %experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
 %experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
-experiment_file('data/examples/tiny_kinship_meta.pl',tiny_kinship_meta).
-
-%experiment_file('data/drafts/mtg/targeting_grammar/mtg_targeting.pl',mtg_targeting).
-%experiment_file('data/drafts/shrdlu/parser.pl',parser).
-%experiment_file('data/vision_thing/vision_thing.pl',vision_thing).
-%experiment_file('data/vision_thing/arc/pipeline/line_segmentation.pl',line_segmentation).
-%experiment_file('data/vision_thing/arc/pipeline/shape_drawing.pl',shape_drawing).
-%experiment_file('data/vision_thing/l_systems/l_systems.pl',l_systems).
-%experiment_file('data/vision_thing/l_systems/algae.pl',algae).
-%experiment_file('data/vision_thing/l_systems/algae4.pl',algae4).
-%experiment_file('data/vision_thing/l_systems/algae_functions.pl',algae_functions).
-%experiment_file('data/vision_thing/l_systems/algae_functions_2.pl',algae_functions_2).
-%experiment_file('data/vision_thing/l_systems/algae.pl',algae).
-%experiment_file('data/vision_thing/l_systems/koch_curve.pl',koch_curve).
-%experiment_file('data/drafts/functions/functions.pl',functions).
-%experiment_file('data/drafts/functions/functions_meta.pl',functions_meta).
-%experiment_file('data/drafts/functions/ordered.pl',ordered).
-%experiment_file('data/drafts/functions/pred_succ.pl',pred_succ).
-%experiment_file('data/drafts/functions/pred_succ_meta.pl',pred_succ_meta).
+%experiment_file('data/examples/tiny_kinship_meta.pl',tiny_kinship_meta).
 
 
 %!	learner(?Name) is semidet.
@@ -221,6 +229,10 @@ learned_metarules_printing(pretty).
 %
 :-dynamic learning_predicate/1.
 :-multifile learning_predicate/1.
+%learning_predicate(learn/1).
+%learning_predicate(learn_dynamic/1).
+%learning_predicate(learn_minimal/1).
+% etc.
 
 
 %!	max_invented(?Number) is semidet.
@@ -281,6 +293,7 @@ meta_projection_21 metarule 'P(x,y):- Q(z)'.
 meta_projection_12 metarule 'P(x):- Q(y,z)'.
 
 %partially_named metarule 'P(x,y):- member(x,y)'.
+% Not yet implemented.
 
 /*
 % H22 metarules redundnant given chain and inverse.

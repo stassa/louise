@@ -187,12 +187,13 @@ specialised_metarule(Ci,[E|Pos],Neg,M,Acc,Bind):-
 	debug_clauses(new_metarules,'New example',[E])
 	,copy_term(M,M_)
 	,meta_grounding(E,Neg,M_,_,M_n)
-	,encapsulated_metarule(M_n,C)
+	,generalise_second_order(M_n,M_g)
+	,encapsulated_metarule(M_g,C)
 	,!
 	,reduced_examples(Pos,C,Pos_)
 	,maplist(length,[Pos,Pos_],[N,N_])
 	,debug(new_metarules,'Reduced ~w examples to ~w',[N,N_])
-	,specialised_metarule(Ci,Pos_,Neg,M,[M_n|Acc],Bind).
+	,specialised_metarule(Ci,Pos_,Neg,M,[M_g|Acc],Bind).
 specialised_metarule(Ci,[_E|Pos],Neg,M,Acc,Bind):-
 	specialised_metarule(Ci,Pos,Neg,M,Acc,Bind).
 
@@ -217,6 +218,76 @@ renamed_metarule(C,Sub:-M,Sub_:-M):-
 	,Sub_ =.. [m,Id_i|Ps]
 	,succ(I,I_)
 	,nb_setarg(1,C,I_).
+
+
+%!	generalise_second_order(+Metarule,-Generalised) is det.
+%
+%	Generalise the second-order variables in a Metarule.
+%
+%	Metarule is an encapsulated metarule. Generalised is the same
+%	metarule with each second-order variables named apart, i.e.
+%	replaced with a free variable.
+%
+%	For example, if Metarule is ['P(x,y):- Q(x,z), P(z,y)"],
+%	Generalised would be [P(x,y):- Q(x,z), R(z,y)]. Note that the
+%	two instances of P have been named apart and the last body
+%	literal now has a free second order variable, R.
+%
+%	The motivation for this operation is to allow learning of
+%	metarules that are a little more general in the sense that they
+%	are not too tightly bound to the training examples and may be
+%	better for representing unseen examples. Note that learning
+%	predicates are capable of specialising metarules to some extent,
+%	by binding their second-order variables together, for example
+%	recursive clauses can be constructed as instances of the Chain
+%	metarule. The opposite is not true, for example it's not
+%	possible to generalise Tailrec so as to construct non-tail
+%	recursive clauses as its instances.
+%
+generalise_second_order(M,M):-
+	configuration:generalise_learned_metarules(false)
+	,!.
+generalise_second_order(Sub:-M,Sub_g:-M_g):-
+	configuration:generalise_learned_metarules(true)
+	,!
+	,Sub =.. [m,Id|Ps]
+	,once(list_tree(Ms,M))
+	,generalise_second_order(Ps,Ms,[],Ps_,[],Ms_g)
+	,once(list_tree(Ms_g,M_g))
+	,Sub_g =.. [m,Id|Ps_].
+generalise_second_order(_,_):-
+	configuration:generalise_learned_metarules(O)
+	,\+ memberchk(O,[true,false])
+	,throw('Unknown generalise_learned_metarules/1 option':O).
+
+%!	generalise_second_order(+SO,+Lits,Acc1,-New_SO,+Acc2,-New_Lits)
+%!	is det.
+%
+%	Business end of generalise_second_order/2.
+%
+%	SO is a list of the second-order variables in a metarule and
+%	Lits is the list of body literals in the metarule. New_SO and
+%	New_Lits are the lists SO and Lits with second-order variables
+%	replaced with new, free variables so that all second-order
+%	variables are named apart.
+%
+%	Note that the second-order variables the instances of the
+%	second-order variables in body literals do unify with the ones
+%	in the encapsulated metasubstitution atom in the head of the
+%	encapsulated metarule. The second order variables are "unique"
+%	in the context of the encapsulated literals of the metarule.
+%
+generalise_second_order([P|Ps],[],[P1],[P1|[P|Ps]],Ls,Ls):-
+% Metarule with no body.
+	!.
+generalise_second_order([],[],Ps_Acc,Ps,Ls_Acc,Ls):-
+	maplist(reverse,[Ps_Acc,Ls_Acc],[Ps,Ls])
+	,!.
+generalise_second_order([P|Ps],[L|Ls],Ps_Acc,Ps_Bind,Ls_Acc,Ls_Bind):-
+	!
+	,L =.. [m,P|As]
+	,L_ =.. [m,P_|As]
+	,generalise_second_order(Ps,Ls,[P_|Ps_Acc],Ps_Bind,[L_|Ls_Acc],Ls_Bind).
 
 
 
