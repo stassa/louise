@@ -89,53 +89,6 @@ train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
 	,once(metric(M,Cs,V)).
 
 
-%!	learning_query(+Pos,+Neg,+BK,+MS,?Ps) is det.
-%
-%	Construct a learning query for training and evaluation.
-%
-%	This predicate allows evaluation of hypotheses learned with
-%	different learning predicates as long as they conform to a
-%	common interface. This is as follows:
-%
-%	==
-%	P(+List:Pos,+List:Neg,+List:BK,+List:MS,-PS)
-%	==
-%
-%	In particular, learning predicates must have 5 arguments, the
-%	same as learning_query/5. The first four are the positive and
-%	negative examples, list of background predicate symbols and
-%	arities and the identifiers of metarules, while the 5th is the
-%	learned hypothesis. learning_query/5 is responsible for
-%	constructing a query with a learning predicate and the elements
-%	of the MIL problem passed to it as arguments, then binding the
-%	result to Ps (the program).
-%
-%	The learning predicate used to construct a learning query is
-%	defined in the configuration option learning_predicate/1. If
-%	this is not set, learning_query/5 defaults to learn/5.
-%
-%	The motivation for this predicate is to allow the evaluation
-%	module to be used with different learning settings in the same
-%	learner and with different learners, each of which may declare
-%	differently-named learning predicates.
-%
-learning_query(Pos,Neg,BK,MS,Ps):-
-% Use a learning predicate required by an experiment file.
-	configuration:learning_predicate(F/_A)
-	,!
-	,Q =.. [F,Pos,Neg,BK,MS,Ps]
-	,call(Q).
-learning_query(Pos,Neg,BK,MS,Ps):-
-% The learning predicate may need to be called by module.
-	configuration:learning_predicate(M:F/_A)
-	,!
-	,Q =.. [F,Pos,Neg,BK,MS,Ps]
-	,M:call(Q).
-learning_query(Pos,Neg,BK,MS,Ps):-
-% Default to learn/5.
-	Q =.. [learn,Pos,Neg,BK,MS,Ps]
-	,call(Q).
-
 
 %!	timed_train_and_test(+Target,+Sample,+Limit,-Program,+Metric,-Value)
 %!	is det.
