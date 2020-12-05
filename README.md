@@ -44,7 +44,8 @@ the language bias is defined by a set of second-order clause templates called
 _metarules_. Examples, background knowledge and metarules must be provided by
 the user, but Louise can perform predicate invention to extend its background
 knowledge and metarules and so learn programs that are impossible to learn only
-from its initial data.
+from its initial data. Louise can also learn new metarules from examples of a
+learning target.
 
 In this manual we show simple examples where Louise is trained on small, "toy"
 problems, designed to demonstrate its use. However, Louise's learning algorithm,
@@ -190,7 +191,30 @@ Here are some of the things that Louise can do.
    See the section [Examples invention](#examples-invention) for more
    information on examples invention in Louise.
 
-7. Louise comes with a number of libraries for tasks that are useful when
+7. Louise can learn new metarules from examples of a target predicate. In the
+   following example, Louise learns a new metarule from examples of the
+   predicate `'S'/2` (as in item 4, above):
+
+   ```Prolog
+   ?- learn_metarules('S'/2).
+   (Meta-dyadic-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+   true.
+   ```
+
+   The new metarule, Meta-dyadic-1 corresponds to the common _Chain_ metarule
+   that is used in item 4 to learn a grammar of the a^nb^n language.
+
+   Louise learns new metarules by specialising the most-general metarule in each
+   language class. In the example above, the language class is H(2,2), the
+   language of metarules having exactly three literals of arity 2:
+
+   ```Prolog
+   ?- print_quantified_metarules(meta_dyadic).
+   (Meta-dyadic) ∃.P,Q,R ∀.x,y,z,u,v,w: P(x,y)← Q(z,u),R(v,w)
+   true.   
+   ```
+
+8. Louise comes with a number of libraries for tasks that are useful when
    learning programs with MIL, e.g. metarule generation, program reduction,
    lifting of ground predicates, etc. These will be discussed in detail in the
    upcoming Louise manual.
