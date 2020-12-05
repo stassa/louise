@@ -522,17 +522,20 @@ known_metarules(Ids):-
 
 
 
-%!	predicate_signature(+Target,-Signature) is det.
+%!	predicate_signature(+Targets,-Signature) is det.
 %
 %	Construct the predicate Signature given a learning Target.
 %
-%	Target is the predicate indicator of a learning target defined
-%	in the current experiment file (which must be loaded).
+%	Targets is a list of the predicate indicators of one or more
+%	learning targets defined in the current experiment file (which
+%	must be loaded). Targets can also be a single predicate
+%	indicator.
 %
-%	Signature is a list of predicate indicators: [Target, I1, ...,
-%	In, B1, ..., Bm], where each Ii is an invented symbol and n is
-%	the current value of max_invented/1, and each Bi is the symbol
-%	of a predicate declared as background knowledge for Target.
+%	Signature is a list of predicate indicators: [T1, T2, ..., I1,
+%	..., In, B1, ..., Bm], where each Ti is in Targets, each Ii is
+%	an invented symbol, n is the current value of max_invented/1,
+%	and each Bi is the symbol of a predicate declared as background
+%	knowledge for a learning target in Targets.
 %
 %	Each invented symbol is an atom '$I' where I is a numerical
 %	index from 1 to the value of max_invented/1. The ordering if
@@ -542,7 +545,23 @@ known_metarules(Ids):-
 %	their order in the background_knowledge/2 declaration for
 %	Target.
 %
-predicate_signature(T/A,[T/A|Ss]):-
+predicate_signature(T/A,Ss):-
+	predicate_signature([T/A],Ss)
+	,!.
+predicate_signature(Ts,Ss):-
+	findall(Ss_i
+	       ,(member(T,Ts)
+		,predicate_signature_(T,Ss_i)
+		)
+	       ,SS)
+	,flatten(SS,SS_f)
+	,sort(SS_f,Ss).
+
+%!	predicate_signature(+Target,-Signature) is det.
+%
+%	Business end of predicate_signature/2.
+%
+predicate_signature_(T/A,[T/A|Ss]):-
 	configuration:max_invented(I)
 	,configuration:experiment_file(_P,M)
 	,M:background_knowledge(T/A,BK)
