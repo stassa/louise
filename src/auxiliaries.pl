@@ -504,14 +504,6 @@ invented_symbols(I,Ss):-
 %
 %	Collect the Ids of metarules known to the system.
 %
-known_metarules_(Ids):-
-	findall(Id
-	       ,(configuration:current_predicate(metarule, H)
-		,H =.. [metarule,Id|_]
-		,clause(H,_B)
-		)
-	       ,Ids).
-
 known_metarules(Ids):-
 	setof(Id
 	       ,H^Ps^B^(configuration:current_predicate(metarule, H)
