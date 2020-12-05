@@ -36,6 +36,7 @@
 		      ,cleanup_experiment/0
 		      ,experiment_data/5
 		      ,initialise_experiment/0
+	              ,learning_target/1
 		      ,learning_targets/1
 		      ,load_experiment_file/0
 		      ,edit_experiment_file/0
@@ -137,6 +138,7 @@ Table of Contents
    * cleanup_experiment/0
    * experiment_data/5
    * initialise_experiment/0
+   * learning_target/1
    * learning_targets/1
    * load_experiment_file/0
    * edit_experiment_file/0
@@ -1878,6 +1880,16 @@ configuration_metarules(MS):-
 initialise_experiment:-
 	configuration:experiment_file(P,_M)
 	,user:use_module(P).
+
+
+
+%!	learning_targets(?Target) is nondet.
+%
+%	Generate each learning Target in an experiment file.
+%
+learning_target(T):-
+	learning_targets(Ts)
+	,member(T,Ts).
 
 
 
