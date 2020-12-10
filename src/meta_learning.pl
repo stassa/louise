@@ -1,12 +1,9 @@
-:-module(meta_learning, [meta_learning/1
-			,meta_learning/2
-			,meta_learning/5
+:-module(meta_learning, [learn_meta/1
+			,learn_meta/2
+			,learn_meta/5
 			,learn_metarules/1
 			,learn_metarules/2
 			,learn_metarules/5
-			,learn_meta/1
-			,learn_meta/2
-			,learn_meta/5
                         ]).
 
 :-use_module(configuration).
@@ -22,32 +19,32 @@
 
 
 
-%!	meta_learning(+Targets) is det.
+%!	learn_meta(+Targets) is det.
 %
 %	Meta-learn a definition of one or more learning Targets.
 %
-meta_learning(Ts):-
-	meta_learning(Ts,Ps)
+learn_meta(Ts):-
+	learn_meta(Ts,Ps)
 	,print_clauses(Ps).
 
 
 
-%!	meta_learning(+Targets,-Definition) is det.
+%!	learn_meta(+Targets,-Definition) is det.
 %
 %	Meta-learn a definition of one or more learning Targets.
 %
-meta_learning(Ts,_Ps):-
+learn_meta(Ts,_Ps):-
 	(   \+ ground(Ts)
-	->  throw('meta_learning/2: non-ground target symbol!')
+	->  throw('learn_meta/2: non-ground target symbol!')
 	;   fail
 	).
-meta_learning(Ts,Ps):-
+learn_meta(Ts,Ps):-
 	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS)
-	,meta_learning(Pos,Neg,BK,MS,Ps).
+	,learn_meta(Pos,Neg,BK,MS,Ps).
 
 
 
-%!	meta_learning(+Pos,+Neg,+BK,+Meta,-Program) is det.
+%!	learn_meta(+Pos,+Neg,+BK,+Meta,-Program) is det.
 %
 %	Learn a Program while learning a set of new metarules.
 %
@@ -57,20 +54,20 @@ meta_learning(Ts,Ps):-
 %	@tbd Currently only learn/5 and learn_dynamic/5 can be the
 %	learning predicate.
 %
-meta_learning([],_Neg,_BK,_MS,_Ts):-
-	throw('meta_learning/5: No positive examples found. Cannot train.').
-meta_learning(Pos,Neg,BK,MS,_Ts):-
+learn_meta([],_Neg,_BK,_MS,_Ts):-
+	throw('learn_meta/5: No positive examples found. Cannot train.').
+learn_meta(Pos,Neg,BK,MS,_Ts):-
 	(   var(Pos)
-	->  throw('meta_learning/5: unbound positive examples list!')
+	->  throw('learn_meta/5: unbound positive examples list!')
 	;   var(Neg)
-	->  throw('meta_learning/5: unbound negative examples list!')
+	->  throw('learn_meta/5: unbound negative examples list!')
 	;   var(BK)
-	->  throw('meta_learning/5: unbound background symbols list!')
+	->  throw('learn_meta/5: unbound background symbols list!')
 	;   var(MS)
-	->  throw('meta_learning/5: unbound metarule IDs list!')
+	->  throw('learn_meta/5: unbound metarule IDs list!')
 	;   fail
 	).
-meta_learning(Pos,Neg,BK,MS_G,Ps):-
+learn_meta(Pos,Neg,BK,MS_G,Ps):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
@@ -291,32 +288,36 @@ generalise_second_order([P|Ps],[L|Ls],Ps_Acc,Ps_Bind,Ls_Acc,Ls_Bind):-
 
 
 
-%!	learn_meta(+Targets) is det.
+%!	meta_learning(+Targets) is det.
 %
 %	Meta-learn a definition of one or more learning Targets.
 %
-learn_meta(Ts):-
-	learn_meta(Ts,Ps)
+%	@deprecated learn_meta/1.
+%
+meta_learning(Ts):-
+	meta_learning(Ts,Ps)
 	,print_clauses(Ps).
 
 
 
-%!	learn_meta(+Targets,-Definition) is det.
+%!	meta_learning(+Targets,-Definition) is det.
 %
 %	Meta-learn a definition of one or more learning Targets.
 %
-learn_meta(Ts,_Ps):-
+%	@deprecated learn_meta/2.
+%
+meta_learning(Ts,_Ps):-
 	(   \+ ground(Ts)
 	->  throw('learn/2: non-ground target symbol!')
 	;   fail
 	).
-learn_meta(Ts,Ps):-
+meta_learning(Ts,Ps):-
 	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS)
-	,learn_meta(Pos,Neg,BK,MS,Ps).
+	,meta_learning(Pos,Neg,BK,MS,Ps).
 
 
 
-%!	learn_meta(+Pos,+Neg,+BK,+Metarules,-Program) is det.
+%!	meta_learning(+Pos,+Neg,+BK,+Metarules,-Program) is det.
 %
 %	Learn a Top program by specialising a general set of Metarules.
 %
@@ -330,7 +331,9 @@ learn_meta(Ts,Ps):-
 %	tendency to over-generalise. This is a new approach and is
 %	still being worked on.
 %
-learn_meta(Pos,Neg,BK,MS,Ps):-
+%	@deprecated learn_meta/5.
+%
+meta_learning(Pos,Neg,BK,MS,Ps):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
