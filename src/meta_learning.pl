@@ -259,12 +259,11 @@ learn_metarules(Pos,Neg,BK,MS,MS_f):-
 %	exception. All this before calling specialised_emtarules/5.
 %
 specialised_metarules_(Pos,Neg,BK,MS,MS_):-
-	Ci = c(1)
-	,examples_targets(Pos,Ts)
+	examples_targets(Pos,Ts)
 	,herbrand_signature(Ts, Ss)
         ,S = write_program(Pos,BK,Refs)
         ,G = (debug(top_program,'Specialising metarule templates...',[])
-	     ,specialised_metarules(Ci,Pos,Neg,MS,Ss,[],MS_)
+	     ,specialised_metarules(Pos,Neg,MS,Ss,[],MS_)
 	     )
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C)
@@ -274,7 +273,7 @@ specialised_metarules_(_Pos,_Neg,_BK,_MS,[]):-
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
-%!	specialised_metarules_(+Counter,+Pos,+Neg,+General,+Signature,+Acc,-Special)
+%!	specialised_metarules_(+Pos,+Neg,+General,+Signature,+Acc,-Special)
 %!	is det.
 %
 %	Specialise a list of most General metarules.
@@ -293,15 +292,15 @@ specialised_metarules_(_Pos,_Neg,_BK,_MS,[]):-
 %	the head literal of a predicate in the BK or the positive
 %	examples.
 %
-specialised_metarules(_,_Pos,_Neg,[],_Ss,MS,MS):-
+specialised_metarules(_Pos,_Neg,[],_Ss,MS,MS):-
 	!.
-specialised_metarules(C,Pos,Neg,[M|MS],Ss,Acc,Bind):-
+specialised_metarules(Pos,Neg,[M|MS],Ss,Acc,Bind):-
 	debug_clauses(new_metarules,'Specialising metarule template',[M])
-	,specialised_metarule(C,Pos,Neg,M,Ss,Acc,Acc_)
-	,specialised_metarules(C,Pos,Neg,MS,Ss,Acc_,Bind).
+	,specialised_metarule(Pos,Neg,M,Ss,Acc,Acc_)
+	,specialised_metarules(Pos,Neg,MS,Ss,Acc_,Bind).
 
 
-%!	specialised_metarules(+Counter,+Pos,+Neg,+General,+Signature,+Acc,-Special)
+%!	specialised_metarules(+Pos,+Neg,+General,+Signature,+Acc,-Special)
 %!	is det.
 %
 %	Specialise one most General metarule.
@@ -313,9 +312,9 @@ specialised_metarules(C,Pos,Neg,[M|MS],Ss,Acc,Bind):-
 %
 %	Signature is the Herbrand signature.
 %
-specialised_metarule(_,[],_Neg,_M,_Ss,MS,MS):-
+specialised_metarule([],_Neg,_M,_Ss,MS,MS):-
 	!.
-specialised_metarule(Ci,[E|Pos],Neg,M,Ss,Acc,Bind):-
+specialised_metarule([E|Pos],Neg,M,Ss,Acc,Bind):-
 	debug_clauses(new_metarules,'New example',[E])
 	,meta_grounding(E,Neg,M,Ss,_Sub,M_n)
 	,generalise_second_order(M_n,M_g)
@@ -324,9 +323,9 @@ specialised_metarule(Ci,[E|Pos],Neg,M,Ss,Acc,Bind):-
 	,reduced_examples(Pos,C,Pos_)
 	,maplist(length,[Pos,Pos_],[N,N_])
 	,debug(new_metarules,'Reduced ~w examples to ~w',[N,N_])
-	,specialised_metarule(Ci,Pos_,Neg,M,Ss,[M_g|Acc],Bind).
-specialised_metarule(Ci,[_E|Pos],Neg,M,Ss,Acc,Bind):-
-	specialised_metarule(Ci,Pos,Neg,M,Ss,Acc,Bind).
+	,specialised_metarule(Pos_,Neg,M,Ss,[M_g|Acc],Bind).
+specialised_metarule([_E|Pos],Neg,M,Ss,Acc,Bind):-
+	specialised_metarule(Pos,Neg,M,Ss,Acc,Bind).
 
 
 %!	encapsulated_metarule(+Metarule,-Body) is det.
