@@ -13,10 +13,111 @@
 
 /** <module> Learning while learning new metarules.
 
+This module defines two families of predicates, learn_metarules/[1,2,5],
+that does what it sas on the tin, and learn_meta/[1,2,5] that combines a
+call to learn_metarules/5 with a call to a learning predicate (e.g.
+learn/5 or learn_dynamic/5) passing it the learned metarules.
+
+Learning new metarules
+----------------------
+
+Predicates learn_metarules/[1,2,5] learn new metarules by specialising
+one or more metarule templates: either a) a most-general metarule in a
+language class, or b) the higher order metarule P:-, consisting of a
+single, variable, head literal.
+
+Metarule templates are specialised by resolving them with the background
+knowledge and then replacing the predicate symbols and constants in the
+now-ground literals of the metarule template with variables.
+
+Here is an example invocation of learn_metarules/1 specialising the
+most-general metarule Meta-dyadic:
+
+==
+?- learn_metarules('S'/2).
+(Meta-dyadic-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+true.
+==
+
+Note that the Meta-dyadic-1 metarule learned this way corresponds to the
+Chain metarule that would otherwise be defined by hand. Chain is a
+specialisation of Meta-dyadic, the most-general metarule in the
+H(l=2,a=2) language, of metarules with exactly two body literals of
+arity exactly 2. Like Chain, Meta-dyadic is defined in the
+configuration and can be pretty-printed by Louise's metarule
+pretty-printer:
+
+==
+?- print_quantified_metarules(meta_dyadic).
+(Meta-dyadic) ∃.P,Q,R ∀.x,y,z,u,v,w: P(x,y)← Q(z,u),R(v,w)
+true.
+==
+
+Most-general metarules are specialised by Louise's Top Program
+Construction algorithm, plus a set of constraints to control
+over-generalisation. The Top Program for a most-general metarule can be
+very large and is likely to include clauses that have either redundant
+(i.e. duplicate) literals or irrelevant literals (i.e. literals with
+free variables). Constraints are therefore imposed to resolution to
+ensure that such clauses are not constructed.
+
+Louise can also specialise the higher-order metarule, P:-, for example:
+
+==
+?- learn_metarules('S'/2).
+(Hom-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+true.
+==
+
+Note that the specialised metarule again corresponds to Chain.
+
+The higher-order metarule P:- cannot easily be specialised by Top
+Program Consruction. Instead, its specialisation is performed by a
+depth-first search with iterative deepening over the number of (head and
+body) literals of the higher-order metarule. That is, first the head of
+P:- is bound to a positive example, then zero or more body literals are
+added to the body of P:- until a specialisation is found that entails
+this example. The minimum and maximum number of body literals to be
+added to each instance of P:- is limited by a constraint provided by
+the user. The iterative deepening search allows more than one metarule
+to be derived from the same set of examples. Further, the literals added
+to the body of P:- must match the "Herbrand signature", a set of
+second-order atomic templates each of which unifies with a) ground atoms
+in the set of positive examples, or, b) atoms of the predicates in the
+background knowledge. Finally, the fully-connected constraints imposed
+on the specialisation of most-general metarules also restrict the search
+for a specialisation of the higher-order metarule, P:-. The result is a
+specialisation of P:- that is a fully-connected metarule.
+
+
+Learning with learned metarules
+-------------------------------
+
+Once a set of new metarules is learned, it can be passed to one
+of Louise's learning predicate, e.g. learn/5 or learn_dynamic/5, etc.
+The learn_meta/[1,2,5] family combines the two calls for convenience.
+The following is an example of calling learn_meta/1:
+
+==
+?- learn_meta('S'/2).
+'$1'(A,B):-'S'(A,C),'B'(C,B).
+'S'(A,B):-'A'(A,C),'$1'(C,B).
+'S'(A,B):-'A'(A,C),'B'(C,B).
+true.
+==
+
+Note that the learned hypothesis includes the definition of an invented
+predicate. In the background of this call, the result of calling
+learn_metarules/5 with meta_dyadic as the metarule template, was passed
+to the learning predicae learn_dynamic/5, which performed predicate
+invention. The learning predicate to be used can be set in the
+configuration.
+
+Note that the exact same result is produced when specialising the
+higher-order metarule P:-, instead of meta-dyadic, at least for the
+example above.
+
 */
-
-%:-debug(new_metarules).
-
 
 
 %!	learn_meta(+Targets) is det.
@@ -31,7 +132,7 @@ learn_meta(Ts):-
 
 %!	learn_meta(+Targets,-Definition) is det.
 %
-%	Meta-learn a definition of one or more learning Targets.
+%	Meta-learn a Definition of one or more learning Targets.
 %
 learn_meta(Ts,_Ps):-
 	(   \+ ground(Ts)
@@ -49,7 +150,7 @@ learn_meta(Ts,Ps):-
 %	Learn a Program while learning a set of new metarules.
 %
 %	Combines learning of new metarules, as in learn_metarules/[1,2,5],
-%	with learning predicates.
+%	with a call to another learning predicate in Louise.
 %
 %	@tbd Currently only learn/5 and learn_dynamic/5 can be the
 %	learning predicate.
@@ -70,8 +171,10 @@ learn_meta(Pos,Neg,BK,MS,_Ts):-
 learn_meta(Pos,Neg,BK,MS_G,Ps):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
-	,debug(learn,'Constructing Top program...',[])
+	,debug(learn,'Learning new metarules...',[])
 	,learn_metarules(Pos_,Neg_,BK_,MS_,MS_n)
+	,debug_clauses(new_metarules,'Learned metarules:',MS_n)
+	,debug(learn,'Calling learning predicate...',[])
 	,learning_query(Pos_,Neg_,BK_,MS_n,Ps).
 
 
@@ -123,7 +226,7 @@ learn_metarules(Ts,MS):-
 
 %!	learn_metarules(+Pos,+Neg,+BK,+Templates,-Metarules) is det.
 %
-%	Derive specialised Metarules from a list of learning Targets.
+%	Derive specialised Metarules from the elements of a MIL problem.
 %
 %	Templates is a list of most-general metarules in a language
 %	class. Metarules is a set of specialisations of the metarules in
@@ -134,10 +237,11 @@ learn_metarules(Pos,Neg,BK,MS,MS_f):-
 	,Ci = c(1)
 	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,debug(learn,'Constructing Top program...',[])
+	,debug(learn,'Specialising metarule templates...',[])
 	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
 	,(   B == true
-	 ->  program_reduction(MS_n,MS_r,_MS_d)
+	 ->  debug(learn,'Reducing learned metarules...',[])
+	    ,program_reduction(MS_n,MS_r,_MS_d)
 	 ;   B == false
 	 ->  MS_r = MS_n
 	 )
@@ -146,13 +250,21 @@ learn_metarules(Pos,Neg,BK,MS,MS_f):-
 
 %!	specialised_metarules_(+Pos,+Neg,+BK,+General,-Special) is det.
 %
-%	Setup helper for specialised_metarules/5).
+%	Setup helper for specialised_metarules/5.
+%
+%	Responsible for collecting the Herbrand signature, writing the
+%	elements of the MIL problem to the dynamic database to take
+%	advantage of Prolog's SLD resolution (rather than a
+%	meta-interpreter) and then cleaning up on exit, including via
+%	exception. All this before calling specialised_emtarules/5.
 %
 specialised_metarules_(Pos,Neg,BK,MS,MS_):-
 	Ci = c(1)
+	,examples_targets(Pos,Ts)
+	,herbrand_signature(Ts, Ss)
         ,S = write_program(Pos,BK,Refs)
-        ,G = (debug(top_program,'Constructing Top program...',[])
-	     ,specialised_metarules(Ci,Pos,Neg,MS,[],MS_)
+        ,G = (debug(top_program,'Specialising metarule templates...',[])
+	     ,specialised_metarules(Ci,Pos,Neg,MS,Ss,[],MS_)
 	     )
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C)
@@ -162,37 +274,59 @@ specialised_metarules_(_Pos,_Neg,_BK,_MS,[]):-
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
-%!	specialised_metarules_(+Pos,+Neg,+General,+Acc,-Special) is det.
+%!	specialised_metarules_(+Counter,+Pos,+Neg,+General,+Signature,+Acc,-Special)
+%!	is det.
 %
 %	Specialise a list of most General metarules.
 %
-specialised_metarules(_,_Pos,_Neg,[],MS,MS):-
+%	Each metarule in General is passed to specialised_metarule/6 for
+%	specialisation with respect to the positive and negative
+%	examples in Pos and Neg. Note that General may be a list of
+%	numbers, denoting the number of literals (head and body) in a
+%	higher-order metarule. Iterating over the number of literals
+%	essentially implements a depth-first search with iterative
+%	deepening over the length of a metarule (its number of
+%	literals).
+%
+%	Signature is the Herbrand signature, a list of encapsulated
+%	second-order atoms m(P,V1,...,Vn) each of which unifies with
+%	the head literal of a predicate in the BK or the positive
+%	examples.
+%
+specialised_metarules(_,_Pos,_Neg,[],_Ss,MS,MS):-
 	!.
-specialised_metarules(C,Pos,Neg,[M|MS],Acc,Bind):-
-	debug_clauses(new_metarules,'Specialising metarule',[M])
-	,specialised_metarule(C,Pos,Neg,M,Acc,Acc_)
-	,specialised_metarules(C,Pos,Neg,MS,Acc_,Bind).
+specialised_metarules(C,Pos,Neg,[M|MS],Ss,Acc,Bind):-
+	debug_clauses(new_metarules,'Specialising metarule template',[M])
+	,specialised_metarule(C,Pos,Neg,M,Ss,Acc,Acc_)
+	,specialised_metarules(C,Pos,Neg,MS,Ss,Acc_,Bind).
 
 
-%!	specialised_metarules(+Pos,+Neg,+General,+Acc,-Special) is det.
+%!	specialised_metarules(+Counter,+Pos,+Neg,+General,+Signature,+Acc,-Special)
+%!	is det.
 %
 %	Specialise one most General metarule.
 %
-specialised_metarule(_,[],_Neg,_M,MS,MS):-
+%	General is either a most-general metarule in a language class,
+%	like meta-dyadic, the most general metarule in H(2,2) etc, or an
+%	integer, denoting the number of literals in a higher-order
+%	metarule.
+%
+%	Signature is the Herbrand signature.
+%
+specialised_metarule(_,[],_Neg,_M,_Ss,MS,MS):-
 	!.
-specialised_metarule(Ci,[E|Pos],Neg,M,Acc,Bind):-
+specialised_metarule(Ci,[E|Pos],Neg,M,Ss,Acc,Bind):-
 	debug_clauses(new_metarules,'New example',[E])
-	,copy_term(M,M_)
-	,meta_grounding(E,Neg,M_,_,M_n)
+	,meta_grounding(E,Neg,M,Ss,_Sub,M_n)
 	,generalise_second_order(M_n,M_g)
 	,encapsulated_metarule(M_g,C)
 	,!
 	,reduced_examples(Pos,C,Pos_)
 	,maplist(length,[Pos,Pos_],[N,N_])
 	,debug(new_metarules,'Reduced ~w examples to ~w',[N,N_])
-	,specialised_metarule(Ci,Pos_,Neg,M,[M_g|Acc],Bind).
-specialised_metarule(Ci,[_E|Pos],Neg,M,Acc,Bind):-
-	specialised_metarule(Ci,Pos,Neg,M,Acc,Bind).
+	,specialised_metarule(Ci,Pos_,Neg,M,Ss,[M_g|Acc],Bind).
+specialised_metarule(Ci,[_E|Pos],Neg,M,Ss,Acc,Bind):-
+	specialised_metarule(Ci,Pos,Neg,M,Ss,Acc,Bind).
 
 
 %!	encapsulated_metarule(+Metarule,-Body) is det.
@@ -207,6 +341,31 @@ encapsulated_metarule(_Sub:-L,L).
 %!	renamed_metarule(+Counter,+Metarule,-Renamed) is det.
 %
 %	Rename a new Metarule.
+%
+%	Counter is a Prolog term c(I) where I is an integer, counting
+%	the metarules renamed so-far. Metarule is an encapsulated
+%	metarule with a the name of either a) a most-general metarule,
+%	e.g. "meta_dyadic", "meta_monadic", etc, or b) the higher-order
+%	metarule "hom". Renamed is the same encapsulated metarule with
+%	its id replaced by <id>_I where <id> is the original name of the
+%	metarule.
+%
+%	So for example, after renaming 3 instances of any three
+%	metarules, if Metarule is an instance of meta-dyadic, this
+%	fourth metarule will be renamed to "meta_dyadic_4".
+%
+%	The reason for this predicate's existence is that we want to be
+%	able to sort learned metarules by skolemising them to ignore the
+%	age of variables. However, if metarles that are instances of the
+%	same template metarule are named apart, they cannot be
+%	recognised as identical during sorting and so duplicates will
+%	not be removed correctly. So we leave the instances of metarule
+%	templates named after the templates until we have to output
+%	them, at which point we rename them with this predicate.
+%
+%	@tbd To be honest, I'm not sure who is sorting learned metarules
+%	after all. I think I've seen duplicates in the output, so it's
+%	possible nothing is. Well then something should.
 %
 renamed_metarule(C,Sub:-M,Sub_:-M):-
 	C = c(I)
@@ -234,12 +393,14 @@ renamed_metarule(C,Sub:-M,Sub_:-M):-
 %	metarules that are a little more general in the sense that they
 %	are not too tightly bound to the training examples and may be
 %	better for representing unseen examples. Note that learning
-%	predicates are capable of specialising metarules to some extent,
-%	by binding their second-order variables together, for example
+%	predicates are capable of specialising metarules futher, by
+%	binding their second-order variables together, for example
 %	recursive clauses can be constructed as instances of the Chain
-%	metarule. The opposite is not true, for example it's not
+%	metarule having their first and last second-order variable
+%	bound together. The opposite is not true, for example it's not
 %	possible to generalise Tailrec so as to construct non-tail
-%	recursive clauses as its instances.
+%	recursive clauses as its instances by Top program construction
+%	alone, hence the need for this prediate.
 %
 generalise_second_order(M,M):-
 	configuration:generalise_learned_metarules(false)
@@ -268,11 +429,11 @@ generalise_second_order(_,_):-
 %	replaced with new, free variables so that all second-order
 %	variables are named apart.
 %
-%	Note that the second-order variables the instances of the
-%	second-order variables in body literals do unify with the ones
-%	in the encapsulated metasubstitution atom in the head of the
-%	encapsulated metarule. The second order variables are "unique"
-%	in the context of the encapsulated literals of the metarule.
+%	Note that the instances of the second-order variables in body
+%	literals do unify with the ones in the encapsulated
+%	metasubstitution atom in the head of the encapsulated metarule.
+%	The second order variables are "unique" in the context of the
+%	encapsulated literals of the metarule.
 %
 generalise_second_order([P|Ps],[],[P1],[P1|[P|Ps]],Ls,Ls):-
 % Metarule with no body.
@@ -288,116 +449,36 @@ generalise_second_order([P|Ps],[L|Ls],Ps_Acc,Ps_Bind,Ls_Acc,Ls_Bind):-
 
 
 
-%!	meta_learning(+Targets) is det.
+%!	meta_grounding(+E,+Neg,+Template,-Metasubstitution,-Specialised)
+%!	is nondet.
 %
-%	Meta-learn a definition of one or more learning Targets.
+%	Ground a metarule Template and return its Specialisation.
 %
-%	@deprecated learn_meta/1.
+%	E is a single positive example.
 %
-meta_learning(Ts):-
-	meta_learning(Ts,Ps)
-	,print_clauses(Ps).
-
-
-
-%!	meta_learning(+Targets,-Definition) is det.
+%	Neg is a list of negative examples.
 %
-%	Meta-learn a definition of one or more learning Targets.
+%	Template can be a) a most-general metarule in a language class
+%	or b) an integer denoting the number of literals in a
+%	higher-order metarule.
 %
-%	@deprecated learn_meta/2.
+%	Metasubstitution is a ground metasubstitution of the learned
+%	metarule, Specialised.
 %
-meta_learning(Ts,_Ps):-
-	(   \+ ground(Ts)
-	->  throw('learn/2: non-ground target symbol!')
-	;   fail
-	).
-meta_learning(Ts,Ps):-
-	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS)
-	,meta_learning(Pos,Neg,BK,MS,Ps).
-
-
-
-%!	meta_learning(+Pos,+Neg,+BK,+Metarules,-Program) is det.
+%	Specialised is a specialisation of the metarule Template.
 %
-%	Learn a Top program by specialising a general set of Metarules.
+%	@tbd Note that Metasubstitution is output but never used. It
+%	should be removed from the list of arguments.
 %
-%	Learning predicate for "meta-learning", a new approach that
-%	begins with a set of most-general metarules and progressively
-%	refines them until a correct hypothesis is constructed.
-%	Most-general metarules alleviate the burden of specifying
-%	metarules for a MIL problem. Currently, the approach works well
-%	but it is very inefficient- use with caution when processing
-%	large numbers of examples. Learned hypotheses also have a
-%	tendency to over-generalise. This is a new approach and is
-%	still being worked on.
-%
-%	@deprecated learn_meta/5.
-%
-meta_learning(Pos,Neg,BK,MS,Ps):-
-	debug(learn,'Encapsulating problem',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,debug(learn,'Constructing Top program...',[])
-	,meta_top_program(Pos_,Neg_,BK_,MS_,Ms)
-	,debug(learn,'Reducing Top program...',[])
-	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
-	,examples_targets(Pos,Ss)
-	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(Ss,Rs,Ps).
-
-
-%!	meta_top_program(+Pos,+Neg,+BK,+MS,-Top) is det.
-%
-%	Construct a Top program while learning new metarules.
-%
-meta_top_program(Pos,Neg,BK,MS,Ts):-
-        S = write_program(Pos,BK,Refs)
-        ,G = (debug(top_program,'Constructing Top program...',[])
-	     ,meta_top_program(Pos,Neg,MS,Ss)
-	     ,applied_metarules(Ss,_,Ts)
-	     ,debug_clauses(top_program,'Applied metarules',Ts)
-	     )
-	,C = erase_program_clauses(Refs)
-	,setup_call_cleanup(S,G,C)
-	,!.
-meta_top_program(_Pos,_Neg,_BK,_MS,[]):-
-% If Top program construction fails return an empty program.
-	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
-
-
-%!	meta_top_program(+Pos,+MS,-Top,-Metarules) is det.
-%
-%	Meta-learning Generalisation and Specialisation step.
-%
-meta_top_program(Pos,Neg,MS,Ss):-
-	findall(Sub-M_n
-	       ,(member(M,MS)
-		,copy_term(M,M_)
-		,member(Ep,Pos)
-		,debug(new_metarules,'',[])
-		,debug_clauses(new_metarules,'New example',[Ep])
-		,once(meta_grounding(Ep,Neg,M_,Sub,M_n))
-		%,meta_grounding(Ep,Neg,M_,Sub,M_n)
-		,numbervars(M_n)
-		)
-	       ,Ss_)
-	,sort(Ss_,Ss_s)
-	,maplist(varnumbers,Ss_s,Ss)
-	,debug_clauses(new_metarules,'New metasubstitutions',Ss).
-
-
-%!	meta_grounding(+E,+Neg,+Metarule,+Metasub,-Specialised) is
-%!	nondet.
-%
-%	Ground a most-general metarule and return its Specialisation.
-%
-meta_grounding(Ep,Neg,M,Sub,M_n):-
-	metasubstitution(Ep,M,Sub)
+meta_grounding(Ep,Neg,M,Ss,Sub,M_n):-
+	copy_term(M,M_)
+	,metasubstitution(Ep,M_,Ss,Sub:-M_g)
 	,constraints(Sub)
-	,debug_clauses(new_metarules,'Ground instance',[M])
-	,new_metarule(M,Sub,M_n)
+	,debug_clauses(new_metarules,'Ground instance',[M_g])
+	,new_metarule(Sub:-M_g,M_n)
 	,debug_clauses(new_metarules,'New metarule',[M_n])
 	,\+((member(En,Neg)
-	    ,metasubstitution(En,M_n,Sub)
+	    ,metasubstitution(En,M_n,Ss,Sub)
 	    )
 	   )
 	,debug(new_metarules,'Entails 0 negative examples',[]).
@@ -413,23 +494,68 @@ meta_grounding(Ep,Neg,M,Sub,M_n):-
 %	negative example is a ground definite goal (i.e. a clause of the
 %	form :-Example).
 %
-metasubstitution(:-E,M,Sub):-
-	louise:bind_head_literal(E,M,(Sub:-(E,Ls)))
+%	@tbd There is a bit of a too-high-level of abstraction here that
+%	can be confusing when debugging or calling this predicate. In
+%	particulare, the form of Metasubstitution changes depending on
+%	the sign of Example: it can be either a ground metasubstitution
+%	atom, when Example is a negative example, or a variable to be
+%	bound to an encapsulated metarule Sub:- M, where Sub is a ground
+%	metasubstitution atom and M the encapsulated literals of the
+%	metarule.
+%
+%	@tbd Does this work with arbitrary definite clause examples?
+%
+metasubstitution(:-E,M,_Ss,Sub):-
+% Sub is a ground metasubstitution atom, m(Id,P1,...,Pn)
+	!
+	,louise:bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
+	% Metarule without a body.
+	% TODO: Make sure not needed anymore after next clause added.
+	%,Ls \= true
 	,user:call(Ls)
 	,debug(metasubstitution,'Succeeded',[]).
-metasubstitution(E,M,Sub):-
-	louise:bind_head_literal(E,M,(Sub:-(E,Ls)))
+metasubstitution(E,M,_Ss,(Sub:-E)):-
+% E is a positive example and M is an abduction metarule. See
+% bind_head_literal/3. We don't need to carry on the "true" atom in the
+% body and in fact this will make it fiddly to handle specialisations of
+% this metarule further down the line.
+	\+ integer(M)
+	,louise:bind_head_literal(E,M,(Sub:-(E,true)))
+	,!
+	,debug_clauses(metasubstitution,'Abduce metasubstitution:',[Sub:-(E,true)]).
+metasubstitution(E,M,_Ss,(Sub:-(E,Ls))):-
+% M is an encapsulated metarule and Sub is yet free.
+	\+ integer(M)
+	,!
+	,louise:bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,once(list_tree(Ls_,Ls))
-	,prove_body_literals(E,Ls_,Ls_).
+	,prove_body_literals(E,Ls_,Ls_)
+	,debug(metasubstitution,'Succeeded',[]).
+metasubstitution(E,Max,Ss,(Sub:-Ls_)):-
+% Max is an integer denoting the number of literals in a metarule to be
+% learned from E.  Sub is yet free.
+	%integer(Max)
+	E =.. [m,_P|Ts]
+	,counts(Ts,[],Cs)
+	,prove_body_literals_ho(Max,Cs,Ss,[E],Ls)
+	,literals_metasub(Ls,Sub)
+	,once(list_tree(Ls,Ls_)).
 
 
 %!	prove_body_literals(+Head,+Body,-Metasubstitution) is nondet.
 %
 %	Prove a set of Body literals in a Metasubstitution.
 %
-%	@tbd Document this properly.
+%	Top-level of a partial meta-interpreter performing resolution of
+%	the body literals of a most-general metarule with the BK.
+%
+%	The meta-interpreter is "partial" in the sense that, unlike an
+%	ordinary meta-interpreter, it hands over resolution to Prolog
+%	(via call/1) and only manages initial instantiations of literals
+%	and imposes constraints on their bindings (mostly by testing
+%	after a literal has been ground by resolution, to be fair).
 %
 prove_body_literals(_H,[true],_Gs):-
 	!.
@@ -447,7 +573,7 @@ prove_body_literals(H,Bs,Gs):-
 %	Literals is the set of literals in the body of a metarule.
 %	Current is the body literal that will be ground in the current
 %	step by resolution with the BK. Constants is the constants
-%	buffer, a list of the constatns used to ground the members of
+%	buffer, a list of the constants used to ground the members of
 %	Literals in previous steps associated with the number of times
 %	each constant has been used to ground a variable in Literals.
 %
@@ -525,13 +651,13 @@ variable_instantiations(L,Cs,Vs):-
 	,member(C,Vs).
 
 
-%!	new_literal(+Literal,+Last,+All) is det.
+%!	new_literal(+Literal,+Literals) is det.
 %
 %	True when Literal is a new ground literal.
 %
-%	Literal is the current ground literal. Last is the literal to
-%	the left of this literal, ground in the previous step. All is
-%	the list of all literals ground so far.
+%	Literal is the current literal, the one ground in the current
+%	step of meta-interpretation. Literals is the list of all
+%	literals ground so far.
 %
 %	This performs a test to ensure that we are not adding the same
 %	literal twice to a clause, to avoid generating tautologies and
@@ -588,17 +714,174 @@ counts_([Ti|Ts],[Tk-C|Cs],Bind):-
         ,counts_(Ts,[Ti-1,Tk-C|Cs],Bind).
 
 
-%!	new_metarule(+Metarule,+Ground_Metasub,-New) is det.
+%!	new_metarule(+Ground,-Metarule) is det.
 %
-%	Rename a metarule.
+%	Lift a Ground clause to derive a Metarule.
 %
-%	Renames all metarules that are specialisations of a most-general
-%	metarule after that most-general metarule.
+%	Ground is a ground instance of an encapsulated most-general
+%	metarule. Metarule is a specialisation of that most-general
+%	metarule derived by replacing each constant and predicate symbol
+%	in Ground with a variable.
 %
-%	Needed because we want to sort metarules to remove duplicates
-%	and that is easier to do if they all have the same name.
-%
-new_metarule(M,Sub_g,Sub:-Ls):-
-	lifted_program([M],[Sub:-Ls])
+new_metarule(Sub_g:-Ls_g,Sub:-Ls):-
+	lifted_program([Sub_g:-Ls_g],[Sub:-Ls])
 	,Sub_g =.. [m,Id|_Ps_g]
 	,Sub =.. [m,Id|_Ps].
+
+
+%!	herbrand_signature(+Targets,-Signature) is det.
+%
+%	Build the Herbrand Signature of a set of Targets.
+%
+%	The "Herbrand signature" of a set of predicates is a set of
+%	second-order atoms P1(V1,...,Vn) where each Pi is an
+%	existentially quantified variable ranging over the set of
+%	predicate symbols and each Vi is an existentially or universally
+%	quantified variable ranging over the set of constants.
+%
+%	Targets then is a list of predicate indicators to be used as
+%	learning targets and Signature is their Herbrand signature.
+%
+%	Note that each memeber of Signature is encapsulated, i.e. each
+%	second-order atom P(V1,...,Vn) is represented as a first-rder
+%	atom m(P,V1,...,Vm).
+%
+%	The purpose of this predicate is to constrain the search for a
+%	specialisation of a higher-order metarule to metarules that have
+%	as a head literal an atom of a target predicate and as body
+%	literals atoms of a target predicate or a predicate in the BK,
+%	or in other words, atoms that unify with the atomic templates in
+%	the Herbrand signature. Without such a constraint, the search
+%	for a specialisation of a most general metarule would have to
+%	search the space of all second-order definite clauses, which is
+%	somewhat on the large side.
+%
+herbrand_signature(T,Ss):-
+	\+ is_list(T)
+	,herbrand_signature([T],Ss)
+	,!.
+herbrand_signature(Ts,Ss):-
+	configuration:experiment_file(_P,M)
+	,findall(Fi/Ai
+		,(member(T,Ts)
+		 ,M:background_knowledge(T,BK)
+		 ,member(Fi/Ai,BK)
+		 )
+		,Bs)
+	,append(Ts,Bs,Ps)
+	,findall(P
+		,(member(_Fk/Ak,Ps)
+		 ,succ(Ak,Ak_)
+		 ,functor(P,m,Ak_)
+		 ,numbervars(P)
+		 )
+		,Ss_)
+	,sort(Ss_, Ss_s)
+	,varnumbers(Ss_s,Ss).
+
+
+%!	prove_body_literals_ho(+N,+Constants,+Signature,+Acc,-Literals)
+%!	is nondet.
+%
+%	Derive a specialisation of a higher-order metarule.
+%
+%	N is the number of literals (head and body) of the
+%	specialisations of the higher-order metarule, P:-, that we are
+%	going to consider in the current step of the search, in other
+%	words it's a depth-bound for the iterative deepening search
+%	performed by specialised_metarules/7 when a higher-order
+%	metarule is specified.
+%
+%	Constants is the constants buffer, as in
+%	grounding_constraints/2, a list of the constants in ground
+%	literals derived so far and their instance counts.
+%
+%	Signature is the Herbrand signature, as returned by
+%	herbrand_signature/2, a list of second-order atomic templates
+%	that determine the arities of literals in the head and body of
+%	the searched-for metarules.
+%
+%	Literals is the set of literals of a new metarule, a
+%	fully-connected metarule that is a specialisation of the
+%	higher-order metarule P:-.
+%
+%	As with prove_body_literals/4, this predicate implements a
+%	partial meta-interpreter that hands resolution off to Prolog via
+%	call/1 but imposes constraints and performs tests on the
+%	derived atoms.
+%
+%	Conceptually, this predicate begins specialising the
+%	higher-order metarule P:- by first binding its head literal, P,
+%	to an atom of a positive example (this step is actually
+%	performed by the last clause of metasubstitution/4, defined in
+%	this module). The constants from the example, and their counts,
+%	are placed on the constant buffer, then the number of literals
+%	added to the specialisation of P:- so far is checked against N.
+%	If the number of those literals is exactly N and there are no
+%	free variables in the clause, the specialised metarule is
+%	returned. Otherwise, the next atomic template is selected from
+%	the Herbrand signature, partially instantiated to the constants
+%	in the constants buffer and resolved with the BK. If resolution
+%	succeeds and the uniqueness constraint imposed by new_literal/2
+%	are not violated, the now fully-ground literal is added to the
+%	set of literals of the specialised metarule and execution
+%	continues with a new atomic template. Otherwise, a new atomic
+%	template is selected from the Herbrand singature and execution
+%	repeats.
+%
+%	The purpose of binding the length of literals to N is that all
+%	specialisatiosn of P:-, of length N, are first tried before any
+%	specialisations of length N+l are tried. This avoids over-long
+%	and over-specialised metarules from being derived when more
+%	general metarules can be derived instead.
+%
+%	@tbd Unlike in prove_body_literals/4, this predicate does not
+%	start with a set of body literals in a most-general metarule.
+%	Therefor, it can not know the number of variables in
+%	literals that remain to be ground. Consequently, it cannot take
+%	advantage of grounding_constraints/2, used in
+%	prove_body_literals/4, to predict that the contents of the
+%	constant buffer will lead to a not-fully-connected metarule. In
+%	other words, this can do less prunning and may have to do more
+%	work (as in backtracking more) to find a specialised metarule
+%	that is fully connected.
+%
+prove_body_literals_ho(Max,Cs,_Ss,Acc,Bs):-
+	length(Acc,Max)
+	,forall(member(_C-K,Cs)
+	      ,K > 1)
+	,reverse(Acc,Bs)
+	,debug_clauses(grounding,'Ground literals',[Bs]).
+prove_body_literals_ho(Max,Cs,Ss,Acc,Bind):-
+	debug_clauses(grounding,'Accumulated literals',[Acc])
+	,length(Acc,N)
+	,N =< Max
+	,member(L,Ss)
+	,copy_term(L,L_)
+	,variable_instantiations(L_,Cs,Is)
+	,debug_clauses(grounding,'Variable instantiations',[Is])
+	,debug_clauses(grounding,'Grounding literal',[L_])
+	,call(L_)
+	,new_literal(L_,Acc)
+	,debug_clauses(grounding,'Ground literal',[L_])
+	,counts(Is,Cs,Cs_)
+	,debug_clauses(grounding,'Constant counts',[Cs_])
+	,prove_body_literals_ho(Max,Cs_,Ss,[L_|Acc],Bind).
+
+
+%!	literals_metasub(+Literals,-Metasubstitution) is det.
+%
+%	Construct a Metasubstitution from the Literals of a metarule.
+%
+%	Literals is the set of encapsulated head and body literals of a
+%	metarule, learned with prove_body_literals_ho/5.
+%	Metasubstitution is an encapsulated metasubstitution atom
+%	holding the predicate symbols of Literals.
+%
+literals_metasub(Ls,Sub):-
+	findall(P
+	       ,(member(L,Ls)
+		,L =.. [m,P|_As]
+		)
+	       ,Ps)
+	,Sub =.. [m,hom|Ps].

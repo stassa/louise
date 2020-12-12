@@ -119,7 +119,9 @@ expanded_metarules(Ids,Ms):-
 	       ,(member(Id,Ids)
 		,metarule_expansion(Id,M)
 		)
-	       ,Ms).
+	       ,Ms_)
+	% Higher order metarule numbers end up [[caged]]
+	,flatten(Ms_,Ms).
 
 
 
@@ -141,6 +143,15 @@ expanded_metarules(Ids,Ms):-
 %	@tbd Obviously this is just a renaming of parsed_metarule/2.
 %	Another reason to rename it, or just get rid of it completely.
 %
+metarule_expansion(higher_order(Min,Max), M):-
+% Higher order metarules are transformed to a list of integers.
+	!
+	,series(Min,Max,M).
+metarule_expansion(N, N):-
+% Something is asking for already-transformed higher order metarules to
+% be expanded again- ignore it, they're just a list of integers.
+	integer(N)
+	,!.
 metarule_expansion(Id, M):-
 	parsed_metarule(Id,M).
 
