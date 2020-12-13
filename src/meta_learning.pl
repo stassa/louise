@@ -470,6 +470,7 @@ generalise_second_order([P|Ps],[L|Ls],Ps_Acc,Ps_Bind,Ls_Acc,Ls_Bind):-
 %	should be removed from the list of arguments.
 %
 meta_grounding(Ep,Neg,M,Ss,Sub,M_n):-
+	% Forget the bindings of M found below
 	copy_term(M,M_)
 	,metasubstitution(Ep,M_,Ss,Sub:-M_g)
 	,constraints(Sub)
@@ -856,6 +857,7 @@ prove_body_literals_ho(Max,Cs,Ss,Acc,Bind):-
 	,length(Acc,N)
 	,N =< Max
 	,member(L,Ss)
+	% Avoid grounding the Herbrand signature
 	,copy_term(L,L_)
 	,variable_instantiations(L_,Cs,Is)
 	,debug_clauses(grounding,'Variable instantiations',[Is])
