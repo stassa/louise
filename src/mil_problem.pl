@@ -293,8 +293,8 @@ hide_bk_closure(Cs,PS,Cs_):-
 %	up?
 %
 hide_bk_closure([],_PS,Acc,Cs):-
-	sort(Acc,Cs)
-	,!.
+	!
+       ,reverse(Acc,Cs).
 hide_bk_closure([C|Cs],PS,Acc,Bind):-
 	hide_clause(C,PS,C_)
 	,hide_bk_closure(Cs,PS,[C_|Acc],Bind).
