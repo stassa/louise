@@ -1,6 +1,7 @@
 :-module(sampling, [n_list_partitions/3
 		   ,p_list_partitions/4
 		   ,k_list_partitions/4
+		   ,pk_list_samples/3
 		   ,p_list_samples/3
 		   ,k_list_samples/3
 		   ,goal_samples/4
@@ -320,6 +321,25 @@ k_list_partitions(K,Ls,Ks,Ss):-
 	,p_list_partitions(1,Is,Ls,[],Ks_,[],Ss_)
 	,sort(Ks_, Ks)
 	,sort(Ss_, Ss).
+
+
+
+%!	pk_list_samples(+Rate,+List,-Sample) is det.
+%
+%	Draw a Sample from a List given an integer or float Rate.
+%
+%	Rate may be an integer or a float. If Rate is an integer,
+%	exactly Rate samples are drawn from list at random. If Rate is a
+%	float, a fraction of the elements of List equal to Rate are
+%	sampled at random.
+%
+pk_list_samples(N,Ls,Ss):-
+	(   integer(N)
+	->  k_list_samples(N,Ls,Ss)
+	;   float(N)
+	->  p_list_samples(N,Ls,Ss)
+	;   throw('list_samples/3 - Unknown sample size type':N)
+	).
 
 
 

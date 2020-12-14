@@ -256,21 +256,76 @@ learn_metarules(Pos,Neg,BK,MS,MS_f):-
 %	elements of the MIL problem to the dynamic database to take
 %	advantage of Prolog's SLD resolution (rather than a
 %	meta-interpreter) and then cleaning up on exit, including via
-%	exception. All this before calling specialised_emtarules/5.
+%	exception. All this before calling specialised_emtarules/6 or
+%	n_specialised_metarules/6.
 %
 specialised_metarules_(Pos,Neg,BK,MS,MS_):-
-	examples_targets(Pos,Ts)
-	,herbrand_signature(Ts, Ss)
+	configuration:metarule_learning_limits(L)
+	,examples_targets(Pos,Ts)
+	,herbrand_signature(Ts,Ss)
         ,S = write_program(Pos,BK,Refs)
-        ,G = (debug(top_program,'Specialising metarule templates...',[])
-	     ,specialised_metarules(Pos,Neg,MS,Ss,[],MS_)
-	     )
+	,limits_goal(L,[Pos,Neg,MS,Ss,MS_],G)
 	,C = erase_program_clauses(Refs)
+	,debug(top_program,'Specialising metarule templates...',[])
 	,setup_call_cleanup(S,G,C)
 	,!.
 specialised_metarules_(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
+
+
+%!	limits_goal(+Limits,+Problem,-Goal) is semidet.
+%
+%	Compose a Goal according to the Limits imposed on a Problem.
+%
+%	Handles composition of a learning query according to the current
+%	metarule_learning_limits/1 option set in the configuration.
+%
+%	Limits is the current setting of the configuration option
+%	metarule_learning_limits/1. Problem is a list,
+%	[Pos,Neg,Templaes,Metarules] holding the elements of a metarule
+%	learning problem (including an "output" variable, Metarules).
+%	Goal is the goal to call to learn metarules limited by the given
+%	Limits.
+%
+limits_goal(none,[Pos,Neg,MS,Ss,MS_],n_specialised_metarules(all,Pos,Neg,MS,Ss,MS_)).
+limits_goal(coverset,[Pos,Neg,MS,Ss,MS_],specialised_metarules(Pos,Neg,MS,Ss,[],MS_)).
+limits_goal(sampling(R),[Pos,Neg,MS,Ss,MS_],specialised_metarules(Pos_,Neg,MS,Ss,[],MS_)):-
+	pk_list_samples(R,Pos,Pos_).
+limits_goal(metasubstitutions(N),[Pos,Neg,MS,Ss,MS_]
+	   ,n_specialised_metarules(N,Pos,Neg,MS,Ss,MS_)).
+
+
+%!	n_specialised_metarules(+N,+Pos,+Neg,+Templates,+Sig,-Metarules)
+%!	is det.
+%
+%	Construct at most N Metarules specialising a lis of Templates.
+%
+%	N is taken from the current configuration option
+%	metarule_learning_limits/1. If this option is "none", N is all
+%	and all possible specialisations of the metarule templates in
+%	Templates are returned. If this option is measubstitutions(N)
+%	where N is an integer, at most N metasubstitutions of a metarule
+%	template are derived and generalised to a new metarule.
+%
+n_specialised_metarules(N,Pos,Neg,MS,Sig,MS_):-
+	B = (member(M,MS)
+	     ,member(Ep,Pos)
+	     ,debug(new_metarules,'',[])
+	     ,debug_clauses(new_metarules,'New example',[Ep])
+	     ,meta_grounding(Ep,Neg,M,Sig,_Sub,M_n)
+	     ,generalise_second_order(M_n,M_g)
+	     ,debug_clauses(new_metarules,'Generalised metarule',[M_g])
+	     ,numbervars(M_g)
+	     )
+	,(   N = all
+	 ->  findall(M_g,B,Ss_)
+	 ;   integer(N)
+	 ->  findnsols(N,M_g,B,Ss_)
+	 )
+	,sort(Ss_,Ss_s)
+	,maplist(varnumbers,Ss_s,MS_)
+	,debug_clauses(new_metarules,'New metasubstitutions',MS_).
 
 
 %!	specialised_metarules_(+Pos,+Neg,+General,+Signature,+Acc,-Special)
@@ -590,9 +645,11 @@ prove_body_literals(H,Bs,Gs):-
 %
 prove_body_literals([],_Gs,_Ls,Cs):-
 	forall(member(_C-N,Cs)
-	      ,N > 1).
+	      ,N > 1)
+	,debug_clauses(grounding,'Fully connected constants:',[Cs]).
 prove_body_literals([Lk|Bs],Gs,Ls,Cs):-
-	grounding_constraints(Cs,Gs)
+	debug_clauses(grounding,'Checking grounding constraints:',[Gs])
+	,grounding_constraints(Cs,Gs)
 	,variable_instantiations(Lk,Cs,Is)
 	,debug_clauses(grounding,'Variable instantiations',[Is])
 	,debug_clauses(grounding,'Grounding literal',[Lk])

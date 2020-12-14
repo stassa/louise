@@ -8,6 +8,7 @@
                         ,minimal_program_size/2
 			,metarule/2
 			,metarule_constraints/2
+                        ,metarule_learning_limits/1
 			,recursion_depth_limit/2
 			,recursive_reduction/1
                         ,reduce_learned_metarules/1
@@ -434,6 +435,16 @@ above(S1,S2,[_|Ss]):-
 %
 previous(S1,S2,[S1,S2|_Ss]).
 */
+
+
+%!      metarule_learning_limits(?Limits) is semidet.
+%
+%       Limits on metarule learning.
+%
+metarule_learning_limits(none).
+%metarule_learning_limits(coverset).
+%metarule_learning_limits(sampling(0.5)).
+%metarule_learning_limits(metasubstitutions(1)).
 
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
