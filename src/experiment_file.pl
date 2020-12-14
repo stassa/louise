@@ -142,6 +142,23 @@ reload/0, nothing else requires it).
 %	load two modules that export (some of) the same predicates in
 %	the same session.
 %
+%	@tbd After changes in Swi-Prolog 8.3.14, the little hack aboe
+%	doesn't work anymore. In particular, reexporting experiment file
+%	interface predicates seems to fail to export the declarations in
+%	a newly loaded experiment file. To circumvent the issue,
+%	hopefully temporarily, I've removed the calls to
+%	abolish_experiment_file_interface/1 from this predicate, so that
+%	previously loaded interface predicate definitions remain in the
+%	dynamic database. This is a temporary solution because we're
+%	basically leaving garbage behind in the database. I've asked for
+%	help on the Swi discussion board because this seems to be
+%	something to do with Swi internals that have changed recently.
+%	In the meantime I'm leaving the original version of reload/0
+%	with the hack here, commented-out, in case it's needed again
+%	later. I've also removed the unload/1 call from
+%	replace_experiment_file/2, which also seems to cause definitions
+%	to be loast when reloading an experiment file.
+/*
 reload:-
 	configuration:experiment_file(P, M)
 	,replace_experiment_file(P,M)
@@ -149,6 +166,13 @@ reload:-
 	,abolish_experiment_file_interface(experiment_file)
 	,interface_reexports(Es)
 	,reexport(P, except(Es)).
+*/
+reload:-
+	configuration:experiment_file(P, M)
+	,replace_experiment_file(P,M)
+	,interface_reexports(Es)
+	,reexport(P, except(Es)).
+
 
 
 %!	replace_experiment_file(+Path,+Module) is det.
@@ -169,8 +193,12 @@ reload:-
 %	By "register" and "unregister" what is meant is that a clause of
 %	the dynamic predicate '$experiment_file'/2 is added to the
 %	database that has the values passed to the Path and Module
-%	arguments of this predicate as paramters.
+%	arguments of this predicate as parameters.
 %
+%	@tbd Original version commented out after changes in Swi 8.3.14
+%	broke my hack. See reload/0 for an explanation.
+%
+/*
 replace_experiment_file(P,M):-
 	\+ '$experiment_file'(_,_)
 	,assert('$experiment_file'(P,M))
@@ -178,6 +206,15 @@ replace_experiment_file(P,M):-
 replace_experiment_file(P1,M1):-
 	'$experiment_file'(P0,_M0)
 	,unload_file(P0)
+	,retractall('$experiment_file'(_,_))
+	,assert('$experiment_file'(P1,M1)).
+*/
+replace_experiment_file(P,M):-
+	\+ '$experiment_file'(_,_)
+	,assert('$experiment_file'(P,M))
+	,!.
+replace_experiment_file(P1,M1):-
+	'$experiment_file'(_P0,_M0)
 	,retractall('$experiment_file'(_,_))
 	,assert('$experiment_file'(P1,M1)).
 
