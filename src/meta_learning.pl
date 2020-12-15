@@ -256,15 +256,21 @@ learn_metarules(Pos,Neg,BK,MS,MS_f):-
 %	elements of the MIL problem to the dynamic database to take
 %	advantage of Prolog's SLD resolution (rather than a
 %	meta-interpreter) and then cleaning up on exit, including via
-%	exception. All this before calling specialised_emtarules/6 or
-%	n_specialised_metarules/6.
+%	exception. Also sets up a call to specialised_metarules/7 with
+%	sampling from Pos if the configuration option
+%	metarule_learning_limits/1 is set to sampling(R) (where R some
+%	sampling rate).
 %
 specialised_metarules_(Pos,Neg,BK,MS,MS_):-
 	configuration:metarule_learning_limits(L)
 	,examples_targets(Pos,Ts)
 	,herbrand_signature(Ts,Ss)
         ,S = write_program(Pos,BK,Refs)
-	,limits_goal(L,[Pos,Neg,MS,Ss,MS_],G)
+	,(   L = sampling(R)
+	 ->  pk_list_samples(R,Pos,Pos_)
+	    ,G = specialised_metarules(none,Pos_,Neg,MS,Ss,[],MS_)
+	 ;   G = specialised_metarules(L,Pos,Neg,MS,Ss,[],MS_)
+	 )
 	,C = erase_program_clauses(Refs)
 	,debug(top_program,'Specialising metarule templates...',[])
 	,setup_call_cleanup(S,G,C)
@@ -274,61 +280,7 @@ specialised_metarules_(_Pos,_Neg,_BK,_MS,[]):-
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
-%!	limits_goal(+Limits,+Problem,-Goal) is semidet.
-%
-%	Compose a Goal according to the Limits imposed on a Problem.
-%
-%	Handles composition of a learning query according to the current
-%	metarule_learning_limits/1 option set in the configuration.
-%
-%	Limits is the current setting of the configuration option
-%	metarule_learning_limits/1. Problem is a list,
-%	[Pos,Neg,Templaes,Metarules] holding the elements of a metarule
-%	learning problem (including an "output" variable, Metarules).
-%	Goal is the goal to call to learn metarules limited by the given
-%	Limits.
-%
-limits_goal(none,[Pos,Neg,MS,Ss,MS_],n_specialised_metarules(all,Pos,Neg,MS,Ss,MS_)).
-limits_goal(coverset,[Pos,Neg,MS,Ss,MS_],specialised_metarules(Pos,Neg,MS,Ss,[],MS_)).
-limits_goal(sampling(R),[Pos,Neg,MS,Ss,MS_],specialised_metarules(Pos_,Neg,MS,Ss,[],MS_)):-
-	pk_list_samples(R,Pos,Pos_).
-limits_goal(metasubstitutions(N),[Pos,Neg,MS,Ss,MS_]
-	   ,n_specialised_metarules(N,Pos,Neg,MS,Ss,MS_)).
-
-
-%!	n_specialised_metarules(+N,+Pos,+Neg,+Templates,+Sig,-Metarules)
-%!	is det.
-%
-%	Construct at most N Metarules specialising a lis of Templates.
-%
-%	N is taken from the current configuration option
-%	metarule_learning_limits/1. If this option is "none", N is all
-%	and all possible specialisations of the metarule templates in
-%	Templates are returned. If this option is measubstitutions(N)
-%	where N is an integer, at most N metasubstitutions of a metarule
-%	template are derived and generalised to a new metarule.
-%
-n_specialised_metarules(N,Pos,Neg,MS,Sig,MS_):-
-	B = (member(M,MS)
-	     ,member(Ep,Pos)
-	     ,debug(new_metarules,'',[])
-	     ,debug_clauses(new_metarules,'New example',[Ep])
-	     ,meta_grounding(Ep,Neg,M,Sig,_Sub,M_n)
-	     ,generalise_second_order(M_n,M_g)
-	     ,debug_clauses(new_metarules,'Generalised metarule',[M_g])
-	     ,numbervars(M_g)
-	     )
-	,(   N = all
-	 ->  findall(M_g,B,Ss_)
-	 ;   integer(N)
-	 ->  findnsols(N,M_g,B,Ss_)
-	 )
-	,sort(Ss_,Ss_s)
-	,maplist(varnumbers,Ss_s,MS_)
-	,debug_clauses(new_metarules,'New metasubstitutions',MS_).
-
-
-%!	specialised_metarules_(+Pos,+Neg,+General,+Signature,+Acc,-Special)
+%!	specialised_metarules_(+Limits,+Pos,+Neg,+General,+Signature,+Acc,-Special)
 %!	is det.
 %
 %	Specialise a list of most General metarules.
@@ -342,34 +294,50 @@ n_specialised_metarules(N,Pos,Neg,MS,Sig,MS_):-
 %	deepening over the length of a metarule (its number of
 %	literals).
 %
+%	Limits is the value of metarule_learning_limit/1. This is used
+%	to restrict the construction of new metarules.
+%
 %	Signature is the Herbrand signature, a list of encapsulated
 %	second-order atoms m(P,V1,...,Vn) each of which unifies with
 %	the head literal of a predicate in the BK or the positive
 %	examples.
 %
-specialised_metarules(_Pos,_Neg,[],_Ss,MS,MS):-
+specialised_metarules(_L,_Pos,_Neg,[],_Ss,MS,MS):-
 	!.
-specialised_metarules(Pos,Neg,[M|MS],Ss,Acc,Bind):-
+specialised_metarules(L,Pos,Neg,[M|MS],Ss,Acc,Bind):-
 	debug_clauses(new_metarules,'Specialising metarule template',[M])
-	,specialised_metarule(Pos,Neg,M,Ss,Acc,Acc_)
-	,specialised_metarules(Pos,Neg,MS,Ss,Acc_,Bind).
+	,specialised_metarule(L,Pos,Neg,M,Ss,Acc,Acc_)
+	,specialised_metarules(L,Pos,Neg,MS,Ss,Acc_,Bind).
 
 
-%!	specialised_metarules(+Pos,+Neg,+General,+Signature,+Acc,-Special)
+
+%!	specialised_metarules(+Limits,+Pos,+Neg,+Template,+Signature,+Acc,-Special)
 %!	is det.
 %
 %	Specialise one most General metarule.
 %
-%	General is either a most-general metarule in a language class,
+%	Template is either a most-general metarule in a language class,
 %	like meta-dyadic, the most general metarule in H(2,2) etc, or an
 %	integer, denoting the number of literals in a higher-order
 %	metarule.
 %
 %	Signature is the Herbrand signature.
 %
-specialised_metarule([],_Neg,_M,_Ss,MS,MS):-
+%	Clauses of specialised_metarule/7 are seleced according to the
+%	value of Limits, set in the configuration option
+%	metarule_learning_limits/1. This constraints the number of
+%	metarules that will be constructed. Option "none" allows
+%	unconstrained construction. Option "coverset" implements a kind
+%	of a coverset algorithm that removes from Pos all examples
+%	entailed by the last metarule learned, then learns a new one
+%	from the remaining examples. Option "sampling(R)" first samples
+%	with a sampling rate of R from the positive examples (actually
+%	done in specialised_metarules_/5). Option "metasubstitutions(N)"
+%	only allows N metasubstitutions of Template to be derived.
+%
+specialised_metarule(coverset,[],_Neg,_M,_Ss,MS,MS):-
 	!.
-specialised_metarule([E|Pos],Neg,M,Ss,Acc,Bind):-
+specialised_metarule(coverset,[E|Pos],Neg,M,Ss,Acc,Bind):-
 	debug_clauses(new_metarules,'New example',[E])
 	,meta_grounding(E,Neg,M,Ss,_Sub,M_n)
 	,generalise_second_order(M_n,M_g)
@@ -378,9 +346,30 @@ specialised_metarule([E|Pos],Neg,M,Ss,Acc,Bind):-
 	,reduced_examples(Pos,C,Pos_)
 	,maplist(length,[Pos,Pos_],[N,N_])
 	,debug(new_metarules,'Reduced ~w examples to ~w',[N,N_])
-	,specialised_metarule(Pos_,Neg,M,Ss,[M_g|Acc],Bind).
-specialised_metarule([_E|Pos],Neg,M,Ss,Acc,Bind):-
-	specialised_metarule(Pos,Neg,M,Ss,Acc,Bind).
+	,specialised_metarule(coverset,Pos_,Neg,M,Ss,[M_g|Acc],Bind).
+specialised_metarule(coverset,[_E|Pos],Neg,M,Ss,Acc,Bind):-
+	specialised_metarule(coverset,Pos,Neg,M,Ss,Acc,Bind).
+
+specialised_metarule(N,Pos,Neg,M,Sig,Acc,MS_):-
+	B = (member(Ep,Pos)
+	    ,debug(new_metarules,'',[])
+	    ,debug_clauses(new_metarules,'New example',[Ep])
+	    ,meta_grounding(Ep,Neg,M,Sig,_Sub,M_n)
+	    ,generalise_second_order(M_n,M_g)
+	    ,debug_clauses(new_metarules,'Generalised metarule',[M_g])
+	    ,numbervars(M_g)
+	    )
+	,(   N = none
+	 ->  findall(M_g,B,Ss_)
+	 ;   N = metasubstitutions(N_)
+	    ,integer(N_)
+	 ->  findnsols(N_,M_g,B,Ss_)
+	 )
+	,sort(Ss_,Ss_s)
+	,maplist(varnumbers,Ss_s,MS)
+	,flatten([Acc,MS],MS_)
+	,debug_clauses(new_metarules,'New metasubstitutions',MS_).
+
 
 
 %!	encapsulated_metarule(+Metarule,-Body) is det.
