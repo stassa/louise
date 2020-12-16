@@ -169,11 +169,10 @@ learn_meta(Pos,Neg,BK,MS,_Ts):-
 	;   fail
 	).
 learn_meta(Pos,Neg,BK,MS_G,Ps):-
-	debug(learn,'Encapsulating problem',[])
+	debug(learn,'Encapsulating problem...',[])
 	,encapsulated_problem(Pos,Neg,BK,MS_G,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Learning new metarules...',[])
 	,learn_metarules(Pos_,Neg_,BK_,MS_,MS_n)
-	,debug_clauses(new_metarules,'Learned metarules:',MS_n)
 	,debug(learn,'Calling learning predicate...',[])
 	,learning_query(Pos_,Neg_,BK_,MS_n,Ps).
 
@@ -235,17 +234,18 @@ learn_metarules(Ts,MS):-
 learn_metarules(Pos,Neg,BK,MS,MS_f):-
 	configuration:reduce_learned_metarules(B)
 	,Ci = c(1)
-	,debug(learn,'Encapsulating problem',[])
+	,debug(learn_metarules,'Encapsulating problem...',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,debug(learn,'Specialising metarule templates...',[])
+	,debug(learn_metarules,'Specialising metarule templates...',[])
 	,specialised_metarules_(Pos_,Neg_,BK_,MS_,MS_n)
 	,(   B == true
-	 ->  debug(learn,'Reducing learned metarules...',[])
+	 ->  debug(learn_metarules,'Reducing learned metarules...',[])
 	    ,program_reduction(MS_n,MS_r,_MS_d)
 	 ;   B == false
 	 ->  MS_r = MS_n
 	 )
-	,maplist(renamed_metarule(Ci),MS_r,MS_f).
+	,maplist(renamed_metarule(Ci),MS_r,MS_f)
+	,debug_quantified_metarules(learned_metarules,'Learned metarules:',MS_f).
 
 
 %!	specialised_metarules_(+Pos,+Neg,+BK,+General,-Special) is det.
@@ -272,12 +272,11 @@ specialised_metarules_(Pos,Neg,BK,MS,MS_):-
 	 ;   G = specialised_metarules(L,Pos,Neg,MS,Ss,[],MS_)
 	 )
 	,C = erase_program_clauses(Refs)
-	,debug(top_program,'Specialising metarule templates...',[])
 	,setup_call_cleanup(S,G,C)
 	,!.
 specialised_metarules_(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
-	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
+	debug(learn_metarules,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
 %!	specialised_metarules_(+Limits,+Pos,+Neg,+General,+Signature,+Acc,-Special)
@@ -305,7 +304,7 @@ specialised_metarules_(_Pos,_Neg,_BK,_MS,[]):-
 specialised_metarules(_L,_Pos,_Neg,[],_Ss,MS,MS):-
 	!.
 specialised_metarules(L,Pos,Neg,[M|MS],Ss,Acc,Bind):-
-	debug_clauses(new_metarules,'Specialising metarule template',[M])
+	debug_clauses(learn_metarules,'Specialising metarule template:',[M])
 	,specialised_metarule(L,Pos,Neg,M,Ss,Acc,Acc_)
 	,specialised_metarules(L,Pos,Neg,MS,Ss,Acc_,Bind).
 
@@ -338,25 +337,24 @@ specialised_metarules(L,Pos,Neg,[M|MS],Ss,Acc,Bind):-
 specialised_metarule(coverset,[],_Neg,_M,_Ss,MS,MS):-
 	!.
 specialised_metarule(coverset,[E|Pos],Neg,M,Ss,Acc,Bind):-
-	debug_clauses(new_metarules,'New example',[E])
+	debug_clauses(learn_metarules,'New example:',[E])
 	,meta_grounding(E,Neg,M,Ss,_Sub,M_n)
 	,generalise_second_order(M_n,M_g)
 	,encapsulated_metarule(M_g,C)
 	,!
 	,reduced_examples(Pos,C,Pos_)
 	,maplist(length,[Pos,Pos_],[N,N_])
-	,debug(new_metarules,'Reduced ~w examples to ~w',[N,N_])
+	,debug(learn_metarules,'Reduced ~w examples to ~w',[N,N_])
 	,specialised_metarule(coverset,Pos_,Neg,M,Ss,[M_g|Acc],Bind).
 specialised_metarule(coverset,[_E|Pos],Neg,M,Ss,Acc,Bind):-
 	specialised_metarule(coverset,Pos,Neg,M,Ss,Acc,Bind).
 
 specialised_metarule(N,Pos,Neg,M,Sig,Acc,MS_):-
 	B = (member(Ep,Pos)
-	    ,debug(new_metarules,'',[])
-	    ,debug_clauses(new_metarules,'New example',[Ep])
+	    ,debug_clauses(learn_metarules,'New example:',[Ep])
 	    ,meta_grounding(Ep,Neg,M,Sig,_Sub,M_n)
 	    ,generalise_second_order(M_n,M_g)
-	    ,debug_clauses(new_metarules,'Generalised metarule',[M_g])
+	    ,debug_clauses(learn_metarules,'Generalised metarule:',[M_g])
 	    ,numbervars(M_g)
 	    )
 	,(   N = none
@@ -368,7 +366,7 @@ specialised_metarule(N,Pos,Neg,M,Sig,Acc,MS_):-
 	,sort(Ss_,Ss_s)
 	,maplist(varnumbers,Ss_s,MS)
 	,flatten([Acc,MS],MS_)
-	,debug_clauses(new_metarules,'New metasubstitutions',MS_).
+	,debug_clauses(learn_metarules,'New metasubstitutions:',MS_).
 
 
 
@@ -453,6 +451,7 @@ generalise_second_order(Sub:-M,Sub_g:-M_g):-
 	,!
 	,Sub =.. [m,Id|Ps]
 	,once(list_tree(Ms,M))
+	,debug(learn_metarules,'Generalising second-order variables...',[])
 	,generalise_second_order(Ps,Ms,[],Ps_,[],Ms_g)
 	,once(list_tree(Ms_g,M_g))
 	,Sub_g =.. [m,Id|Ps_].
@@ -518,14 +517,14 @@ meta_grounding(Ep,Neg,M,Ss,Sub,M_n):-
 	copy_term(M,M_)
 	,metasubstitution(Ep,M_,Ss,Sub:-M_g)
 	,constraints(Sub)
-	,debug_clauses(new_metarules,'Ground instance',[M_g])
+	,debug_clauses(metarule_grounding,'Ground instance:',[M_g])
 	,new_metarule(Sub:-M_g,M_n)
-	,debug_clauses(new_metarules,'New metarule',[M_n])
+	,debug_clauses(metarule_grounding,'New metarule:',[M_n])
 	,\+((member(En,Neg)
 	    ,metasubstitution(En,M_n,Ss,Sub)
 	    )
 	   )
-	,debug(new_metarules,'Entails 0 negative examples',[]).
+	,debug(metarule_grounding,'Entails 0 negative examples.',[]).
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
@@ -558,7 +557,7 @@ metasubstitution(:-E,M,_Ss,Sub):-
 	% TODO: Make sure not needed anymore after next clause added.
 	%,Ls \= true
 	,user:call(Ls)
-	,debug(metasubstitution,'Succeeded',[]).
+	,debug(metasubstitution,'Succeeded.',[]).
 metasubstitution(E,M,_Ss,(Sub:-E)):-
 % E is a positive example and M is an abduction metarule. See
 % bind_head_literal/3. We don't need to carry on the "true" atom in the
@@ -576,7 +575,7 @@ metasubstitution(E,M,_Ss,(Sub:-(E,Ls))):-
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,once(list_tree(Ls_,Ls))
 	,prove_body_literals(E,Ls_,Ls_)
-	,debug(metasubstitution,'Succeeded',[]).
+	,debug(metasubstitution,'Succeeded.',[]).
 metasubstitution(E,Max,Ss,(Sub:-Ls_)):-
 % Max is an integer denoting the number of literals in a metarule to be
 % learned from E.  Sub is yet free.
@@ -606,7 +605,7 @@ prove_body_literals(_H,[true],_Gs):-
 prove_body_literals(H,Bs,Gs):-
 	H =.. [m,_P|Ts]
 	,counts(Ts,[],Cs)
-	,debug_clauses(grounding,'Grounding clause',[[H|Gs]])
+	,debug_clauses(metarule_grounding,'Grounding clause:',[[H|Gs]])
 	,prove_body_literals(Bs,Gs,[H],Cs).
 
 %!	prove_body_literals(?Literals,?Clause,+Current,+Constants) is
@@ -635,18 +634,18 @@ prove_body_literals(H,Bs,Gs):-
 prove_body_literals([],_Gs,_Ls,Cs):-
 	forall(member(_C-N,Cs)
 	      ,N > 1)
-	,debug_clauses(grounding,'Fully connected constants:',[Cs]).
+	,debug_clauses(metarule_grounding,'Fully connected constants:',[Cs]).
 prove_body_literals([Lk|Bs],Gs,Ls,Cs):-
-	debug_clauses(grounding,'Checking grounding constraints:',[Gs])
+	debug_clauses(metarule_grounding,'Checking grounding constraints:',[Gs])
 	,grounding_constraints(Cs,Gs)
 	,variable_instantiations(Lk,Cs,Is)
-	,debug_clauses(grounding,'Variable instantiations',[Is])
-	,debug_clauses(grounding,'Grounding literal',[Lk])
+	,debug_clauses(metarule_grounding,'Variable instantiations:',[Is])
+	,debug_clauses(metarule_grounding,'Grounding literal:',[Lk])
 	,call(Lk)
 	,new_literal(Lk,Ls)
-	,debug_clauses(grounding,'Ground literal',[Lk])
+	,debug_clauses(metarule_grounding,'Ground literal:',[Lk])
 	,counts(Is,Cs,Cs_)
-	,debug_clauses(grounding,'Constant counts',[Cs_])
+	,debug_clauses(metarule_grounding,'Constant counts:',[Cs_])
 	,prove_body_literals(Bs,Gs,[Lk|Ls],Cs_).
 
 
@@ -897,22 +896,22 @@ prove_body_literals_ho(Max,Cs,_Ss,Acc,Bs):-
 	,forall(member(_C-K,Cs)
 	      ,K > 1)
 	,reverse(Acc,Bs)
-	,debug_clauses(grounding,'Ground literals',[Bs]).
+	,debug_clauses(metarule_grounding,'Ground literals:',[Bs]).
 prove_body_literals_ho(Max,Cs,Ss,Acc,Bind):-
-	debug_clauses(grounding,'Accumulated literals',[Acc])
+	debug_clauses(metarule_grounding,'Accumulated literals:',[Acc])
 	,length(Acc,N)
 	,N =< Max
 	,member(L,Ss)
 	% Avoid grounding the Herbrand signature
 	,copy_term(L,L_)
 	,variable_instantiations(L_,Cs,Is)
-	,debug_clauses(grounding,'Variable instantiations',[Is])
-	,debug_clauses(grounding,'Grounding literal',[L_])
+	,debug_clauses(metarule_grounding,'Variable instantiations:',[Is])
+	,debug_clauses(metarule_grounding,'Grounding literal:',[L_])
 	,call(L_)
 	,new_literal(L_,Acc)
-	,debug_clauses(grounding,'Ground literal',[L_])
+	,debug_clauses(metarule_grounding,'Ground literal:',[L_])
 	,counts(Is,Cs,Cs_)
-	,debug_clauses(grounding,'Constant counts',[Cs_])
+	,debug_clauses(metarule_grounding,'Constant counts:',[Cs_])
 	,prove_body_literals_ho(Max,Cs_,Ss,[L_|Acc],Bind).
 
 

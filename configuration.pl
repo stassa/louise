@@ -60,6 +60,9 @@
 %:-debug(reduction). % Debug Top program reduction.
 %:-debug(dynamic). % Debug dynamic learning.
 %:-debug(predicate_invention). % Debug predicate invention.
+%:-debug(learn_metarules). % Debug metarule learning
+%:-debug(learned_metarules). % Debug new metarules
+%:-debug(metarule_grounding). % Debug metarule template specialisation
 %:-debug(examples_invention). % Debug examples invention.
 %:-debug(evaluation).
 
