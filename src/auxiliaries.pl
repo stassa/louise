@@ -29,6 +29,8 @@
 		      ,list_top_program/3
 		      ,print_metarules/1
 		      ,print_quantified_metarules/1
+		      ,debug_quantified_metarules/2
+		      ,debug_quantified_metarules/3
 		       % Database auxiliaries
 		      ,assert_program/3
 		      ,erase_program_clauses/1
@@ -129,6 +131,10 @@ Table of Contents
    * list_top_program_reduction/1
    * list_top_program/1
    * list_top_program/3
+   * print_metarules/1
+   * print_quantified_metarules/1
+   * debug_quantified_metarules/2
+   * debug_quantified_metarules/3
 
 5. Database auxiliaries [sec_dynm]
    * assert_program/3
@@ -1356,34 +1362,78 @@ symbol_range(T,Ss,N):-
 %
 %	Pretty-print a list of Metarules with quantifiers.
 %
+%	Metarules is a list of encapsulated metarules, or a list of
+%	atomic metarule IDs.
+%
 print_quantified_metarules(M):-
 	\+ is_list(M)
 	,!
 	,print_quantified_metarules([M]).
 print_quantified_metarules(MS):-
 	forall(member(M,MS)
-	      ,(print_quantified_metarule(M)
-	       ,nl
-	       )
+	      ,output_quantified_metarule(print,user_output,M)
 	      ).
 
 
-%!	print_quantified_metarule(+Metarule) is det.
+
+%!	debug_quantified_metarules(+Subject,+Message,+Metarules) is det.
+%
+%	Log a message followed by a pretty-printed list of Metarules.
+%
+%	Subject is the name of a debug subject.
+%
+%	Message is a string that wll be printed above the list of
+%	quantified Metarules when logging Subject.
+%
+%	Metarules is a list of encapsulated metarules or metarule IDs
+%	that will be pretty-printed when logging Subject.
+%
+debug_quantified_metarules(S,M,MS):-
+	debug(S,'~w',M)
+	,debug_quantified_metarules(S,MS).
+
+
+
+%!	debug_quantified_metarules(+Subject,+Metarles) is det.
+%
+%	Log a list of pretty-printed Metarules.
+%
+%	Subject is the name of a debug subject.
+%
+%	Metarules is a list of metarule IDs or encapsulated metarules
+%	that wll be pretty-printed when logging Subject.
+%
+debug_quantified_metarules(S,M):-
+	\+ is_list(M)
+	,!
+	,debug_quantified_metarules(S,[M]).
+debug_quantified_metarules(S,MS):-
+	forall(member(M,MS)
+	      ,output_quantified_metarule(debug,S,M)
+	      ).
+
+
+
+%!	print_quantified_metarule(+How,+Where,+Metarule) is det.
 %
 %	Pretty-print a Metarule with quantifiers.
 %
-print_quantified_metarule(Id):-
+%	How is one of "print" or "debug". Where is the name of the
+%	stream to print to, or the debug subject.
+%
+output_quantified_metarule(H,W,Id):-
 	atom(Id)
 	,!
 	,once(metarule_expansion(Id,M))
-	,print_quantified_metarule(M).
-print_quantified_metarule(M):-
+	,output_quantified_metarule(H,W,M).
+output_quantified_metarule(H,W,M):-
 	metarule_symbols(M)
 	,excapsulated_metarule(M,M_)
 	,metarule_Id(M, Id)
 	,metarule_quantifiers(M,Es,Us)
 	,pretty_metarule_id(Id,Id_)
-	,format('(~w) ~w~w: ~w',[Id_,Es,Us,M_]).
+	,format(atom(A),'(~w) ~w~w: ~w',[Id_,Es,Us,M_])
+	,print_or_debug(H,W,A).
 
 
 %!	metarule_symbols(+Metarule) is det.
