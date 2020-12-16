@@ -1,7 +1,5 @@
 :-module(auxiliaries, [% Experiment auxiliaries
 	               protocol_experiment/3
-		       % Printing auxiliaries
-		      ,print_or_debug/3
 		       % Configuration auxiliareis
 		      ,debug_config/1
 		      ,list_config/0
@@ -20,6 +18,7 @@
 		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
 		       % Debugging auxiliaries
+		      ,print_or_debug/3
 		      ,list_encapsulated_problem/1
 		      ,list_learning_results/0
 		      ,list_mil_problem/1
@@ -101,9 +100,6 @@ Table of Contents
 1. Experiment auxiliaries [sec_prot]
    * protocol_experiment/3
 
-1. Printing auxiliaries [sec_print]
-   * print_or_debug/3
-
 2. Configuration auxiliaries [sec_config]
    * debug_config/1
    * list_config/0
@@ -124,6 +120,7 @@ Table of Contents
    * write_encapsulated_problem/4
 
 4. Debugging auxiliaries [sec_debug]
+   * print_or_debug/3
    * list_encapsulated_problem/1
    * list_learning_results/0
    * list_mil_problem/1
@@ -208,38 +205,6 @@ protocol_experiment(T,N,G):-
 	,writeln('Results:')
 	,user:call(G)
 	,noprotocol.
-
-
-
-% [sec_print]
-% ================================================================================
-% Printing auxiliaries
-% ================================================================================
-% Predicates for printing to streams (including user_output).
-
-
-%!	print_or_debug(+Print_or_Debug,+Stream_or_Subject,+Atom) is
-%!	det.
-%
-%	Print or debug an Atom.
-%
-%	Print_or_Debug can be one of: [print,debug,both]. If "print",
-%	Stream_or_Subject should be the name or alias of a stream
-%	and Atom is printed at that Stream. If "debug",
-%	Stream_or_Subject should be a debug subject and Atom is printed
-%	to the current debug stream, iff the specified subject is being
-%	debugged. If "both", Stream_or_Subject should be a term Str/Sub,
-%	where Str the name or alias of a stream and Sub the name of
-%	debug topic; then Atom is printed to the specified stream and
-%	also to the current debug topic if Sub is being debugged.
-%
-print_or_debug(debug,S,C):-
-	debug(S,'~w',[C]).
-print_or_debug(print,S,C):-
-	format(S,'~w~n',[C]).
-print_or_debug(both,Str/Sub,C):-
-	print_or_debug(print,Str,C)
-	,print_or_debug(debug,Sub,C).
 
 
 
@@ -703,7 +668,32 @@ write_encapsulated_problem(Pos,Neg,BK,MS):-
 % ================================================================================
 % Debugging auxiliaries
 % ================================================================================
-% Predicates to facilitate debugging of experiments.
+% Predicates to facilitate experiment debugging and data inspection.
+
+
+%!	print_or_debug(+Print_or_Debug,+Stream_or_Subject,+Atom) is
+%!	det.
+%
+%	Print or debug an Atom.
+%
+%	Print_or_Debug can be one of: [print,debug,both]. If "print",
+%	Stream_or_Subject should be the name or alias of a stream
+%	and Atom is printed at that Stream. If "debug",
+%	Stream_or_Subject should be a debug subject and Atom is printed
+%	to the current debug stream, iff the specified subject is being
+%	debugged. If "both", Stream_or_Subject should be a term Str/Sub,
+%	where Str the name or alias of a stream and Sub the name of
+%	debug topic; then Atom is printed to the specified stream and
+%	also to the current debug topic if Sub is being debugged.
+%
+print_or_debug(debug,S,C):-
+	debug(S,'~w',[C]).
+print_or_debug(print,S,C):-
+	format(S,'~w~n',[C]).
+print_or_debug(both,Str/Sub,C):-
+	print_or_debug(print,Str,C)
+	,print_or_debug(debug,Sub,C).
+
 
 
 %!	list_encapsulated_problem(+Target) is det.
