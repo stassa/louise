@@ -131,6 +131,10 @@ Table of Contents
    * list_top_program_reduction/1
    * list_top_program/1
    * list_top_program/3
+   * debug_clauses/3
+   * debug_clauses/2
+   * print_clauses/2
+   * print_clauses/1
    * print_metarules/1
    * print_quantified_metarules/1
    * debug_quantified_metarules/2
@@ -972,6 +976,74 @@ write_and_count(T,Msg,MS,Cs,U,E):-
 	,format_underlined(Msg)
 	,print_clauses(Cs_2)
 	,format('Length:~w~n',[N]).
+
+
+
+%!	debug_clauses(+Topic,+Message,-Clauses) is det.
+%
+%	Log a Message followed by a set of Clauses.
+%
+debug_clauses(T,M,Cs):-
+	debug(T,'~w',[M])
+	,debug_clauses(T,Cs).
+
+
+%!	debug_clauses(+Topic,+Clauses) is det.
+%
+%	Debug a list of Clauses if Topic is being debugged.
+%
+debug_clauses(T,[]):-
+	!
+	,debug(T,'[]',[]).
+debug_clauses(T,L):-
+	\+ is_list(L)
+	,!
+	,debug_clauses(T,[L]).
+debug_clauses(T,Cs):-
+	forall(member(C,Cs)
+	      ,(copy_term(C,C_)
+	       ,numbervars(C_)
+	       ,format(atom(A),'~W',[C_, [fullstop(true)
+					 ,numbervars(true)
+					 ,quoted(true)]
+				    ])
+	       ,debug(T,'~w',A)
+	       )
+	      ).
+
+
+
+%!	print_clauses(+Message,-Clauses) is det.
+%
+%	Print a Message followed by a set of Clauses.
+%
+print_clauses(M,Cs):-
+	format('~w~n',[M])
+	,print_clauses(Cs).
+
+
+%!	print_clauses(+Clauses) is det.
+%
+%	Print a list of Clauses to standard output.
+%
+print_clauses([]):-
+	!
+	,writeln([]).
+print_clauses(L):-
+	\+ is_list(L)
+	,!
+	,print_clauses([L]).
+print_clauses(Cs):-
+	forall(member(C,Cs)
+	      ,(copy_term(C,C_)
+	       ,numbervars(C_)
+	       ,write_term(C_, [fullstop(true)
+			       ,nl(true)
+			       ,numbervars(true)
+			       ,quoted(true)
+			       ])
+	       )
+	      ).
 
 
 
@@ -2113,74 +2185,6 @@ program_symbols(Ps,Ss):-
 		    ,functor(L,F,A)
 		    )
 	      ,Ss).
-
-
-
-%!	debug_clauses(+Topic,+Message,-Clauses) is det.
-%
-%	Log a Message followed by a set of Clauses.
-%
-debug_clauses(T,M,Cs):-
-	debug(T,'~w',[M])
-	,debug_clauses(T,Cs).
-
-
-%!	debug_clauses(+Topic,+Clauses) is det.
-%
-%	Debug a list of Clauses if Topic is being debugged.
-%
-debug_clauses(T,[]):-
-	!
-	,debug(T,'[]',[]).
-debug_clauses(T,L):-
-	\+ is_list(L)
-	,!
-	,debug_clauses(T,[L]).
-debug_clauses(T,Cs):-
-	forall(member(C,Cs)
-	      ,(copy_term(C,C_)
-	       ,numbervars(C_)
-	       ,format(atom(A),'~W',[C_, [fullstop(true)
-					 ,numbervars(true)
-					 ,quoted(true)]
-				    ])
-	       ,debug(T,'~w',A)
-	       )
-	      ).
-
-
-
-%!	print_clauses(+Message,-Clauses) is det.
-%
-%	Print a Message followed by a set of Clauses.
-%
-print_clauses(M,Cs):-
-	format('~w~n',[M])
-	,print_clauses(Cs).
-
-
-%!	print_clauses(+Clauses) is det.
-%
-%	Print a list of Clauses to standard output.
-%
-print_clauses([]):-
-	!
-	,writeln([]).
-print_clauses(L):-
-	\+ is_list(L)
-	,!
-	,print_clauses([L]).
-print_clauses(Cs):-
-	forall(member(C,Cs)
-	      ,(copy_term(C,C_)
-	       ,numbervars(C_)
-	       ,write_term(C_, [fullstop(true)
-			       ,nl(true)
-			       ,numbervars(true)
-			       ,quoted(true)
-			       ])
-	       )
-	      ).
 
 
 
