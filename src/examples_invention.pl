@@ -1,6 +1,7 @@
 :-module(examples_invention, [learn_with_examples_invention/1
 			     ,learn_with_examples_invention/2
 			     ,learn_with_examples_invention/5
+			     ,examples_invention/1
 			     ,examples_invention/2
 			     ,examples_invention/5
 			     ]).
@@ -64,6 +65,17 @@ learn_with_examples_invention(Pos,Neg,BK,MS,Ps):-
 
 
 
+%!	examples_invention(+Targets) is det.
+%
+%	Invent new positive examples of one or more learning Targets.
+%
+examples_invention(Ts):-
+	experiment_data(Ts,Pos,Neg,BK,MS)
+	,examples_invention(Pos,Neg,BK,MS,Es)
+	,print_clauses(Es).
+
+
+
 %!	examples_invention(+Targets,-Examples) is det.
 %
 %	Invent new positive Examples of one or more learning Targets.
@@ -79,9 +91,10 @@ examples_invention(Ts,Es):-
 %	Invent a new set of positive Examples from a MIL problem.
 %
 examples_invention(Pos,Neg,BK,MS,Es):-
-	partial_examples(Pos,Es_)
+	partial_examples_(Pos,Es_)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	% TODO: should Pos also be added in?
+	% LATER: It's included in Es_, no?
 	%,append(Es_,Pos_,Es_Pos)
 	%,top_program(Es_Pos,Neg_,BK_,MS_,Ts)
 	,top_program(Es_,Neg_,BK_,MS_,Ts)
@@ -118,15 +131,33 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 %	will include two atoms, path(a,X) and path(Y,f), each a partial
 %	example derived from path(a,f).
 %
-partial_examples(Pos,Es):-
-	findall(E_
-		,(member(E,Pos)
-		 ,E =.. [F|As]
-		 ,length(As,A)
-		 ,functor(E_,F,A)
+partial_examples_(Pos,Es):-
+	generalised_examples(Pos, [], Es_)
+	,encapsulated_clauses(Es_,Es).
+
+%!	generalised_examples(+Es,+Acc,-Generalised) is det.
+%
+%	Business end of partial_examples/2.
+%
+generalised_examples([],Acc,Gs):-
+	!
+	,flatten(Acc,Gs_f)
+	,reverse(Gs_f,Gs).
+generalised_examples([E|Es],Acc,Bind):-
+	generalised_example(E,Gs)
+	,generalised_examples(Es,[Gs|Acc],Bind).
+
+generalised_example(E,E_):-
+	E =.. [F|[_]]
+	,!
+	,functor(E_,F,1).
+generalised_example(E,Gs):-
+	E =.. [F|As]
+	,length(As,A)
+	,findall(E_
+		,(functor(E_,F,A)
 		 ,E_ =.. [F|As_]
 		 ,nth1(I,As,Ai)
 		 ,nth1(I,As_,Ai)
 		 )
-		,Es_)
-	,encapsulated_clauses(Es_,Es).
+		,Gs).
