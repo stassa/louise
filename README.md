@@ -29,38 +29,40 @@ Table of contents
 Overview
 --------
 
-Louise is a machine learning system that learns Prolog programs.
+Louise [(Patsantzis et al. 2021)] is a machine learning system that learns
+Prolog programs.
 
-Louise is based on a new program learning algorithm that runs in polynomial
-time. Louise can learn recursive programs, including left-recursive and mutually
-recursive programs and perform multi-predicate learning, predicate invention and
-examples invention, among other things.
+Louise is based on a new program learning algorithm, called _Top Program
+Construction_, that runs in polynomial time. Louise can learn recursive
+programs, including left-recursive and mutually recursive programs and perform
+multi-predicate learning, predicate invention and examples invention, among
+other things.
 
-Louise is a Meta-Interpretive Learning (MIL) system. MIL is a new setting for
-Inductive Logic Programming (ILP). ILP is the branch of machine learning that
-studies algorithms learning logic programs from examples, background knowledge
-and a language bias that determines the structure of learned programs. In MIL,
-the language bias is defined by a set of second-order clause templates called
-_metarules_. Examples, background knowledge and metarules must be provided by
-the user, but Louise can perform predicate invention to extend its background
-knowledge and metarules and so learn programs that are impossible to learn only
-from its initial data. Louise can also learn new metarules from examples of a
-learning target.
+Louise is a Meta-Interpretive Learning (MIL) system. MIL [(Muggleton et al.
+2014)], [(Muggleton et al. 2015)], is a new setting for Inductive Logic
+Programming (ILP) [(Muggleton, 1991)]. ILP is the branch of machine learning
+that studies algorithms learning logic programs from examples, background
+knowledge and a language bias that determines the structure of learned
+programs. In MIL, the language bias is defined by a set of second-order clause
+templates called _metarules_. Examples, background knowledge and metarules must
+be provided by the user, but Louise can perform predicate invention to extend
+its background knowledge and metarules and so learn programs that are
+impossible to learn only from its initial data. Louise can also learn new
+metarules from examples of a learning target. Finally, Louise can perform
+examples invention to extend its set of given examples.
 
 In this manual we show simple examples where Louise is trained on small, "toy"
 problems, designed to demonstrate its use. However, Louise's learning algorithm,
 _Top Program Construction_, is efficient enough to learn very large programs. In
 one of the example datasets included with Louise, a program of more than 2,500
-clauses is learned in under 5 minutes. This is most likely larger than any
-program learned by an ILP system, or indeed by any program learning system, to
-date. 
+clauses is learned in under 5 minutes.
 
 In general, Louise's novelty means that it has so far primarily been applied to
 artificial datasets designed to demonstrate its working principles rather than
 realise its full potential. Work is underway to apply Louise on more challenging
-problems, including more real-world applications. Keep in mind however that
-Louise is maintained by a single PhD student. New developments should be
-expected to come at a leisurely pace.
+problems, including more real-world applications. Keep in mind that Louise is
+maintained by a single PhD student. New developments should be expected to come
+at a leisurely pace.
 
 Capabilities
 ------------
@@ -150,12 +152,47 @@ Here are some of the things that Louise can do.
    Eliminating invented predicates can sometimes improve comprehensibility of
    the learned program.
 
-6. Louise can invent some missing examples. In the following, a single example
-   of the target predicate `path/2` is given, which is insufficient to learn
-   without examples invention, as in the first query. In the second query
-   sufficient examples are invented to learn a full definition of the target
-   predicate. The third query learns with the examples invented with
-   `examples_invention/2`:
+6. Louise can invent new examples. In the following, taken from Akihiro
+   Yamamoto's paper "Which hypotheses can be found with inverse entailment?", a
+   single example of the target predicate `odd/1` is given as well as some
+   background knowledge representing the concept of "even" and a "flattening"
+   predicate, s/2. The elements of the MIL problem are insufficient to learn the
+   target theory proposed by Yamamoto, `odd(X):- s(A,Y), even(Y)`, as shown in
+   the first query. In the second query, a second example of odd/1 is invented,
+   then in the third query Yamamoto's proposed target theory is learned from the
+   invented examples.
+
+   ```prolog
+   % Background Knowledge:
+   % s(s(X),X)
+   % even(0).
+   % even(s(X)):-
+   %         odd(X).
+   % Metarules:
+   % 'P(x):- Q(x,y), R(y)'
+   % Examples:
+   % odd(s(s(s(0)))).
+
+   ?- examples_invention(odd/1).
+   m(odd,s(0)).
+   m(odd,s(s(s(0)))).
+   true.
+
+   ?- learn_with_examples_invention(odd/1).
+   odd(s(s(s(0)))).
+   odd(A):-s(A,B),even(B).
+   true.
+   ```
+
+   See `data/examples/yamamoto.pl` for the `odd/1` example.
+
+   In the following query a greater number of examples is invented. The
+   background knowledge for this MIL problem consists of 6 `edge/2` ground facts
+   that determine the structure of a graph and a few facts of `not_edge`/2 that
+   represent nodes not connected by edges. `path(a,f)` is the single example.
+   Louise invents sufficient examples to learn a correct hypothesis that
+   reprsents the full path from node 'a' to node 'f', without crossing any
+   non-edges.
 
    ```prolog
    ?- learn(path/2).
@@ -344,8 +381,8 @@ steps are described in detail below.
 The predicate `learn/1` implements Louise's default learning setting that learns
 a program one-clause-at-a-time without memory of what was learned before. This
 is limited in that clauses learned in an earlier step cannot be re-used and so
-it's not possible to learn more complex recursive relations, or learn programs
-with mutliple clauses "calling" each other.
+it's not possible to learn programs with mutliple clauses "calling" each other,
+or single recursive clauses that can only be self-resolved.
 
 Louise overcomes this limitation with Dynamic learning, a learning setting where
 programs are learned incrementally: the program learned in each dynamic learning
@@ -356,6 +393,7 @@ background knowledge defined by the user.
 
 The example of learning the `a^nb^n` language in section
 [Capabilities](#capabilities) is an example of learning with dynamic learning.
+The result is a grammar in Prolog's Definite Clause Grammars formalism [DCG].
 Below, we list the steps to run this example yourself. The steps to run this
 example are similar to the steps to run the `ancestor/2` example, only this time
 the learning predicate is `learn_dynamic/1`:
@@ -688,3 +726,35 @@ draft of the manual stored in the file `MAN.md` in the directory `louise/doc`.
 Keep in mind that `MAN.md` is a _draft_ and as such may contain incomplete or
 inaccurate information. On the other hand, it will probably give a general idea
 of how to use Louise and what it can do.
+
+Citing Louise
+-------------
+
+If you wish to use Louise, please cite our work with the reference below:
+
+```bib
+@article{Patsantzis2021,
+author = {Patsantzis, Stassa and Muggleton, Stephen},
+title = {Top Program Construction for Polynomial Meta-Interpretive Learning},
+journal = {Machine Learning},
+year = {2021},
+doi = {https://doi.org/10.1007/s10994-020-05945-w}
+}
+```
+
+Bibliography
+------------
+
+1. S.H. Muggleton, D. Lin, N. Pahlavi, and A. Tamaddoni-Nezhad. _Meta-interpretive learning: application to grammatical inference_. [Machine Learning, 94:25-49, 2014](https://link.springer.com/article/10.1007/s10994-013-5358-3)
+
+2. S.H. Muggleton, D. Lin, and A. Tamaddoni-Nezhad. _Meta-interpretive learning of higher-order dyadic datalog: Predicate invention revisited_. [Machine Learning, 100(1):49-73, 2015](https://link.springer.com/content/pdf/10.1007%2Fs10994-014-5471-y.pdf)
+
+3. S.H. Muggleton. _Inductive Logic Programming_. [New Generation Computing, 8(4):295-318, 1991](https://doi.org/10.1007/BF03037089)
+
+4. S. Patsantzis and S. H. Muggleton. _Top Program Construction for Polynomial-Time Meta-interpretive Learning_. [Machine Learning, 2021](https://link.springer.com/article/10.1007/s10994-020-05945-w)
+
+[(Muggleton et al. 2014)]: https://link.springer.com/article/10.1007/s10994-013-5358-3 "Meta-interpretive learning: application to grammatical inference"
+[(Muggleton et al. 2015)]: https://link.springer.com/content/pdf/10.1007%2Fs10994-014-5471-y.pdf "Meta Interpretive Learning of higher-order dyadic datalog: predicate invention revisited"
+[(Muggleton, 1991)]: https://doi.org/10.1007/BF03037089
+[DCG]:https://en.wikipedia.org/wiki/Definite_clause_grammar
+[(Patsantzis et al.)]: https://link.springer.com/article/10.1007/s10994-020-05945-w
