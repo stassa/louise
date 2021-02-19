@@ -138,6 +138,7 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
 %experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
 %experiment_file('data/examples/tiny_kinship_meta.pl',tiny_kinship_meta).
+%experiment_file('data/examples/yamamoto.pl',yamamoto).
 
 
 %!	learner(?Name) is semidet.
@@ -470,7 +471,7 @@ metarule_learning_limits(none).
 %       should probably be reflected in the name of this option.
 %
 recursion_depth_limit(dynamic_learning,none).
-%recursion_depth_limit(dynamic_learning,50000).
+%recursion_depth_limit(dynamic_learning,5000).
 %recursion_depth_limit(dynamic_learning,100_000).
 %recursion_depth_limit(dynamic_learning,150000).
 %recursion_depth_limit(dynamic_learning,500_000_000_000).
