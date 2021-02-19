@@ -29,7 +29,7 @@ Table of contents
 Overview
 --------
 
-Louise [(Patsantzis et al. 2021)] is a machine learning system that learns
+Louise [(Patsantzis & Muggleton 2021)] is a machine learning system that learns
 Prolog programs.
 
 Louise is based on a new program learning algorithm, called _Top Program
@@ -759,6 +759,6 @@ Bibliography
 
 [(Muggleton et al. 2014)]: https://link.springer.com/article/10.1007/s10994-013-5358-3 "Meta-interpretive learning: application to grammatical inference"
 [(Muggleton et al. 2015)]: https://link.springer.com/content/pdf/10.1007%2Fs10994-014-5471-y.pdf "Meta Interpretive Learning of higher-order dyadic datalog: predicate invention revisited"
-[(Muggleton, 1991)]: https://doi.org/10.1007/BF03037089
-[DCG]:https://en.wikipedia.org/wiki/Definite_clause_grammar
-[(Patsantzis et al.)]: https://link.springer.com/article/10.1007/s10994-020-05945-w
+[(Muggleton, 1991)]: https://doi.org/10.1007/BF03037089 "Inductive Logic Programming"
+[DCG]:https://en.wikipedia.org/wiki/Definite_clause_grammar "Definite Clause Grammars"
+[(Patsantzis & Muggleton 2021)]: https://link.springer.com/article/10.1007/s10994-020-05945-w "Top Program Construction for Polynomial-Time Meta-interpretive Learning"
