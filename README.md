@@ -173,6 +173,10 @@ Here are some of the things that Louise can do.
    % Examples:
    % odd(s(s(s(0)))).
 
+   ?- learn(odd/1).
+   odd(s(s(s(0)))).
+   true.
+
    ?- examples_invention(odd/1).
    m(odd,s(0)).
    m(odd,s(s(s(0)))).
