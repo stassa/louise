@@ -192,10 +192,10 @@ Here are some of the things that Louise can do.
 
    In the following query a greater number of examples is invented. The
    background knowledge for this MIL problem consists of 6 `edge/2` ground facts
-   that determine the structure of a graph and a few facts of `not_edge`/2 that
+   that determine the structure of a graph and a few facts of `not_edge/2` that
    represent nodes not connected by edges. `path(a,f)` is the single example.
    Louise invents sufficient examples to learn a correct hypothesis that
-   reprsents the full path from node 'a' to node 'f', without crossing any
+   represents the full path from node 'a' to node 'f', without crossing any
    non-edges.
 
    ```prolog
