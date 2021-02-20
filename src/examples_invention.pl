@@ -16,6 +16,7 @@ Documentation pending.
 
 */
 
+
 %!	learn_with_examples_invention(+Targets) is det.
 %
 %	Learn a program for one or more Targets with invented examples.
@@ -91,17 +92,17 @@ examples_invention(Ts,Es):-
 %	Invent a new set of positive Examples from a MIL problem.
 %
 examples_invention(Pos,Neg,BK,MS,Es):-
-	partial_examples_(Pos,Es_)
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	partial_examples(Pos,Es_)
+	,encapsulated_problem(Es_,Neg,BK,MS,[Es_e,Neg_,BK_,MS_])
 	% TODO: should Pos also be added in?
 	% LATER: It's included in Es_, no?
 	%,append(Es_,Pos_,Es_Pos)
-	,debug(examples_invention,'Learning with partial examples...',[])
 	%,top_program(Es_Pos,Neg_,BK_,MS_,Ts)
-	,top_program(Es_,Neg_,BK_,MS_,Ts)
+	,debug(examples_invention,'Learning with partial examples...',[])
+	,top_program(Es_e,Neg_,BK_,MS_,Ts)
 	,debug_clauses(examples_invention,'Top Program for partial examples:',Ts)
-	,least_herbrand_model(Pos_,Neg_,BK_,Ts,Es).
-
+	,encapsulated_clauses(Pos,Pos_e)
+	,least_herbrand_model(Pos_e,Neg_,BK_,Ts,Es).
 
 
 %!	partial_examples(+Examples,-Partial) is det.
@@ -118,9 +119,8 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 %	will include two atoms, path(a,X) and path(Y,f), each a partial
 %	example derived from path(a,f).
 %
-partial_examples_(Pos,Es):-
-	generalised_examples(Pos, [], Es_)
-	,encapsulated_clauses(Es_,Es)
+partial_examples(Pos,Es):-
+	generalised_examples(Pos, [], Es)
 	,debug_clauses(examples_invention,'Partial examples',Es).
 
 %!	generalised_examples(+Es,+Acc,-Generalised) is det.
