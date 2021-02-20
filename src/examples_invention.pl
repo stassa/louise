@@ -55,11 +55,11 @@ learn_with_examples_invention(Pos,Neg,BK,MS,Ps):-
 	,debug(examples_invention,'Given and invented examples',[])
 	,debug_clauses(examples_invention,Es)
 	,debug(examples_invention,'Encapsulating problem',[])
-	,encapsulated_problem([],Neg,BK,MS,[[],Neg_,BK_,MS_])
+	,encapsulated_problem(Es,Neg,BK,MS,[Es_,Neg_,BK_,MS_])
 	,debug(examples_invention,'Constructing Top program...',[])
-	,top_program(Es,Neg_,BK_,MS_,Ts)
+	,top_program(Es_,Neg_,BK_,MS_,Ts)
 	,debug(examples_invention,'Reducing Top program',[])
-	,reduced_top_program(Es,BK_,MS_,Ts,Rs)
+	,reduced_top_program(Es_,BK_,MS_,Ts,Rs)
 	,debug(examples_invention,'Excapsulating hypothesis',[])
 	,examples_targets(Pos,Ss)
 	,excapsulated_clauses(Ss,Rs,Ps).
@@ -102,7 +102,9 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 	,top_program(Es_e,Neg_,BK_,MS_,Ts)
 	,debug_clauses(examples_invention,'Top Program for partial examples:',Ts)
 	,encapsulated_clauses(Pos,Pos_e)
-	,least_herbrand_model(Pos_e,Neg_,BK_,Ts,Es).
+	,least_herbrand_model(Pos_e,Neg_,BK_,Ts,Ls)
+	,examples_targets(Pos,Ss)
+	,excapsulated_clauses(Ss,Ls,Es).
 
 
 %!	partial_examples(+Examples,-Partial) is det.
