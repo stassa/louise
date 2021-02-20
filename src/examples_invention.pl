@@ -1,9 +1,13 @@
-:-module(examples_invention, [learn_with_examples_invention/1
+:-module(examples_invention, [learn_with_partial_examples/1
+			     ,learn_with_partial_examples/2
+			     ,learn_with_partial_examples/5
+			     ,learn_with_examples_invention/1
 			     ,learn_with_examples_invention/2
 			     ,learn_with_examples_invention/5
 			     ,examples_invention/1
 			     ,examples_invention/2
 			     ,examples_invention/5
+			     ,partial_examples/2
 			     ]).
 
 :-use_module(src(louise)).
@@ -12,9 +16,96 @@
 
 /** <module> Examples invention.
 
-Documentation pending.
+Predicates in this module learn programs by generalising positive
+examples. A generalised example is entailed by more clauses in the
+Hypothesis Language, therefore more general programs can be learned than
+with a set of fully-ground examples.
+
+Generalising examples of course introduces a risk of learning
+over-general programs. To combat this, negative examples or strictly
+relevant background knowledge and metarules are needed.
+
+There are three groups of predicates defined in this module.
+
+1. learn_with_partial_examples/[1,2,5]
+
+These learning predicates partially generalise examples producing a set
+of atoms of the target predicates where a constant is replaced with a
+variable. For example a positive example p(a,b) yields two partial
+examples, p(X,b) and p(a,Y), etc. learn_with_partial_examples/[1,2,5]
+then learn a Top Program from the set of partial examples. The Top
+Program is reduced _with the original examples_. Reduction with the
+partial examples may be over-strong (because the partial examples may be
+over-general).
+
+2. learn_with_examples_invention/[1,2,5]
+
+These learning predicates first invent a new set of ground examples,
+then learn a Top Program with those examples. The learned Top Program is
+reduced with respect to the learned ground examples.
+
+3. examples_invention/[1,2,5]
+
+These three predicates perform examples invention. To invent examples,
+first a set of partial examples is generated, in the same way described
+in section 1 above. Then, a Top Program is constructed from the partial
+examples. Finally, the Least Herbrand Model of the Top Program for the
+partial examples is derived in a bottom-up fashion. The result is a set
+of ground atoms of the learning targets.
+
+4. partial_examples/2
+
+This predicate is responsible for generalising examples by partially
+variabilising them.
 
 */
+
+
+%!	learn_with_partial_examples(+Targets) is det.
+%
+%	Learn a program from partial examples of a set of Targets.
+%
+learn_with_partial_examples(Ts):-
+	learn_with_partial_examples(Ts,Ps)
+	,print_clauses(Ps).
+
+
+
+%!	learn_with_partial_examples(+Targets,-Program) is det.
+%
+%	Learn a program from partial examples of a set of Targets.
+%
+learn_with_partial_examples(Ts,Ps):-
+	experiment_data(Ts,Pos,Neg,BK,MS)
+	,learn_with_partial_examples(Pos,Neg,BK,MS,Ps).
+
+
+
+%!	learn_with_partial_examples(+Pos,+Neg,+BK,+MS,-Program) is det.
+%
+%	Learn a program from partial examples.
+%
+%	Pos, Neg, BK and MS are the elements of a MIL problem (positive
+%	and negative examples, BK and metarules, respectively).
+%
+%	Positive examples in Pos are generalised by a call to
+%	partial_examples/2. A Top Program is constructed from the
+%	partial examples and reduced _with the original examples_ (lest
+%	it be over-reduced when partial examples are maximally general).
+%
+%	Program is the Top Program learned with partial examples and
+%	reduced with the original, assumed fully ground, examples.
+%
+learn_with_partial_examples(Pos,Neg,BK,MS,Ps):-
+	partial_examples(Pos,Es)
+	,encapsulated_problem(Es,Neg,BK,MS,[Es_e,Neg_,BK_,MS_])
+	,top_program(Es_e,Neg_,BK_,MS_,Ps_)
+	,subtract(Ps_,Es_e,Ps_s)
+	,encapsulated_clauses(Pos,Pos_e)
+	,reduced_top_program(Pos_e,BK_,MS_,Ps_s,Rs)
+	,examples_targets(Pos,Ss)
+	,excapsulated_clauses(Ss,Rs,Ps).
+
 
 
 %!	learn_with_examples_invention(+Targets) is det.
