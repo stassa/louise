@@ -55,7 +55,7 @@ learn_with_examples_invention(Pos,Neg,BK,MS,Ps):-
 	,debug_clauses(examples_invention,Es)
 	,debug(examples_invention,'Encapsulating problem',[])
 	,encapsulated_problem([],Neg,BK,MS,[[],Neg_,BK_,MS_])
-	,debug(examples_invention,'Constructing Top program',[])
+	,debug(examples_invention,'Constructing Top program...',[])
 	,top_program(Es,Neg_,BK_,MS_,Ts)
 	,debug(examples_invention,'Reducing Top program',[])
 	,reduced_top_program(Es,BK_,MS_,Ts,Rs)
@@ -96,25 +96,12 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 	% TODO: should Pos also be added in?
 	% LATER: It's included in Es_, no?
 	%,append(Es_,Pos_,Es_Pos)
+	,debug(examples_invention,'Learning with partial examples...',[])
 	%,top_program(Es_Pos,Neg_,BK_,MS_,Ts)
 	,top_program(Es_,Neg_,BK_,MS_,Ts)
-	,debug(examples_invention,'Generalised partial examples:',[])
-	,debug_clauses(examples_invention,Ts)
-	,flatten([Pos_,Neg_,BK_,Ts], Rs)
-	,lfp_query(Rs,[],As)
-	,examples_targets(Pos, Ss)
-	% Kind of ugly. Can we beautify?
-	,findall(E
-		,(member(T/A,Ss)
-		 ,functor(E,T,A)
-		 )
-		,Fs)
-	,encapsulated_clauses(Fs,Fs_)
-	,setof(E_
-	      ,As^Fs_^(member(E_,Fs_)
-		      ,member(E_,As)
-		      )
-	      ,Es).
+	,debug_clauses(examples_invention,'Top Program for partial examples:',Ts)
+	,least_herbrand_model(Pos_,Neg_,BK_,Ts,Es).
+
 
 
 %!	partial_examples(+Examples,-Partial) is det.
@@ -133,7 +120,8 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 %
 partial_examples_(Pos,Es):-
 	generalised_examples(Pos, [], Es_)
-	,encapsulated_clauses(Es_,Es).
+	,encapsulated_clauses(Es_,Es)
+	,debug_clauses(examples_invention,'Partial examples',Es).
 
 %!	generalised_examples(+Es,+Acc,-Generalised) is det.
 %
@@ -161,3 +149,37 @@ generalised_example(E,Gs):-
 		 ,nth1(I,As_,Ai)
 		 )
 		,Gs).
+
+
+%!	least_herbrand_model(+Pos,+Neg,+BK,+Top,-LHM) is det.
+%
+%	Derive the Least Herbrand Model of a MIL problem.
+%
+%	Pos, Neg, BK are elements of a MIL problem and Top its Top
+%	Program, all encapsulated.
+%
+%	LHM is the LHM of the inputs, evaluated bottom-up (primarily to
+%	avoid infinite recursions- but remember that this guarantee only
+%	holds with datalog, i.e. no functions. With functions, it's
+%	all up in the air) and restricted to atoms of the target
+%	predicates in Pos.
+%
+least_herbrand_model(Pos,Neg,BK,Ts,LHM):-
+	flatten([Pos,Neg,BK,Ts], Ps)
+	,debug_clauses(examples_invention,'Deriving Least Herbrand Model of:',Ps)
+	,lfp_query(Ps,[],As)
+	,debug_clauses(examples_invention,'Derived LHM:',As)
+	,examples_targets(Pos, Ss)
+	% Kind of ugly. Can we beautify?
+	% Restricts LHM to clauses of target preds in As.
+	,findall(E
+		,(member(T/A,Ss)
+		 ,functor(E,T,A)
+		 )
+		,Fs)
+	,encapsulated_clauses(Fs,Fs_)
+	,setof(E_
+	      ,As^Fs_^(member(E_,Fs_)
+		      ,member(E_,As)
+		      )
+	      ,LHM).
