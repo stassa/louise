@@ -95,7 +95,7 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 	partial_examples(Pos,Es_)
 	,encapsulated_problem(Es_,Neg,BK,MS,[Es_e,Neg_,BK_,MS_])
 	% TODO: should Pos also be added in?
-	% LATER: It's included in Es_, no?
+	% LATER: It's not included in Es_.
 	%,append(Es_,Pos_,Es_Pos)
 	%,top_program(Es_Pos,Neg_,BK_,MS_,Ts)
 	,debug(examples_invention,'Learning with partial examples...',[])
