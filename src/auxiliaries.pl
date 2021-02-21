@@ -7,6 +7,9 @@
 		      ,reset_defaults/0
 		      ,set_configuration_option/2
 		       % MIL Problem auxiliaries
+		      ,hypothesis_language/1
+		      ,hypothesis_language/2
+		      ,hypothesis_language/4
 		      ,invented_symbol/3
 		      ,invented_symbol/2
 		      ,invented_symbols/3
@@ -407,6 +410,86 @@ set_configuration_option(N, Vs):-
 % MIL problem auxiliaries
 % ================================================================================
 % Predicates for inspecting and manipulating a MIL problem.
+
+
+%!	hypothesis_language(+Ts) is det.
+%
+%	Generate and print the Hypothesis Language for a MIL problem.
+%
+hypothesis_language(Ts):-
+	hypothesis_language(Ts,Hs)
+	,print_clauses(Hs).
+
+
+
+%!	hypothesis_language(+Ts,-Ls) is det.
+%
+%	Generate and print the Hypothesis Language for a MIL problem.
+%
+hypothesis_language(Ts,Hs):-
+	experiment_data(Ts,Pos,_Neg,BK,MS)
+	,hypothesis_language(Pos,BK,MS,Hs).
+
+
+
+%!	hypothesis_language(+Pos,BK,MS,-Ls) is det.
+%
+%	Generate and print the Hypothesis Language for a MIL problem.
+%
+%	Pos, BK and MS are the positive examples, BK and metarules for a
+%	MIL problem. Ls is a list of all instances of the metarules in
+%	Ms constructible with predicate symbols and constants in Pos and
+%	BK.
+%
+%	Ls is constructed by first generalising all examples in Pos, by
+%	replacing each of their terms with variables. The result is a
+%	set of atoms that are the most general atoms of their
+%	respective predicaets. The set of generalised examples is then
+%	passed to learn/5 with an empty negative examples list. This
+%	generates all clauses that entail any atom of the target
+%	predicates (because they entail the most-general atoms of those
+%	target predicates).
+%
+hypothesis_language(Pos,BK,MS,Hs):-
+	configuration:reduction(R)
+	,configuration:resolutions(S)
+	,generalised_examples(Pos,Gs)
+	,set_configuration_option(reduction,[plotkins])
+	,set_configuration_option(resolutions,[0])
+	,learn(Gs,[],BK,MS,Hs_)
+	,subtract(Hs_,Gs,Hs)
+	,retract(configuration:reduction(plotkins))
+	,retract(configuration:resolutions(0))
+	,set_configuration_option(reduction,[R])
+	,set_configuration_option(resolutions,[S]).
+
+
+%!	generalised_examples(+Examples,-Generalised) is det.
+%
+%	Generalise a set of Examples.
+%
+%	Examples are ground atoms of one or more target predicates.
+%
+%	Generalised is a list of atoms with the symbol and arities of
+%	the atoms in Examples but with fresh variables in place of each
+%	term.
+%
+%	For example:
+%	==
+%	?- generalised_examples([f(a,b), f(a,b,c,d), p(1,2,3,4)], Gs).
+%	Gs = [f(_1722, _1724),f(_1830, _1832, _1834, _1836),p(_1962, _1964, _1966, _1968)].
+%	==
+%
+generalised_examples(Es,Gs):-
+	setof(E_
+	     ,E^Es^F^A^(member(E,Es)
+		       ,functor(E,F,A)
+		       ,functor(E_,F,A)
+		       ,numbervars(E_)
+		       )
+	     ,Gs_)
+	,maplist(varnumbers,Gs_,Gs).
+
 
 
 %!	invented_symbol(+Index,?Arity,?Symbol) is nondet.
