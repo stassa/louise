@@ -38,6 +38,10 @@ Program is reduced _with the original examples_. Reduction with the
 partial examples may be over-strong (because the partial examples may be
 over-general).
 
+Learning with partial examples can produce clauses that entail no
+positive examples. These are removed from the Top Program before
+reductin.
+
 2. learn_with_examples_invention/[1,2,5]
 
 These learning predicates first invent a new set of ground examples,
@@ -101,10 +105,122 @@ learn_with_partial_examples(Pos,Neg,BK,MS,Ps):-
 	,encapsulated_problem(Es,Neg,BK,MS,[Es_e,Neg_,BK_,MS_])
 	,top_program(Es_e,Neg_,BK_,MS_,Ps_)
 	,subtract(Ps_,Es_e,Ps_s)
-	,encapsulated_clauses(Pos,Pos_e)
-	,reduced_top_program(Pos_e,BK_,MS_,Ps_s,Rs)
 	,examples_targets(Pos,Ss)
+	,table_encapsulated(Ss)
+	,encapsulated_clauses(Pos,Pos_e)
+	,remove_null(Ps_s,Pos_e,BK_,Ps_n)
+	,untable_encapsulated(Ss)
+	,reduced_top_program(Pos_e,BK_,MS_,Ps_n,Rs)
 	,excapsulated_clauses(Ss,Rs,Ps).
+
+
+%!	remove_null(+Top,+Pos,+BK,-New_Top) is det.
+%
+%	Remove Top-Null clauses from a Top Program.
+%
+%	Top-Null is the set of clauses in the Hypothesis Language of a
+%	MIL problem that entail 0 positive examples. A Top Program
+%	learned from partially generalised examples, as in
+%	learn_with_partial_examples/5, can include clauses in Top Null.
+%	This predicate removes those clauses to return a Top Program
+%	where each clause entails at least one positive example.
+%
+remove_null(Ts,Pos,BK,Ts_):-
+	assert_program('$remove_null',Ts,Rs_1)
+	,S = assert_program('$remove_null',BK,Rs_2)
+	,G = remove_null_(Ts,Pos,[],Ts_)
+	,C = (forall(member(D,Ts)
+		    ,retractall('$remove_null':D)
+		    )
+	     ,eraseall_program_clauses(Rs_1)
+	     ,eraseall_program_clauses(Rs_2)
+	     )
+	,setup_call_cleanup(S,G,C).
+
+%!	remove_null_(+Top,+Pos,+Acc,-New) is det.
+%
+%	Business end of remove_null/4.
+%
+remove_null_([],_,Acc,Ts):-
+	!
+       ,reverse(Acc,Ts).
+remove_null_([C|Ts],Pos,Acc,Bind):-
+	retract('$remove_null':C)
+	,debug_clauses(remove_null,'Retracted clause',[C])
+	,\+ prove_examples(Pos)
+	,!
+	,assert('$remove_null':C)
+	,debug_clauses(remove_null,'Re-asserted clause',[C])
+	,remove_null_(Ts,Pos,[C|Acc],Bind).
+remove_null_([C|Ts],Pos,Acc,Bind):-
+	debug_clauses(remove_null,'Leaving clause out',[C])
+	,remove_null_(Ts,Pos,Acc,Bind).
+
+
+%!	prove_examples(+Pos) is det.
+%
+%	Prove a set of positive examples against a Top Program.
+%
+prove_examples([]):-
+	!.
+prove_examples([E|Pos]):-
+% Not strictly necessary eh?
+% But we may end up calling this with generalised examples...
+	copy_term(E, E_)
+	,debug_clauses(remove_null,'Proving example',[E_])
+	,call('$remove_null':E_)
+	,debug_clauses(remove_null,'Proved example',[E_])
+	,prove_examples(Pos).
+
+
+%!	table_encapsulated(+Targets) is det.
+%
+%	Table each target predicate defined in a Top Program.
+%
+%	Targets is the set of predicate symbols and arities of the
+%	learning targets defined in a Top Program learned from partial
+%	examples.
+%
+%	Variant of dynamic_learning:table_encapsulated/1 that also
+%	declares target predicates dynamic and incremental, allowing
+%	incremental tables to be updated when a tabled predicate depends
+%	on itself.
+%
+%	The motivation for this is that if we have a target predicate
+%	f/2 in Top and this is defined in terms of itself, tabled
+%	execution will store the first set of resulst returned from the
+%	first query to an example of f/2, then continue returning the
+%	same result _even when we remove clauses of Top from the dynamic
+%	database_. This would completely defeat the purpose of removing
+%	clauses to test their necessity to the Top Program's
+%	correctness. Declaring target predicates as dynamic and
+%	incremental forces Swi-Prolog's tabling mechanism to re-evaluate
+%	tables when a clause of the Top Program is added to or removed
+%	from the dynamic database during execution of remove_null_/4.
+%
+table_encapsulated(Ts):-
+	forall(member(_F/A,Ts)
+	      ,(succ(A,A_)
+	       ,table('$remove_null':m/A_ as incremental)
+	       ,(dynamic(['$remove_null':m/A_], [incremental(true)]))
+	       ,debug_clauses(remove_null,'Tabled predicate',[m/A_])
+	       )
+	      ).
+
+
+%!	untable_encapsulated(+Targets) is det.
+%
+%	Untable tabled predicates of learning targets in a Top Program.
+%
+%	Counterpart of table_encapsulated/1.
+%
+untable_encapsulated(Ts):-
+	forall(member(_F/A,Ts)
+	      ,(succ(A,A_)
+	       ,untable('$remove_null':m/A_)
+	       ,debug_clauses(remove_null,'Untabled predicate',[m/A_])
+	       )
+	      ).
 
 
 

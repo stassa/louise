@@ -36,6 +36,7 @@
 		       % Database auxiliaries
 		      ,assert_program/3
 		      ,erase_program_clauses/1
+		      ,eraseall_program_clauses/1
 		       % Experiment file auxiliaries
 		      ,cleanup_experiment/0
 		      ,experiment_data/5
@@ -1867,6 +1868,25 @@ erase_program_clauses([]):-
 erase_program_clauses([Ref|Rs]):-
 	erase(Ref)
 	,erase_program_clauses(Rs).
+
+
+
+%!	eraseall_program_clauses(+Refs) is det.
+%
+%	retractall-like clause erasure.
+%
+%	"Retractall-like" in the sense that if a reference in Refs is
+%	now found, this doesn't fail and simply continues with the next
+%	reference.
+%
+eraseall_program_clauses([]):-
+	!.
+eraseall_program_clauses([Ref|Rs]):-
+	erase(Ref)
+	,!
+	,eraseall_program_clauses(Rs).
+eraseall_program_clauses([_Ref|Rs]):-
+	eraseall_program_clauses(Rs).
 
 
 
