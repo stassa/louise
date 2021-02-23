@@ -128,33 +128,35 @@ learn_with_partial_examples(Pos,Neg,BK,MS,Ps):-
 remove_null(Ts,Pos,BK,Ts_):-
 	assert_program('$remove_null',Ts,Rs_1)
 	,S = assert_program('$remove_null',BK,Rs_2)
-	,G = remove_null_(Ts,Pos,[],Ts_)
-	,C = (forall(member(D,Ts)
-		    ,retractall('$remove_null':D)
-		    )
-	     ,eraseall_program_clauses(Rs_1)
+	,G = remove_null_(Ts,Pos,[],Ts_,[],Rs_3)
+	,C = (eraseall_program_clauses(Rs_1)
 	     ,eraseall_program_clauses(Rs_2)
+	     ,eraseall_program_clauses(Rs_3)
 	     )
 	,setup_call_cleanup(S,G,C).
 
-%!	remove_null_(+Top,+Pos,+Acc,-New) is det.
+%!	remove_null_(+Top,+Pos,+Acc,Acc_Refs,-New,-Refs) is det.
 %
 %	Business end of remove_null/4.
 %
-remove_null_([],_,Acc,Ts):-
+%	Acc_Refs is the accumulator of clause references of re-asserted
+%	clauses. Refs is the output variable. These are needed to clean
+%	up the dynamic database after manipulating it. Evil.
+%
+remove_null_([],_,Acc_Ts,Ts,Rs,Rs):-
 	!
-       ,reverse(Acc,Ts).
-remove_null_([C|Ts],Pos,Acc,Bind):-
+       ,reverse(Acc_Ts,Ts).
+remove_null_([C|Ts],Pos,Acc_Ts,Bind_Ts,Acc_Rs,Bind_Rs):-
 	retract('$remove_null':C)
 	,debug_clauses(remove_null,'Retracted clause',[C])
 	,\+ prove_examples(Pos)
 	,!
-	,assert('$remove_null':C)
+	,assert('$remove_null':C, R)
 	,debug_clauses(remove_null,'Re-asserted clause',[C])
-	,remove_null_(Ts,Pos,[C|Acc],Bind).
-remove_null_([C|Ts],Pos,Acc,Bind):-
+	,remove_null_(Ts,Pos,[C|Acc_Ts],Bind_Ts,[R|Acc_Rs],Bind_Rs).
+remove_null_([C|Ts],Pos,Acc_Ts,Bind_Ts,Acc_Rs,Bind_Rs):-
 	debug_clauses(remove_null,'Leaving clause out',[C])
-	,remove_null_(Ts,Pos,Acc,Bind).
+	,remove_null_(Ts,Pos,Acc_Ts,Bind_Ts,Acc_Rs,Bind_Rs).
 
 
 %!	prove_examples(+Pos) is det.
