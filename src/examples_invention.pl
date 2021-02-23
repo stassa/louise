@@ -106,15 +106,13 @@ learn_with_partial_examples(Pos,Neg,BK,MS,Ps):-
 	,top_program(Es_e,Neg_,BK_,MS_,Ps_)
 	,subtract(Ps_,Es_e,Ps_s)
 	,examples_targets(Pos,Ss)
-	,table_encapsulated(Ss)
 	,encapsulated_clauses(Pos,Pos_e)
-	,remove_null(Ps_s,Pos_e,BK_,Ps_n)
-	,untable_encapsulated(Ss)
+	,remove_null(Ps_s,Pos_e,BK_,Ss,Ps_n)
 	,reduced_top_program(Pos_e,BK_,MS_,Ps_n,Rs)
 	,excapsulated_clauses(Ss,Rs,Ps).
 
 
-%!	remove_null(+Top,+Pos,+BK,-New_Top) is det.
+%!	remove_null(+Top,+Pos,+BK,+Symbols,-New_Top) is det.
 %
 %	Remove Top-Null clauses from a Top Program.
 %
@@ -125,13 +123,19 @@ learn_with_partial_examples(Pos,Neg,BK,MS,Ps):-
 %	This predicate removes those clauses to return a Top Program
 %	where each clause entails at least one positive example.
 %
-remove_null(Ts,Pos,BK,Ts_):-
+%	Symbols is the set of predicate symbols in Pos, used to table
+%	and untable encapsulated examples.
+%
+remove_null(Ts,Pos,BK,Ss,Ts_):-
 	assert_program('$remove_null',Ts,Rs_1)
-	,S = assert_program('$remove_null',BK,Rs_2)
+	,S = (assert_program('$remove_null',BK,Rs_2)
+	     ,table_encapsulated(Ss)
+	     )
 	,G = remove_null_(Ts,Pos,[],Ts_,[],Rs_3)
 	,C = (eraseall_program_clauses(Rs_1)
 	     ,eraseall_program_clauses(Rs_2)
 	     ,eraseall_program_clauses(Rs_3)
+	     ,untable_encapsulated(Ss)
 	     )
 	,setup_call_cleanup(S,G,C).
 
