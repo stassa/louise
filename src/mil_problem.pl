@@ -247,7 +247,7 @@ encapsulated_bk(BK,Es):-
 %	Hide programs in the BK's Closure from the learning process.
 %
 %	Encapsulating the clauses of predicates in the BK and predicates
-%	in the closure of predicates in the BKusing the same
+%	in the closure of predicates in the BK using the same
 %	encapsulation predicate makes it impossible to separate the
 %	symbols in the BK, that should be used in the clauses of a
 %	hypothesis, from the symbols in the BK's closure, that should
@@ -285,12 +285,6 @@ hide_bk_closure(Cs,PS,Cs_):-
 %!	hide_bk_closure(+Closure,+Signature,+Acc,-Hidden) is det.
 %
 %	Business end of hide_bk_closure/3.
-%
-%	@tbd This sorts the lists of clauses in the end - why? Is it to
-%	remove duplicate clauses? That wouldn't work given that they're
-%	probably not ground. Is it to order clauses in a standard
-%	order? But that would change the semantics of a program. What's
-%	up?
 %
 hide_bk_closure([],_PS,Acc,Cs):-
 	!
