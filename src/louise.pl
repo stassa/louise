@@ -172,6 +172,8 @@ generalise(Pos,MS,Ss_Pos):-
 	     ,(member(M,MS)
 	      ,copy_term(M,M_)
 	      ,member(Ep,Pos)
+	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
+	      ,debug_clauses(metasubstitution,'Instantiating metarule:',M)
 	      ,metasubstitution(Ep,M_,H)
 	      ,constraints(H)
 	      )
@@ -193,6 +195,8 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 	     ,H^M^Ss_Pos^En^Neg^
 	      (member(H-M,Ss_Pos)
 	      ,\+((member(En,Neg)
+		  ,debug_clauses(metasubstitution,'Negative example:',En)
+		  ,debug_clauses(metasubstitution,'Instantiated metarule:',H)
 		  ,metasubstitution(En,M,H)
 		  )
 		 )
@@ -211,11 +215,11 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	form :-Example).
 %
 metasubstitution(E,M,Sub):-
-	bind_head_literal(E,M,(Sub:-(_H,Ls)))
+	bind_head_literal(E,M,(Sub:-(H,Ls)))
+	,debug_clauses(metasubstitution,'Bound head literal:',H)
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,user:call(Ls)
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
-
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
 %
