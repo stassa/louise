@@ -164,13 +164,13 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 %	----------
 %
 %	Tabling the predicates encapsulating each learning target is a
-%	very convenient way to avoid entering infinite recursion during
-%	dynamic learning. Because dynamic learning adds to the dynamic
-%	database clauses of the Top program learned in a previous
-%	iteration, so that they may be called in subsequent iterations,
-%	if a recursive clause is added to the dynamic database before a
-%	suitable "base case" for the recursion is added, it's likely
-%	that the learning procedure will enter an infinite recursion.
+%	convenient way to avoid entering an infinite recursion when a
+%	left-recursive clause of a target predicate is added to the
+%	background knowledge. Because dynamic learning adds to the
+%	dynamic database clauses of the Top program learned in a
+%	previous iteration, so that they may be called in subsequent
+%	iterations, if a left-recursive clause is added to the dynamic
+%	database the learning procedure can enter an infinite recursion.
 %	Tabling, a.k.a. SLG resolution, avoids this and guarantees
 %	termination by precomputing the result of recursive calls and
 %	storing them in a table, so that execution does not have to
@@ -181,10 +181,18 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 %	works as intended. If tabling changes, this may have to change
 %	also.
 %
+%	@tbd Encapsulation predicates are probably best defined as
+%	incremental and declared dynamic and incremental, since multiple
+%	clauses of them may be added to the program database during
+%	learning. Declaring predicates as incremental tells the tabling
+%	mechanism to update a table whenever a tabled predicate's
+%	definition changes. This may not be a perfect solution.
+%
 table_encapsulated(Ts):-
 	forall(member(_F/A,Ts)
 	      ,(succ(A,A_)
-	       ,table(user:m/A_)
+	       ,table(user:m/A_ as incremental)
+	       ,(dynamic([user:m/A_], [incremental(true)]))
 	       )
 	      ).
 
