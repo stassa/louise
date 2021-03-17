@@ -453,16 +453,20 @@ hypothesis_language(Ts,Hs):-
 %
 hypothesis_language(Pos,BK,MS,Hs):-
 	configuration:reduction(R)
-	,configuration:resolutions(S)
+	,configuration:resolutions(N)
 	,generalised_examples(Pos,Gs)
-	,set_configuration_option(reduction,[plotkins])
-	,set_configuration_option(resolutions,[0])
-	,learn(Gs,[],BK,MS,Hs_)
-	,subtract(Hs_,Gs,Hs)
-	,retract(configuration:reduction(plotkins))
-	,retract(configuration:resolutions(0))
-	,set_configuration_option(reduction,[R])
-	,set_configuration_option(resolutions,[S]).
+	,S = (set_configuration_option(reduction,[plotkins])
+	     ,set_configuration_option(resolutions,[0])
+	     )
+	,G = (learn(Gs,[],BK,MS,Hs_)
+	     ,subtract(Hs_,Gs,Hs)
+	     )
+	,C = (retract(configuration:reduction(plotkins))
+	     ,retract(configuration:resolutions(0))
+	     ,set_configuration_option(reduction,[R])
+	     ,set_configuration_option(resolutions,[N])
+	     )
+	,setup_call_cleanup(S,G,C).
 
 
 %!	generalised_examples(+Examples,-Generalised) is det.
