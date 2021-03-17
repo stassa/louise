@@ -184,11 +184,9 @@ symbols_metarules(Ss,M,MS):-
 %	metasubstitution atom of the encapsulated metarule.
 %
 program_metarules(Ps, MS):-
-	% Avoid Skolemising program variables with numbervars/1 in setof/3 call.
-	copy_term(Ps, Ps_)
-	,(   encapsulated(Ps_)
-	->  Es = Ps_
-	;   encapsulated_clauses(Ps_, Es)
+	(   encapsulated(Ps)
+	->  Es = Ps
+	;   encapsulated_clauses(Ps, Es)
 	)
 	,lifted_program(Es,Ls)
 	,setof(A:-(H,B)

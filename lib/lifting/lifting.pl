@@ -223,9 +223,14 @@ lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 	memberchk(T,Es)
 	,!
 	,lifted_terms(I, J, Ts, Es, [T|Acc], Bind).
-lifted_terms(I,J,['$VAR'(K)|Ts],Es,Acc,Bind):-
-% TODO: When is this ^^ ever the case?
-	!
+lifted_terms(I,J,[T|Ts],Es,Acc,Bind):-
+% T is an already-skolemised term.
+         lifting_configuration:lift_skolemised(false)
+        ,compound(T)
+	,ground(T)
+	,functor(T,'$VAR',1)
+	,T = '$VAR'(K)
+	,!
 	,lifted_terms(I,J,Ts,Es,['$VAR'(K)|Acc],Bind).
 lifted_terms(I, J, [T|Ts], Es, Acc, Bind):-
 % T is a compound term and may need to be lifted recursively.
