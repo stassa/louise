@@ -3,7 +3,7 @@
 		      ,metarule_expansion/2
 		      ,encapsulated/1
 		      ,encapsulated_problem/5
-		      ,encapsulated_bk/2
+		      ,encapsulated_bk/3
 		      ,examples_targets/2
 		      ,encapsulated_clauses/2
 		      ,applied_metarules/3
@@ -209,22 +209,28 @@ encapsulated(Ts):-
 %	@tbd Encapsulated forms need documentation.
 %
 encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
-	encapsulated_bk(BK,BK_)
+	examples_targets(Pos, Ss)
+	,encapsulated_bk(BK,Ss,BK_)
 	,expanded_metarules(MS,MS_)
 	,encapsulated_clauses(Pos,Pos_)
 	,encapsulated_clauses(Neg,Neg_).
 
 
-
-%!	encapsulated_bk(+Background,-Encapsulated) is det.
+%!	encapsulated_bk(+Background,+Symbols,-Encapsulated) is det.
 %
 %	Encapsulate a list of Background definitions.
 %
-encapsulated_bk(BK,BK):-
+%	Symbols is the set of predicate symbols of target predicates
+%	(including invented predicates), used to ensure clauses of
+%	target predicates in the closure of BK predicates are
+%	encapsulated as target predicates, with functor m, and not as BK
+%	auxiliaries with functor p.
+%
+encapsulated_bk(BK,_Ss,BK):-
 % Already encapsulated.
 	encapsulated(BK)
 	,!.
-encapsulated_bk(BK,Es):-
+encapsulated_bk(BK,Ts,Es):-
 	(   closure(BK, user, Ps)
 	 ->  true
 	 % Added to avoid errors in Swi 8.2.1
@@ -239,7 +245,8 @@ encapsulated_bk(BK,Es):-
 		)
 	       ,Es_)
 	,flatten(Es_, Fs)
-	,hide_bk_closure(Fs,BK,Es).
+	,predicate_signature(Ts,Ss)
+	,hide_bk_closure(Fs,Ss,Es).
 
 
 %!	hide_bk_closure(+Closure,+Signature,-Hidden) is det.
