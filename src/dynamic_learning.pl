@@ -188,6 +188,11 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 %	mechanism to update a table whenever a tabled predicate's
 %	definition changes. This may not be a perfect solution.
 %
+%	@tbd The predicates in the closure of the BK may need to be
+%	tabled also, even though they are not actually to be modified.
+%	This would relax the requirement on the BK that it must
+%	terminate.
+%
 table_encapsulated(Ts):-
 	forall(member(_F/A,Ts)
 	      ,(succ(A,A_)
