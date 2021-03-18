@@ -2,7 +2,6 @@
                      ,metarules/2
                      ,positive_example/2
                      ,negative_example/2
-                     ,f/2
                      ]).
 
 :-use_module(configuration).
@@ -37,11 +36,16 @@ following configuration options:
 ?- list_config.
 example_clauses(call)
 experiment_file(data/examples/multi_pred.pl,multi_pred)
+generalise_learned_metarules(true)
+generalised_examples(fully)
+learned_metarules_printing(pretty)
 learner(louise)
 max_invented(1)
+metarule_learning_limits(none)
 minimal_program_size(2,inf)
-recursion_depth_limit(dynamic_learning,500)
+recursion_depth_limit(dynamic_learning,none)
 recursive_reduction(false)
+reduce_learned_metarules(false)
 reduction(plotkins)
 resolutions(5000)
 symbol_range(predicate,[P,Q,R,S,T])
@@ -59,8 +63,8 @@ perform multi-predicate learning.
 ==
 ?- learn([even/1,odd/1]).
 even(0).
-even(A):-f(A,B),odd(B).
-odd(A):-f(A,B),even(B).
+even(A):-pred(A,B),odd(B).
+odd(A):-pred(A,B),even(B).
 true.
 ==
 
@@ -86,14 +90,14 @@ vice-versa, using dynamic learning:
 ==
 ?- learn_dynamic(even/1).
 even(0).
-'$1'(A):-f(A,B),even(B).
-even(A):-f(A,B),'$1'(B).
+'$1'(A):-pred(A,B),even(B).
+even(A):-pred(A,B),'$1'(B).
 true.
 
 ?- learn_dynamic(odd/1).
-odd(s(0)).
-'$1'(A):-f(A,B),odd(B).
-odd(A):-f(A,B),'$1'(B).
+'$1'(A):-pred(A,B),odd(B).
+odd(A):-pred(A,B),'$1'(B).
+'$1'(0).
 true.
 ==
 
@@ -101,8 +105,8 @@ In fact, dynamic learning is necessary to learn even with
 multi-predicate learning, if sufficient examples are not needed.
 
 Suppose that instead of {even(0), odd(s(0)), even(s^2(0)), odd(s^3(0))}
-we give as examples {even(0), odd(s(0)), even(s^2(0)), odd(s^3(0))}, so
-that now there is, e.g. no even predecessor of the only odd/1 example,
+we give as examples {even(0), odd(s(0)), even(s^2(0)), odd(s^5(0))}, so
+that now there is no even predecessor of the only odd/1 example,
 s^5(0):
 
 ==
@@ -121,7 +125,8 @@ Negative examples
 
 Background knowledge
 --------------------
-m(f,A,B):-A=..[C,B].
+m(pred,s(0),0).
+m(pred,s(A),s(B)):-m(pred,A,B).
 
 Metarules
 ---------
@@ -148,45 +153,19 @@ Dynamic learning instead invents an intensional definition of odd/1 (as
 ==
 ?- learn_dynamic([even/1,odd/1]).
 even(0).
-'$1'(A):-f(A,B),even(B).
-even(A):-f(A,B),'$1'(B).
-odd(A):-f(A,B),even(B).
+'$1'(A):-pred(A,B),even(B).
+even(A):-pred(A,B),'$1'(B).
+odd(A):-pred(A,B),even(B).
 true.
 ==
 
+6. abduce_unit metarule
 
-6. Background knowledge
-
-The only predicate defined as background knowledge in this experiment
-file is f/2, a "function evaluation" predicate that takes as the first
-argument a Prolog "function" and binds to the second argument the
-function's output value. The word "function" is in scare quotes because
-Prolog doesn't really have a formal concept of "function". More to the
-point, Prolog doesn't enforce separate alphabets for function and
-predicate symbols, which means that predicate atoms and functions, that
-are syntactically identical, cannot be distinguished. For example, in
-the following we may suspect that "f(x)" is a function but only because
-of function naming conventions ("f"):
-
-==
-p(x):- r(f(x)).
-==
-
-We might observe that if f/1 has a definition, then it's a predicate.
-But if it has no definition- is it a predicate, or is it a function?
-
-In any case, Louise does not allow function symbols in metarules and in
-order to evaluate a function, a helper predicate is needed- in this
-case, f/2.
-
-
-7. abduce_unit metarule
-
-Note that the abduce_unit metarule, P(X), used below is not strictly
-necessary. Without it, Louise learns the same programs listed above. The
-difference is that the base-case of each recursive program, e.g.
-even(0), odd(s(0)), etc, are actually examples that are not entailed by
-the rest of the program (a.k.a. "atomic residue").
+The abduce_unit metarule, P(X), used below is not strictly necessary.
+Without it, Louise learns the same programs listed above. The difference
+is that the base-case of each recursive program, e.g. even(0),
+odd(s(0)), etc, are actually examples that are not entailed by the rest
+of the program (a.k.a. "atomic residue").
 
 This is possible to see by turning on debugging in the configuration
 module. Uncomment the following lines:
@@ -206,20 +185,27 @@ Then call learn/1 on the multi-predicate problem:
 % m(abduce_unit,even,s(s(0)))-(m(abduce_unit,A,B):-m(A,B)).
 % m(abduce_unit,odd,s(0))-(m(abduce_unit,A,B):-m(A,B)).
 % m(abduce_unit,odd,s(s(s(0))))-(m(abduce_unit,A,B):-m(A,B)).
-% m(postcon_unit,even,f,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
-% m(postcon_unit,odd,f,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,even,pred,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,odd,pred,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
 % Specialised Top program
-% m(abduce_unit,even,0).
-% m(abduce_unit,even,s(s(0))).
-% m(abduce_unit,odd,s(0)).
-% m(abduce_unit,odd,s(s(s(0)))).
-% m(postcon_unit,even,f,odd).
-% m(postcon_unit,odd,f,even).
+% m(abduce_unit,even,0)-(m(abduce_unit,A,B):-m(A,B)).
+% m(abduce_unit,even,s(s(0)))-(m(abduce_unit,A,B):-m(A,B)).
+% m(abduce_unit,odd,s(0))-(m(abduce_unit,A,B):-m(A,B)).
+% m(abduce_unit,odd,s(s(s(0))))-(m(abduce_unit,A,B):-m(A,B)).
+% m(postcon_unit,even,pred,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,odd,pred,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% Applied metarules
+% m(even,0).
+% m(even,s(s(0))).
+% m(odd,s(0)).
+% m(odd,s(s(s(0)))).
+% m(even,A):-m(pred,A,B),m(odd,B).
+% m(odd,A):-m(pred,A,B),m(even,B).
 % Reducing Top program...
 % Excapsulating hypothesis
 even(0).
-even(A):-f(A,B),odd(B).
-odd(A):-f(A,B),even(B).
+even(A):-pred(A,B),odd(B).
+odd(A):-pred(A,B),even(B).
 true.
 ==
 
@@ -228,8 +214,30 @@ metasubstitutions of abduce_unit. Now, remove abduce_unit from the
 metarules of the two target predicates:
 
 ==
-metarules(even/1,[postcon_unit]).
-metarules(odd/1,[postcon_unit]).
+?- list_encapsulated_problem([odd/1,even/1]).
+Positive examples
+-----------------
+m(odd,s(0)).
+m(odd,s(s(s(0)))).
+m(even,0).
+m(even,s(s(0))).
+
+Negative examples
+-----------------
+:-m(odd,0).
+:-m(odd,s(s(0))).
+:-m(even,s(0)).
+:-m(even,s(s(s(0)))).
+
+Background knowledge
+--------------------
+m(pred,s(0),0).
+m(pred,s(A),s(B)):-m(pred,A,B).
+
+Metarules
+---------
+m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E).
+true.
 ==
 
 And call learn/1 again:
@@ -239,16 +247,19 @@ And call learn/1 again:
 % Constructing Top program...
 % Constructing Top program...
 % Generalised Top program
-% m(postcon_unit,even,f,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
-% m(postcon_unit,odd,f,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,even,pred,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,odd,pred,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
 % Specialised Top program
-% m(postcon_unit,even,f,odd).
-% m(postcon_unit,odd,f,even).
+% m(postcon_unit,even,pred,odd)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% m(postcon_unit,odd,pred,even)-(m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E)).
+% Applied metarules
+% m(even,A):-m(pred,A,B),m(odd,B).
+% m(odd,A):-m(pred,A,B),m(even,B).
 % Reducing Top program...
 % Excapsulating hypothesis
 even(0).
-even(A):-f(A,B),odd(B).
-odd(A):-f(A,B),even(B).
+even(A):-pred(A,B),odd(B).
+odd(A):-pred(A,B),even(B).
 true.
 ==
 
@@ -258,20 +269,22 @@ atom of even/1 is kept in the output. That is because it can't be
 reduced by Plotkin's algorithm, since it is not entailed by the rest of
 the learned program.
 
-
 */
 
 configuration:postcon_unit metarule 'P(x):- Q(x,y), R(y)'.
 configuration:abduce_unit metarule 'P(X)'.
 
-background_knowledge(even/1, [f/2]).
-background_knowledge(odd/1, [f/2]).
+background_knowledge(even/1, [pred/2]).
+background_knowledge(odd/1, [pred/2]).
 
 metarules(even/1,[postcon_unit,abduce_unit]).
 metarules(odd/1,[postcon_unit,abduce_unit]).
+%metarules(even/1,[postcon_unit]).
+%metarules(odd/1,[postcon_unit]).
 
 positive_example(even/1,even(X)):-
         member(X,[0,s(s(0))]).
+        %member(X,[s(s(0))]).
 positive_example(odd/1,odd(X)):-
         member(X,[s(0),s(s(s(0)))]).
         %member(X,[s(s(s(s(s(0)))))]).
@@ -281,22 +294,16 @@ negative_example(even/1,even(X)):-
         %member(X,[s(s(s(s(s(0)))))]).
 negative_example(odd/1,odd(X)):-
         member(X,[0,s(s(0))]).
+        %member(X,[s(s(0))]).
 
 
-%!      f(+Function,?Value) is nondet.
+%!      pred(?N,?M) is nondet.
 %
-%       The output Value of a Function.
+%       True when N is a predecessor of M.
 %
-%       Uses =../2 to decompose Function into a functor and single
-%       argument (i.e. assumes each "function" has exactly one return
-%       Value).
+%       N and M are natural numbers in peano notation: 0, s(0), s(s(0)),
+%       s(s(s(0))), ... etc.
 %
-%       Example:
-%       ==
-%       ?- F = s(s(0)), multi_pred:f(F, V).
-%       F = s(s(0)),
-%       V = s(0).
-%       ==
-%
-f(F,V):-
-        F =.. [_F|[V]].
+pred(s(0),0).
+pred(s(A),s(B)):-
+        pred(A,B).
