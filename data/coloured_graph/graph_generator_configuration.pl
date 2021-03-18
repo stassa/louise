@@ -52,9 +52,9 @@ mislabelling_probability(0.2).
 %       One of: [no_noise, ambiguities, false_positives,
 %       false_negatives].
 %
-%mislabelling_type(no_noise).
+mislabelling_type(no_noise).
 %mislabelling_type(ambiguities).
-mislabelling_type(false_positives).
+%mislabelling_type(false_positives).
 %mislabelling_type(false_negatives).
 
 
