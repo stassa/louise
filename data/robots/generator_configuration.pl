@@ -17,6 +17,8 @@
 %	Use to generate grids for positive examples.
 %
 experiment_world(empty_world).
+%experiment_world(simple_world).
+%experiment_world(obstacles_world).
 
 
 %!	world_dimensions(?Width,?Height) is semidet.
@@ -25,7 +27,8 @@ experiment_world(empty_world).
 %
 %	Used to generate examples for robot navigation plans.
 %
-world_dimensions(4,4).
+world_dimensions(2,2).
+%world_dimensions(4,4).
 
 
 %!	output_directory(?Root) is semidet.
@@ -73,3 +76,5 @@ symbol(floor,_,.).
 exported_moves(empty_world,[move_right/2,move_left/2,move_up/2,move_down/2]).
 exported_moves(simple_world,[move_right/2,move_left/2,move_up/2,move_down/2
                             ,pick_up/2,put_down/2]).
+exported_moves(obstacles_world,[move_right/2,move_left/2,move_up/2,move_down/2
+                               ,pick_up/2,put_down/2]).

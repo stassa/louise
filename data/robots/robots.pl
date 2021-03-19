@@ -22,6 +22,20 @@
 		 ,move_down_then_left/2
 		 ]).
 
+
+/*                       ++++++ WARNING: ++++++++
+
+For Swi-Prolog versions after 8.3.1*, the following query must be called
+at the Swi command line before calling a learning predicate, else errors
+will be raised:
+
+
+?- use_module(src(experiment_file)).
+
+
+A more permanent solution is in the works.
+*/
+
 :-use_module(configuration).
 :-use_module(src(auxiliaries)).
 :-use_module(render).
@@ -32,6 +46,7 @@
 % Stops Swi from raising exception on move/2. No idea why.
 :- dataset_file_name(_,Fn)
   ,reexport(Fn).
+
 
 /* % Uncomment to work on a new dataset or debuggin of tasks.
 :-edit(world).
@@ -80,6 +95,12 @@ background_knowledge(move/2, [% Move primitives
 			     ,move_left/2
 			     ,move_up/2
 			     ,move_down/2
+			     % Uncomment when training in worlds where the
+			     % agent must manipulate an object, i.e.
+			     % simple_world and obstacles_world
+			     % TODO: make this addition automatic, maybe?
+			     %,pick_up/2
+			     %,put_down/2
 			      % Higher-order actions - multi-moves
 			     ,double_move/3
 			     ,triple_move/3

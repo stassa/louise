@@ -174,6 +174,17 @@ nondeterministic_world(simple_world,W,H,[R,B,G,HB,W-H]):-
 	,object_coordinates(nondet,W,H,B)
 	,object_coordinates(nondet,W,H,G)
 	,holds_ball(nondet,R,B,HB).
+nondeterministic_world(obstacles_world,W,H,[R,B,O,G,HB,W-H]):-
+	object_coordinates(nondet,W,H,R)
+	,object_coordinates(nondet,W,H,B)
+	,object_coordinates(nondet,W,H,G)
+	,object_coordinates(nondet,W,H,O)
+	% The goal can't be on the obstacle
+	% or the robot will never get there.
+	,G \= O
+	% Neither can the ball
+	,B \= O
+	,holds_ball(nondet,R,B,HB).
 
 
 %!	random_world(+Width,+Height,-World) is det.

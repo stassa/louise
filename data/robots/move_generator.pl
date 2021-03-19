@@ -525,6 +525,11 @@ move_right([R,B,_G,HB,W-H],move_right([R,B,G,HB,W-H],[R_new,B_new,G,HB,W-H])):-
 	,move(R,+,1/0,W-H,R_new)
 	,with_the_ball(R,B,R_new,HB,B_new)
 	,G = '$VAR'('G').
+move_right([R,B,O,_G,HB,W-H],move_right([R,B,O,G,HB,W-H],[R_new,B_new,O,G,HB,W-H])):-
+	!
+	,move_unobstructed(R,+,1/0,O,W-H,R_new)
+	,with_the_ball(R,B,R_new,HB,B_new)
+	,G = '$VAR'('G').
 
 
 %!	move_left(+State, -Move) is det.
@@ -538,6 +543,11 @@ move_left([R,_G,W-H],move_left([R,G,W-H],[R_new,G,W-H])):-
 move_left([R,B,_G,HB,W-H],move_left([R,B,G,HB,W-H],[R_new,B_new,G,HB,W-H])):-
 	!
 	,move(R,-,1/0,W-H,R_new)
+	,with_the_ball(R,B,R_new,HB,B_new)
+	,G = '$VAR'('G').
+move_left([R,B,O,_G,HB,W-H],move_left([R,B,O,G,HB,W-H],[R_new,B_new,O,G,HB,W-H])):-
+	!
+	,move_unobstructed(R,-,1/0,O,W-H,R_new)
 	,with_the_ball(R,B,R_new,HB,B_new)
 	,G = '$VAR'('G').
 
@@ -555,6 +565,11 @@ move_up([R,B,_G,HB,W-H],move_up([R,B,G,HB,W-H],[R_new,B_new,G,HB,W-H])):-
 	,move(R,+,0/1,W-H,R_new)
 	,with_the_ball(R,B,R_new,HB,B_new)
 	,G = '$VAR'('G').
+move_up([R,B,O,_G,HB,W-H],move_up([R,B,O,G,HB,W-H],[R_new,B_new,O,G,HB,W-H])):-
+	!
+	,move_unobstructed(R,+,0/1,O,W-H,R_new)
+	,with_the_ball(R,B,R_new,HB,B_new)
+	,G = '$VAR'('G').
 
 
 %!	move_down(+State, -New) is det.
@@ -568,6 +583,11 @@ move_down([R,_G,W-H],move_down([R,G,W-H],[R_new,G,W-H])):-
 move_down([R,B,_G,HB,W-H],move_down([R,B,G,HB,W-H],[R_new,B_new,G,HB,W-H])):-
 	!
 	,move(R,-,0/1,W-H,R_new)
+	,with_the_ball(R,B,R_new,HB,B_new)
+	,G = '$VAR'('G').
+move_down([R,B,O,_G,HB,W-H],move_down([R,B,O,G,HB,W-H],[R_new,B_new,O,G,HB,W-H])):-
+	!
+	,move_unobstructed(R,-,0/1,O,W-H,R_new)
 	,with_the_ball(R,B,R_new,HB,B_new)
 	,G = '$VAR'('G').
 
@@ -594,6 +614,11 @@ pick_up([_R,_B,_G,_HB,W-H],pick_up([R,R,G,false,W-H],[R,R,G,true,W-H])):-
 	!
 	,R = '$VAR'('R')
 	,G = '$VAR'('G').
+pick_up([_R,_B,_O,_G,false,W-H],pick_up([R,R,O,G,false,W-H],[R,R,O,G,true,W-H])):-
+	!
+	,R = '$VAR'('R')
+	,G = '$VAR'('G')
+	,O = '$VAR'('O').
 
 
 %!	put_down(?World_Dimensions,?New) is semidet.
@@ -609,6 +634,11 @@ put_down([_R,_B,_G,_HB,W-H],put_down([R,R,G,true,W-H],[R,R,G,false,W-H])):-
 	!
 	,G = '$VAR'('G')
 	,R = '$VAR'('R').
+put_down([_R,_B,_O,_G,true,W-H],put_down([R,R,O,G,true,W-H],[R,R,O,G,false,W-H])):-
+	!
+	,R = '$VAR'('R')
+	,G = '$VAR'('G')
+	,O = '$VAR'('O').
 
 
 %!	move(+Point,+Delta,+Distance,+Limits,-End) is det.
@@ -661,3 +691,26 @@ within_limits(X,L):-
 with_the_ball(R,R,R_new,true,R_new):-
 	!.
 with_the_ball(_R,B,_R_new,false,B).
+
+
+%!	move_unobstructed(+Robot,+Delta,+Distance,+Obstacle,+Limit,-New)
+%!	is det.
+%
+%	Modify a coordinate, taking into account relevant objects.
+%
+%	Ensures the Robot can not move through an Obstacle. Otherwise,
+%	the Robot moves to the New position determined by Delta and
+%	Distance.
+%
+%	@tbd Used with the obstacles world.
+%
+move_unobstructed(R,Dlt,Dst,O,L,R_new):-
+	move(R,Dlt,Dst,L,R_new)
+	,\+ obstructed(R_new,O).
+
+
+%!	obstructed(+Object,+Obstacle) is det.
+%
+%	True when a destination tile is obstructed.
+%
+obstructed(O,O).
