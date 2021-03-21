@@ -174,8 +174,11 @@ learn_meta(Pos,Neg,BK,MS_G,Ps):-
 	,debug(learn,'Learning new metarules...',[])
 	,learn_metarules(Pos_,Neg_,BK_,MS_,MS_n)
 	,debug(learn,'Calling learning predicate...',[])
-	,learning_query(Pos_,Neg_,BK_,MS_n,Ps).
-
+	,(   configuration:learning_predicate(F/A)
+	    ,\+ F/A == learn_meta/A
+	 ->  learning_query(Pos_,Neg_,BK_,MS_n,Ps)
+	 ;   learn(Pos_,Neg_,BK_,MS_n,Ps)
+	 ).
 
 
 %!	learn_metarules(+Targets) is det.
