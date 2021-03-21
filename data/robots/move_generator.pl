@@ -1,4 +1,5 @@
 :-module(move_generator, [write_dataset/0
+			 ,list_dataset/0
 			 ,dataset_file_name/2
 			 ,generate_locations/2
 			 ,generate_moves/1
@@ -326,6 +327,21 @@ dataset_file_name(Bn,P):-
 	,file_name_extension(Bn,'.pl',Fn)
 	,atomic_list_concat([D,O],'/',R)
 	,directory_file_path(R,Fn,P).
+
+
+%!	list_dataset is det.
+%
+%	Print the elements of a problem world to user output.
+%
+%	@tbd this actually generates problems, locations and moves
+%	and will be very expensive to run for large programs. It should
+%	best be replaced with a closed-form calcuation.
+%
+list_dataset:-
+	generate_problems(Ps)
+	,generate_locations(Ps,Ls)
+	,generate_moves(Ms)
+	,list_dataset(user_output,Ps,Ms,Ls).
 
 
 %!	list_dataset(+Stream,+Tasks,+Moves,+Locations) is det.
