@@ -64,8 +64,6 @@ proportion of all examples, rather than an integer:
 
 ==
 ?- _T = ancestor/2, _M = acc, _K = 100, float_interval(1,9,1,_Ss), learning_curve(_T,_M,_K,_Ss,_Ms,_SDs), writeln(_Ms), writeln(_SDs).
-
-?- _T = ancestor/2, _M = acc, _K = 2, interval(1,2,1,_Is), findall(S,(member(I,_Is), S is I /10),_Ss), learning_curve(_T,_M,_K,_Ss,_Ms,_SDs), writeln(_Ms), writeln(_SDs).
 % Step 1 of 2
 % Sampling size: 0.1
 % Sampling size: 0.2
