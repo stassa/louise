@@ -22,6 +22,7 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(minimal_program)).
 :-use_module(src(metagen)).
 :-use_module(src(examples_invention)).
+:-use_module(src(meta_learning)).
 
 edit_files:-
 % Uncomment, or add, the paths of files you want to open in the IDE when
@@ -56,7 +57,7 @@ edit_files:-
 
 % Large hypotheses may require large tables particularly for evaluation
 % purposes
-%:- set_prolog_flag(table_space, 2_147_483_648).
+%:-set_prolog_flag(table_space, 2_147_483_648).
 %:-set_prolog_flag(table_space, 4_294_967_296).
 %:-set_prolog_flag(table_space, 8_589_934_592).
 %:-set_prolog_flag(table_space, 17_179_869_184).
