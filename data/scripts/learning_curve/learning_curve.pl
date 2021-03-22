@@ -307,11 +307,12 @@ learning_curve(_T,L,[Pos,Neg,BK,MS],time,K,Ss,Rs):-
 			 % Learn timing soft-cuts learning predicate goal
 			 % avoiding backtracking over nondet learning predicates.
 			 ,learn_timing([Pos_Train,Neg_Train,BK,MS],L,Ps,D)
-			 ,debug_clauses(progress,'Learned:',Ps)
+			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
 			 ,debug(progress,'Duration: ~w sec',[D])
 			 ,debug(learning_curve_full,'Duration: ~w sec',[D])
 			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
 			 ,length(Ps, N)
+			 ,debug(progress,'Hypothesis size: ~w',[N])
 			 ,debug(learning_curve_full,'Hypothesis size: ~w',[N])
 			 )
 			,Vs)
@@ -327,11 +328,12 @@ learning_curve(T,L,[Pos,Neg,BK,MS],M,K,Ss,Rs):-
 			 % Soft cut stops backtracking into multiple learning
 			 % steps when training with nondet learning predicates
 			 ,once(timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V))
-			 ,debug_clauses(progress,'Learned:',Ps)
+			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
 			 ,debug(progress,'Measured ~w: ~w',[M,V])
 			 ,debug_clauses(learning_curve_full,'Learned:',Ps)
 			 ,debug(learning_curve_full,'Measured ~w: ~w',[M,V])
 			 ,length(Ps, N)
+			 ,debug(progress,'Hypothesis size: ~w',[N])
 			 ,debug(learning_curve_full,'Hypothesis size: ~w',[N])
 			 )
 			,Vs)
