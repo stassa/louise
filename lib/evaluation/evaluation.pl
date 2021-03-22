@@ -81,12 +81,16 @@ train_and_test(T,S,Ps,M,V):-
 %	Sample.
 %
 train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
-	train_test_splits(S,Pos,Pos_Train,Pos_Test)
+	debug(evaluation, 'Partitioning data...', [])
+	,train_test_splits(S,Pos,Pos_Train,Pos_Test)
 	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
+	,debug(evaluation, 'Learning program...', [])
 	,learning_query(Pos_Train,Neg_Train,BK,MS,Ps)
+	,debug(evaluation, 'Evaluating learned program...', [])
 	,program_results(T,Ps,BK,Rs)
 	,evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
-	,once(metric(M,Cs,V)).
+	,once(metric(M,Cs,V))
+	,debug(evaluation, 'Completed evaluation. ~w: ~w', [M,V]).
 
 
 
@@ -118,18 +122,22 @@ timed_train_and_test(T,S,L,Ps,M,V):-
 %	ealuated as the result of learning.
 %
 timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V):-
-	train_test_splits(S,Pos,Pos_Train,Pos_Test)
+	debug(evaluation, 'Partitioning data...', [])
+	,train_test_splits(S,Pos,Pos_Train,Pos_Test)
 	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
 	,G = learning_query(Pos_Train,Neg_Train,BK,MS,Ps)
 	,C = call_with_time_limit(L,G)
+	,debug(evaluation, 'Learning program...', [])
 	,catch(C,time_limit_exceeded,(Ps=[]
 				     ,cleanup_experiment
 				     ,debug(evaluation,'Time limit exceeded',[])
 				     )
 	      )
+	,debug(evaluation, 'Evaluating learned program...', [])
 	,program_results(T,Ps,BK,Rs)
 	,evaluation(Rs,Pos_Test,Neg_Test,_Ts,_Bs,Cs)
-	,once(metric(M,Cs,V)).
+	,once(metric(M,Cs,V))
+	,debug(evaluation, 'Completed evaluation. ~w: ~w', [M,V]).
 
 
 
