@@ -6,7 +6,7 @@
 			,learn_metarules/5
                         ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 :-use_module(src(auxiliaries)).
 :-use_module(src(minimal_program)).
 :-use_module(lib(lifting/lifting)).

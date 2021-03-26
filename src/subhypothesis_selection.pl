@@ -2,7 +2,7 @@
 				  ,subhypothesis/4
 				  ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 :-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).
 

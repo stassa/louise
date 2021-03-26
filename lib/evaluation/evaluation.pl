@@ -14,7 +14,7 @@
 		     ,true_negatives/3
 		     ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 :-use_module(src(auxiliaries)).
 
 % Ensure the learner module is loaded.

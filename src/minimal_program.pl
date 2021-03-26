@@ -4,7 +4,7 @@
 			  ,reduced_examples/3
 			  ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 :-use_module(src(louise)).
 :-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).

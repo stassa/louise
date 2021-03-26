@@ -62,7 +62,7 @@
 		      ,learning_query/5
 		      ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
 :-user:use_module(lib(mathemancy/mathemancy)).

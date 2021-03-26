@@ -9,7 +9,7 @@
 		 ,reduced_top_program/5
 		 ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 :-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).
 :-use_module(lib(tp/tp)).
