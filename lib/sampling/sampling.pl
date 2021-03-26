@@ -15,7 +15,7 @@
 		   ,bernoulli_trial/2
 		  ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 /** <module> Random sampling from lists and goal results.
 
