@@ -68,6 +68,7 @@
 :-user:use_module(lib(mathemancy/mathemancy)).
 :-use_module(src(mil_problem)).
 :-use_module(src(defaults)).
+:-use_module(src(louise)).
 
 /** <module> Auxiliary predicates.
 
