@@ -12,6 +12,7 @@
 :-use_module(lib(lifting/lifting)).
 :-use_module(src(mil_problem)).
 :-use_module(src(louise)).
+:-use_module(lib(sampling/sampling)).
 
 /** <module> Learning while learning new metarules.
 
