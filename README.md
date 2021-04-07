@@ -29,7 +29,7 @@ Table of contents
 Overview
 --------
 
-## For generalist programmers
+### For generalist programmers
 
 Louise is a program that writes Prolog programs according to a specification.
 This specification is not a document in natural or formal language, as in
@@ -93,7 +93,7 @@ Identity, above. In the worst case, the user may need to specify the maximum and
 minimum number of literals in a metarule (`P(x,y)` and `Q(y,x)` in Inverse are
 literals). 
 
-## For machine learning specialists
+### For machine learning specialists
 
 Louise [(Patsantzis & Muggleton 2021)] is a machine learning system that learns
 Prolog programs.
