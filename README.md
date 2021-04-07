@@ -275,8 +275,8 @@ Here are some of the things that Louise can do.
    The new metarule, Meta-dyadic-1 corresponds to the common _Chain_ metarule
    that is used in item 4 to learn a grammar of the a^nb^n language.
 
-   Louise learns new metarules by specialising the most-general metarule in each
-   language class. In the example above, the language class is H(2,2), the
+   Louise can learn new metarules by specialising the most-general metarule in
+   each language class. In the example above, the language class is H(2,2), the
    language of metarules having exactly three literals of arity 2:
 
    ```Prolog
@@ -284,6 +284,11 @@ Here are some of the things that Louise can do.
    (Meta-dyadic) ∃.P,Q,R ∀.x,y,z,u,v,w: P(x,y)← Q(z,u),R(v,w)
    true.   
    ```
+
+   Louise can also learn new metarules given only an upper and lower bound on
+   their numbers of literals. In the example of learning _Chain_ above, instead
+   of specifying meta-dyadic, we can instead give an upper and lower bound of 3,
+   with a declaration of `higher_order(3,3)`.
 
 8. Louise comes with a number of libraries for tasks that are useful when
    learning programs with MIL, e.g. metarule generation, program reduction,
