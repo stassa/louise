@@ -218,51 +218,15 @@ Here are some of the things that Louise can do.
    Eliminating invented predicates can sometimes improve comprehensibility of
    the learned program.
 
-6. Louise can invent new examples. In the following, taken from Akihiro
-   Yamamoto's paper "Which hypotheses can be found with inverse entailment?", a
-   single example of the target predicate `odd/1` is given as well as some
-   background knowledge representing the concept of "even" and a "flattening"
-   predicate, s/2. The elements of the MIL problem are insufficient to learn the
-   target theory proposed by Yamamoto, `odd(X):- s(A,Y), even(Y)`, as shown in
-   the first query. In the second query, a second example of odd/1 is invented,
-   then in the third query Yamamoto's proposed target theory is learned from the
-   invented examples.
-
-   ```prolog
-   % Background Knowledge:
-   % s(s(X),X)
-   % even(0).
-   % even(s(X)):-
-   %         odd(X).
-   % Metarules:
-   % 'P(x):- Q(x,y), R(y)'
-   % Examples:
-   % odd(s(s(s(0)))).
-
-   ?- learn(odd/1).
-   odd(s(s(s(0)))).
-   true.
-
-   ?- examples_invention(odd/1).
-   m(odd,s(0)).
-   m(odd,s(s(s(0)))).
-   true.
-
-   ?- learn_with_examples_invention(odd/1).
-   odd(s(s(s(0)))).
-   odd(A):-s(A,B),even(B).
-   true.
-   ```
-
-   See `data/examples/yamamoto.pl` for the `odd/1` example.
-
-   In the following query a greater number of examples is invented. The
-   background knowledge for this MIL problem consists of 6 `edge/2` ground facts
-   that determine the structure of a graph and a few facts of `not_edge/2` that
-   represent nodes not connected by edges. `path(a,f)` is the single example.
-   Louise invents sufficient examples to learn a correct hypothesis that
-   represents the full path from node 'a' to node 'f', without crossing any
-   non-edges.
+6. Louise can invent new examples. In the following query a number of examples
+   of `path/2` are invented. The background knowledge for this MIL problem
+   consists of 6 `edge/2` ground facts that determine the structure of a graph
+   and a few facts of `not_edge/2` that represent nodes not connected by edges.
+   `path(a,f)` is the single given example. The target theory for this problem
+   is a recursive definition of `path/2` that includes a "base case" for which
+   no example is given. Louise can invent examples of the base-case and so learn
+   a correct hypothesis that represents the full path from node 'a' to node 'f',
+   without crossing any non-edges.
 
    ```prolog
    ?- learn(path/2).
