@@ -277,7 +277,8 @@ Here are some of the things that Louise can do.
 
    Louise can learn new metarules by specialising the most-general metarule in
    each language class. In the example above, the language class is H(2,2), the
-   language of metarules having exactly three literals of arity 2:
+   language of metarules having exactly three literals of arity 2. The most
+   general metarule in H(2,2) is Meta-dyadic:
 
    ```Prolog
    ?- print_quantified_metarules(meta_dyadic).
@@ -287,7 +288,7 @@ Here are some of the things that Louise can do.
 
    Louise can also learn new metarules given only an upper and lower bound on
    their numbers of literals. In the example of learning _Chain_ above, instead
-   of specifying meta-dyadic, we can instead give an upper and lower bound of 3,
+   of specifying Meta-dyadic, we can instead give an upper and lower bound of 3,
    with a declaration of `higher_order(3,3)`.
 
 8. Louise comes with a number of libraries for tasks that are useful when
