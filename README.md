@@ -35,7 +35,8 @@ Louise is a program that writes Prolog programs according to a specification.
 This specification is not a document in natural or formal language, as in
 software engineering. Instead, the specifications used by Louise are made up of
 examples, background knowledge and "metarules". These are explained immediately
-below.
+below. The specification is normally given by a user but Louise can complete the
+missing parts of a specification on its own, even coming up with new examples.
 
 **Examples** are like the inputs and outputs of unit tests that the final
 program must pass. Positive examples test that the program has correct
@@ -91,7 +92,6 @@ Q(z,u)` can let Louise create programs that have instances of both Inverse and
 Identity, above. In the worst case, the user may need to specify the maximum and
 minimum number of literals in a metarule (`P(x,y)` and `Q(y,x)` in Inverse are
 literals). 
-
 
 ## For machine learning specialists
 
