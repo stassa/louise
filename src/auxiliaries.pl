@@ -1572,6 +1572,27 @@ debug_quantified_metarules(S,MS):-
 %	How is one of "print" or "debug". Where is the name of the
 %	stream to print to, or the debug subject.
 %
+output_quantified_metarule(H,W,higher_order(Min,Max)):-
+% Pretty-print third-order metarules.
+	!
+	,findall(M_
+	       ,(between(Min,Max,N)
+		,length(Ps,N)
+		,variables_symbols(predicate,Ps)
+		,once(list_tree(Ps,Vs))
+		,(   Vs = (Hd,B)
+		 ->  format(atom(M),'~w \u2190 ~w',[Hd,B])
+		 ;   M = Vs
+		 )
+		,maplist(arg(1),Ps,Es)
+		,atomic_list_concat(Es,',',Es_)
+		,format(atom(Es_A),'\u2203.~w',[Es_])
+		,format(atom(M_),'(TOM-~w) ~w: ~w',[N,Es_A,M])
+		)
+	       ,Hs)
+	,forall(member(Hom,Hs)
+	       ,print_or_debug(H,W,Hom)
+	       ).
 output_quantified_metarule(H,W,Id):-
 	atom(Id)
 	,!
