@@ -23,19 +23,6 @@
 		 ]).
 
 
-/*                       ++++++ WARNING: ++++++++
-
-For Swi-Prolog versions after 8.3.1*, the following query must be called
-at the Swi command line before calling a learning predicate, else errors
-will be raised:
-
-
-?- use_module(src(experiment_file)).
-
-
-A more permanent solution is in the works.
-*/
-
 :-use_module(configuration).
 :-use_module(src(auxiliaries)).
 :-use_module(render).
@@ -45,7 +32,7 @@ A more permanent solution is in the works.
 :- user:use_module(move_generator).
 % Stops Swi from raising exception on move/2. No idea why.
 :- dataset_file_name(_,Fn)
-  ,reexport(Fn).
+  ,user:use_module(Fn).
 
 
 /* % Uncomment to work on a new dataset or debuggin of tasks.
@@ -417,7 +404,8 @@ quadruple_move(M,Ss,Gs):-
 %	move_right_twice and move_up_twice. This may or may not be as
 %	required. If not, uncomment the actions you don't want, below.
 %
-move(M):-
+move(experiment_file:M):-
+% We must point to where M is defined or errors rise.
 	member(M, [move_right
 		  ,move_left
 		  ,move_up
