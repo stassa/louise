@@ -233,9 +233,7 @@ encapsulated_bk(BK,_Ss,BK):-
 encapsulated_bk(BK,Ts,Es):-
 	(   closure(BK, user, Ps)
 	 ->  true
-	 % Added to avoid errors in Swi 8.2.1
-	 ;   configuration:experiment_file(_,M)
-	    ,closure(BK, M, Ps)
+	 ;   closure(BK, experiment_file, Ps)
 	 ->  true
 	 ;   throw('Missing BK definition of predicate in':BK)
 	 )
@@ -247,6 +245,7 @@ encapsulated_bk(BK,Ts,Es):-
 	,flatten(Es_, Fs)
 	,predicate_signature(Ts,Ss)
 	,hide_bk_closure(Fs,Ss,Es).
+
 
 
 %!	hide_bk_closure(+Closure,+Signature,-Hidden) is det.

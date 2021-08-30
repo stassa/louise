@@ -812,10 +812,9 @@ herbrand_signature(T,Ss):-
 	,herbrand_signature([T],Ss)
 	,!.
 herbrand_signature(Ts,Ss):-
-	configuration:experiment_file(_P,M)
-	,findall(Fi/Ai
+	findall(Fi/Ai
 		,(member(T,Ts)
-		 ,M:background_knowledge(T,BK)
+		 ,experiment_file:background_knowledge(T,BK)
 		 ,member(Fi/Ai,BK)
 		 )
 		,Bs)

@@ -24,12 +24,11 @@
 % Must be loaded before experiment file to allow experiment files to
 % use set_configuration_option/2 without errors.
 :-use_module(src(auxiliaries), [set_configuration_option/2]).
-:-user:use_module(src(experiment_file)).
+:-use_module(src/load_experiment_file).
 :-reexport(lib(program_reduction/reduction_configuration),
 	   except([resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
 :-reexport(lib/sampling/sampling_configuration).
-
 
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
@@ -713,4 +712,5 @@ unfold_invented(false).
 % changed and reloaded. Don't remove it.
 %
 % DO NOT REMOVE THIS LINE!
-:-experiment_file:reload.
+:- experiment_file(P,_)
+  ,load_experiment_file(P).

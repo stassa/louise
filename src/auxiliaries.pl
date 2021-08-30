@@ -43,7 +43,6 @@
 		      ,initialise_experiment/0
 	              ,learning_target/1
 		      ,learning_targets/1
-		      ,load_experiment_file/0
 		      ,edit_experiment_file/0
 		      ,tp_safe_experiment_data/5
 		       % Program auxiliaries
@@ -66,6 +65,7 @@
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
 :-user:use_module(lib(mathemancy/mathemancy)).
+:-use_module(src/load_experiment_file).
 :-use_module(src(mil_problem)).
 :-use_module(src(defaults)).
 :-use_module(src(louise)).
@@ -152,7 +152,6 @@ Table of Contents
    * initialise_experiment/0
    * learning_target/1
    * learning_targets/1
-   * load_experiment_file/0
    * edit_experiment_file/0
    * tp_safe_experiment_data/5
 
@@ -621,8 +620,7 @@ predicate_signature(Ts,Ss):-
 %
 predicate_signature_(T/A,[T/A|Ss]):-
 	configuration:max_invented(I)
-	,configuration:experiment_file(_P,M)
-	,M:background_knowledge(T/A,BK)
+	,experiment_file:background_knowledge(T/A,BK)
 	,invented_symbols(I,A,Is)
 	,append(Is,BK,Ss).
 
@@ -904,8 +902,7 @@ list_learning_results(P/2):-
 %	MIL problem to be listed.
 %
 list_mil_problem(T):-
-	configuration:experiment_file(_P,M)
-	,experiment_data(T,Pos,Neg,BK,MS)
+	experiment_data(T,Pos,Neg,BK,MS)
 	,format_underlined('Positive examples')
 	,print_clauses(Pos)
 	,nl
@@ -914,7 +911,7 @@ list_mil_problem(T):-
 	,nl
 	,format_underlined('Background knowledge')
 	,forall(member(P,BK)
-	       ,(program(P,M,Ps)
+	       ,(program(P,experiment_file,Ps)
 		,format('~w:~n',[P])
 		,print_clauses(Ps)
 		,format('~n',[])
@@ -1986,14 +1983,11 @@ experiment_data(T,_,_,_,_):-
 	,\+ memberchk(T,Ts)
 	,throw('Unknown learning target':T).
 experiment_data(T,Pos,Neg,BK,MS):-
-	configuration:experiment_file(_P,M)
-	% Commented out to avoid errors in Swi 8.2.1.
-	%,user:use_module(P)
-	,signed_examples(positive,M,T,Pos_)
-	,signed_examples(negative,M,T,Neg_)
+	signed_examples(positive,experiment_file,T,Pos_)
+	,signed_examples(negative,experiment_file,T,Neg_)
 	,maplist(list_to_set,[Pos_,Neg_],[Pos,Neg])
-	,bk_or_metarules(background_knowledge,M,T,BK)
-	,bk_or_metarules(metarules,M,T,MS_)
+	,bk_or_metarules(background_knowledge,experiment_file,T,BK)
+	,bk_or_metarules(metarules,experiment_file,T,MS_)
 	,(   (MS_ == [all]
 	     ;	 memberchk(all,MS_)
 	     )
@@ -2118,9 +2112,11 @@ configuration_metarules(MS):-
 %
 %	Load and initialise the current experiment file.
 %
+%	@deprecated Use load_experiment_file/1 instead.
+%
 initialise_experiment:-
 	configuration:experiment_file(P,_M)
-	,user:use_module(P).
+	,load_experiment_file(P).
 
 
 
@@ -2144,11 +2140,8 @@ learning_target(T):-
 %	file.
 %
 learning_targets(Ts):-
-	% Commented out to avoid errors in Swi 8.2.1.
-	%initialise_experiment
-	experiment_file(_P, M)
-	,findall(T
-		,M:background_knowledge(T, _BK)
+	findall(T
+		,experiment_file:background_knowledge(T, _BK)
 		,Ts_)
 	,flatten(Ts_,Ts).
 
