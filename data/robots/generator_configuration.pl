@@ -27,8 +27,8 @@ experiment_world(empty_world).
 %
 %	Used to generate examples for robot navigation plans.
 %
-world_dimensions(2,2).
-%world_dimensions(4,4).
+%world_dimensions(2,2).
+world_dimensions(4,4).
 
 
 %!	output_directory(?Root) is semidet.
