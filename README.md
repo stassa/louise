@@ -29,72 +29,6 @@ Table of contents
 Overview
 --------
 
-### For generalist programmers
-
-Louise is a program that writes Prolog programs according to a specification.
-This specification is not a document in natural or formal language, as in
-software engineering. Instead, the specifications used by Louise are made up of
-examples, background knowledge and "metarules". These are explained immediately
-below. The specification is normally given by a user but Louise can complete the
-missing parts of a specification on its own, even coming up with new examples.
-
-**Examples** are like the inputs and outputs of unit tests that the final
-program must pass. Positive examples test that the program has correct
-behaviour: "given input X, the program must produce output Y". Negative examples
-test that the program does not have incorrect behaviour: "given input X the
-program must not produce output Y". If the final program passes all "unit
-tests", both positive and negative, it's a "correct program".
-
-For instance, suppose we want Louise to write a program to sum two natural
-numbers. We may give Louise the positive example `sum(1,2,3)` and the negative
-example `sum(1,2,4)`. The final program should return 3 given 1 and 2 as inputs;
-and it should not return 4 when given 1 and 2 as inputs.
-
-**Background knowledge** is a library of sub-programs, in Prolog, that Louise
-will use to compose the final program. For example, suppose you wanted Louise to
-write a program to return the average of a list of numbers. You would then give
-it background knowledge containing programs that operate on lists or perform
-arithmetic operations. Louise is generally given the necessary background
-knowledge it needs by its user but since background knowledge consists of Prolog
-programs and Louise can write Prolog programs, it can also write its own
-background knowledge from scratch, in a process called "predicate invention"
-(Prolog programs are called "predicates").
-
-**Metarules** are a high-level way to define the structure of a Prolog program.
-Prolog programs are sets of clauses, and each clause in the final program
-created by Louise is an "instance" of a metarule. Here are three very common
-metarules with their numbers in parentheses at the start of each line:
-
-```
-(Identity) P(x,y):- Q(x,y)
-(Inverse)  P(x,y):- Q(y,x)
-(Chain)    P(x,y):- Q(x,z), R(z,y)
-```
-
-In the Inverse metarule, `P(x,y):- Q(y,x)` is a clause; `P` and `Q` are
-variables to be "filled in" with predicate symbols (the names of predicates);
-and `x,y` are variables that determine the relation between the predicates with
-symbols `P` and `Q`. For example, "Inverse" says that `Q` is `P` with its inputs
-and outputs reversed. Suppose `P` is "husband" and `Q` is "wife". Then the
-clause `husband(x,y):- wife(y,x)` is an instance of Inverse that holds for each
-husband `x` of a wife `y`.
-
-If a clause of the form `P(x,y):- Q(y,x)` is added to a program by Louise, that
-clause is true for all combinations of values of `x` and `y`. If Louise cannot
-prove that such a universal relation holds, it does not add the clause to the
-program.
-
-Metarules must be defined by the user and so require the user to have some
-intuition or knowledge about the shape of the final program. However, Louise can
-learn its own metarules from examples and background knowledge. In some cases
-the user may have to define metarules in a general form, for example `P(x,y):-
-Q(z,u)` can let Louise create programs that have instances of both Inverse and
-Identity, above. In the worst case, the user may need to specify the maximum and
-minimum number of literals in a metarule (`P(x,y)` and `Q(y,x)` in Inverse are
-literals). 
-
-### For machine learning specialists
-
 Louise [(Patsantzis & Muggleton 2021)] is a machine learning system that learns
 Prolog programs.
 
@@ -102,7 +36,8 @@ Louise is based on a new program learning algorithm, called _Top Program
 Construction_, that runs in polynomial time. Louise can learn recursive
 programs, including left-recursive and mutually recursive programs and perform
 multi-predicate learning, predicate invention and examples invention, among
-other things.
+other things. Louise includes the program TOIL that can learn metarules for MIL
+systems, including Louise itself.
 
 Louise is a Meta-Interpretive Learning (MIL) system. MIL [(Muggleton et al.
 2014)], [(Muggleton et al. 2015)], is a new setting for Inductive Logic
