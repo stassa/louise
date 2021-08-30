@@ -1,4 +1,6 @@
 :-module(coloured_graph, [dataset_path/1
+                         ,target_predicate/1
+                         ,delete_dataset/0
                          ]).
 
 :-use_module(graph_generator_configuration).
@@ -36,3 +38,52 @@ dataset_path(Path):-
    ;   true
    )
   ,reexport(P).
+
+
+
+%!      target_predicate(?Symbol) is det.
+%
+%       Determine the Symbol of the current target predicate.
+%
+%       Use this to find the Symbol and arity of the predicate of the
+%       examples in the coloured graph dataset as it is currently
+%       defined in graph_generator_configuration.pl.
+%
+%       The Symbol defined in the configuration may be distinct to the
+%       symbol of the examples actually loaded in memory, if the
+%       experiment file hasn't been loaded since the configuration
+%       changed. The symbol of the actually loaded target predicate can
+%       be inspected with a call to learning_targets/1.
+%
+target_predicate(F/A):-
+        graph_generator_configuration:mislabelling_type(L)
+        ,graph_generator_configuration:target_prefix_arity(P,A)
+        ,atomic_list_concat([P,L],'_',F).
+
+
+
+%!      delete_dataset is det.
+%
+%       Delete the current dataset file, if it exists.
+%
+%       Raises a warning if the file does not exist.
+%
+%       Use this to quickly delete an existing dataset file when you are
+%       confused about what file is loaded at any time, which I often
+%       am. Note that if you only want to re-generate a dataset after
+%       updating graph_generator_configuration.pl, it suffices to call
+%       write_dataset/0, which overwrites the file without asking.
+%
+delete_dataset:-
+        dataset_path(P)
+        ,(   exists_file(P)
+         ->  delete_file(P)
+         ;   print_message(warning, del(P))
+         ).
+
+% Prolog hook for delete_dataset/0 - specific warning message.
+:- multifile prolog:message//1.
+
+prolog:message(del(M)) --> message(M).
+
+message(M) --> ['File ~q not found. Nothing deleted'-[M]].
