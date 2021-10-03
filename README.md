@@ -153,7 +153,48 @@ Here are some of the things that Louise can do.
    Eliminating invented predicates can sometimes improve comprehensibility of
    the learned program.
 
-6. Louise can invent new examples. In the following query a number of examples
+6. Louise can fold an over-specialised program to introduce recursion.In the
+   following example, an over-specialised program is learned taht finds the last
+   element of a list of length up to 3:
+
+   ```prolog
+   ?- learn(list_last/2).
+   list_last(A,B):-tail(A,C),empty(C),head(A,B).
+   list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
+   list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
+   true.
+   ```
+
+   We can observe that some clauses include sequences of body literals that
+   match the body literals in other clauses. The predicate `fold_recursive/2`
+   can be used to replace body literals in a clause with an equivalent recursive
+   call:
+
+   ```prolog
+   ?- learn(list_last/2, _Ps), print_clauses('Learned', _Ps), fold_recursive(_Ps, _Fs), nl, print_clauses('Folded', _Fs).
+   Learned
+   list_last(A,B):-tail(A,C),empty(C),head(A,B).
+   list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
+   list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
+   
+   Folded
+   list_last(A,B):-tail(A,C),empty(C),head(A,B).
+   list_last(A,B):-tail(A,C),list_last(C,B).
+   true.
+   ```
+
+   Note the clause `list_last(A,B):-tail(A,C),list_last(C,B).` that was the
+   desired result of the folding operation.
+
+   While there are still over-specialised clauses remaining in the
+   post-processed hypothesis, they don't change the success set of the learned
+   program, which is now a correct solution for lists of arbitrary length.
+
+   The `list_last` example above was taken from ILP at 30 (Cropper et al.,
+   Machine Learning 2021, to appear). See `data/examples/recursive_folding.pl`
+   for the complete example source code.
+
+7. Louise can invent new examples. In the following query a number of examples
    of `path/2` are invented. The background knowledge for this MIL problem
    consists of 6 `edge/2` ground facts that determine the structure of a graph
    and a few facts of `not_edge/2` that represent nodes not connected by edges.
@@ -197,7 +238,7 @@ Here are some of the things that Louise can do.
    See the section [Examples invention](#examples-invention) for more
    information on examples invention in Louise.
 
-7. Louise can learn new metarules from examples of a target predicate. In the
+8. Louise can learn new metarules from examples of a target predicate. In the
    following example, Louise learns a new metarule from examples of the
    predicate `'S'/2` (as in item 4, above):
 
@@ -226,7 +267,7 @@ Here are some of the things that Louise can do.
    of specifying Meta-dyadic, we can instead give an upper and lower bound of 3,
    with a declaration of `higher_order(3,3)`.
 
-8. Louise comes with a number of libraries for tasks that are useful when
+9. Louise comes with a number of libraries for tasks that are useful when
    learning programs with MIL, e.g. metarule generation, program reduction,
    lifting of ground predicates, etc. These will be discussed in detail in the
    upcoming Louise manual.
