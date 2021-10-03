@@ -165,10 +165,10 @@ Here are some of the things that Louise can do.
    true.
    ```
 
-   We can observe that some clauses include sequences of body literals that
-   match the body literals in other clauses. The predicate `fold_recursive/2`
-   can be used to replace body literals in a clause with an equivalent recursive
-   call:
+   We can observe that some clauses in the program above include sequences of
+   body literals that match the body literals in other clauses. The predicate
+   `fold_recursive/2` can be used to replace body literals in a clause with an
+   equivalent recursive call:
 
    ```prolog
    ?- learn(list_last/2, _Ps), fold_recursive(_Ps, _Fs), maplist(print_clauses,['%Learned:','\n%Folded:'], [_Ps,_Fs]).
