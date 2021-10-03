@@ -153,7 +153,7 @@ Here are some of the things that Louise can do.
    Eliminating invented predicates can sometimes improve comprehensibility of
    the learned program.
 
-6. Louise can fold an over-specialised program to introduce recursion.In the
+6. Louise can fold an over-specialised program to introduce recursion. In the
    following example, an over-specialised program is learned taht finds the last
    element of a list of length up to 3:
 
