@@ -88,52 +88,16 @@ list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
 
 Folded
 list_last(A,B):-tail(A,C),empty(C),head(A,B).
-list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
-list_last(A,B):-tail(A,C),tail(C,D),list_last(D,B).
 list_last(A,B):-tail(A,C),list_last(C,B).
-list_last(A,B):-list_last(A,B).
 true.
 ==
 
 6. Add the recursive hypothesis to a source file and load it, then test
-it:
+it to verify it's a correct hypothesis:
 ==
-?- _Ls = [1,2,3,4,5], list_last:list_last(_Ls, L).
-L = 5 .
-==
-
-Note that the folded, recursive program works correctly, although it
-risks entering an infinite recursion if you ask for more results after
-the first because of its left-recursive last clause:
-==
-list_last(A,B):-list_last(A,B).
-==
-
-7. The left-recursive last clause (and other redundant clauses) can be
-removed by Plotkin's program reduction algorithm:
-==
-?- learn(list_last/2, _Ps), print_clauses('Learned', _Ps), fold_recursive(_Ps, _Fs), nl, print_clauses('Folded', _Fs), nl, program_reduction(_Fs,_Rs,_Ds), print_clauses('Reduced', _Rs), nl, print_clauses('Redundant:',_Ds).
-Learned
-list_last(A,B):-tail(A,C),empty(C),head(A,B).
-list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
-list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
-
-Folded
-list_last(A,B):-tail(A,C),empty(C),head(A,B).
-list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
-list_last(A,B):-tail(A,C),tail(C,D),list_last(D,B).
-list_last(A,B):-tail(A,C),list_last(C,B).
-list_last(A,B):-list_last(A,B).
-
-Reduced
-list_last(A,B):-tail(A,C),empty(C),head(A,B).
-list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
-list_last(A,B):-tail(A,C),tail(C,D),list_last(D,B).
-list_last(A,B):-tail(A,C),list_last(C,B).
-
-Redundant:
-list_last(A,B):-list_last(A,B).
-true.
+?- _Ls = [1,2,3,4,5], recursive_folding:list_last(_Ls, L).
+L = 5 ;
+false.
 ==
 
 */
@@ -156,10 +120,7 @@ head([H|_T], H).
 tail([_H|T],T).
 empty([]).
 
-/* Recursive hypothesis
+/* Folded hypothesis:
 list_last(A,B):-tail(A,C),empty(C),head(A,B).
-list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
-list_last(A,B):-tail(A,C),tail(C,D),list_last(D,B).
 list_last(A,B):-tail(A,C),list_last(C,B).
-list_last(A,B):-list_last(A,B).
 */
