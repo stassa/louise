@@ -183,12 +183,9 @@ Here are some of the things that Louise can do.
    true.
    ```
 
-   Note the clause `list_last(A,B):-tail(A,C),list_last(C,B).` that was the
-   desired result of the folding operation.
-
-   While there are still over-specialised clauses remaining in the
-   post-processed hypothesis, they don't change the success set of the learned
-   program, which is now a correct solution for lists of arbitrary length.
+   Note the new clause `list_last(A,B):-tail(A,C),list_last(C,B).` replacing the
+   second and third clause in the original program. The new, recursive
+   hypothesis is now a correct solution for lists of arbitrary length. 
 
    The `list_last` example above was taken from ILP at 30 (Cropper et al.,
    Machine Learning 2021, to appear). See `data/examples/recursive_folding.pl`
