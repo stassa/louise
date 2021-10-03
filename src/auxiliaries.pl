@@ -2345,13 +2345,43 @@ program(Ss,M,Ps):-
 %	replacing any sequence of literals L1, ..., Ln in C by the head
 %	of a clause in Clauses.
 %
-fold_recursive(Cs, Cs_s):-
-        fold_clauses(Cs,Cs_)
-        ,setof(C
-              ,Cs_^(member(C,Cs_)
-                   ,numbervars(C)
+fold_recursive(Cs,Fs):-
+	program_reduction(Cs,Rs,_)
+	,sort_clauses(Rs, Rs_)
+	,fold_recursive_all(Rs_,Fs).
+
+
+%!	fold_recursive_all(+Clauses,-Folded) is det.
+%
+%	Fold a set of clauses until no redundancies are left.
+%
+%	Ensures every clause that can be folded into another, is.
+%
+fold_recursive_all(Cs,Rs):-
+	fold_clauses(Cs,Fs)
+	,program_reduction(Fs, Fs_r,_)
+	,sort_clauses(Fs_r, Fs_)
+	,Fs_ \= Cs
+	,!
+	,fold_recursive_all(Fs_,Rs).
+fold_recursive_all(Rs,Rs).
+
+
+%!	sort_clauses(+Clauses,-Sorted) is det.
+%
+%	Sort a set of clauses, ignoring variable ages.
+%
+sort_clauses(Cs,Cs_s):-
+	setof(C
+              ,Cs^(member(C,Cs)
+		  ,numbervars(C)
                )
-              ,Cs_s).
+              ,Cs_)
+	,findall(C_1
+		,(member(C_,Cs_)
+		 ,varnumbers(C_,C_1)
+		 )
+		,Cs_s).
 
 
 %!	fold_clauses(+Clauses,-Folded) is det.
@@ -2360,6 +2390,7 @@ fold_recursive(Cs, Cs_s):-
 %
 fold_clauses(Cs,Fs):-
         fold_clauses(Cs,Cs,[],Fs).
+
 
 %!	fold_clauses(+ToFold,+Clauses,+Acc,-Folded) is det.
 %
@@ -2418,6 +2449,7 @@ folding(C1, C2, H_1:-Ls_4):-
         maplist(clause_literals,[C1,C2],[[H_1|Ls_1],[H_2|Ls_2]])
         ,replace_all(H_2,Ls_1,Ls_2,Ls_3)
         ,once(list_tree(Ls_3,Ls_4)).
+
 
 %!	replace_all(+Head,+Body1,+Body2,-Replaced) is det.
 %
