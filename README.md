@@ -171,13 +171,13 @@ Here are some of the things that Louise can do.
    call:
 
    ```prolog
-   ?- learn(list_last/2, _Ps), print_clauses('Learned', _Ps), fold_recursive(_Ps, _Fs), nl, print_clauses('Folded', _Fs).
-   Learned
+   ?- learn(list_last/2, _Ps), fold_recursive(_Ps, _Fs), maplist(print_clauses,['Learned:','\nFolded:'], [_Ps,_Fs]).
+   Learned:
    list_last(A,B):-tail(A,C),empty(C),head(A,B).
    list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
    list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
    
-   Folded
+   Folded:
    list_last(A,B):-tail(A,C),empty(C),head(A,B).
    list_last(A,B):-tail(A,C),list_last(C,B).
    true.
