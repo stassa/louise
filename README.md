@@ -187,9 +187,9 @@ Here are some of the things that Louise can do.
    second and third clause in the original program. The new, recursive
    hypothesis is now a correct solution for lists of arbitrary length. 
 
-   The `list_last` example above was taken from ILP at 30 (Cropper et al.,
-   Machine Learning 2021, to appear). See `data/examples/recursive_folding.pl`
-   for the complete example source code.
+   The `list_last` example above was taken from _Inductive Logic Programming at
+   30_ (Cropper et al., Machine Learning 2021, to appear). See
+   `data/examples/recursive_folding.pl` for the complete example source code.
 
 7. Louise can invent new examples. In the following query a number of examples
    of `path/2` are invented. The background knowledge for this MIL problem
