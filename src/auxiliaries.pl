@@ -54,6 +54,7 @@
 		      ,print_clauses/2
 		      ,print_clauses/1
 		      ,program/3
+		      ,fold_recursive/2
 	              % Timing auxiliaries
 	              ,timing/2
 		      ,timing/3
@@ -162,6 +163,7 @@ Table of Contents
    * debug_clauses/2
    * print_clauses/1
    * program/3
+   * fold_recursive/2
 
 8. Timing auxiliaries [sec_learn]
    * learning_query/5
@@ -2331,6 +2333,161 @@ program(Ss,M,Ps):-
 		 )
 		)
 	       ,Ps).
+
+
+
+%!	fold_recursive(+Clauses,-Folded) is det.
+%
+%	Fold a set of Clauses into recursive variants, if possible.
+%
+%	Clauses is a set of clauses. Folded is a set of clauses such
+%	that each clause C in Clauses is folded into a clause C' by
+%	replacing any sequence of literals L1, ..., Ln in C by the head
+%	of a clause in Clauses.
+%
+fold_recursive(Cs, Cs_s):-
+        fold_clauses(Cs,Cs_)
+        ,setof(C
+              ,Cs_^(member(C,Cs_)
+                   ,numbervars(C)
+               )
+              ,Cs_s).
+
+
+%!	fold_clauses(+Clauses,-Folded) is det.
+%
+%	Fold a set of Clauses to add recursion, if possible.
+%
+fold_clauses(Cs,Fs):-
+        fold_clauses(Cs,Cs,[],Fs).
+
+%!	fold_clauses(+ToFold,+Clauses,+Acc,-Folded) is det.
+%
+%	Business end of fold_clauses/2.
+%
+%	ToFold and Clauses begin as the same list of clauses to be
+%	folded. Each clause in ToFold is attempted to be folded by
+%	replacing some of its body literals with the head literal of a
+%	head in Clauses, if possible.
+%
+fold_clauses([],_,Fs,Fs):-
+        !.
+fold_clauses([C|Cs],Cs_,Acc_1,Bind):-
+        fold_clause(C,Cs_,Acc_1,Acc_2)
+        ,fold_clauses(Cs,Cs_,Acc_2,Bind).
+
+
+%!	fold_clause(+Clause,+Clauses,+Acc,-Folded) is det.
+%
+%	Fold a Clause to add recursion, if possible.
+%
+%	Folds each fold given as the first argument in fold_clauses/4
+%	with each of the clauses in the list given as the first argument
+%	in fold_clauses/4, replacing Clause with a folded clause with a
+%	recursive call, if possible.
+%
+fold_clause(_C1,[],Fs,Fs):-
+        !.
+fold_clause(C1,[C2|Cs],Acc,Bind):-
+        folding(C1,C2,C3)
+        ,fold_clause(C1,Cs,[C3|Acc],Bind).
+
+
+%!	folding(+Clause1,+Clause2,-Folded) is det.
+%
+%	Fold two clauses to introduce recursion, if possible.
+%
+%	Let Clause1 = H1:- L11, ..., Li, ..., Lk, ..., Ln and let
+%	Clause2 = H2:- L21, ..., L2m. Then, if H1 and H2 have the same
+%	predicate symbol and arity AND L21 ,..., L2m = Li, ..., Lk,
+%	Clause3 is the clause H2:- L11,..., H2, ..., Ln.
+%
+%	Note that in the process of derving Clause3 from Clause2, first
+%	L21 ,..., L2m = Li, ..., Lk are unified. Unification changes the
+%	variables in Clause1, resulting in new variable names in
+%	Clause3, but not in a new "wiring" of the variables.
+%
+%	The result of all this is that Clause 3 has one or more
+%	recursive body literals.
+%
+%	If there is no sub-sequence Li, ..., Lk of the body literals in
+%	Clause1 that matches the body literals of Clause2, then Clause3
+%	is Clause1, unchanged.
+%
+folding(C1, C2, H_1:-Ls_4):-
+        maplist(clause_literals,[C1,C2],[[H_1|Ls_1],[H_2|Ls_2]])
+        ,replace_all(H_2,Ls_1,Ls_2,Ls_3)
+        ,once(list_tree(Ls_3,Ls_4)).
+
+%!	replace_all(+Head,+Body1,+Body2,-Replaced) is det.
+%
+%	Replace all occurrences of a set of literals with a new one.
+%
+%	Head is the head of a clause that has Body2 as its body. Body1
+%	is a sequence of body literals of a possibly different clause,
+%	that has Body2 as its sub-sequence. Replaced is the sequence of
+%	literals in Body1, where the sub-sequence matching Body2 is
+%	replaced by Head.
+%
+%	To replace Body2 in Body1 with Head, literals in Body1 and Body2
+%	are unified, resulting in binding of variables in Head, Body1
+%	and Body2. This is necessary to preserver the "wiring" of
+%	literals in the original clauses and to make sure the clause in
+%	Replaced is fully-connected (or "closed"), i.e. that it doesn't
+%	have any free variables left dangling without sharing.
+%
+replace_all(S,Xs,Ys,Zs):-
+        replace_all_(S,Xs,Ys,Zs).
+
+%!	replace_all_(+Head,+Body1,+Body2,-Replaced) is det.
+%
+%	Business end of replace_all/4.
+%
+replace_all_(S,Xs,Ys,Bind):-
+        replace(S,Xs,Ys,Xs_)
+        ,!
+        ,replace_all_(S,Xs_,Ys,Bind).
+replace_all_(_S,Zs,_Ys,Zs).
+
+
+%!	replace(+Head,+Body1,+Body2,-Replaced) is det.
+%
+%	Replace all occurrences of Body2 in Body1 with Head.
+%
+replace(S,Xs,Ys,Zs):-
+        replace(S,Xs,Ys,[],Zs).
+
+%!	replace(+Head,+Body1,+Body2,+Acc,-Replaced) is det.
+%
+%	Business end of replace/4.
+%
+replace(S,[X|Xs],[Y|Ys],Acc,Bind):-
+% Elements don't match.
+        X \= Y
+        ,!
+        ,replace(S,Xs,[Y|Ys],[X|Acc],Bind).
+replace(S,[Y|Xs],[Y|Ys],Acc,Zs):-
+% Matchine elements of a _possible_ shared sub-sequence.
+        drop(Xs,Ys,Acc_2)
+        ,!
+        ,reverse(Acc,Acc_1)
+        ,append(Acc_1,[S|Acc_2],Zs).
+replace(S,[X|Xs],[Y|Ys],Acc,Zs):-
+% Matching elements _not_ in a shared subsequence.
+        replace(S,Xs,[Y|Ys],[X|Acc],Zs).
+
+
+%!	drop(+Sequence,+Subsequence,-Dropped) is det.
+%
+%	Drop all elemeents of a Subsequence from a Sequence.
+%
+%	Sequence and Subsequence are lists, interpreted as sequences.
+%	Dropped is the result of removing Subsequence from Sequence.
+%
+drop(Xs,[],Xs):-
+        !.
+drop([Y|Xs],[Y|Ys],Acc):-
+        drop(Xs,Ys,Acc).
 
 
 

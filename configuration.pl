@@ -138,6 +138,7 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
 %experiment_file('data/examples/tiny_kinship_meta.pl',tiny_kinship_meta).
 %experiment_file('data/examples/yamamoto.pl',yamamoto).
+%experiment_file('data/examples/recursive_folding.pl',recursive_folding).
 
 
 %!	learner(?Name) is semidet.
