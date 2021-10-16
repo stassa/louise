@@ -610,11 +610,12 @@ predicate_signature(T/A,Ss):-
 predicate_signature(Ts,Ss):-
 	findall(Ss_i
 	       ,(member(T,Ts)
-		,predicate_signature_(T,Ss_i)
+		,predicate_signature_(T,[_|Ss_i])
 		)
 	       ,SS)
 	,flatten(SS,SS_f)
-	,sort(SS_f,Ss).
+	,maplist(sort,[Ts,SS_f],[Ts_,Ss_s])
+	,append(Ts_,Ss_s,Ss).
 
 %!	predicate_signature(+Target,-Signature) is det.
 %
