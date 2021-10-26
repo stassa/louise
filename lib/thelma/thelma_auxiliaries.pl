@@ -154,14 +154,14 @@ order_constraints(BK,Ps,Cs):-
 %	background predicates defined in the current experiment file.
 %	Order is the same list ordered by lexicographic ordering.
 %
-%	@tbd Currently this simply returns the list Background in the
-%	same way it receives it. The purpose of having a separate
-%	predicate is that I'd also like to allow the user to set a
-%	specific ordering to override the ordering in which background
-%	predicates are declared in an experiment file, or even to
-%	declare some more complex ordering logic.
+%	@tbd Changed from original thelma version to remove arities from
+%	symbols. This may cause trouble further down the line,
+%	particularly existence errors when trying to prove BK atoms.
 %
-predicate_order(BK,BK).
+predicate_order(BK,Ss):-
+	findall(S
+	       ,member(S/_A, BK)
+	       ,Ss).
 
 
 %!	constants_indexing(+Module,+Background,-Indexed) is det.

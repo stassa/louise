@@ -111,6 +111,47 @@ depth_level(C,I,C_,I_):-
 	,I_ < C_.
 
 
+%!	program_signature(+Invented,+Targets,+BK,-Predicates,-Constants)
+%!	is det.
+%
+%       Construct the predicate and constant signatures.
+%
+%       Invented is the maximum number of invented predicate symbols.
+%
+%       Targets is a list of symbols and arities of target predicates.
+%
+%       BK is the list of symbols and arities of background predicates.
+%
+%       Predicates is the predicate signature, a list of symbols in
+%       target predicates, background predicates and any invented
+%       predicates.
+%
+%       Constants is the constant signature, the list of constants in
+%       all clauses of background predicates.
+%
+%       Predicates and Constants are ordered according to
+%       order_constraints/3. In particular, Predicates is a
+%       concatenation of the list of Targets, the list of invented
+%       predicate symbols and the list of symbols output as the first
+%       output argument of order_constraints/3.
+%
+%       @tbd This takes the list of Targets as already ordered by the
+%       user and keeps the ordering when building the predicate
+%       signature.
+%
+program_signature(K,F/A,BK,PS,CS):-
+        program_signature(K,[F/A],BK,PS,CS)
+        ,!.
+program_signature(K,Ts,BK,PS,CS):-
+	order_constraints(BK,Ps,CS)
+	,invented_symbols(K,Is)
+        % Remove arities from targets' symbols.
+        ,findall(S
+                ,member(S/_A,Ts)
+                ,Ts_)
+        ,append(Ts_,Is,Ss)
+	,append(Ss,Ps,PS).
+
 
 %!	write_program(+Module,+Pos,+BK,+PS,-Refs) is det.
 %
@@ -136,9 +177,8 @@ prove(Ts,As,BK,MS,Ss):-
         configuration:depth_limits(C,I)
         ,depth_level(C,I,K,J)
         ,debug(depth_level,'Depth level: ~w clauses, ~w invented.',[K,J])
-        ,predicate_signature(Ts,J,Sig)
-        ,prove(K,As,BK,MS,Sig,[],Ss).
-
+        ,program_signature(J,Ts,BK,PS,CS)
+        ,prove(K,As,BK,MS,PS-CS,[],Ss).
 
 %!      prove(+K,+Atoms,+BK,+Metarules,+Sig,+Acc,-Clauses) is nondet.
 %
@@ -146,6 +186,10 @@ prove(Ts,As,BK,MS,Ss):-
 %
 %       +K is an upper bound to the cardinality of the learned set of
 %       Clauses.
+%
+%       Sig is the program signature: a compound PS-CS where PS is the
+%       list of predicate symbols in the predicate signature and CS is
+%       the list of constants in the constant signature.
 %
 prove(_K,[],_BK,_MS,_Sig,Ps,Ps):-
         !
@@ -287,10 +331,14 @@ new_metasub(K,Ss,A,MS,Sig,[Sub-M|Ss],Ls):-
 %       This predicate instantiates each of P,Q,R... to a symbol in
 %       Signature.
 %
-bind_existential(Sub,Sig):-
+bind_existential(Sub,PS-_CS):-
         debug(bind_existential,'Binding existential variables: ~w',[Sub])
-        ,Sub =.. [m|[_Id,_T|Es]]
-        ,bind_existential_(Es,Sig,Es).
+        ,Sub =.. [m|[Id,T|Es]]
+        ,bind_existential_(Es,PS,Es)
+        ,configuration:order_constraints(Id,[T|Es],_Fs,Ps,_Cs)
+        ,debug(bind_existential, 'Testing lexicographic order constraints: ~w', [Ps])
+        ,debug(bind_existential, 'Predicate signature: ~w', [PS])
+        ,order_test(Ps,PS).
 
 %!      bind_existential_(+Sub,+Sig) is nondet.
 %
@@ -299,8 +347,60 @@ bind_existential(Sub,Sig):-
 bind_existential_([],_Sig,_Acc).
 % I know, weird. Acc stays unbound and yet it doesn't.
 bind_existential_([S|Sub],Sig,Acc):-
-        member(S/_,Sig)
+        member(S,Sig)
         ,bind_existential_(Sub,Sig,Acc).
+
+
+%!      order_test(+Terms,+Ordering) is det.
+%
+%       True when Terms conform to a total Ordering.
+%
+%       Terms is a list of ordered pairs T1>T2, where T1, T2 are two
+%       predicate symbols (without arities) or two constants.
+%
+%       Ordering is a lit of predicate symbols or constants
+%       representing a total ordering over the predicate or constant
+%       signature, respectively.
+%
+%       order_test/2 is true iff every term T1 in a pair T1>T2 in Terms
+%       is above its corresponding T2 in Ordering.
+%
+order_test(_Ts,[]):-
+        !.
+order_test(Ts,Cs):-
+        ordered_list(Ts,Cs).
+
+
+%!	ordered_list(?List,+Ordering) is det.
+%
+%	A List ordered according to a total Ordering of its elements.
+%
+ordered_list([X>Y],Os):-
+	above(X,Y,Os)
+	,!.
+ordered_list([X>Y|Ls],Os):-
+	above(X,Y,Os)
+	,ordered_list(Ls,Os).
+
+
+%!	above(?Above,+Below,+Ordering) is det.
+%
+%	True when Above is above Below in a total Ordering.
+%
+above(S1,S2,Ss):-
+	previous(S1,S2,Ss).
+above(S1,S3,Ss):-
+	previous(S1,S2,Ss)
+	,above(S2,S3,Ss).
+above(S1,S2,[_|Ss]):-
+	above(S1,S2,Ss).
+
+
+%!	previous(?First,?Next,?List) is det.
+%
+%	True when First and Next are the first two elements of List.
+%
+previous(S1,S2,[S1,S2|_Ss]).
 
 
 
