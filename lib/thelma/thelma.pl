@@ -150,7 +150,8 @@ program_signature(K,Ts,BK,PS,CS):-
                 ,member(S/_A,Ts)
                 ,Ts_)
         ,append(Ts_,Is,Ss)
-	,append(Ss,Ps,PS).
+	,append(Ss,Ps,PS)
+        ,debug(program_signature,'Program signature: ~w - ~w.',[PS,CS]).
 
 
 %!	write_program(+Module,+Pos,+BK,+PS,-Refs) is det.
@@ -337,8 +338,8 @@ bind_existential(Sub,PS-_CS):-
         ,bind_existential_(Es,PS,Es)
         ,configuration:order_constraints(Id,[T|Es],_Fs,Ps,_Cs)
         ,debug(bind_existential, 'Testing lexicographic order constraints: ~w', [Ps])
-        ,debug(bind_existential, 'Predicate signature: ~w', [PS])
-        ,order_test(Ps,PS).
+        ,order_test(Ps,PS)
+        ,debug(bind_existential, 'Constraints satisfied.', []).
 
 %!      bind_existential_(+Sub,+Sig) is nondet.
 %
