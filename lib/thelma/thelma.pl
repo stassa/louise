@@ -365,7 +365,7 @@ bind_existential_([S|Sub],Sig,Acc):-
 %       order_test/2 is true iff every term T1 in a pair T1>T2 in Terms
 %       is above its corresponding T2 in Ordering.
 %
-order_test(_Ts,[]):-
+order_test([],_):-
         !.
 order_test(Ts,Cs):-
         ordered_list(Ts,Cs).
