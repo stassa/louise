@@ -16,6 +16,7 @@
 		      ,invented_symbols/2
 		      ,known_metarules/1
 		      ,predicate_signature/2
+		      ,predicate_signature/3
 		      ,background_predicate/2
 		      ,same_metarule/2
 		      ,write_encapsulated_problem/1
@@ -604,28 +605,39 @@ known_metarules(Ids):-
 %	their order in the background_knowledge/2 declaration for
 %	Target.
 %
-predicate_signature(T/A,Ss):-
-	predicate_signature([T/A],Ss)
-	,!.
 predicate_signature(Ts,Ss):-
-	findall(Ss_i
-	       ,(member(T,Ts)
-		,predicate_signature_(T,[_|Ss_i])
-		)
-	       ,SS)
-	,flatten(SS,SS_f)
-	,maplist(sort,[Ts,SS_f],[Ts_,Ss_s])
-	,append(Ts_,Ss_s,Ss).
-
-%!	predicate_signature(+Target,-Signature) is det.
-%
-%	Business end of predicate_signature/2.
-%
-predicate_signature_(T/A,[T/A|Ss]):-
 	configuration:max_invented(I)
-	,experiment_file:background_knowledge(T/A,BK)
-	,invented_symbols(I,A,Is)
-	,append(Is,BK,Ss).
+	,predicate_signature(Ts,I,Ss).
+
+
+%!	predicate_signature(+Targets,+Invented,-Signature) is det.
+%
+%	As predicate_signature/2 but allows setting Invented max.
+%
+predicate_signature(T/A,I,Ss):-
+	predicate_signature([T/A],I,Ss)
+	,!.
+predicate_signature(Ts,I,Ss):-
+	setof(S
+	      ,T^A^Ts^BK^(member(T/A,Ts)
+			 ,experiment_file:background_knowledge(T/A,BK)
+			 ,member(S,BK)
+			 ,\+memberchk(S,Ts)
+			 )
+	      ,Bs)
+	% Branching allows for 0 invented predicates.
+	,(   setof(I_i
+		  ,T^A^Bs^I^Is_i^(member(T/A,Bs)
+			     ,invented_symbols(I,A,Is_i)
+			     ,member(I_i, Is_i)
+			     )
+		  ,Is)
+	 ->  true
+	 ;   Is = []
+	 )
+	,sort(Ts,Ts_)
+	,append(Ts_,Is,Ps)
+	,append(Bs,Ps,Ss).
 
 
 
@@ -646,6 +658,10 @@ predicate_signature_(T/A,[T/A|Ss]):-
 %	experiment file must be loaded into memory (as normally done by
 %	starting the project with a clause of experiment_file/2 in
 %	configuration.pl).
+%
+%	@tbd This predicate includes all the symbols in the predicate
+%	signature to the symbols in BK - that's most likely wrong,
+%	although examples are also used as BK.
 %
 background_predicate(T,P):-
 	predicate_signature(T,Ss)
