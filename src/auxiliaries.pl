@@ -628,8 +628,8 @@ predicate_signature(Ts,I,Ss):-
 	% Branching allows for 0 invented predicates.
 	,(   setof(I_i
 		  ,T^A^Bs^I^Is_i^(member(T/A,Bs)
-			     ,invented_symbols(I,A,Is_i)
-			     ,member(I_i, Is_i)
+				 ,invented_symbols(I,A,Is_i)
+				 ,member(I_i, Is_i)
 			     )
 		  ,Is)
 	 ->  true
