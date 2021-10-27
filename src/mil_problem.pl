@@ -352,9 +352,9 @@ hide_literals([L|Ls],PS,Acc,Bind):-
 %
 %	Extract symbols and arities from Examples of Targets.
 %
-%	Examples is a list of positive examples, encapsulated or not.
-%	Targets is a list of the predicate symbols and arities of the
-%	target predicates in that list of examples.
+%	Examples is a list of positive or negative examples,
+%	encapsulated or not. Targets is a list of the predicate symbols
+%	and arities of the target predicates in that list of examples.
 %
 examples_targets(Es,Ss):-
         setof(S
@@ -368,13 +368,23 @@ examples_targets(Es,Ss):-
 %
 %	Derive the predicate symbol of an Example.
 %
-%	Example is a positive example. It might be encapsulated, or not.
-%	Symbol is a compound Symbol/Arity, the symbol and arity of the
-%	Example's predicate (not m/n if encapsulated).
+%	Example is a positive or negative example. It might be
+%	encapsulated, or not. Symbol is a compound Symbol/Arity, the
+%	symbol and arity of the Example's predicate (not m/n if
+%	encapsulated).
 %
 symbol(H:-_B,F/A):-
 	!
 	,symbol(H,F/A).
+symbol(:-E,F/A):-
+% Encapsulated negative example.
+        E =.. [m,F|As]
+        ,!
+        ,length(As,A).
+symbol(:-H,F/A):-
+% Not encapsulated negative example.
+        functor(H,F,A)
+        ,!.
 symbol(E,F/A):-
 % Encapsulated example.
         E =.. [m,F|As]
