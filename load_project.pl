@@ -1,5 +1,7 @@
 % Start in dark mode
 %:-use_module(library(theme/dark)).
+% Start in dork mode
+%:-use_module((themes/dork)).
 
 :-prolog_load_context(directory, Dir)
 ,asserta(user:file_search_path(project_root, Dir)).
