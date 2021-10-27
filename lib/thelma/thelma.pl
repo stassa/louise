@@ -55,7 +55,7 @@ thelma(Pos,Neg,BK,MS,Ps):-
              ,applied_metarules(Ms,MS,Ms_)
              ,debug_clauses(thelma,'Current hypothesis:',Ms_)
              ,debug(thelma,'Disproving examples...',[])
-             ,disprove(Neg_,Ms_)
+             ,disprove(Neg_,BK,Ms_)
              )
         ,Cl = (debug(thelma,'Erasing program clauses...',[])
               ,erase_program_clauses(Refs))
@@ -405,17 +405,18 @@ previous(S1,S2,[S1,S2|_Ss]).
 
 
 
-%!	disprove(+Atoms,+Program) is det.
+%!	disprove(+Atoms,+BK,+Program) is det.
 %
 %	True when a Program does not cover negative examples.
 %
-%	Atoms is a list of negative examples of the learning target. It
-%	is a list of lists where each sublist is an atom in the form of
-%	a list [F|As], where F the symbol of the target predicate and As
-%	the list of the atom's terms.
+%       Atoms is a list of negative examples of one or more learning
+%       targets. It is a list of negated atoms, :-E1, :-E2, etc.
+%
+%       BK is a list of predicate indicators declared as bakcground
+%       knowledge for the predicates of the negative examples.
 %
 %	Program is a list of definite datalog clauses, a hypothesis
-%	formed by a call to prove/6.
+%	formed by a call to prove/5.
 %
 %	disprove/2 fails iff an atom in Atoms is entailed by Program.
 %	This is tested by first asserting Program to the dynamic
@@ -423,11 +424,16 @@ previous(S1,S2,[S1,S2|_Ss]).
 %	Program is retracted from the database after the proof
 %	completes.
 %
-disprove([],_Ms):-
+disprove([],_BK,_Ms):-
 % Skip further processing if there are no negative examples.
 	!.
-disprove(Neg,Ps):-
-        S  = assert_program(thelma,Ps,Refs)
+disprove(Neg,BK,Ps):-
+        examples_targets(Neg,Ts)
+        %,bk_symbols(Ts,BK)
+        ,S  = (assert_program(thelma,Ps,Refs)
+              ,table_encapsulated(Ts,m)
+              ,table_encapsulated(BK,p)
+              )
         % Succeed if the program fails, otherwise fail;
 	% Erase the newly asserted clauses eitherwise.
         ,G = forall(member(:-A,Neg)
@@ -435,5 +441,49 @@ disprove(Neg,Ps):-
                      ,\+ once(call(thelma:A))
                      )
                    )
-        ,C = erase_program_clauses(Refs)
+        ,C = (erase_program_clauses(Refs)
+             ,untable_encapsulated(Ts,m)
+             ,untable_encapsulated(BK,p)
+             )
         ,setup_call_cleanup(S,G,C).
+
+
+%!      table_encapsulated(+Targets,+Symbol) is det.
+%
+%       Table a set of Targets encapsulated by a Symbol.
+%
+%       This is a variant of the table_encapsulated/1 defined in
+%       dynamic_learning, that also accepts an encapsulation predicate
+%       so that BK predicates (encapsulated using 'p' rather than 'm')
+%       can also be encapsulated.
+%
+%       @tbd Move this to auxiliaries and replace the dynamic_learning
+%       version with it.
+%
+table_encapsulated(Ts,P):-
+	forall(member(_F/A,Ts)
+	      ,(succ(A,A_)
+               ,table(thelma:P/A_)
+               %,writeln('Tabled':P/A_)
+	       )
+	      ).
+
+
+%!      untable_encapsulated(+Targets,+Symbol) is det.
+%
+%       Untable a set of Target predicates encapsulated by a Symbol.
+%
+%       Variant of the untable_encapsulated/1 predicate defined in
+%       dynamic_learning that also accepts an encapsulation predicate
+%       similar to table_encapsulated/2.
+%
+%       @tbd Also move to auxiliaries and replace the dynamic_learning
+%       version.
+%
+untable_encapsulated(Ts,P):-
+	forall(member(_F/A,Ts)
+	      ,(succ(A,A_)
+	       ,untable(thelma:P/A_)
+               %,writeln('Untabled':P/A_)
+	       )
+	      ).
