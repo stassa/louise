@@ -326,21 +326,6 @@ program_results(F/A,Ps,_BK,Rs):-
 	,setup_call_cleanup(S,G,C).
 
 
-%!	unifiable_compare(-Delta,+A,+B) is det.
-%
-%	Comparison predicate for predsort/3.
-%
-%	If A and B unify Delta is =, otherwise compare(Delta,A,B) is
-%	true.
-%
-%	Suggested by Boris on the Swi-Prolog mailing list.
-%
-unifiable_compare(Delta, A, B) :-
-    (   unifiable(A, B, _)
-    ->  Delta = (=)
-    ;   compare(Delta, A, B)
-    ).
-
 
 %!	manage_residue(+Target,+Program,-Managed) is det.
 %
