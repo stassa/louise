@@ -29,6 +29,8 @@
 	   except([resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
 :-reexport(lib/sampling/sampling_configuration).
+:-reexport(lib/thelma/thelma_configuration).
+:-reexport(lib(thelma/thelma_auxiliaries)).
 
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
