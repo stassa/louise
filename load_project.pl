@@ -23,6 +23,8 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(metagen)).
 :-use_module(src(examples_invention)).
 :-use_module(src(meta_learning)).
+:-use_module(lib(thelma/thelma)).
+:-use_module(lib(folding_unfolding/folding_unfolding)).
 
 edit_files:-
 % Uncomment, or add, the paths of files you want to open in the IDE when
@@ -30,16 +32,25 @@ edit_files:-
 	configuration:experiment_file(P,_)
 	,edit(project_root(load_project))
 	,edit(project_root(configuration))
-	,edit(src(mil_problem))
+	%,edit(src(experiment_file))
+	%,edit(src(mil_problem))
 	,edit(src(louise))
 	,edit(src(auxiliaries))
 	%,edit(lib(evaluation/evaluation))
 	,edit(src(dynamic_learning))
 	%,edit(src(metagen))
-	,edit(src(examples_invention))
+	%,edit(src(examples_invention))
 	%,edit(src(metarules_parser))
 	%,edit(src(subhypothesis_selection))
-	,edit(src(minimal_program))
+	%,edit(src(minimal_program))
+	%,edit(src(incremental_refinement))
+	%,edit(src(meta_learning))
+	%,edit(lib(thelma/thelma))
+	%,edit(lib(thelma/thelma_auxiliaries))
+	%,edit(lib(thelma/thelma_configuration))
+	%,edit(lib(program_reduction/program_reduction))
+	%,edit(lib(evaluation/evaluation2))
+	%,edit(lib(folding_unfolding/folding_unfolding))
 	,edit(P)
 	.
 :-edit_files.
@@ -48,7 +59,7 @@ edit_files:-
 %:-run_tests.
 
 % Large data may require a larger stack.
-%:- set_prolog_flag(stack_limit, 2_147_483_648).
+:- set_prolog_flag(stack_limit, 2_147_483_648).
 %:- set_prolog_flag(stack_limit, 4_294_967_296).
 %:-set_prolog_flag(stack_limit, 8_589_934_592).
 %:-set_prolog_flag(stack_limit, 17_179_869_184).
@@ -57,7 +68,7 @@ edit_files:-
 
 % Large hypotheses may require large tables particularly for evaluation
 % purposes
-%:-set_prolog_flag(table_space, 2_147_483_648).
+:-set_prolog_flag(table_space, 2_147_483_648).
 %:-set_prolog_flag(table_space, 4_294_967_296).
 %:-set_prolog_flag(table_space, 8_589_934_592).
 %:-set_prolog_flag(table_space, 17_179_869_184).

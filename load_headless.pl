@@ -18,6 +18,8 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(metagen)).
 :-use_module(src(examples_invention)).
 :-use_module(src(meta_learning)).
+:-use_module(lib(thelma/thelma)).
+:-use_module(lib(folding_unfolding/folding_unfolding)).
 
 %:-load_test_files([]).
 %:-run_tests.
