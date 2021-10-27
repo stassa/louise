@@ -271,7 +271,7 @@ specialised_metarules_(Pos,Neg,BK,MS,MS_):-
 	configuration:metarule_learning_limits(L)
 	,examples_targets(Pos,Ts)
 	,herbrand_signature(Ts,Ss)
-        ,S = write_program(Pos,BK,Refs)
+        ,S = write_problem(user,[Pos,BK],Refs)
 	,(   L = sampling(R)
 	 ->  pk_list_samples(R,Pos,Pos_)
 	    ,G = specialised_metarules(none,Pos_,Neg,MS,Ss,[],MS_)

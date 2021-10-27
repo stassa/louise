@@ -231,7 +231,7 @@ untable_encapsulated(Ts):-
 %
 top_program_dynamic(C,Ss,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	,S = write_program(Pos,BK,Refs)
+	,S = write_problem(user,[Pos,BK],Refs)
 	,G = (top_program_dynamic(C,Pos,Neg,MS)
 	     ,collect_clauses(Ss,MS,Ts_)
 	     ,debug_clauses(dynamic,'Collected clauses:',Ts_)

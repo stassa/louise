@@ -19,6 +19,7 @@
 		      ,predicate_signature/3
 		      ,background_predicate/2
 		      ,same_metarule/2
+		      ,write_problem/3
 		      ,write_encapsulated_problem/1
 		      ,write_encapsulated_problem/4
 		       % Debugging auxiliaries
@@ -123,6 +124,7 @@ Table of Contents
    * predicate_signature/2
    * background_predicate/2
    * same_metarule/2
+   * write_problem/3
    * write_encapsulated_problem/1
    * write_encapsulated_problem/4
 
@@ -739,6 +741,24 @@ metarule_head_body_name(M,Sub_,B_,Id):-
 
 
 
+%!	write_problem(+Module,+Elements,-Refs) is det.
+%
+%	Write the Elements of a MIL problem to a Module.
+%
+%	Refs is a list of references of the clauses assserted to the
+%	dynamic database. These are meant to be used later to erase the
+%	asserted clauses.
+%
+write_problem(M,Es,Rs):-
+	findall(Rs_i
+		,(member(P, Es)
+		 ,assert_program(M,P,Rs_i)
+		 )
+		,Rs_)
+	,flatten(Rs_,Rs).
+
+
+
 %!	write_encapsulated_problem(+Target) is det.
 %
 %	Write an encapsulated MIL problem to the dynamic db.
@@ -1028,7 +1048,7 @@ list_top_program(T):-
 list_top_program(T,U,E):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,write_program(Pos_,BK_,Refs)
+	,write_problem(user,[Pos_,BK_],Refs)
 	,generalise(Pos_,MS_,Ss_Pos_)
 	,write_and_count(T,'Generalisation:',MS,Ss_Pos_,U,E)
 	,specialise(Ss_Pos_,Neg_,Ss_Neg)

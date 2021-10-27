@@ -1,7 +1,6 @@
 :-module(louise, [learn/1
 		 ,learn/2
 		 ,learn/5
-		 ,write_program/3
 		 ,top_program/5
 		 ,generalise/3
 		 ,specialise/3
@@ -111,7 +110,8 @@ top_program(Pos,Neg,BK,MS,_Ts):-
 	).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	,S = write_program(Pos,BK,Refs)
+	% Negative examples and metarules don't need to be asserted.
+	,S = write_problem(user,[Pos,BK],Refs)
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise(Pos,MS,Ss_Gen)
 	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
@@ -136,22 +136,6 @@ top_program(Pos,Neg,BK,MS,Ts):-
 top_program(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
-
-
-%!	write_program(+Pos,+BK,+PS,-Refs) is det.
-%
-%	Write an encapsulated MIL problem to the dynamic database.
-%
-%	@tbd The negative examples and metarules don't need to be
-%	written to the dynamic database.
-%
-write_program(Pos,BK,Rs):-
-	findall(Rs_i
-		,(member(P, [Pos,BK])
-		 ,assert_program(user,P,Rs_i)
-		 )
-		,Rs_)
-	,flatten(Rs_,Rs).
 
 
 

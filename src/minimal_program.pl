@@ -100,7 +100,7 @@ minimal_program(_Pos,_Neg,_BK,_MS,_Ts):-
 	,throw('theorem_prover(tp) not working with minimal program learning').
 minimal_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	,S = write_program(BK,Pos,Refs)
+	,S = write_problem(user,[BK,Pos],Refs)
 	,G = minimal_program_(Pos,Neg,MS,[],Ts)
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C).
