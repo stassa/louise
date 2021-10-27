@@ -146,7 +146,8 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,debug(learn,'Reducing dynamic Top program...',[])
 	,reduced_top_program_dynamic(Pos_,BK_,MS_,Ts,Rs)
 	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(Ss,Rs,Ps).
+	,excapsulated_clauses(Ss,Rs,Ps_)
+	,unfold_clauses(Ps_,[Pos,BK],Ps).
 
 
 %!	table_encapsulated(+Targets) is det.
@@ -233,9 +234,8 @@ top_program_dynamic(C,Ss,Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,S = write_problem(user,[Pos,BK],Refs)
 	,G = (top_program_dynamic(C,Pos,Neg,MS)
-	     ,collect_clauses(Ss,MS,Ts_)
-	     ,debug_clauses(dynamic,'Collected clauses:',Ts_)
-	     ,unfold_clauses(Ts_,Ss,Ts)
+	     ,collect_clauses(Ss,MS,Ts)
+	     ,debug_clauses(dynamic,'Collected clauses:',Ts)
 	     )
 	,Cl = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,Cl)
@@ -568,15 +568,15 @@ unifiable_compare(Delta, A, B) :-
     ).
 
 
-%!	unfold_clauses(+Clauses,+Targets,-Unfolded) is det.
+%!	unfold_clauses(+Clauses,+Problem,-Unfolded) is det.
 %
 %	Unfold Clauses to remove invented predicates.
 %
 %	Clauses is a set of Clauses learned by top_program_dynamic/4,
 %	possibly including definitions of invented predicates.
 %
-%	Targets is a list of predicate symbols and arities of target
-%	predicates in Clauses.
+%	Problem is the set of positive examples and BK symbols and
+%	arities of target predicates in Clauses.
 %
 %	Unfolded is the list of clauses in Clauses unfolded to remove
 %	invented predicates. See unfold_invented/3 for an explanation of
@@ -586,11 +586,17 @@ unifiable_compare(Delta, A, B) :-
 %	option unfold_invented/1 is set to "true". Otherwise, Unfolded
 %	is bound to Clauses.
 %
-unfold_clauses(Cs,Ss,Us):-
+unfold_clauses(Cs,[Pos,BK],Us):-
 	configuration:unfold_invented(true)
 	,!
 	,debug(top_program,'Unfolding invented Top Progam',[])
-	,unfold_invented(Cs,Ss,Us).
+	,examples_targets(Pos,Ss)
+	,closure(BK,experiment_file,Bs)
+	,flatten(Bs,Bs_f)
+	,S = write_problem(unfolding,[Cs,Pos,Bs_f],Refs)
+	,G = unfold_invented(Cs,Ss,Us)
+	,C = erase_program_clauses(Refs)
+	,setup_call_cleanup(S,G,C).
 unfold_clauses(Cs,_Ss,Cs):-
 	configuration:unfold_invented(false).
 
@@ -620,10 +626,9 @@ reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
 %
 %	Unfold a Program, removing invented predicates.
 %
-%	Program is a program learned by dynamic learning which may
-%	include definitions of one or more invented predicates with
-%	symbols such as '$1', '$2', etc. Program should be encapsulated
-%	of unfold_invented/3 will fail.
+%	Program is a list of clauses forming a program which may include
+%	definitions of one or more invented predicates with symbols such
+%	as '$1', '$2', etc.
 %
 %	Targets is the list of predicate symbols and arities of the
 %	target predicates in Program, as F/A predicate indicators.
@@ -652,10 +657,6 @@ reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
 %	'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
 %	true.
 %	==
-%
-%	Note that the positive examples and background knowledge _must_
-%	be in the dynamic database and accessible from the dynamic
-%	learning module, else unfold_invented/3 will fail.
 %
 %	Motivation
 %	----------
@@ -737,15 +738,9 @@ reduced_top_program_dynamic(Pos,BK,MS,Ps,Rs):-
 %	resolvent of a clause of a target predicate (whereas otherwise
 %	it would potentially backtrack over all positive examples).
 %	Unfortunately, this also requires the unfolded program to be
-%	"lifted" to variabilise its constants. Since Program is
-%	encapsulated, lifting it will variabilise the predicate symbols
-%	in literals, which will result in a nonsensical program with
-%	literals like m(P,X,Y,Z) where P should be a predicate symbol,
-%	rather than a variable. To avoid this, we utilise a predicate
-%	encapsulated_signature/2 to collect all constants in the
-%	encapsulated input Program, which, since Program is
-%	encapsulated, includes not only predicate symbols but also
-%	constants of the learned theory. The whole process is a little
+%	"lifted" to variabilise its constants. To achieve this, we
+%	utilise a predicate theory_constants/2 to collect all constants
+%	in the encapsulated input Program. The process is a little
 %	fiddly and not exactly the most efficient thing in the world,
 %	but the alternative is even fiddlier and includes passing around
 %	metasubstitutions and instantiating their existentially
@@ -760,8 +755,9 @@ unfold_invented(Ps,Ts,Us):-
 	,!
 	,unfold_clauses(Cs,Ss,Is,[],Us_)
 	,flatten(Us_,Us_f)
-	,encapsulated_signature(Ps,Ps_Cs)
-	,lifted_program(Us_f,Ps_Cs,Us).
+	,theory_constants(Ps,Ps_Cs)
+	,lifted_program(Us_f,Ps_Cs,Us_l)
+	,predsort(unifiable_compare,Us_l, Us).
 unfold_invented(Ps,Ts,Ps):-
 	program_invented(Ps,Ts,_Cs,[]).
 
@@ -926,9 +922,9 @@ unfold_clause(H:-B,Ss,Is,H:-B_):-
 % TODO: Actually, all of the above means that we can't process arbitrary
 % definite clause examples. For those we'd have to modify this code
 % slightly.
-must_be(nonvar,H)
+	must_be(nonvar,H)
 	,must_be(nonvar,B)
-	,clause(H,true)
+	,clause(unfolding:H,true)
 	,unfold_literals(B,Ss,Is,(H),U_)
 	,treeverse(U_,(H,B_)).
 
@@ -959,7 +955,7 @@ unfold_literals(L,Ss,Is,Acc,Bind):-
 % a literal in the refutation sequence of a positive example.
 	L \= (_,_)
 	,\+ clause_of(L,Ss)
-	,call(L)
+	,call(unfolding:L)
 	,unfold_literals(true,Ss,Is,(L,Acc),Bind).
 
 
@@ -983,27 +979,27 @@ head_body(A,L,true):-
 	copy_term(A,L).
 
 
-%!	encapsulated_signature(+Encapsulated,-Signature) is det.
+%!	theory_constants(+Clauses,-Signature) is det.
 %
 %	Collect constants in an Encapsulated program.
 %
-%	Encapsulated is a list of encapsulated clauses of a program
-%	learned with dynamic learning.
+%	Clauses is a list of clauses of a program learned with dynamic
+%	learning.
 %
 %	Signature is the list of constants of in all clauses in
-%	Encapsulated.
-%
-%	Note well: since Encapsulated is, well, encapsulated, its
-%	constants are actually constants _and_ predicate symbols. This
-%	is as it should be because we want to collect both of those for
-%	use in lifting an unfolded program, where we want to preserve
-%	both symbols and constants in a theory.
+%	Clauses.
 %
 %	Use this predicate to collect symbols and constants in a program
 %	that must be excluded from variabilisation when unfolded clauses
 %	are variabilised at the end of unfold_invented/3.
 %
-encapsulated_signature(Ps,Ss):-
+%	@tbd Note that only constants in clauses with a head and body
+%	are collected. Atomic clauses should _not_ be lifted. Currently,
+%	lifted_program/3 ignores atomic clauses which is a bug to solve
+%	in that program. Once that bug is solved, this module will have
+%	to separate atomic from other clauses and lift only the latter.
+%
+theory_constants(Ps,Ss):-
 % Below, we collect each result in each findall/3 loop with a subsequent
 % call to member/2 to avoid flattening the final list of constants after
 % the outer loop exits. Flattening the list of all constants also
@@ -1018,8 +1014,12 @@ encapsulated_signature(Ps,Ss):-
 % Actually, it looks like a stairway to heaven. A bit.
 %
 % Outer loop: find all constants in all clauses.
+%
 	findall(Cn
 	       ,(member(C,Ps)
+		% We only want constants in definite clauses
+		% Not unit clauses.
+		,C = (_H:-_B)
 		,clause_literals(C,Ls)
 		% Median loop: find all constants in all literals
 		,findall(Cn_
