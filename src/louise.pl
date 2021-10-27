@@ -214,12 +214,28 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	negative example is a ground definite goal (i.e. a clause of the
 %	form :-Example).
 %
+%/*
 metasubstitution(E,M,Sub):-
 	bind_head_literal(E,M,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Bound head literal:',H)
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,user:call(Ls)
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
+%*/
+/* TODO: Extra debugging; consider adding in properly.
+metasubstitution(E,M,Sub):-
+	bind_head_literal(E,M,(Sub:-(H,Ls)))
+	,debug_clauses(metasubstitution,'Bound head literal:',H)
+	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
+	,(    user:call(Ls)
+	 ->   debug_clauses(metasubstitution,'Succeeded:',Ls)
+	 ;    debug_clauses(metasubstitution,'Failed:',Ls)
+	     ,fail
+	 ).
+metasubstitution(_E,_M,Sub):-
+	debug_clauses(metasubstitution,'Failed:',Sub)
+	,fail.
+*/
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
 %
