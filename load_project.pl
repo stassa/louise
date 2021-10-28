@@ -3,6 +3,8 @@
 % Start in dork mode
 %:-use_module((themes/dork)).
 
+:- set_prolog_flag(encoding, utf8).
+
 :-prolog_load_context(directory, Dir)
 ,asserta(user:file_search_path(project_root, Dir)).
 
