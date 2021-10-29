@@ -131,6 +131,7 @@ learn_dynamic(Pos,Neg,BK,MS,_Ts):-
 	).
 learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	configuration:max_invented(I)
+	,configuration:unfold_invented(U)
 	,C = c(1,I)
 	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
@@ -143,7 +144,10 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,reduced_top_program_dynamic(Pos_,BK_,MS_,Ts,Rs)
 	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(Ss,Rs,Ps_)
-	,unfold_clauses(Ps_,Pos,BK,Ps).
+	,(   U ==  true
+	 ->  unfold_clauses(Ps_,Pos,BK,Ps)
+	 ;   Ps_ = Ps
+	 ).
 
 
 %!	table_encapsulated(+Targets) is det.

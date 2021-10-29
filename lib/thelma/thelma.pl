@@ -85,6 +85,7 @@ thelma(T,Prog):-
 %
 thelma(Pos,Neg,BK,MS,Prog):-
 	configuration:depth_limits(C,I)
+	,configuration:unfold_invented(U)
 	,convert_examples(pos,Pos,Pos_c)
 	,convert_examples(neg,Neg,Neg_c)
 	,target_predicate(Pos_c,T)
@@ -94,10 +95,14 @@ thelma(Pos,Neg,BK,MS,Prog):-
 	,S = transform_metarules(MS)
 	,G = (prove(C_,Pos_c,BK,MS,Po-Co,Ps)
 	     ,disprove(Neg_c,BK,Ps)
-	     ,project_metasubs(Ps, Prog)
+	     ,project_metasubs(Ps, Prog_)
 	     )
 	,Cl = cleanup_metarules
-	,setup_call_cleanup(S,G,Cl).
+	,setup_call_cleanup(S,G,Cl)
+	,(   U == true
+	 ->  unfold_clauses(Prog_,Pos,BK,Prog)
+	 ;   Prog_ = Prog
+	 ).
 thelma(_Pos,_Neg,_BK,_MS,[]).
 
 

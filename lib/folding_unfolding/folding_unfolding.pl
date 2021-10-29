@@ -264,14 +264,8 @@ drop([Y|Xs],[Y|Ys],Acc):-
 %	invented predicates. See unfold_invented/3 for an explanation of
 %	unfolding invented predicates.
 %
-%	The clauses in Clauses are only unfolded if the configuration
-%	option unfold_invented/1 is set to "true". Otherwise, Unfolded
-%	is bound to Clauses.
-%
 unfold_clauses(Cs,Pos,BK,Us):-
-	configuration:unfold_invented(true)
-	,!
-	,debug(top_program,'Unfolding invented Top Progam',[])
+	debug(top_program,'Unfolding invented Top Progam',[])
 	,examples_targets(Pos,Ss)
 	,closure(BK,experiment_file,Bs)
 	,flatten(Bs,Bs_f)
@@ -279,8 +273,6 @@ unfold_clauses(Cs,Pos,BK,Us):-
 	,G = unfold_invented(Cs,Ss,Us)
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C).
-unfold_clauses(Cs,_Pos,_BK,Cs):-
-	configuration:unfold_invented(false).
 
 
 
