@@ -1,6 +1,7 @@
 :-module(thelma_cofiguration, [default_ordering/1
                               ,depth_limits/2
                               ,order_constraints/5
+                              ,metarule_functor/1
                               ]).
 
 /** <module> Configuration options for Thelma.
@@ -56,3 +57,10 @@ order_constraints(tailrec,[P,Q],[X,Y,Z],[P>Q],[X>Z,Z>Y]).
 order_constraints(precon,[P,Q,R],_Fs,[P>Q,P>R],[]).
 order_constraints(postcon,[P,Q,R],_Fs,[P>Q,P>R],[]).
 order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
+
+
+%!	metarule_functor(?Functor) is semidet.
+%
+%	Functor for the internal representation of metarules.
+%
+metarule_functor('$metarule').

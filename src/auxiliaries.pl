@@ -72,6 +72,8 @@
 :-use_module(src(mil_problem)).
 :-use_module(src(defaults)).
 :-use_module(src(louise)).
+:-reexport(lib(thelma/thelma_auxiliaries)).
+
 
 /** <module> Auxiliary predicates.
 
@@ -1259,7 +1261,7 @@ print_metarule(MR):-
 
 %!	metarule_variables(+Metarule,-Second_order,-First_order) is det.
 %
-%	Collect variables in a Metarule
+%	Collect variables in an encapsulated Metarule.
 %
 %	Second_order is the list of second-order existentially
 %	quantified variables in Metarule. First_order is the list of

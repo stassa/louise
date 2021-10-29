@@ -1,5 +1,10 @@
 :-module(thelma_auxiliaries, [order_constraints/3
+			     ,transform_metarules/1
+			     ,cleanup_metarules/0
                              ]).
+
+:-use_module(project_root(configuration)).
+
 
 /** <module> Auxiliary predicates for Thelma.
 */
@@ -124,6 +129,16 @@ order_constraints(T,Ps,Cs):-
 	,M:constant_order(T,Cs)
 	,!.
 */
+/*
+order_constraints(T,Ps,Cs):-
+% Allow the user to override constraints - undocumented.
+        M = configuration
+	,predicate_property(M:predicate_order(_,_), defined)
+	,M:predicate_order(T,Ps)
+	,predicate_property(M:constant_order(_,_), defined)
+	,M:constant_order(T,Cs)
+	,!.
+*/
 order_constraints(F/A,Ps,Cs):-
 % Allow a target predicate's symbol as first argument.
 	!
@@ -154,14 +169,7 @@ order_constraints(BK,Ps,Cs):-
 %	background predicates defined in the current experiment file.
 %	Order is the same list ordered by lexicographic ordering.
 %
-%	@tbd Changed from original thelma version to remove arities from
-%	symbols. This may cause trouble further down the line,
-%	particularly existence errors when trying to prove BK atoms.
-%
-predicate_order(BK,Ss):-
-	findall(S
-	       ,member(S/_A, BK)
-	       ,Ss).
+predicate_order(BK,BK).
 
 
 %!	constants_indexing(+Module,+Background,-Indexed) is det.
@@ -228,3 +236,164 @@ unique_indices(O,[c(I/J/K,C)|Ss],Acc,Bind):-
 
 
 
+%!	transform_metarules(+IDs)
+%
+%	Transform metarules to internal representation.
+%
+%	IDs is a list of metarule identifierss.
+%
+%	This prepares metarules defined in Louise's preferred format to
+%	metarules in the format expected by Thelma. See notes in
+%	assert_metarules/1 regarding how yes, this is a bit silly and
+%	might change in the future.
+%
+transform_metarules(MS):-
+	expanded_metarules(MS, E_Ms)
+	,findall(metarule(Id,Es,Fs,L)
+		,(member(M,E_Ms)
+		 ,metarule_parts(M,Sub,L)
+		 ,Sub =.. [m,Id|Es]
+		 ,auxiliaries:metarule_variables(M,_Ss,Fs)
+		 )
+		,Ms)
+	%,print_clauses(Ms)
+	%,nl
+        ,assert_metarules(Ms).
+
+
+%!	metarule_parts(+Metarule,-Sub,-Literals) is det.
+%
+%	Split an encapsulated metarule to its constituent parts.
+%
+metarule_parts((Sub:-H,B),Sub, H:-B):-
+	!.
+metarule_parts((Sub:-H),Sub, H):-
+	!.
+
+
+%!	assert_metarules(+Metarules) is det.
+%
+%	Add a list of Metarules to the dynamic database.
+%
+%	Metarules is a list of encapsulated metarules manipulated by
+%	transform_metarules/1 to match the input format expected by
+%	assert_metarules/1.
+%
+%	assert_metarules/1 further transforms metarules to the internal
+%	format that Thelma understands.
+%
+%	This is a bit finicky and it's totally the result of copying
+%	much code from the original Thelma and adjusting it to work with
+%	Louise's notation for metarules and other stuff. This can be
+%	changed in the future to allow Thelma to instantiate metarules
+%	in Louise's internal format directly, without all this
+%	transformation necessary.
+%
+%	For the time being, the following are an example of the input to
+%	assert_metarules/1 (i.e. the elements of the list Metarules) and
+%	of the internal representation written to the dynamic database:
+%
+%	==
+%	% Input
+%	metarule(chain,[A,B,C],[D,E,F],(m(A,D,E):-m(B,D,F),m(C,F,E)))
+%
+%	% Asserted to the dynamic db:
+%	$metarule(chain,[A/2,B/2,C/2],[D,E,F],[[A,D,E],[B,D,F],[C,F,E]])
+%	==
+%
+assert_metarules([]):-
+	!.
+assert_metarules([metarule(Id,_,_,_)|Ms]):-
+% A metarule with this Id already exists in the dynamic database.
+	metarule_functor(F)
+	,T =.. [F,Id,_,_,_]
+	,predicate_property(T, number_of_clauses(N))
+	,N > 1
+	,call(user:T)
+	,!
+	,assert_metarules(Ms).
+assert_metarules([metarule(Id,Ss,Fs,Bs)|Ms]):-
+	metarule_functor(F)
+	,metarule_body(Bs, [], Bs_)
+	,symbols_arities(Ss,Bs_,Ss_)
+	,T =.. [F,Id,Ss_,Fs,Bs_]
+	,user:assert(T)
+	%,print_clauses(T)
+	,assert_metarules(Ms).
+
+
+%!	symbols_arities(+Symbols,+Literals,-Predicate_Indicators) is
+%!	det.
+%
+%	Derive the Predicate_Indicators of a list of predicate Symbols.
+%
+%	In the configuration notation for metarules, second-order
+%	predicate symbols are not given an arity. Here, their arities
+%	are derived from the arities of the literals in the encapsualted
+%	body of a metarule.
+%
+symbols_arities(Ss,Bs,Ss_):-
+	symbols_arities(Ss,Bs,[],Ss_).
+
+%!	symbols_arities(+Symbols,+Literals,+Acc,-PIs) is det.
+%
+%	Business end of symbols_arities/3.
+%
+symbols_arities([],[],Ss,Ss_):-
+	reverse(Ss,Ss_)
+	,!.
+symbols_arities([],[_],Ss,Ss_):-
+% Handles tailrec metarule where one symbol is shared by two literals.
+% Not convinced this is robust enough to cover any recursive pattern.
+	reverse(Ss,Ss_)
+	,!.
+symbols_arities(As,[],Ss,Ss_):-
+% Handles metarules meant to bind constants.
+% These should always come after existentially quantified variables.
+% Stupid reverse-append-reverse needs killing.
+% Later: This probably doesn't make sense anymore. No?
+        reverse(Ss, Ss_r)
+	,append(Ss_r,As,Ss_)
+	,!.
+symbols_arities([S1|Ss],[[S2|As]|Bs],Acc,Bind):-
+% Match exactly to avoid binding first-order existential vars.
+	S1 == S2
+	,!
+	,length(As,N)
+	,symbols_arities(Ss,Bs,[S1/N|Acc],Bind).
+symbols_arities([S|Ss],Bs,Acc,Bind):-
+% Skip because S is an existentially quantified first order var.
+% Handles metarules with existentially quantified first-order variables.
+% Also with body literals - unlike original Thelma.
+	symbols_arities(Ss,Bs,[S|Acc],Bind).
+
+
+%!	metarule_body(+Metarule,+Acc,-Body) is det.
+%
+%	Transform a metarule's body from a tree to a list.
+%
+metarule_body((H:-true),Acc,Bind):-
+	!
+	,metarule_body(H,Acc,Bind).
+metarule_body((H:-Bs),Acc,Bind):-
+	H =.. [_F|As]
+	,!
+	,metarule_body(Bs,[As|Acc],Bind).
+metarule_body((L,Ls),Acc,Bind):-
+	L =.. [_F|As]
+	,!
+	,metarule_body(Ls,[As|Acc],Bind).
+metarule_body((L),Acc,Bs_):-
+	L =.. [_F|As]
+	,reverse([As|Acc], Bs_).
+
+
+
+%!	cleanup_metarules is det.
+%
+%	Remove transformed metarules from the dynamic database.
+%
+cleanup_metarules:-
+	metarule_functor(F)
+	,functor(T,F,4)
+	,user:retractall(T).
