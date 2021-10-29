@@ -53,6 +53,9 @@
 %	only there to transform metarules from their user-friendly
 %	configuration representation to the internal m/n representation.
 %
+%	@tbd Unusable, since encapsulated metarules are no longer
+%	written to the dynamic database.
+%
 metarule_parts(Id,M,Sub,H,B):-
 	ground(Id)
 	,!
