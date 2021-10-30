@@ -913,9 +913,10 @@ list_learning_results:-
 list_learning_results(P/N):-
 	\+ memberchk(P,[learn
 		       ,learn_dynamic
+		       ,learn_meta
 		       ,learn_minimal
 		       ,learn_with_examples_invention
-		       ,learn_meta
+		       ,thelma
 		       ])
 	,format(atom(A),'Unknown learning predicate: ~w',[P/N])
 	,throw(A)

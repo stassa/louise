@@ -212,8 +212,10 @@ learned_metarules_printing(pretty).
 %       Louise:
 %       * learn/1
 %       * learn_dynamic/1
-%       * learn_with_examples_invention/2
+%       * learn_meta/1
 %       * learn_minimal/1
+%       * learn_with_examples_invention/2
+%       * thelma/1
 %
 %       The specified predicate will be used to list the learning
 %       results for all learning targets defined in an experiment file
