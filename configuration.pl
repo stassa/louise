@@ -1,5 +1,6 @@
 :-module(configuration, [experiment_file/2
                         ,example_clauses/1
+                        ,depth_limits/2
                         ,generalise_learned_metarules/1
 			,learner/1
                         ,learned_metarules_printing/1
@@ -29,7 +30,7 @@
 	   except([resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
 :-reexport(lib/sampling/sampling_configuration).
-:-reexport(lib/thelma/thelma_configuration).
+:-reexport(lib/thelma/thelma_configuration, except([depth_limits/2])).
 
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
@@ -94,6 +95,21 @@
 %
 %example_clauses(bind).
 example_clauses(call).
+
+
+%!      depth_limits(?Clauses,?Invented) is semidet.
+%
+%       Depth limits for Thelma's hypothesis search.
+%
+%       Clauses is the maximum number of clauses in hypotheses
+%       considered in the Hypothesis Space search restricted by these
+%       depth limits. Invented is the maximum number of clauses of
+%       invented predicates in hypotheses.
+%
+%       If Invented is not at most 1 lower than Clauses, it will be
+%       treated as being one lower than Clauses.
+%
+depth_limits(2,0).
 
 
 %!      generalise_learned_metarules(?Bool) is semidet.
