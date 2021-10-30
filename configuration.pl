@@ -50,7 +50,8 @@
 % Allows experiment files to define their own, special metarules.
 % BUG: Actually, this doesn't work- module quantifiers, again.
 % Needs fixing.
-:-multifile metarule/2.
+:-multifile metarule/2
+           ,order_constraints/5.
 
 /* Debug levels
  * Note that some of the debug topics below emit identical messages.
