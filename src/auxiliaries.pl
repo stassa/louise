@@ -408,6 +408,10 @@ set_configuration_option(N, V):-
 	atomic(V)
 	,!
 	,set_configuration_option(N,[V]).
+set_configuration_option(N, [V]):-
+	is_list(V)
+	,!
+	,set_configuration_option(N,V).
 set_configuration_option(N, Vs):-
 	length(Vs, A)
 	,functor(T,N,A)

@@ -38,7 +38,8 @@
 
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
-:- dynamic max_invented/1
+:- dynamic depth_limits/2
+          ,max_invented/1
           ,minimal_program_size/2
           ,recursion_depth_limit/2
 	  ,recursive_reduction/1
