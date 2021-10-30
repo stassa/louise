@@ -291,6 +291,7 @@ print_config(T,S,Sc):-
 		 ,\+ memberchk(F/A, [metarule/2
 				    ,metarule_constraints/2
 				    ,order_constraints/5
+				    ,symbol_range/2
 				    ,tautology/1
 				    ])
 		 ,functor(Opt,F,A)
