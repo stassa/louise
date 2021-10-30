@@ -84,16 +84,11 @@ thelma(T,Prog):-
 %	module user.
 %
 thelma(Pos,Neg,BK,MS,Prog):-
-	configuration:depth_limits(C,I)
-	,configuration:unfold_invented(U)
+	configuration:unfold_invented(U)
 	,convert_examples(pos,Pos,Pos_c)
 	,convert_examples(neg,Neg,Neg_c)
-	,target_predicate(Pos_c,T)
-	,depth_level(C,I,C_,I_)
-	,program_signature(I_,T,BK,Po,Co)
-	,debug(depth,'Clauses: ~w; Invented: ~w',[C_,I_])
 	,S = transform_metarules(MS)
-	,G = (prove(C_,Pos_c,BK,MS,Po-Co,Ps)
+	,G = (prove(Pos_c,BK,MS,Ps)
 	     ,disprove(Neg_c,BK,Ps)
 	     ,project_metasubs(Ps, Prog_)
 	     )
@@ -104,6 +99,7 @@ thelma(Pos,Neg,BK,MS,Prog):-
 	 ;   Prog_ = Prog
 	 ).
 thelma(_Pos,_Neg,_BK,_MS,[]).
+
 
 
 %!	convert_examples(+Examples,-Converted) is det.
@@ -264,14 +260,10 @@ target_predicate([[F|Args]|_Es],F/A):-
 	length(Args,A).
 
 
-%!	prove(+Depth,+Atoms,+BK,+Metarules,+Orders,-Metasubstitutions)
+%!	prove(+Atoms,+BK,+Metarules,-Metasubstitutions)
 %!	is nondet.
 %
 %	Prove a list of Atoms and derive a list of Metasubstitutions.
-%
-%	Depth is the maximum depth for the iterative deepening search.
-%	It's the maximum size of a hypothesis, i.e. the maximum number
-%	of elements in the list Metasubstitutions.
 %
 %	Atoms is a list of positive examples of the learning target. It
 %	is a list of lists where each sublist is an atom in the form of
@@ -284,35 +276,43 @@ target_predicate([[F|Args]|_Es],F/A):-
 %	Metarules is a list of atoms, the names of metarules for the
 %	learning target.
 %
-%	Orders is a term Ps-Cs, where Ps is the program signature and Cs
-%	is the _constant signature_ a list of all constants in the
-%	Herbrand universe of the background predicates ordered by
-%	interval inclusion order.
-%
 %	Metasubstitutions is a list of metasubstitutions. Each
 %	metasubstitution is a Prolog coumpound, sub(Id, Ps). Id is the
 %	name of a metarule in Metarules and Ps is a list of symbols and
 %	arities of predicates in the program signature.
 %
-%	When prove/6 exits, each sub/2 term in the list of
+%	When prove/4 exits, each sub/2 term in the list of
 %	Metasubstitutions is projected onto the corresponding metarule
-%	to form a clause in a hypothesis. The hypothesis is then tested
+%	to form a clause in a hypothesis. The hypothesis is later tested
 %	for consistency with the negative examples in disprove/2 and
-%	returned if it is consistent.
+%	returned if it is consistent. This happens in thelma/5.
 %
 %	On backtracking, each list of metasubstitutions representing a
 %	hypothesis that is correct with respect to the positive examples
-%	and consistent withe the negative examples are returned.
+%	are returned.
 %
-prove(K,Pos,BK,MS,Os,Ss):-
-	prove(K,Pos,BK,MS,Os,[],Ss_)
+prove(Pos,BK,MS,Ss):-
+	configuration:depth_limits(C,I)
+	,target_predicate(Pos,T)
+	,depth_level(C,I,C_,I_)
+	,debug(depth,'Clauses: ~w; Invented: ~w',[C_,I_])
+	,program_signature(I_,T,BK,Po,Co)
+	,prove(C_,Pos,BK,MS,Po-Co,[],Ss_)
 	,reverse(Ss_,Ss).
-
 
 %!	prove(+Depth,+Atoms,+BK,+Metarules,+Orders,+Acc,-Metasubs)
 %!	is nondet.
 %
 %	Business end of prove/7.
+%
+%	Depth is the maximum depth for the iterative deepening search.
+%	It's the maximum size of a hypothesis, i.e. the maximum number
+%	of elements in the list Metasubstitutions.
+%
+%	Orders is a term Ps-Cs, where Ps is the program signature and Cs
+%	is the _constant signature_ a list of all constants in the
+%	Herbrand universe of the background predicates ordered by
+%	interval inclusion order.
 %
 prove(_K,[],_BK,_MS,_PS,Ss,Ss):-
 	!.
