@@ -305,6 +305,7 @@ prove(Pos,BK,MS,Ss):-
 	,depth_level(C,I,C_,I_)
 	,debug(depth_level,'Clauses: ~w; Invented: ~w',[C_,I_])
 	,program_signature(I_,T,BK,Po,Co)
+	,debug(program_signature,'Program signature: ~w',[Po-Co])
 	,prove(C_,Pos,BK,MS,Po-Co,[],Ss_)
 	,reverse(Ss_,Ss).
 
@@ -400,7 +401,8 @@ background_predicate(BK,[F|Args]):-
 %
 select_metasub(Msubs,MS,A,Os,Bs):-
 	member(Msub,Msubs)
-	,once(metasubstitution(MS,A,Os,Msub,Bs)).
+	,once(metasubstitution(MS,A,Os,Msub,Bs))
+	,debug(select_metasub, 'Selected metasub: ~w', [Msub]).
 
 
 %!	new_metasub(+Depth,+Metasubs,+Atom,+Metarules,+Orders,-New,-Body)
@@ -440,7 +442,8 @@ new_metasub(K,Msubs,A,MS,Os,Msubs_,Bs):-
 	length(Msubs,N)
 	,N < K
 	,metasubstitution(MS,A,Os,Msub,Bs)
-	,save_metasub(Msub,Msubs,Msubs_).
+	,save_metasub(Msub,Msubs,Msubs_)
+	,debug(new_metasub, 'Saved new metasub: ~w', [Msub]).
 
 
 %!	metasubstitution(+Metarules,+Atom,+Signature,?Metasub,-Body) is
