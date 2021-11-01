@@ -85,17 +85,25 @@ thelma(T,Prog):-
 %
 thelma(Pos,Neg,BK,MS,Prog):-
 	configuration:unfold_invented(U)
+	,debug(thelma,'Converting examples...',[])
 	,convert_examples(pos,Pos,Pos_c)
 	,convert_examples(neg,Neg,Neg_c)
-	,S = transform_metarules(MS)
-	,G = (prove(Pos_c,BK,MS,Ps)
+	,S = (debug(thelma,'Transforming metarules...',[])
+             ,transform_metarules(MS)
+	     )
+	,G = (debug(thelma,'Proving examples...',[])
+	     ,prove(Pos_c,BK,MS,Ps)
+	     ,debug(thelma,'Disproving examples...',[])
 	     ,disprove(Neg_c,BK,Ps)
 	     ,project_metasubs(Ps, Prog_)
 	     )
-	,Cl = cleanup_metarules
+	,Cl = (debug(thelma,'Cleaning up metarules...',[]),
+	       cleanup_metarules
+	      )
 	,setup_call_cleanup(S,G,Cl)
 	,(   U == true
-	 ->  unfold_clauses(Prog_,Pos,BK,Prog)
+	 ->  debug(thelma,'Unfolding invented predicates...',[])
+	    ,unfold_clauses(Prog_,Pos,BK,Prog)
 	 ;   Prog_ = Prog
 	 ).
 thelma(_Pos,_Neg,_BK,_MS,[]).
@@ -295,7 +303,7 @@ prove(Pos,BK,MS,Ss):-
 	configuration:depth_limits(C,I)
 	,target_predicate(Pos,T)
 	,depth_level(C,I,C_,I_)
-	,debug(depth,'Clauses: ~w; Invented: ~w',[C_,I_])
+	,debug(depth_level,'Clauses: ~w; Invented: ~w',[C_,I_])
 	,program_signature(I_,T,BK,Po,Co)
 	,prove(C_,Pos,BK,MS,Po-Co,[],Ss_)
 	,reverse(Ss_,Ss).
@@ -317,19 +325,22 @@ prove(Pos,BK,MS,Ss):-
 prove(_K,[],_BK,_MS,_PS,Ss,Ss):-
 	!.
 prove(K,[A|As],BK,MS,Os,Acc,Bind):-
-	background_predicate(BK,A)
+        debug(prove,'Proving atom (BK): ~w', [A])
+        ,background_predicate(BK,A)
 	,!
 	,prove_atom(A)
 	,prove(K,As,BK,MS,Os,Acc,Bind).
 prove(K,[A|As],BK,MS,Os,Acc1,Bind):-
-	select_metasub(Acc1,MS,A,Os,Bs)
+	debug(prove,'Proving atom (select metasub): ~w', [A])
+        ,select_metasub(Acc1,MS,A,Os,Bs)
 	,prove(K,Bs,BK,MS,Os,Acc1,Acc2)
 	,! % Very red cut. Avoids adding (many!)
 	% redundant clauses- but will it cut
 	% out necessary ones, also?
 	,prove(K,As,BK,MS,Os,Acc2,Bind).
 prove(K,[A|As],BK,MS,Os,Acc1,Bind):-
-	new_metasub(K,Acc1,A,MS,Os,Acc2,Bs)
+	debug(prove,'Proving atom (new metasub): ~w', [A])
+        ,new_metasub(K,Acc1,A,MS,Os,Acc2,Bs)
 	,prove(K,Bs,BK,MS,Os,Acc2,Acc3)
 	,prove(K,As,BK,MS,Os,Acc3,Bind).
 
