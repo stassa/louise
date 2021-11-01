@@ -356,6 +356,8 @@ prove(K,[A|As],BK,MS,Os,Acc1,Bind):-
 %
 prove_atom(A):-
 	A_ =.. A
+	,predicate_property(experiment_file:A_,number_of_clauses(M))
+	,M > 0
 	,experiment_file:call(A_).
 
 
