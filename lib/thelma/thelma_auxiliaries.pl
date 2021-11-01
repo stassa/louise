@@ -309,7 +309,7 @@ assert_metarules([metarule(Id,_,_,_)|Ms]):-
 	,T =.. [F,Id,_,_,_]
 	,predicate_property(T, number_of_clauses(N))
 	,N > 1
-	,call(user:T)
+	,call(thelma:T)
 	,!
 	,assert_metarules(Ms).
 assert_metarules([metarule(Id,Ss,Fs,Bs)|Ms]):-
@@ -317,7 +317,7 @@ assert_metarules([metarule(Id,Ss,Fs,Bs)|Ms]):-
 	,metarule_body(Bs, [], Bs_)
 	,symbols_arities(Ss,Bs_,Ss_)
 	,T =.. [F,Id,Ss_,Fs,Bs_]
-	,user:assert(T)
+	,thelma:assert(T)
 	%,print_clauses(T)
 	,assert_metarules(Ms).
 
@@ -396,4 +396,4 @@ metarule_body((L),Acc,Bs_):-
 cleanup_metarules:-
 	metarule_functor(F)
 	,functor(T,F,4)
-	,user:retractall(T).
+	,thelma:retractall(T).

@@ -498,7 +498,7 @@ next_metarule(MS,[Id,Ss,Fs,Bs]):-
 	metarule_functor(F)
 	,member(Id,MS)
 	,M =.. [F,Id,Ss,Fs,Bs]
-	,user:call(M).
+	,thelma:call(M).
 
 
 %!	second_order_bindings(+Signature,+Constants,?Bindings) is
