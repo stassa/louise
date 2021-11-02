@@ -309,6 +309,7 @@ prove(Pos,BK,MS,Ss):-
 	,prove(C_,Pos,BK,MS,Po-Co,[],Ss_)
 	,reverse(Ss_,Ss).
 
+
 %!	prove(+Depth,+Atoms,+BK,+Metarules,+Orders,+Acc,-Metasubs)
 %!	is nondet.
 %
@@ -701,7 +702,7 @@ disprove([],_BK,_Ms):-
 % Skip further processing if there are no negative examples.
 	!.
 disprove(Neg,BK,Ps):-
-        examples_targets(Neg,Ts)
+	examples_targets(Neg,Ts)
         ,S  = (assert_program(thelma,Ps,Refs)
               ,table_encapsulated(Ts,m)
               ,table_encapsulated(BK,p)
@@ -808,7 +809,7 @@ project_metasubs(Ms,Prog):-
 project_metasub(sub(Id,Ss),C):-
 	metarule_functor(F)
 	,M =.. [F,Id,Ss,_Fs,Bs]
-	,M
+	,call(experiment_file:M)
 	,project_metasub(Bs,[],Ls)
 	,literals_list_to_clause(Ls,C).
 
