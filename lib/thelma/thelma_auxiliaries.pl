@@ -176,6 +176,7 @@ predicate_order(BK,BK).
 %
 %	Index Background constants according to their declaration order.
 %
+/*
 constants_indexing(M,BK,Is):-
 	findall(ITs
 	       ,(nth1(I,BK,F/A)
@@ -190,6 +191,28 @@ constants_indexing(M,BK,Is):-
 	       ,Cs_)
 	,flatten(Cs_, Cs_flat)
 	,sort(2,@=<,Cs_flat,Is).
+*/
+%/*
+constants_indexing(M,BK,Is):-
+	findall(ITs
+	       ,(nth1(I,BK,F/A)
+		,functor(T,F,A)
+		,findall(T
+			,(predicate_property(T,number_of_clauses(N))
+			 ,N > 0
+			 ,M:call(T)
+			 )
+			,Ts)
+		,Ts \= []
+		,nth1(K,Ts,Ti)
+		,Ti =.. Ti_
+		,indexing_terms(F,I,K,Ti_,ITs)
+		)
+	       ,Cs_)
+	,flatten(Cs_, Cs_flat)
+	,sort(2,@=<,Cs_flat,Is).
+%*/
+
 
 
 %!	indexing_terms(+Symbol,+Predicate,+Atom,+Term,-Indexings) is
