@@ -229,6 +229,8 @@ encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
 %	encapsulated as target predicates, with functor m, and not as BK
 %	auxiliaries with functor p.
 %
+encapsulated_bk([],_Ss,[]):-
+	!.
 encapsulated_bk(BK,_Ss,BK):-
 % Already encapsulated.
 	encapsulated(BK)
