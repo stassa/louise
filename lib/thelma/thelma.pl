@@ -809,7 +809,7 @@ project_metasubs(Ms,Prog):-
 project_metasub(sub(Id,Ss),C):-
 	metarule_functor(F)
 	,M =.. [F,Id,Ss,_Fs,Bs]
-	,call(experiment_file:M)
+	,call(thelma:M)
 	,project_metasub(Bs,[],Ls)
 	,literals_list_to_clause(Ls,C).
 
