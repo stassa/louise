@@ -8,7 +8,7 @@
 		  ,extend/3
 		  ]).
 
-:-use_module(auxiliaries).
+:-use_module(src(auxiliaries)).
 
 /** <module> Predicates for metarule generation.
 

@@ -18,7 +18,7 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(lib(sampling/sampling)).
 :-use_module(subsystems(dynamic_learning)).
 :-use_module(subsystems(minimal_program)).
-:-use_module(src(metagen)).
+:-use_module(subsystems(metagen)).
 :-use_module(subsystems(examples_invention)).
 :-use_module(subsystems(meta_learning)).
 :-use_module(subsystems(thelma/thelma)).
