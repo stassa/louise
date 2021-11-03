@@ -8,7 +8,7 @@
 
 :-use_module(project_root(configuration)).
 :-use_module(src(auxiliaries)).
-:-use_module(src(minimal_program)).
+:-use_module(subsystems(minimal_program)).
 :-use_module(lib(lifting/lifting)).
 :-use_module(src(mil_problem)).
 :-use_module(src(louise)).
