@@ -24,7 +24,7 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(sampling/sampling)).
 :-use_module(subsystems(dynamic_learning)).
-:-use_module(src(minimal_program)).
+:-use_module(subsystems(minimal_program)).
 :-use_module(src(metagen)).
 :-use_module(subsystems(examples_invention)).
 :-use_module(src(meta_learning)).
@@ -48,7 +48,7 @@ edit_files:-
 	%,edit(subsystems(examples_invention))
 	%,edit(src(metarules_parser))
 	%,edit(src(subhypothesis_selection))
-	%,edit(src(minimal_program))
+	%,edit(subsystems(minimal_program))
 	%,edit(src(incremental_refinement))
 	%,edit(src(meta_learning))
 	%,edit(lib(thelma/thelma))
