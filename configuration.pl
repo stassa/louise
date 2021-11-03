@@ -213,6 +213,7 @@ learned_metarules_printing(pretty).
 %       * learn/1
 %       * learn_dynamic/1
 %       * learn_meta/1
+%       * learn_metarules/1
 %       * learn_minimal/1
 %       * learn_with_examples_invention/2
 %       * thelma/1

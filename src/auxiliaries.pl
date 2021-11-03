@@ -914,6 +914,7 @@ list_learning_results(P/N):-
 	\+ memberchk(P,[learn
 		       ,learn_dynamic
 		       ,learn_meta
+		       ,learn_metarules
 		       ,learn_minimal
 		       ,learn_with_examples_invention
 		       ,thelma
