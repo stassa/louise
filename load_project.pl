@@ -21,15 +21,15 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(louise)).
 :-use_module(src(mil_problem)).
 :-use_module(src(auxiliaries)).
-:-use_module(lib(evaluation/evaluation)).
-:-use_module(lib(sampling/sampling)).
 :-use_module(subsystems(dynamic_learning)).
-:-use_module(subsystems(minimal_program)).
-:-use_module(subsystems(metagen)).
 :-use_module(subsystems(examples_invention)).
+:-use_module(subsystems(metagen)).
 :-use_module(subsystems(meta_learning)).
+:-use_module(subsystems(minimal_program)).
 :-use_module(subsystems(thelma/thelma)).
+:-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(folding_unfolding/folding_unfolding)).
+:-use_module(lib(sampling/sampling)).
 
 edit_files:-
 % Uncomment, or add, the paths of files you want to open in the IDE when
@@ -38,25 +38,23 @@ edit_files:-
 	,edit(project_root(load_project))
 	%,edit(project_root(load_headless))
 	,edit(project_root(configuration))
-	%,edit(src(experiment_file))
 	%,edit(src(mil_problem))
 	,edit(src(louise))
 	,edit(src(auxiliaries))
-	%,edit(lib(evaluation/evaluation))
-	%,edit(subsystems(dynamic_learning))
-	,edit(subsystems(metagen))
-	%,edit(subsystems(examples_invention))
 	%,edit(src(metarules_parser))
 	%,edit(src(subhypothesis_selection))
-	%,edit(subsystems(minimal_program))
-	%,edit(src(incremental_refinement))
+	%,edit(subsystems(dynamic_learning))
+	%,edit(subsystems(examples_invention))
+	%,edit(subsystems(incremental_refinement))
+	%,edit(subsystems(thelma/thelma))
+	%,edit(subsystems(thelma/thelma_auxiliaries))
+	%,edit(subsystems(thelma/thelma_configuration))
+	%,edit(subsystems(metagen))
 	%,edit(subsystems(meta_learning))
-	%,edit(lib(thelma/thelma))
-	%,edit(lib(thelma/thelma_auxiliaries))
-	%,edit(lib(thelma/thelma_configuration))
-	%,edit(lib(program_reduction/program_reduction))
-	%,edit(lib(evaluation/evaluation2))
+	%,edit(subsystems(minimal_program))
+	%,edit(lib(evaluation/evaluation))
 	%,edit(lib(folding_unfolding/folding_unfolding))
+	%,edit(lib(program_reduction/program_reduction))
 	,edit(P)
 	.
 :-edit_files.
