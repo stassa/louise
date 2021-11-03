@@ -1,10 +1,10 @@
-:-module(meta_learning, [learn_meta/1
-			,learn_meta/2
-			,learn_meta/5
-			,learn_metarules/1
-			,learn_metarules/2
-			,learn_metarules/5
-                        ]).
+:-module(toil, [learn_meta/1
+	       ,learn_meta/2
+	       ,learn_meta/5
+	       ,learn_metarules/1
+	       ,learn_metarules/2
+	       ,learn_metarules/5
+	       ]).
 
 :-use_module(project_root(configuration)).
 :-use_module(src(auxiliaries)).
