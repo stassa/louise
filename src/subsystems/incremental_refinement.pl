@@ -5,7 +5,7 @@
                                  ]).
 
 :-use_module(src(louise)).
-:-use_module(src(dynamic_learning)).
+:-use_module(subsystems(dynamic_learning)).
 
 /** <module> Incremental refinement of background knowledge.
 
