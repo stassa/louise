@@ -23,7 +23,7 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(auxiliaries)).
 :-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(sampling/sampling)).
-:-use_module(src(dynamic_learning)).
+:-use_module(subsystems(dynamic_learning)).
 :-use_module(src(minimal_program)).
 :-use_module(src(metagen)).
 :-use_module(src(examples_invention)).
@@ -43,7 +43,7 @@ edit_files:-
 	,edit(src(louise))
 	,edit(src(auxiliaries))
 	%,edit(lib(evaluation/evaluation))
-	%,edit(src(dynamic_learning))
+	%,edit(subsystems(dynamic_learning))
 	%,edit(src(metagen))
 	%,edit(src(examples_invention))
 	%,edit(src(metarules_parser))

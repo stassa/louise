@@ -16,7 +16,7 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(auxiliaries)).
 :-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(sampling/sampling)).
-:-use_module(src(dynamic_learning)).
+:-use_module(subsystems(dynamic_learning)).
 :-use_module(src(minimal_program)).
 :-use_module(src(metagen)).
 :-use_module(src(examples_invention)).
