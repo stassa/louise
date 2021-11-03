@@ -126,13 +126,13 @@ This limitation will be addressed in future versions of this module.
 %
 %	Metarules are extracted by a call to symbols_metarules/3,
 %	passing the predicate symbols of the background predicates, and
-%	the module 'user'. Accordingly, only predicates defined in the
-%	current experiment file and exported to module user will be used
-%	to extract metarules.
+%	the module 'experiment_file'. Accordingly, only predicates
+%	defined in the current experiment file will be used to extract
+%	metarules.
 %
 bk_metarules(T, MS):-
 	experiment_data(T,_Pos,_Neg,BK,_MS)
-	,symbols_metarules(BK,user,MS).
+	,symbols_metarules(BK,experiment_file,MS).
 
 
 %!	symbols_metarules(+Symbols,+Module,-Metarules) is det.
