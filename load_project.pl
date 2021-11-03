@@ -26,7 +26,7 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(subsystems(dynamic_learning)).
 :-use_module(src(minimal_program)).
 :-use_module(src(metagen)).
-:-use_module(src(examples_invention)).
+:-use_module(subsystems(examples_invention)).
 :-use_module(src(meta_learning)).
 :-use_module(subsystems(thelma/thelma)).
 :-use_module(lib(folding_unfolding/folding_unfolding)).
@@ -45,7 +45,7 @@ edit_files:-
 	%,edit(lib(evaluation/evaluation))
 	%,edit(subsystems(dynamic_learning))
 	%,edit(src(metagen))
-	%,edit(src(examples_invention))
+	%,edit(subsystems(examples_invention))
 	%,edit(src(metarules_parser))
 	%,edit(src(subhypothesis_selection))
 	%,edit(src(minimal_program))
