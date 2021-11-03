@@ -176,7 +176,7 @@ predicate_order(BK,BK).
 %
 %	Index Background constants according to their declaration order.
 %
-/*
+%/*
 constants_indexing(M,BK,Is):-
 	findall(ITs
 	       ,(nth1(I,BK,F/A)
@@ -191,8 +191,8 @@ constants_indexing(M,BK,Is):-
 	       ,Cs_)
 	,flatten(Cs_, Cs_flat)
 	,sort(2,@=<,Cs_flat,Is).
-*/
-%/*
+%*/
+/* Version that allows undefined BK predicates.
 constants_indexing(M,BK,Is):-
 	findall(ITs
 	       ,(nth1(I,BK,F/A)
@@ -211,7 +211,7 @@ constants_indexing(M,BK,Is):-
 	       ,Cs_)
 	,flatten(Cs_, Cs_flat)
 	,sort(2,@=<,Cs_flat,Is).
-%*/
+*/
 
 
 

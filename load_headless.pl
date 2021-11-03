@@ -4,6 +4,7 @@
 ,asserta(user:file_search_path(project_root, Dir)).
 
 user:file_search_path(src, project_root(src)).
+user:file_search_path(subsystems, src(subsystems)).
 user:file_search_path(lib, project_root(lib)).
 user:file_search_path(data, project_root(data)).
 user:file_search_path(output, project_root(output)).
@@ -20,7 +21,7 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(metagen)).
 :-use_module(src(examples_invention)).
 :-use_module(src(meta_learning)).
-:-use_module(lib(thelma/thelma)).
+:-use_module(subsystems(thelma/thelma)).
 :-use_module(lib(folding_unfolding/folding_unfolding)).
 
 %:-load_test_files([]).

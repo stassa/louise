@@ -31,7 +31,7 @@
 	   except([resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
 :-reexport(lib/sampling/sampling_configuration).
-:-reexport(lib/thelma/thelma_configuration
+:-reexport(subsystems(thelma/thelma_configuration)
           ,except([depth_limits/2
                   ,order_constraints/5
                   ])).

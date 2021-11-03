@@ -72,7 +72,7 @@
 :-use_module(src(mil_problem)).
 :-use_module(src(defaults)).
 :-use_module(src(louise)).
-:-reexport(lib(thelma/thelma_auxiliaries)).
+:-reexport(subsystems(thelma/thelma_auxiliaries)).
 
 
 /** <module> Auxiliary predicates.
