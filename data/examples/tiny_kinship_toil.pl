@@ -394,7 +394,7 @@ background_knowledge(male/2,[male/1]).
 background_knowledge(female/2,[female/1]).
 
 % Metarules
-/* Maximally general second-order metarules.
+%/* Maximally general second-order metarules.
 metarules(ancestor/2,[meta_dyadic,meta_monadic]).
 metarules(grandparent/2,[meta_dyadic]).
 metarules(grandfather/2,[meta_dyadic]).
@@ -410,8 +410,8 @@ metarules(father/2,[meta_precon,meta_projection_21]).
 metarules(mother/2,[meta_precon,meta_projection_21]).
 metarules(male/2,[meta_monadic,meta_projection_21]).
 metarules(female/2,[meta_monadic,meta_projection_21]).
-*/
-%/* Third-order metarules.
+%*/
+/* Third-order metarules.
 metarules(ancestor/2,[higher_order(2,3)]).
 metarules(grandparent/2,[higher_order(2,3)]).
 metarules(grandfather/2,[higher_order(2,3)]).
@@ -426,7 +426,7 @@ metarules(father/2,[higher_order(3,3)]).
 metarules(mother/2,[higher_order(3,3)]).
 metarules(male/2,[higher_order(2,2)]).
 metarules(female/2,[higher_order(2,2)]).
-%*/
+*/
 
 
 % Positive and negative examples generators.
