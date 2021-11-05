@@ -25,7 +25,8 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(subsystems(examples_invention)).
 :-use_module(subsystems(metagen)).
 :-use_module(subsystems(metarule_extraction)).
-:-use_module(subsystems(meta_learning)).
+:-use_module(subsystems(soil)).
+:-use_module(subsystems(toil)).
 :-use_module(subsystems(minimal_program)).
 :-use_module(subsystems(thelma/thelma)).
 :-use_module(lib(evaluation/evaluation)).
@@ -51,7 +52,8 @@ edit_files:-
 	%,edit(subsystems(thelma/thelma_auxiliaries))
 	%,edit(subsystems(thelma/thelma_configuration))
 	%,edit(subsystems(metagen))
-	%,edit(subsystems(meta_learning))
+	%,edit(subsystems(toil))
+	%,edit(subsystems(soil))
 	%,edit(subsystems(minimal_program))
 	%,edit(lib(evaluation/evaluation))
 	%,edit(lib(folding_unfolding/folding_unfolding))
