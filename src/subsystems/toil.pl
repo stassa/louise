@@ -14,94 +14,302 @@
 :-use_module(src(louise)).
 :-use_module(lib(sampling/sampling)).
 
-/** <module> Learning while learning new metarules.
+/** <module> Third Order Inductive Learner.
 
-This module defines two families of predicates, learn_metarules/[1,2,5],
-that does what it sas on the tin, and learn_meta/[1,2,5] that combines a
-call to learn_metarules/5 with a call to a learning predicate (e.g.
-learn/5 or learn_dynamic/5) passing it the learned metarules.
-
-Learning new metarules
-----------------------
-
-Predicates learn_metarules/[1,2,5] learn new metarules by specialising
-one or more metarule templates: either a) a most-general metarule in a
-language class, or b) the higher order metarule P:-, consisting of a
-single, variable, head literal.
-
-Metarule templates are specialised by resolving them with the background
-knowledge and then replacing the predicate symbols and constants in the
-now-ground literals of the metarule template with variables.
-
-Here is an example invocation of learn_metarules/1 specialising the
-most-general metarule Meta-dyadic:
+This module implements TOIL, a MIL system that learns metarules from
+data.
 
 ==
+%learned_metarules_printing(pretty).
+
+?- learn_metarules(ancestor/2).
+(Meta-dyadic-1) ∃.P,P,P ∀.x,y,z: P(x,y)← P(x,z),P(z,y)
+(Meta-dyadic-2) ∃.P,P,P ∀.x,y,z: P(x,y)← P(z,y),P(x,z)
+(Meta-dyadic-3) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(x,z),Q(y,z)
+(Meta-dyadic-4) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(x,z),Q(z,y)
+(Meta-dyadic-5) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(z,y),Q(x,z)
+(Meta-dyadic-6) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(z,y),Q(z,x)
+(Meta-dyadic-7) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(x,z),P(z,y)
+(Meta-dyadic-8) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(y,z),P(x,z)
+(Meta-dyadic-9) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(z,x),P(z,y)
+(Meta-dyadic-10) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(z,y),P(x,z)
+(Meta-dyadic-11) ∃.P,Q,Q ∀.x,y,z: P(x,y)← Q(x,z),Q(z,y)
+(Meta-dyadic-12) ∃.P,Q,Q ∀.x,y,z: P(x,y)← Q(z,y),Q(x,z)
+(Meta-monadic-13) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+
+%learned_metarules_printing(prolog).
+
+?- learn_metarules(ancestor/2).
+m(meta_dyadic_1,P,P,P):-m(P,X,Y),m(P,X,Z),m(P,Z,Y)
+m(meta_dyadic_2,P,P,P):-m(P,X,Y),m(P,Z,Y),m(P,X,Z)
+m(meta_dyadic_3,P,P,Q):-m(P,X,Y),m(P,X,Z),m(Q,Y,Z)
+m(meta_dyadic_4,P,P,Q):-m(P,X,Y),m(P,X,Z),m(Q,Z,Y)
+m(meta_dyadic_5,P,P,Q):-m(P,X,Y),m(P,Z,Y),m(Q,X,Z)
+m(meta_dyadic_6,P,P,Q):-m(P,X,Y),m(P,Z,Y),m(Q,Z,X)
+m(meta_dyadic_7,P,Q,P):-m(P,X,Y),m(Q,X,Z),m(P,Z,Y)
+m(meta_dyadic_8,P,Q,P):-m(P,X,Y),m(Q,Y,Z),m(P,X,Z)
+m(meta_dyadic_9,P,Q,P):-m(P,X,Y),m(Q,Z,X),m(P,Z,Y)
+m(meta_dyadic_10,P,Q,P):-m(P,X,Y),m(Q,Z,Y),m(P,X,Z)
+m(meta_dyadic_11,P,Q,Q):-m(P,X,Y),m(Q,X,Z),m(Q,Z,Y)
+m(meta_dyadic_12,P,Q,Q):-m(P,X,Y),m(Q,Z,Y),m(Q,X,Z)
+m(meta_monadic_13,P,Q):-m(P,X,Y),m(Q,X,Y)
+==
+
+A metarule taxonomy
+-------------------
+
+Metarules are the second-order clauses used as inductive bias in
+Meta-Interpretive Learning (MIL) systems, such as Louise or Metagol. MIL
+systems learn by specialising metarules by SLD resolution to derive the
+first-order clauses of a hypothesis.
+
+TOIL is a MIL system and it also works by specialising metarules by
+SLD resolution, however the metarules specialised by TOIL are
+generalisations of the metarules in ordinary MIL.
+
+We distinguish three taxa of metarules. We illustrate them with an
+example:
+
+==
+% Example 1: a taxonomy of metarules.
+
+% User-defined second-order "sort" metarules:
+P(x,y):- Q(x,y).
+P(x,y):- Q(y,x).
+P(x,y):- Q(x,z), R(z,y).
+P(x,y):- Q(x,z), R(y,z).
+P(x,y):- Q(z,x), R(z,y).
+...
+
+% Maximally general second-order "matrix" metarules:
+P(x,y):- Q(z,u).
+P(x,y):- Q(z,u), R(v,w).
+
+% Third-order "punch" metarules:
+P:- Q.
+P:- Q, R.
+==
+
+"Sort" metarules are second-order datalog clauses where each first-order
+variable is shared between at least two literals and where each variable
+in a head literal is shared with a body literal.
+
+"Matrix" metarules are generalisations of sort metarules where each
+variable appears only once in the entire clause. Matrix metarules are
+the most general second-order metarules in a language class (defined as
+a set of metarules with a certain number of literals, and arities).
+
+"Punch" metarules are generalisations of matrix metarules where each
+literal is replaced by a variable. Punch metarules are third-order
+clauses with variables quantified over the set of atoms (in the
+first-order logic sense of atomic formulae, rather than the Prolog
+sense).
+
+How TOIL learns metarules
+-------------------------
+
+Note that in Example 1, showing a taxonomy of metarules, the matrix
+metarules are generalisations of the sort metarules and the punch
+metarules generalisations of the matrix metarules. This relation between
+the three taxa of metarules is exploited by TOIL to specalise punch or
+matrix metarules into sort metarules.
+
+TOIL uses the Top Program Construction (TPC) algorithm, also used in
+Louise and its other subsystems, to learn sort metarules from examples,
+background knowledge and sets of either matrix or punch metarules.
+
+The TPC algorithm learns by refuting positive examples by SLD-resolution
+with metarules and background knowledge. If refutation fails, thus
+proving an example, the substitutions of the second-order variables in
+each metarule that successfully resolved with the example are kept and
+used to construct a first-order clause (this clause entails the refuted
+example, in conjunction with the background knowledge). TOIL also keeps
+the substitutions of the first-order variables derived during
+SLD-resolution, which gives a fully-ground first order clause. The
+predicate symbols and constants in this fully-ground first order clause
+are then replaced by variables to produce a second-order clause.
+
+
+Using TOIL to learn metarules
+-----------------------------
+
+To learn sort metarules by TOIL, the user must still choose a set of
+matrix or punch metarules, alongside the background knowledge and
+examples of a learning target. However, selecting punch or matrix
+metarules reduces the burden on the user to "guess" at the structure of
+the target theory.
+
+Learning sort metarules from matrix metarules frees the user from the
+need to closely tailor the metarules in a MIL problem to the expected
+solution. Matrix metarules can be used with TOIL when the user has some
+intuition about the numbers of literals and arities in clauses of the
+solution to a MIL problem.
+
+Learning sort metarules from punch metarules needs the user to set only
+a lower and upper limit of literals in the learned sort metarules. These
+numbers correspond to the number of literals in punch metarules, for
+example the punch metarules "P:-Q", "P:-Q,R" and "P:-Q,R,S" can be
+specialised to any sort metarules with two, three, or four literals.
+
+Although all the examples shown here use punch metarules to learn sort
+metarules whose literals have always arity 2, punch metarules can be
+specialised to metarules with literals of arbitrary arities.
+
+Toil can be used in two "modes", implemented by the two families of
+predicates defined in this module, learn_metarules/[1,2,5] and
+learn_meta/[1,2,5].
+
+In the first mode, TOIL is used to suggest metarules. TOIL is trained
+with matrix or punch metarules and outputs a list of metarules. The user
+selects the metarules he or she wants to use and manually adds them to
+an experiment file, then learns a program with one of Louise's learning
+predicates.
+
+In the second mode, TOIL is trained with matrix or punch metarules and
+imediatelly passes the learned metarules to one of Louise's learning
+predicates, then outputs a first-order hypothesis. These two modes are
+described below.
+
+First mode: learning new metarules
+----------------------------------
+
+Predicates learn_metarules/[1,2,5] learn new metarules by specialising
+sets of punch or matrix metarules. Currently, only one kind of
+metarules can be used by TOIL at a time, either only punch or only
+matrix metarules.
+
+Below is an example of using learn_metarules/1 to specialise the matrix
+metarule Meta-dyadic and learn a new sort metarule from the examples and
+background knowledge in data/examples/anbn.pl:
+
+==
+% Example 2: specialising matrix metarules with learn_metarules/1.
+
+?- list_config.
+depth_limits(2,1)
+example_clauses(call)
+experiment_file(data/examples/anbn.pl,anbn)
+generalise_learned_metarules(false)
+learned_metarules_printing(pretty)
+learner(louise)
+learning_predicate(learn_dynamic/1)
+max_invented(1)
+metarule_learning_limits(metasubstitutions(1))
+minimal_program_size(2,inf)
+recursion_depth_limit(dynamic_learning,none)
+recursive_reduction(false)
+reduce_learned_metarules(false)
+reduction(plotkins)
+resolutions(5000)
+theorem_prover(resolution)
+unfold_invented(false)
+true.
+
+?- list_mil_problem('S'/2).
+Positive examples
+-----------------
+'S'([a,b],[]).
+'S'([a,a,b,b],[]).
+'S'([a,a,a,b,b,b],[]).
+
+Negative examples
+-----------------
+[]
+
+Background knowledge
+--------------------
+A/2:
+'A'([a|A],A).
+
+B/2:
+'B'([b|A],A).
+
+Metarules
+---------
+(Meta-dyadic) ∃.P,Q,R ∀.x,y,z,u,v,w: P(x,y)← Q(z,u),R(v,w)
+true.
+
 ?- learn_metarules('S'/2).
 (Meta-dyadic-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
 true.
 ==
 
-Note that the Meta-dyadic-1 metarule learned this way corresponds to the
-Chain metarule that would otherwise be defined by hand. Chain is a
-specialisation of Meta-dyadic, the most-general metarule in the
-H(l=2,a=2) language, of metarules with exactly two body literals of
-arity exactly 2. Like Chain, Meta-dyadic is defined in the
-configuration and can be pretty-printed by Louise's metarule
-pretty-printer:
+Note that the Meta-dyadic-1 metarule learned in Example 2 corresponds to
+the Chain metarule that is defined by hand in the anbn.pl experiment
+file. Chain is a specialisation of Meta-dyadic, the most-general
+metarule in the M(l=3,a=2) language, of metarules with exactly three
+literals each of arity exactly 2.
+
+The following is an example of using learn_metarules/1 this time with a
+punch metarule, again to learn a sort metarule from the data in
+data/examples/anbn.pl:
 
 ==
-?- print_quantified_metarules(meta_dyadic).
-(Meta-dyadic) ∃.P,Q,R ∀.x,y,z,u,v,w: P(x,y)← Q(z,u),R(v,w)
+% Example 3: specialising punch metarules with learn_metarules/1.
+
+?- list_mil_problem('S'/2).
+Positive examples
+-----------------
+'S'([a,b],[]).
+'S'([a,a,b,b],[]).
+'S'([a,a,a,b,b,b],[]).
+
+Negative examples
+-----------------
+[]
+
+Background knowledge
+--------------------
+A/2:
+'A'([a|A],A).
+
+B/2:
+'B'([b|A],A).
+
+Metarules
+---------
+(TOM-2) ∃.P,Q: P ← Q
+(TOM-3) ∃.P,Q,R: P ← Q,R
 true.
-==
 
-Most-general metarules are specialised by Louise's Top Program
-Construction algorithm, plus a set of constraints to control
-over-generalisation. The Top Program for a most-general metarule can be
-very large and is likely to include clauses that have either redundant
-(i.e. duplicate) literals or irrelevant literals (i.e. literals with
-free variables). Constraints are therefore imposed to resolution to
-ensure that such clauses are not constructed.
-
-Louise can also specialise the higher-order metarule, P:-, for example:
-
-==
 ?- learn_metarules('S'/2).
 (Hom-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
 true.
 ==
 
-Note that the specialised metarule again corresponds to Chain.
-
-The higher-order metarule P:- cannot easily be specialised by Top
-Program Consruction. Instead, its specialisation is performed by a
-depth-first search with iterative deepening over the number of (head and
-body) literals of the higher-order metarule. That is, first the head of
-P:- is bound to a positive example, then zero or more body literals are
-added to the body of P:- until a specialisation is found that entails
-this example. The minimum and maximum number of body literals to be
-added to each instance of P:- is limited by a constraint provided by
-the user. The iterative deepening search allows more than one metarule
-to be derived from the same set of examples. Further, the literals added
-to the body of P:- must match the "Herbrand signature", a set of
-second-order atomic templates each of which unifies with a) ground atoms
-in the set of positive examples, or, b) atoms of the predicates in the
-background knowledge. Finally, the fully-connected constraints imposed
-on the specialisation of most-general metarules also restrict the search
-for a specialisation of the higher-order metarule, P:-. The result is a
-specialisation of P:- that is a fully-connected metarule.
+Note that the specialised metarule HOM-1 again corresponds to Chain.
 
 
-Learning with learned metarules
--------------------------------
+Second mode: learning with learned metarules
+--------------------------------------------
 
-Once a set of new metarules is learned, it can be passed to one
-of Louise's learning predicate, e.g. learn/5 or learn_dynamic/5, etc.
-The learn_meta/[1,2,5] family combines the two calls for convenience.
-The following is an example of calling learn_meta/1:
+In the previous section we have shown examples of using TOIL to output
+metarules in Louise's high-level, user-friendly format, where metarules
+are represented as atoms. TOIL can also ouptut metarules in the internal
+format used by Louise's learning predicates such as learn/5 or
+learn_dynamic/5. This is controlled with a configuration option:
 
 ==
+% Example 4: outputting learned metarules as Prolog clauses.
+
+% configuration:learned_metarules_printing(prolog).
+
+?- learn_metarules('S'/2).
+m(meta_dyadic_1,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+true.
+==
+
+The learn_meta/[1,2,5] family of predicates, defined in this module, can
+be used to learn a set of sort metarules by TOIL and immediately pass
+them to the learning predicate set in the configuration: The following
+is an example of calling learn_meta/1 with the learning predicate set
+to learn_dynamic/1, to perform predicate invention:
+
+==
+% Example 5: using learn_meta/1.
+
+% configuration:learning_predicate(learn_dynamic/1).
+
 ?- learn_meta('S'/2).
 '$1'(A,B):-'S'(A,C),'B'(C,B).
 'S'(A,B):-'A'(A,C),'$1'(C,B).
@@ -109,17 +317,78 @@ The following is an example of calling learn_meta/1:
 true.
 ==
 
-Note that the learned hypothesis includes the definition of an invented
-predicate. In the background of this call, the result of calling
-learn_metarules/5 with meta_dyadic as the metarule template, was passed
-to the learning predicae learn_dynamic/5, which performed predicate
-invention. The learning predicate to be used can be set in the
-configuration.
+Limitations of TOIL
+-------------------
 
-Note that the exact same result is produced when specialising the
-higher-order metarule P:-, instead of meta-dyadic, at least for the
-example above.
+TOIL is still a prototype and so has some limitations.
 
+1. Predicate invention
+
+Currently TOIL is implemented using a special-purpose version of the TPC
+algorithm that does not perform predicate invention. This limits the
+capability of TOIL to learn metarules with arbitrary numbers of
+literals. However, metarules learned by TOIL can still be used to learn
+programs that can't be learned without predicate invention. In examples
+2-5 above, we have shown how TOIL learns the Chain metarule from
+examples of the a^nb^n language in data/examples/anbn.pl. The Chain
+metarule suffices for TPC to learn a full grammar of a^nb^n by inventing
+a new predicate, consisting of a single clause that is an instance of
+Chain.
+
+2. Over-generation
+
+TOIL tends to over-generate metarules, as can be seen in the following
+example. The example only lists the configuration options that are
+relevant to TOIL:
+
+==
+% Example 6: over-generation of metarules
+
+?- list_config.
+% ...  other configs
+generalise_learned_metarules(false)
+learned_metarules_printing(pretty)
+metarule_learning_limits(none)
+reduce_learned_metarules(false)
+% ... other configs
+
+?- learn_metarules('S'/2).
+(Hom-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Hom-2) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(z,y),R(x,z)
+true.
+==
+
+In particular, note the value "false" set for the option
+metarule_learning_limits/1. This can be used to restrict the
+over-generation of metarules by TOIL. See the structured documentation
+for metarule_learning_limits/1 for more details.
+
+3. Overfitting
+
+Alongside over-generation, TOIL can also _overfit_ to examples and so
+learn metarules over-specialised to a set of examples (and to the
+background knowledge). The following example illustrates this:
+
+==
+% Example 7: Overfitting to the examples
+
+?- learn_meta(ancestor/2).
+ancestor(stathis,stassa).
+ancestor(stefanos,stassa).
+ancestor(alexandra,stassa).
+ancestor(paraskevi,stassa).
+ancestor(A,B):-parent(A,B).
+ancestor(A,B):-ancestor(A,C),parent(B,C).
+true.
+==
+
+In Example 7, the last clause defines an ancestor as the ancestor of
+someone's children. This means that, for example, a person's mother and
+father are ancestors of each other- a very special case of ancstry
+(though not unheard of in science fiction).
+
+Overfitting can be controlled by providing more negative training
+examples, but this means that more examples are needed overall.
 */
 
 
@@ -233,9 +502,8 @@ learn_metarules(Ts,MS):-
 %
 %	Derive specialised Metarules from the elements of a MIL problem.
 %
-%	Templates is a list of most-general metarules in a language
-%	class. Metarules is a set of specialisations of the metarules in
-%	Templates.
+%	Templates is a list of punch or matrix metarules. Metarules is
+%	a set of specialisations of the metarules in Templates.
 %
 learn_metarules(Pos,Neg,BK,MS,MS_f):-
 	configuration:reduce_learned_metarules(B)
