@@ -144,7 +144,7 @@ thelma_complete(T,Hs,Prog):-
 
 
 %!	thelma_complete(+Pos,+Neg,+BK,+Metarules,+Partial,-Complete) is
-%	nondet.
+%!	nondet.
 %
 %	Complete a Partial theory with Thelma.
 %
@@ -205,6 +205,83 @@ convert_examples(neg,Es,Es_):-
 		,E =.. E_
 		)
 	       ,Es_).
+
+
+%!	prove(+Atoms,+BK,+Metarules,-Metasubstitutions)
+%!	is nondet.
+%
+%	Prove a list of Atoms and derive a list of Metasubstitutions.
+%
+%	Atoms is a list of positive examples of the learning target. It
+%	is a list of lists where each sublist is an atom in the form of
+%	a list [F|As], where F the symbol of the target predicate and As
+%	the list of the atom's terms.
+%
+%	BK is a list of predicate symbols and arities of the background
+%	knowledge predicates for the learning target.
+%
+%	Metarules is a list of atoms, the names of metarules for the
+%	learning target.
+%
+%	Metasubstitutions is a list of metasubstitutions. Each
+%	metasubstitution is a Prolog coumpound, sub(Id, Ps). Id is the
+%	name of a metarule in Metarules and Ps is a list of symbols and
+%	arities of predicates in the program signature.
+%
+%	When prove/4 exits, each sub/2 term in the list of
+%	Metasubstitutions is projected onto the corresponding metarule
+%	to form a clause in a hypothesis. The hypothesis is later tested
+%	for consistency with the negative examples in disprove/2 and
+%	returned if it is consistent. This happens in thelma/5.
+%
+%	On backtracking, each list of metasubstitutions representing a
+%	hypothesis that is correct with respect to the positive examples
+%	are returned.
+%
+prove(Pos,BK,MS,Ss):-
+	configuration:depth_limits(C,I)
+	,target_predicate(Pos,T)
+	,depth_level(C,I,C_,I_)
+	,debug(depth_level,'Clauses: ~w; Invented: ~w',[C_,I_])
+	,program_signature(I_,T,BK,Po,Co)
+	,debug(program_signature,'Program signature: ~w',[Po-Co])
+	,prove(C_,Pos,BK,MS,Po-Co,[],Ss_)
+	,reverse(Ss_,Ss).
+
+
+%!	prove(+Pos,+BK,+Metarules,+Partial,-Completed) is nondet.
+%
+%	As prove/4 but also completes a Partial theory.
+%
+prove(Pos,BK,MS,Hs,Ss):-
+	configuration:depth_limits(C,I)
+	,target_predicate(Pos,T)
+	,depth_level(C,I,C_,I_)
+	,debug(depth_level,'Clauses: ~w; Invented: ~w',[C_,I_])
+	,program_signature(I_,T,BK,Po,Co)
+	,debug(program_signature,'Program signature: ~w',[Po-Co])
+	,clauses_metasubs(Hs,MS,Po-Co,Hs_)
+	,prove(C_,Pos,BK,MS,Po-Co,Hs_,Ss_)
+	,reverse(Ss_,Ss).
+
+
+%!	target_predicate(+Examples,-Target) is det.
+%
+%	Determine the Target predicate from a set of Examples.
+%
+%	Examples is a list of lists, where each sublist is an atom in
+%	the form of a list, [F|As], such that F is the predicate symbol
+%	of the atom and As is the list of its terms.
+%
+%	Target is the symbol and arity of the learning target. The
+%	predicate symbol and arity of Target are the predicate symbol
+%	and number of terms in the first sub-list of Examples.
+%
+%	target_predicate/2 makes no attempt to check that Examples are
+%	all atoms of the same predicate, etc.
+%
+target_predicate([[F|Args]|_Es],F/A):-
+	length(Args,A).
 
 
 %!	depth_level(+Clause_Max,+Invented_Max,-Clauses,-Invented) is
@@ -321,85 +398,8 @@ invented_symbols(K,_F/A,Ss):-
 	       ,Ss).
 
 
-%!	target_predicate(+Examples,-Target) is det.
-%
-%	Determine the Target predicate from a set of Examples.
-%
-%	Examples is a list of lists, where each sublist is an atom in
-%	the form of a list, [F|As], such that F is the predicate symbol
-%	of the atom and As is the list of its terms.
-%
-%	Target is the symbol and arity of the learning target. The
-%	predicate symbol and arity of Target are the predicate symbol
-%	and number of terms in the first sub-list of Examples.
-%
-%	target_predicate/2 makes no attempt to check that Examples are
-%	all atoms of the same predicate, etc.
-%
-target_predicate([[F|Args]|_Es],F/A):-
-	length(Args,A).
-
-
-%!	prove(+Atoms,+BK,+Metarules,-Metasubstitutions)
-%!	is nondet.
-%
-%	Prove a list of Atoms and derive a list of Metasubstitutions.
-%
-%	Atoms is a list of positive examples of the learning target. It
-%	is a list of lists where each sublist is an atom in the form of
-%	a list [F|As], where F the symbol of the target predicate and As
-%	the list of the atom's terms.
-%
-%	BK is a list of predicate symbols and arities of the background
-%	knowledge predicates for the learning target.
-%
-%	Metarules is a list of atoms, the names of metarules for the
-%	learning target.
-%
-%	Metasubstitutions is a list of metasubstitutions. Each
-%	metasubstitution is a Prolog coumpound, sub(Id, Ps). Id is the
-%	name of a metarule in Metarules and Ps is a list of symbols and
-%	arities of predicates in the program signature.
-%
-%	When prove/4 exits, each sub/2 term in the list of
-%	Metasubstitutions is projected onto the corresponding metarule
-%	to form a clause in a hypothesis. The hypothesis is later tested
-%	for consistency with the negative examples in disprove/2 and
-%	returned if it is consistent. This happens in thelma/5.
-%
-%	On backtracking, each list of metasubstitutions representing a
-%	hypothesis that is correct with respect to the positive examples
-%	are returned.
-%
-prove(Pos,BK,MS,Ss):-
-	configuration:depth_limits(C,I)
-	,target_predicate(Pos,T)
-	,depth_level(C,I,C_,I_)
-	,debug(depth_level,'Clauses: ~w; Invented: ~w',[C_,I_])
-	,program_signature(I_,T,BK,Po,Co)
-	,debug(program_signature,'Program signature: ~w',[Po-Co])
-	,prove(C_,Pos,BK,MS,Po-Co,[],Ss_)
-	,reverse(Ss_,Ss).
-
-
-%!	prove(+Pos,+BK,+Metarules,+Partial,-Completed) is nondet.
-%
-%	As prove/4 but also completes a Partial theory.
-%
-prove(Pos,BK,MS,Hs,Ss):-
-	configuration:depth_limits(C,I)
-	,target_predicate(Pos,T)
-	,depth_level(C,I,C_,I_)
-	,debug(depth_level,'Clauses: ~w; Invented: ~w',[C_,I_])
-	,program_signature(I_,T,BK,Po,Co)
-	,debug(program_signature,'Program signature: ~w',[Po-Co])
-	,clauses_metasubs(Hs,MS,Po-Co,Hs_)
-	,prove(C_,Pos,BK,MS,Po-Co,Hs_,Ss_)
-	,reverse(Ss_,Ss).
-
-
 %!	clauses_metasubs(+Clauses,+Metarules,+Ordering,-Metasubs) is
-%	det.
+%!	det.
 %
 %	Convert a list of Clauses to ground metasubstitutions.
 %
@@ -422,11 +422,13 @@ clauses_metasubs(Cs,MS,Os,Ms):-
 	       ,Ms).
 
 
-
 %!	prove(+Depth,+Atoms,+BK,+Metarules,+Orders,+Acc,-Metasubs)
 %!	is nondet.
 %
-%	Business end of prove/7.
+%	Business end of prove/4 and prove/5.
+%
+%	This is the implementation of the main meta-intperetive learning
+%	procedure in Thelma.
 %
 %	Depth is the maximum depth for the iterative deepening search.
 %	It's the maximum size of a hypothesis, i.e. the maximum number
