@@ -1,6 +1,9 @@
 :-module(thelma, [thelma/1
 		 ,thelma/2
 		 ,thelma/5
+		 ,thelma_complete/2
+		 ,thelma_complete/3
+		 ,thelma_complete/6
 		 ]).
 
 :-use_module(project_root(configuration)).
@@ -110,6 +113,76 @@ thelma(_Pos,_Neg,_BK,_MS,[]).
 
 
 
+%!	thelma_complete(+Target,+Partial) is nondet.
+%
+%	Complete a Partial theory with Thelma.
+%
+%	As thelma_complete/3 but outputs the completed theory to the
+%	Prolog console instead of binding it to an output variable.
+%
+thelma_complete(T,Hs):-
+	thelma_complete(T,Hs,Ps)
+	,print_clauses(Ps).
+
+
+
+%!	thelma_complete(+Target,+Partial,-Completed) is nondet.
+%
+%	Complete a Partial theory with Thelma.
+%
+%	Partial is a list of clauses in a logic program that entails
+%	some subset of the positive examples for Target with respect to
+%	background knowledge. This predicate completes Partial by
+%	learning a set of clauses that all entail the positive examples
+%	of Target with respect to background knowledge and outputs the
+%	result in Completed.
+%
+thelma_complete(T,Hs,Prog):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,thelma_complete(Pos,Neg,BK,MS,Hs,Prog).
+
+
+
+%!	thelma_complete(+Pos,+Neg,+BK,+Metarules,+Partial,-Complete) is
+%	nondet.
+%
+%	Complete a Partial theory with Thelma.
+%
+%	As thelma/5, but Partial is a list of clauses representing a
+%	partial theory, which is completed, and output in Complete.
+%
+%	Partial is completed by learning additional clauses such that
+%	the union of Partial and Complete entails all the positive
+%	examples in Pos, and none of the negative examples in Neg, with
+%	respect to the definitions of predicates listed in BK.
+%
+thelma_complete(Pos,Neg,BK,MS,Hs,Prog):-
+	configuration:unfold_invented(U)
+	,debug(thelma,'Converting examples...',[])
+	,convert_examples(pos,Pos,Pos_c)
+	,convert_examples(neg,Neg,Neg_c)
+	,S = (debug(thelma,'Transforming metarules...',[])
+             ,transform_metarules(MS)
+	     )
+	,G = (debug(thelma,'Proving examples...',[])
+	     ,prove(Pos_c,BK,MS,Hs,Ps)
+	     ,debug(thelma,'Disproving examples...',[])
+	     ,disprove(Neg_c,BK,Ps)
+	     ,project_metasubs(Ps, Prog_)
+	     )
+	,Cl = (debug(thelma,'Cleaning up metarules...',[]),
+	       cleanup_metarules
+	      )
+	,setup_call_cleanup(S,G,Cl)
+	,(   U == true
+	 ->  debug(thelma,'Unfolding invented predicates...',[])
+	    ,unfold_clauses(Prog_,Pos,BK,Prog)
+	 ;   Prog_ = Prog
+	 ).
+thelma_complete(_Pos,_Neg,_BK,_MS,_Hs,[]).
+
+
+
 %!	convert_examples(+Examples,-Converted) is det.
 %
 %	Convert Examples to Thelma's internal represenation.
@@ -132,7 +205,6 @@ convert_examples(neg,Es,Es_):-
 		,E =.. E_
 		)
 	       ,Es_).
-
 
 
 %!	depth_level(+Clause_Max,+Invented_Max,-Clauses,-Invented) is
@@ -308,6 +380,47 @@ prove(Pos,BK,MS,Ss):-
 	,debug(program_signature,'Program signature: ~w',[Po-Co])
 	,prove(C_,Pos,BK,MS,Po-Co,[],Ss_)
 	,reverse(Ss_,Ss).
+
+
+%!	prove(+Pos,+BK,+Metarules,+Partial,-Completed) is nondet.
+%
+%	As prove/4 but also completes a Partial theory.
+%
+prove(Pos,BK,MS,Hs,Ss):-
+	configuration:depth_limits(C,I)
+	,target_predicate(Pos,T)
+	,depth_level(C,I,C_,I_)
+	,debug(depth_level,'Clauses: ~w; Invented: ~w',[C_,I_])
+	,program_signature(I_,T,BK,Po,Co)
+	,debug(program_signature,'Program signature: ~w',[Po-Co])
+	,clauses_metasubs(Hs,MS,Po-Co,Hs_)
+	,prove(C_,Pos,BK,MS,Po-Co,Hs_,Ss_)
+	,reverse(Ss_,Ss).
+
+
+%!	clauses_metasubs(+Clauses,+Metarules,+Ordering,-Metasubs) is
+%	det.
+%
+%	Convert a list of Clauses to ground metasubstitutions.
+%
+%	This predicate is used to convert the clauses of a partial
+%	theory to a list of ground metasubstitutions. These are later
+%	used by prove/7 when selecting an existing metasubstitution to
+%	prove an atom.
+%
+clauses_metasubs(Cs,MS,Os,Ms):-
+	maplist(clause_literals,Cs,Cs_Ls)
+	,findall(Msub
+	       ,(member(Ls,Cs_Ls)
+		,findall(L_
+			,(member(L,Ls)
+			 ,L =.. L_
+			 )
+			,[Hs|Bs])
+		,metasubstitution(MS,Hs,Os,Msub,Bs)
+		)
+	       ,Ms).
+
 
 
 %!	prove(+Depth,+Atoms,+BK,+Metarules,+Orders,+Acc,-Metasubs)
