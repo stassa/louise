@@ -31,7 +31,8 @@
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
 		      ,list_top_program/3
-		      ,print_metarules/1
+		      ,print_metarules/2
+		      ,print_expanded_metarules/1
 		      ,print_quantified_metarules/1
 		      ,debug_quantified_metarules/2
 		      ,debug_quantified_metarules/3
@@ -150,6 +151,9 @@ Table of Contents
    * print_quantified_metarules/1
    * debug_quantified_metarules/2
    * debug_quantified_metarules/3
+   * print_user_friendly_metarules/1
+   * debug_user_friendly_metarules/2
+   * debug_user_friendly_metarules/3
 
 5. Database auxiliaries [sec_dynm]
    * assert_program/3
@@ -1178,7 +1182,45 @@ print_clauses(Cs):-
 
 
 
-%!	print_metarules(+Metarules) is det.
+%!	print_metarules(+Format,+Metarules) is det.
+%
+%	Pretty-print a list of metarules.
+%
+%	Format is an atom denoting the format in which Metarules will be
+%	printed, one of [expanded,quantified,user_friendly], interpreted
+%	as follows.
+%	* expanded: print metarules in Louise's internal format,
+%	encapsulated and expanded, but with pretty variable names.
+%	* quantified: print metarules with quantifiers and in the
+%	human-readable format found in the MIL literature.
+%	* user_friendly: print metarules in the user-level format used
+%	in experiment files.
+%
+%	Ask for "expanded" formatting when you wish to inspect the
+%	internal representation of metarules that Louise uses to learn.
+%
+%	Ask for "quantified" formatting when you want to compare
+%	metarules with metarules listed in the literature, or just to
+%	get a more formal definition of metarules.
+%
+%	Ask for "user_friendly" formatting when you want to copy and
+%	past metarules to an experiment file to use directly in a
+%	learning attempt.
+%
+print_metarules(expanded,MS):-
+	!
+	,print_expanded_metarules(MS).
+print_metarules(quantified,MS):-
+	!
+	,print_quantified_metarules(MS).
+print_metarules(user_friendly,MS):-
+	!
+	,print_user_friendly_metarules(MS).
+print_metarules(F,_MS):-
+	throw('Uknown metarule printing format':F).
+
+
+%!	print_expanded_metarules(+Metarules) is det.
 %
 %	Pretty-print a list of Metarules.
 %
@@ -1209,7 +1251,7 @@ print_clauses(Cs):-
 %
 %	Example:
 %       ==
-%       ?- print_metarules([inverse,identity,chain]).
+%       ?- print_expanded_metarules([inverse,identity,chain]).
 %       m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
 %       m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
 %       m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
@@ -1228,19 +1270,19 @@ print_clauses(Cs):-
 %	true.
 %	==
 %
-print_metarules(M):-
+print_expanded_metarules(M):-
 	\+ is_list(M)
 	,!
-	,print_metarules([M]).
-print_metarules(MS):-
+	,print_expanded_metarules([M]).
+print_expanded_metarules(MS):-
 	forall(member(M,MS)
-	      ,(print_metarule(M)
+	      ,(print_expanded_metarule(M)
 	       ,nl
 	       )
 	      ).
 
 
-%!	print_metarule(+Metarule) is det.
+%!	print_expanded_metarule(+Metarule) is det.
 %
 %	Pretty-print a Metarule at the top-level.
 %
@@ -1248,12 +1290,12 @@ print_metarules(MS):-
 %	program database, or an expanded metarule, as returned by
 %	metarule_expansion/2.
 %
-print_metarule(Id):-
+print_expanded_metarule(Id):-
 	atom(Id)
 	,!
 	,once(metarule_expansion(Id,M))
-	,print_metarule(M).
-print_metarule(MR):-
+	,print_expanded_metarule(M).
+print_expanded_metarule(MR):-
 	must_be(nonvar, MR)
 	,metarule_variables(MR,Es,Us)
 	,length(Es,N)
@@ -1295,7 +1337,7 @@ print_metarule(MR):-
 %	predicate that should ever be in the transitive closure of a
 %	heavy-lifting predicate.
 %
-%	@tbd Well, add this warning at print_metarule/1, no?
+%	@tbd Well, add this warning at print_expanded_metarule/1, no?
 %
 metarule_variables(_A:-M,Ss,Fs):-
 	metarule_variables(M,[],Ss_,[],Fs_)
@@ -1716,8 +1758,26 @@ user_friendly_metarule(Id,A):-
 	,atomic_list_concat([_Qs,C],': ',M)
 	,format(atom(R),'\u2190 ',[])
 	,atomic_list_concat([Hd,Bd],R,C)
-	% abduce metarule 'P(X,Y)'.
-	,format(atom(A),'configuration:~w metarule \'~w:- ~w\'.',[Id,Hd,Bd]).
+	,metarule_id(Id,Id_)
+	,format(atom(A),'configuration:~w metarule \'~w:- ~w\'.',[Id_,Hd,Bd]).
+
+
+%!	metarule_id(+Metarule,-Id) is det.
+%
+%	Extract the Id of a Metarule.
+%
+%	Metarule may be an atomic Id of a metarule or a metarule clause.
+%	Id is either the atom Id, or the atomic ide of the metarule in
+%	the clause.
+%
+%	@tbd this is going to be needed elsewhere. Maybe modify
+%	mil_problem's metarule_parts/5 so it actually works?
+%
+metarule_id(Id,Id):-
+	atom(Id)
+	,!.
+metarule_id(Sub:-_,Id):-
+	Sub =.. [m,Id|_].
 
 
 

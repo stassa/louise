@@ -159,7 +159,7 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
 %experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
-%experiment_file('data/examples/tiny_kinship_toi.pl',tiny_kinship_toil).
+%experiment_file('data/examples/tiny_kinship_toil.pl',tiny_kinship_toil).
 %experiment_file('data/examples/yamamoto.pl',yamamoto).
 %experiment_file('data/examples/recursive_folding.pl',recursive_folding).
 
@@ -183,24 +183,33 @@ learner(louise).
 %
 %       How to print metarules learned with new_metarules/1.
 %
-%       One of: [pretty,prolog]. Option "pretty" calls the metarule
-%       pretty-printer, print_quantified_metarules/1. Option "prolog"
-%       calls the encapsulated metarule printer, print_metarules/1.
+%       How is one of: [expanded, quantified, user_friendly].
 %
-%       Choose option "pretty" when you want the learned metarules to be
-%       printed nicely for inspection by a human user. Choose option
-%       "prolog" when you want to copy the learned metarules by hand and
-%       use them directly as Prolog terms.
+%       Option "expanded" prints metarules in Louise's internal format,
+%       encapsulated and expanded, with an encapsulated metasubstitution
+%       atom in the head. Use this option to inspect what Louise
+%       actually sees when you declare a metarule.
 %
-%       @tbd This set of options should include one to print the learned
-%       metarules in Louise's user-level format, i.e. as
-%       configuration:metarule/2 terms. This will need to be implemented
-%       from scratch, probably, as the metarules parser only goes "one
-%       way" (it can only parse user-level metarules to learner-leve
-%       metarules but not the other way around).
+%       Option "quantified" prints metarules with quantifiers and in
+%       formal notation found in the MIL literature. Use this option to
+%       compare metarules with the ones in the literature, or just to
+%       get a more clear explanation of a metarule.
 %
-learned_metarules_printing(pretty).
-%learned_metarules_printing(prolog).
+%       Option "user_friendly" prints metarules in Louise's user-level,
+%       and user-friendly format of metarules in experiment files. Use
+%       this option when you want to copy a metarule and later paste it
+%       to an experiment file. For example, this option is handy when
+%       you learn metarules with TOIL and you want to reuse them in an
+%       experiment file.
+%
+%       Note that the metarules printed with option "expanded" cannot be
+%       directly copy/pasted into an experiment file. Or, well, sure
+%       they can... but they won't be picked up by experiment_data/5 and
+%       you will probably see errors.
+%
+learned_metarules_printing(expanded).
+%learned_metarules_printing(quantified).
+%learned_metarules_printing(user_friendly).
 
 
 %!	learning_predicate(+Learning_Predicate) is semidet.

@@ -481,12 +481,7 @@ learn_meta(Pos,Neg,BK,MS_G,Ps):-
 learn_metarules(Ts):-
 	configuration:learned_metarules_printing(H)
 	,learn_metarules(Ts,MS)
-	,(   H = pretty
-	 ->  print_quantified_metarules(MS)
-	 ;   H = prolog
-	 ->  print_metarules(MS)
-	 ;   throw('Unknown new_metarules_printing/1 option':H)
-	 ).
+	,print_metarules(H,MS).
 
 
 %!	learn_metarules(+Targets,-Metarules) is det.
