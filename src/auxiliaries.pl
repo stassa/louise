@@ -35,6 +35,9 @@
 		      ,print_quantified_metarules/1
 		      ,debug_quantified_metarules/2
 		      ,debug_quantified_metarules/3
+		      ,print_user_friendly_metarules/1
+		      ,debug_user_friendly_metarules/2
+		      ,debug_user_friendly_metarules/3
 		       % Database auxiliaries
 		      ,assert_program/3
 		      ,erase_program_clauses/1
@@ -1614,14 +1617,134 @@ debug_quantified_metarules(S,MS):-
 
 
 
-%!	print_quantified_metarule(+How,+Where,+Metarule) is det.
+%!	print_user_friendly_metarules(+Ids) is det.
+%
+%	Pretty-print metarules in a user-friendly format.
+%
+%	As print_quantified_metarules/1 but prints metarules in the
+%	user-level format expected by Louise in experiment files,
+%	without non-ascii characters.
+%
+%	Example:
+%	==
+%	?- auxiliaries:print_user_friendly_metarules([chain,identity,inverse]).
+%	configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
+%	configuration:identity metarule 'P(x,y):- Q(x,y)'.
+%	configuration:inverse metarule 'P(x,y):- Q(y,x)'.
+%	true.
+%	==
+%
+%	@tbd Currently only prints sort and matrix metarules, but not
+%	punch metarules.
+%
+print_user_friendly_metarules(M):-
+	\+ is_list(M)
+	,!
+	,print_user_friendly_metarules([M]).
+print_user_friendly_metarules(MS):-
+	forall(member(M,MS)
+	      ,output_user_friendly_metarule(print,user_output,M)
+	      ).
+
+
+
+%!	debug_user_friendly_metarules(+Subject,+Ids) is det.
+%
+%	Log a list of metarules in a user-friendly format.
+%
+%	As debug_quantified_metarules/2 but prints metarules in the
+%	user-level format expected by Louise in experiment files,
+%	without non-ascii characters.
+%
+%	See also print_user_friendly_metarules/1
+%
+%	@tbd Currently only logs sort and matrix metarules, but not
+%	punch metarules.
+%
+debug_user_friendly_metarules(S,M):-
+	\+ is_list(M)
+	,!
+	,debug_user_friendly_metarules(S,[M]).
+debug_user_friendly_metarules(S,MS):-
+	forall(member(M,MS)
+	      ,output_user_friendly_metarule(debug,S,M)
+	      ).
+
+
+
+%!	debug_user_friendly_metarules(+Subject,+Message,+Ids) is det.
+%
+%	Log a message followed by a user-friendly list of Metarules.
+%
+%	As debug_user_friendly_metarules/2 but also prints a message to
+%	the debug stream.
+%
+%	Subject is the name of a debug subject.
+%
+%	Message is a string that wll be printed above the list of
+%	quantified Metarules when logging Subject.
+%
+%	Metarules is a list of encapsulated metarules or metarule IDs
+%	that will be pretty-printed when logging Subject.
+%
+debug_user_friendly_metarules(S,M,MS):-
+	debug(S,'~w',M)
+	,debug_user_friendly_metarules(S,MS).
+
+
+
+%!	output_user_friendly_metarule(+How,+Where,+Id) is det.
+%
+%	Pretty-print a metarule in user-friendly format.
+%
+%	As output_quantified_metarule/3 but outputs metarules in the
+%	user-level format expected by Louise in experiment files,
+%	without non-ascii characters.
+%
+output_user_friendly_metarule(H,W,Id):-
+	user_friendly_metarule(Id,M)
+	,print_or_debug(H,W,M).
+
+
+%!	user_friendly_metarule(+Metarule,-Atom) is det.
+%
+%	Transform a Metarule into a user-friendly pretty-printing Atom.
+%
+user_friendly_metarule(Id,A):-
+	quantified_metarule(Id,M)
+	,atom(M)
+	,atomic_list_concat([_Qs,C],': ',M)
+	,format(atom(R),'\u2190 ',[])
+	,atomic_list_concat([Hd,Bd],R,C)
+	% abduce metarule 'P(X,Y)'.
+	,format(atom(A),'configuration:~w metarule \'~w:- ~w\'.',[Id,Hd,Bd]).
+
+
+
+%!	output_quantified_metarule(+How,+Where,+Metarule) is det.
 %
 %	Pretty-print a Metarule with quantifiers.
 %
 %	How is one of "print" or "debug". Where is the name of the
 %	stream to print to, or the debug subject.
 %
-output_quantified_metarule(H,W,higher_order(Min,Max)):-
+output_quantified_metarule(H,W,Id):-
+	quantified_metarule(Id,M)
+	,(   is_list(M)
+	 ->  forall(member(Hom,M)
+		   ,print_or_debug(H,W,Hom)
+		   )
+	 ;   print_or_debug(H,W,M)
+	 ).
+
+
+%!	quantified_metarule(+Id,-Atom) is det.
+%
+%	Transform a metarule into a pretty-printing atom.
+%
+%	Business end of output_quantified_metarule/3.
+%
+quantified_metarule(higher_order(Min,Max),Hs):-
 % Pretty-print third-order metarules.
 	!
 	,findall(M_
@@ -1638,23 +1761,20 @@ output_quantified_metarule(H,W,higher_order(Min,Max)):-
 		,format(atom(Es_A),'\u2203.~w',[Es_])
 		,format(atom(M_),'(TOM-~w) ~w: ~w',[N,Es_A,M])
 		)
-	       ,Hs)
-	,forall(member(Hom,Hs)
-	       ,print_or_debug(H,W,Hom)
-	       ).
-output_quantified_metarule(H,W,Id):-
+	       ,Hs).
+quantified_metarule(Id,A):-
 	atom(Id)
 	,!
 	,once(metarule_expansion(Id,M))
-	,output_quantified_metarule(H,W,M).
-output_quantified_metarule(H,W,M):-
+	,quantified_metarule(M,A).
+quantified_metarule(M,A):-
 	metarule_symbols(M)
 	,excapsulated_metarule(M,M_)
 	,metarule_Id(M, Id)
 	,metarule_quantifiers(M,Es,Us)
 	,pretty_metarule_id(Id,Id_)
-	,format(atom(A),'(~w) ~w~w: ~w',[Id_,Es,Us,M_])
-	,print_or_debug(H,W,A).
+	,format(atom(A),'(~w) ~w~w: ~w',[Id_,Es,Us,M_]).
+
 
 
 %!	metarule_symbols(+Metarule) is det.
