@@ -1241,7 +1241,6 @@ print_metarules(F,_MS):-
 
 
 
-
 %!	debug_metarules(+Subject,+Metarules) is det.
 %
 %	Print a list of pretty-printed Metarules to a debug Subject.
@@ -1258,7 +1257,7 @@ debug_metarules(S,MS):-
 
 %!	debug_metarules(+Formatting,+Subject,+Metarules) is det.
 %
-%	Print a list of pretty-printed Metarules to a debug Subject.
+%	Log a list of pretty-printed Metarules to a debug stream.
 %
 %	Subject is the name of the debug subject associated with the
 %	debugging stream, where the list of Metarules is to be
@@ -1272,12 +1271,20 @@ debug_metarules(S,MS):-
 %
 %	@tbd Expanded metarules can currently not be debugged.
 %
+debug_metarules(F,S,M):-
+	\+ is_list(M)
+	,!
+	,debug_metarules(F,S,[M]).
 debug_metarules(quantified,S,MS):-
 	!
-	,debug_quantified_metarules(S,MS).
+	,forall(member(M,MS)
+	       ,output_quantified_metarule(debug,S,M)
+	       ).
 debug_metarules(user_friendly,S,MS):-
 	!
-	,debug_user_friendly_metarules(S,MS).
+	,forall(member(M,MS)
+	       ,output_user_friendly_metarule(debug,S,M)
+	       ).
 debug_metarules(F,_S,_MS):-
 	throw('Uknown metarule printing format':F).
 
@@ -1292,14 +1299,14 @@ debug_metarules(F,_S,_MS):-
 %	the debug output. The predicate doesn't check that Message is
 %	actually informative :P
 %
-debug_metarules(quantified,S,M,MS):-
-	!
-	,debug_quantified_metarules(S,M,MS).
-debug_metarules(user_friendly,S,M,MS):-
-	!
-	,debug_user_friendly_metarules(S,M,MS).
-debug_metarules(F,_S,_M,_MS):-
-	throw('Uknown metarule printing format':F).
+%	@tbd If Message is '', an empty debug line is printed, i.e. an
+%	empty line headed with the Prolog comment symbol, %. This can be
+%	used to add some space between output that is otherwise too
+%	cloase together, to facilitate reading logs.
+%
+debug_metarules(F,S,M,MS):-
+	debug(S,'~w',M)
+	,debug_metarules(F,S,MS).
 
 
 
@@ -1719,89 +1726,6 @@ symbol_range(T,Ss,N):-
 
 
 
-%!	debug_quantified_metarules(+Subject,+Message,+Metarules) is det.
-%
-%	Log a message followed by a pretty-printed list of Metarules.
-%
-%	Subject is the name of a debug subject.
-%
-%	Message is a string that wll be printed above the list of
-%	quantified Metarules when logging Subject.
-%
-%	Metarules is a list of encapsulated metarules or metarule IDs
-%	that will be pretty-printed when logging Subject.
-%
-debug_quantified_metarules(S,M,MS):-
-	debug(S,'~w',M)
-	,debug_quantified_metarules(S,MS).
-
-
-
-%!	debug_quantified_metarules(+Subject,+Metarles) is det.
-%
-%	Log a list of pretty-printed Metarules.
-%
-%	Subject is the name of a debug subject.
-%
-%	Metarules is a list of metarule IDs or encapsulated metarules
-%	that wll be pretty-printed when logging Subject.
-%
-debug_quantified_metarules(S,M):-
-	\+ is_list(M)
-	,!
-	,debug_quantified_metarules(S,[M]).
-debug_quantified_metarules(S,MS):-
-	forall(member(M,MS)
-	      ,output_quantified_metarule(debug,S,M)
-	      ).
-
-
-
-%!	debug_user_friendly_metarules(+Subject,+Ids) is det.
-%
-%	Log a list of metarules in a user-friendly format.
-%
-%	As debug_quantified_metarules/2 but prints metarules in the
-%	user-level format expected by Louise in experiment files,
-%	without non-ascii characters.
-%
-%	See also print_user_friendly_metarules/1
-%
-%	@tbd Currently only logs sort and matrix metarules, but not
-%	punch metarules.
-%
-debug_user_friendly_metarules(S,M):-
-	\+ is_list(M)
-	,!
-	,debug_user_friendly_metarules(S,[M]).
-debug_user_friendly_metarules(S,MS):-
-	forall(member(M,MS)
-	      ,output_user_friendly_metarule(debug,S,M)
-	      ).
-
-
-
-%!	debug_user_friendly_metarules(+Subject,+Message,+Ids) is det.
-%
-%	Log a message followed by a user-friendly list of Metarules.
-%
-%	As debug_user_friendly_metarules/2 but also prints a message to
-%	the debug stream.
-%
-%	Subject is the name of a debug subject.
-%
-%	Message is a string that wll be printed above the list of
-%	quantified Metarules when logging Subject.
-%
-%	Metarules is a list of encapsulated metarules or metarule IDs
-%	that will be pretty-printed when logging Subject.
-%
-debug_user_friendly_metarules(S,M,MS):-
-	debug(S,'~w',M)
-	,debug_user_friendly_metarules(S,MS).
-
-
-
 %!	output_user_friendly_metarule(+How,+Where,+Id) is det.
 %
 %	Pretty-print a metarule in user-friendly format.
@@ -1809,6 +1733,9 @@ debug_user_friendly_metarules(S,M,MS):-
 %	As output_quantified_metarule/3 but outputs metarules in the
 %	user-level format expected by Louise in experiment files,
 %	without non-ascii characters.
+%
+%	@tbd Currently only outputs sort and matrix metarules, but not
+%	punch metarules.
 %
 output_user_friendly_metarule(H,W,Id):-
 	user_friendly_metarule(Id,M)
