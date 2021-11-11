@@ -514,7 +514,7 @@ learn_metarules(Pos,Neg,BK,MS,MS_f):-
 	 ->  MS_r = MS_n
 	 )
 	,maplist(renamed_metarule(Ci),MS_r,MS_f)
-	,debug_quantified_metarules(learned_metarules,'Learned metarules:',MS_f).
+	,debug_msg_metarules(learned_metarules,'Learned metarules:',MS_f).
 
 
 %!	specialised_metarules_(+Pos,+Neg,+BK,+General,-Special) is det.
