@@ -1191,7 +1191,6 @@ print_metarules(MS):-
 	,print_metarules(F,MS).
 
 
-
 %!	print_metarules(+Format,+Metarules) is det.
 %
 %	Pretty-print a list of metarules.
@@ -1244,7 +1243,6 @@ print_metarules(F,MS):-
 debug_metarules(S,MS):-
 	configuration:metarule_formatting(F)
 	,debug_metarules(F,S,MS).
-
 
 
 %!	debug_metarules(+Formatting,+Subject,+Metarules) is det.
