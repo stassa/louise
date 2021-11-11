@@ -3,13 +3,13 @@
                         ,depth_limits/2
                         ,generalise_learned_metarules/1
 			,learner/1
-                        ,learned_metarules_printing/1
                         ,learning_predicate/1
 			,max_invented/1
                         ,minimal_program_size/2
 			,metarule/2
 			,metarule_constraints/2
                         ,metarule_learning_limits/1
+                        ,metarule_formatting/1
                         ,order_constraints/5
 			,recursion_depth_limit/2
 			,recursive_reduction/1
@@ -177,39 +177,6 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %	Thelma etc).
 %
 learner(louise).
-
-
-%!      learned_metarules_printing(?How) is semidet.
-%
-%       How to print metarules learned with new_metarules/1.
-%
-%       How is one of: [expanded, quantified, user_friendly].
-%
-%       Option "expanded" prints metarules in Louise's internal format,
-%       encapsulated and expanded, with an encapsulated metasubstitution
-%       atom in the head. Use this option to inspect what Louise
-%       actually sees when you declare a metarule.
-%
-%       Option "quantified" prints metarules with quantifiers and in
-%       formal notation found in the MIL literature. Use this option to
-%       compare metarules with the ones in the literature, or just to
-%       get a more clear explanation of a metarule.
-%
-%       Option "user_friendly" prints metarules in Louise's user-level,
-%       and user-friendly format of metarules in experiment files. Use
-%       this option when you want to copy a metarule and later paste it
-%       to an experiment file. For example, this option is handy when
-%       you learn metarules with TOIL and you want to reuse them in an
-%       experiment file.
-%
-%       Note that the metarules printed with option "expanded" cannot be
-%       directly copy/pasted into an experiment file. Or, well, sure
-%       they can... but they won't be picked up by experiment_data/5 and
-%       you will probably see errors.
-%
-learned_metarules_printing(expanded).
-%learned_metarules_printing(quantified).
-%learned_metarules_printing(user_friendly).
 
 
 %!	learning_predicate(+Learning_Predicate) is semidet.
@@ -484,6 +451,39 @@ metarule_learning_limits(none).
 %metarule_learning_limits(coverset).
 %metarule_learning_limits(sampling(0.5)).
 %metarule_learning_limits(metasubstitutions(1)).
+
+
+%!      metarule_formatting(?How) is semidet.
+%
+%       How to print metarules learned with new_metarules/1.
+%
+%       How is one of: [quantified, user_friendly, expanded].
+%
+%       Option "quantified" prints metarules with quantifiers and in
+%       formal notation found in the MIL literature. Use this option to
+%       compare metarules with the ones in the literature, or just to
+%       get a more clear explanation of a metarule.
+%
+%       Option "user_friendly" prints metarules in Louise's user-level,
+%       and user-friendly format of metarules in experiment files. Use
+%       this option when you want to copy a metarule and later paste it
+%       to an experiment file. For example, this option is handy when
+%       you learn metarules with TOIL and you want to reuse them in an
+%       experiment file.
+%
+%       Option "expanded" prints metarules in Louise's internal format,
+%       encapsulated and expanded, with an encapsulated metasubstitution
+%       atom in the head. Use this option to inspect what Louise
+%       actually sees when you declare a metarule.
+%
+%       Note that the metarules printed with option "expanded" cannot be
+%       directly copy/pasted into an experiment file. Or, well, sure
+%       they can... but they won't be picked up by experiment_data/5 and
+%       you will probably see errors.
+%
+metarule_formatting(quantified).
+%metarule_formatting(user_friendly).
+%metarule_formatting(expanded).
 
 
 %!      order_constraints(+Id,+Existential,+FO,+Lexicographic,+Interval)

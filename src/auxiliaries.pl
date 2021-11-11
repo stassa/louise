@@ -31,6 +31,7 @@
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
 		      ,list_top_program/3
+		      ,print_metarules/1
 		      ,print_metarules/2
 		      ,print_expanded_metarules/1
 		      ,print_quantified_metarules/1
@@ -148,6 +149,8 @@ Table of Contents
    * print_clauses/2
    * print_clauses/1
    * print_metarules/1
+   * print_metarules/2
+   * print_expanded_metarules/1
    * print_quantified_metarules/1
    * debug_quantified_metarules/2
    * debug_quantified_metarules/3
@@ -1182,6 +1185,19 @@ print_clauses(Cs):-
 
 
 
+%!	print_metarules(+Metarules) is det.
+%
+%	Pretty-print a list of Metarules.
+%
+%	As print_metarules/2 but the choice of formatting is taken from
+%	the configuration option metarule_formattting/1.
+%
+print_metarules(MS):-
+	configuration:metarule_formatting(F)
+	,print_metarules(F,MS).
+
+
+
 %!	print_metarules(+Format,+Metarules) is det.
 %
 %	Pretty-print a list of metarules.
@@ -1218,6 +1234,7 @@ print_metarules(user_friendly,MS):-
 	,print_user_friendly_metarules(MS).
 print_metarules(F,_MS):-
 	throw('Uknown metarule printing format':F).
+
 
 
 %!	print_expanded_metarules(+Metarules) is det.
@@ -1269,6 +1286,9 @@ print_metarules(F,_MS):-
 %	m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E).
 %	true.
 %	==
+%
+%	@tbd This needs 2- and 3-arity variants, as the other two
+%	metarule pretty-printers.
 %
 print_expanded_metarules(M):-
 	\+ is_list(M)
