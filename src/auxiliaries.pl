@@ -1259,8 +1259,6 @@ debug_metarules(S,MS):-
 %	Formatting is one fo [quantified,user_friendly,expanded]. See
 %	configuration option metarule_formatting/1 for details.
 %
-%	@tbd Expanded metarules can currently not be debugged.
-%
 debug_metarules(F,S,M):-
 	\+ is_list(M)
 	,!
