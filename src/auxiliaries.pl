@@ -1221,20 +1221,10 @@ print_metarules(F,M):-
 	\+ is_list(M)
 	,!
 	,print_metarules(F,[M])	.
-print_metarules(expanded,MS):-
+print_metarules(F,MS):-
 	!
 	,forall(member(M,MS)
-	       ,output_expanded_metarule(print,user_output,M)
-	       ).
-print_metarules(quantified,MS):-
-	!
-	,forall(member(M,MS)
-	       ,output_quantified_metarule(print,user_output,M)
-	       ).
-print_metarules(user_friendly,MS):-
-	!
-	,forall(member(M,MS)
-	       ,output_user_friendly_metarule(print,user_output,M)
+	       ,output_metarule(F,print,user_output,M)
 	       ).
 print_metarules(F,_MS):-
 	throw('Uknown metarule printing format':F).
@@ -1275,20 +1265,10 @@ debug_metarules(F,S,M):-
 	\+ is_list(M)
 	,!
 	,debug_metarules(F,S,[M]).
-debug_metarules(quantified,S,MS):-
+debug_metarules(F,S,MS):-
 	!
 	,forall(member(M,MS)
-	       ,output_quantified_metarule(debug,S,M)
-	       ).
-debug_metarules(user_friendly,S,MS):-
-	!
-	,forall(member(M,MS)
-	       ,output_user_friendly_metarule(debug,S,M)
-	       ).
-debug_metarules(expanded,S,MS):-
-	!
-	,forall(member(M,MS)
-	       ,output_expanded_metarule(debug,S,M)
+	       ,output_metarule(F,debug,S,M)
 	       ).
 debug_metarules(F,_S,_MS):-
 	throw('Uknown metarule printing format':F).
@@ -1334,76 +1314,34 @@ debug_msg_metarules(S,M,MS):-
 
 
 
-%!	output_expanded_metarules(+How,+Where,+Metarule) is det.
+%!	output_metarules(+Format,+How,+Where,+Id) is det.
 %
-%	Pretty-print an expanded Metarule.
+%	Pretty-print a Metarule.
 %
-%	How is one of: [print, debug], denoting whether Metarule is
-%	pretty-printed to a debug or print stream.
+output_metarule(expanded,H,W,Id):-
+	!
+	,pretty_expanded_metarule(Id,M)
+	,output_metarule(H,W,M).
+output_metarule(quantified,H,W,Id):-
+	quantified_metarule(Id,M)
+	,output_metarule(H,W,M).
+output_metarule(user_friendly,H,W,Id):-
+	user_friendly_metarule(Id,M)
+	,output_metarule(H,W,M).
+
+
+%!	output_metarule(+How,+Where,+Id) is det.
 %
-%	Where is the name of the stream to print to if How is "print" or
-%	the debug subject, if How is "debug".
+%	Business end of otuput_metarule/4.
 %
-%	Metarule is either a metarule ID or an expanded metarule, as the
-%	output of metarule_expansion/2 or expanded_metarules/2.
-%
-%	The given Metarule is printed at the top-level with variables
-%	replaced by common predicate and variable names, e.g.
-%	second-order existentially quantified variables are printed as
-%	P, Q, R etc, whereas first-order existentialy or universally
-%	quantified variables are printed as X, Y, Z etc. The names for
-%	each type of variable are determined by the appropriate clause
-%	of symbol_range/3.
-%
-%	__Motivation__
-%
-%	This predicate is the base predicate for pretty-printing
-%	expanded metarules at the top-level for the purpose of debugging
-%	a MIL problem. It is called by print_metarules/[1,2] to print
-%	metarules in "expanded" format.
-%
-%	Metarules can also be printed to the top-level using
-%	print_clauses/1, however that predicate assigns variable names
-%	to metarule variables according to their order. This can make
-%	metarules difficult to read especially for the user who has the
-%	notation used in MIL literature in mind.
-%
-%	Example:
-%       ==
-%       ?- print_expanded_metarules([inverse,identity,chain]).
-%       m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
-%       m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
-%       m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
-%       true.
-%       ==
-%
-%	Note the difference with the alternative of printing metarules
-%	using print_clauses/2:
-%	==
-%	?- expanded_metarules([inverse,identity,chain],_MS)
-%	,print_clauses(_MS).
-%
-%	m(inverse,A,B):-m(A,C,D),m(B,D,C).
-%	m(identity,A,B):-m(A,C,D),m(B,C,D).
-%	m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E).
-%	true.
-%	==
-%
-%	@tbd Third-order metarules are not expanded into encapsulated
-%	clauses with a metasubstitution atom in the head, and so this
-%	predicate cannot pretty-print third order metarules.
-%
-%	@tbd This needs 2- and 3-arity variants, as the other two
-%	metarule pretty-printers.
-%
-output_expanded_metarule(H,W,Id):-
-	pretty_expanded_metarule(Id,M)
-	,(   is_list(M)
-	 ->  forall(member(Hom,M)
-		   ,print_or_debug(H,W,Hom)
-		   )
-	 ;   print_or_debug(H,W,M)
-	 ).
+output_metarule(H,W,M):-
+	(   is_list(M)
+	->  forall(member(Hom,M)
+		  ,print_or_debug(H,W,Hom)
+		  )
+	;   print_or_debug(H,W,M)
+	).
+
 
 
 %!	pretty_expanded_metarule(+Id,-Expanded) is det.
@@ -1731,22 +1669,6 @@ symbol_range(T,Ss,N):-
 
 
 
-%!	output_user_friendly_metarule(+How,+Where,+Id) is det.
-%
-%	Pretty-print a metarule in user-friendly format.
-%
-%	As output_quantified_metarule/3 but outputs metarules in the
-%	user-level format expected by Louise in experiment files,
-%	without non-ascii characters.
-%
-%	@tbd Currently only outputs sort and matrix metarules, but not
-%	punch metarules.
-%
-output_user_friendly_metarule(H,W,Id):-
-	user_friendly_metarule(Id,M)
-	,print_or_debug(H,W,M).
-
-
 %!	user_friendly_metarule(+Metarule,-Atom) is det.
 %
 %	Transform a Metarule into a user-friendly pretty-printing Atom.
@@ -1778,23 +1700,6 @@ metarule_id(Id,Id):-
 metarule_id(Sub:-_,Id):-
 	Sub =.. [m,Id|_].
 
-
-
-%!	output_quantified_metarule(+How,+Where,+Metarule) is det.
-%
-%	Pretty-print a Metarule with quantifiers.
-%
-%	How is one of "print" or "debug". Where is the name of the
-%	stream to print to, or the debug subject.
-%
-output_quantified_metarule(H,W,Id):-
-	quantified_metarule(Id,M)
-	,(   is_list(M)
-	 ->  forall(member(Hom,M)
-		   ,print_or_debug(H,W,Hom)
-		   )
-	 ;   print_or_debug(H,W,M)
-	 ).
 
 
 %!	quantified_metarule(+Id,-Atom) is det.
