@@ -479,9 +479,9 @@ learn_meta(Pos,Neg,BK,MS_G,Ps):-
 %	top-program construction predicate.
 %
 learn_metarules(Ts):-
-	configuration:learned_metarules_printing(H)
-	,learn_metarules(Ts,MS)
-	,print_metarules(H,MS).
+	learn_metarules(Ts,MS)
+	,print_metarules(MS).
+
 
 
 %!	learn_metarules(+Targets,-Metarules) is det.
