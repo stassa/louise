@@ -33,6 +33,10 @@
 		      ,list_top_program/3
 		      ,print_metarules/1
 		      ,print_metarules/2
+		      ,debug_metarules/2
+		      ,debug_metarules/3
+		      ,debug_metarules/4
+		      ,debug_msg_metarules/3
 		      ,print_expanded_metarules/1
 		      ,print_quantified_metarules/1
 		      ,debug_quantified_metarules/2
@@ -150,6 +154,10 @@ Table of Contents
    * print_clauses/1
    * print_metarules/1
    * print_metarules/2
+   * debug_metarules/2
+   * debug_metarules/3
+   * debug_metarules/4
+   * debug_msg_metarules/3
    * print_expanded_metarules/1
    * print_quantified_metarules/1
    * debug_quantified_metarules/2
@@ -1234,6 +1242,86 @@ print_metarules(user_friendly,MS):-
 	,print_user_friendly_metarules(MS).
 print_metarules(F,_MS):-
 	throw('Uknown metarule printing format':F).
+
+
+
+%!	debug_metarules(+Subject,+Metarules) is det.
+%
+%	Print a list of pretty-printed Metarules to a debug Subject.
+%
+%	As debug_metarules/3 but the choice of formatting of the printed
+%	metarules is taken from the configuration option
+%	metarule_formatting/1.
+%
+debug_metarules(S,MS):-
+	configuration:metarule_formatting(F)
+	,debug_metarules(F,S,MS).
+
+
+
+%!	debug_metarules(+Formatting,+Subject,+Metarules) is det.
+%
+%	Print a list of pretty-printed Metarules to a debug Subject.
+%
+%	Subject is the name of the debug subject associated with the
+%	debugging stream, where the list of Metarules is to be
+%	pretty-printed.
+%
+%	Metarules is a list of metarule IDs or expended metarules to be
+%	printed to the debug stream associated with Subject.
+%
+%	Formatting is one fo [quantified,user_friendly,expanded]. See
+%	configuration option metarule_formatting/1 for details.
+%
+%	@tbd Expanded metarules can currently not be debugged.
+%
+debug_metarules(quantified,S,MS):-
+	!
+	,debug_quantified_metarules(S,MS).
+debug_metarules(user_friendly,S,MS):-
+	!
+	,debug_user_friendly_metarules(S,MS).
+debug_metarules(F,_S,_MS):-
+	throw('Uknown metarule printing format':F).
+
+
+
+%!	debug_metarules(+Formatting,+Subject,+,Message,+Metarules) is
+%!	det.
+%
+%	Print a list of pretty-printed Metarules to a debug Subject.
+%
+%	As debug_metarules/3 but also prints an informative Message to
+%	the debug output. The predicate doesn't check that Message is
+%	actually informative :P
+%
+debug_metarules(quantified,S,M,MS):-
+	!
+	,debug_quantified_metarules(S,M,MS).
+debug_metarules(user_friendly,S,M,MS):-
+	!
+	,debug_user_friendly_metarules(S,M,MS).
+debug_metarules(F,_S,_M,_MS):-
+	throw('Uknown metarule printing format':F).
+
+
+
+%!	debug_msg_metarules(+Subject,+Message,+Metarules) is det.
+%
+%	Print a list of pretty-printed Metarules to a debug Subject.
+%
+%	As debug_metarules/4, but takes the metarule printing format
+%	from the configuration option metarule_formatting/1.
+%
+%	@tbd This breaks the mould of the name of metarule debugging
+%	predicates because a three-argument version of
+%	debug_metarules/3 already exists and it would make a bit of a
+%	mess if we endeavoured to overload it.
+%
+%
+debug_msg_metarules(S,M,MS):-
+	configuration:metarule_formatting(F)
+	,debug_metarules(F,S,M,MS).
 
 
 
