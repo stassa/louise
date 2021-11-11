@@ -1286,7 +1286,7 @@ debug_metarules(F,_S,_MS):-
 
 
 
-%!	debug_metarules(+Formatting,+Subject,+,Message,+Metarules) is
+%!	debug_metarules(+Formatting,+Subject,+Message,+Metarules) is
 %!	det.
 %
 %	Print a list of pretty-printed Metarules to a debug Subject.
