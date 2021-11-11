@@ -1196,6 +1196,10 @@ print_metarules(MS):-
 %
 %	Pretty-print a list of metarules.
 %
+%	Metarules is a list of either metarule ids, or expanded
+%	metarules as returned by metarule_expansion/2 or
+%	expanded_metarules/2.
+%
 %	Format is an atom denoting the format in which Metarules will be
 %	printed, one of [expanded,quantified,user_friendly], interpreted
 %	as follows.
@@ -1226,8 +1230,6 @@ print_metarules(F,MS):-
 	,forall(member(M,MS)
 	       ,output_metarule(F,print,user_output,M)
 	       ).
-print_metarules(F,_MS):-
-	throw('Uknown metarule printing format':F).
 
 
 
@@ -1270,8 +1272,6 @@ debug_metarules(F,S,MS):-
 	,forall(member(M,MS)
 	       ,output_metarule(F,debug,S,M)
 	       ).
-debug_metarules(F,_S,_MS):-
-	throw('Uknown metarule printing format':F).
 
 
 
@@ -1314,20 +1314,71 @@ debug_msg_metarules(S,M,MS):-
 
 
 
-%!	output_metarules(+Format,+How,+Where,+Id) is det.
+%!	output_metarules(+Format,+How,+Where,+Metarule) is det.
 %
 %	Pretty-print a Metarule.
 %
+%	How is one of: [print, debug], denoting whether Metarule is
+%	pretty-printed to a debug or print stream.
+%
+%	Where is the name of the stream to print to if How is "print" or
+%	the debug subject, if How is "debug".
+%
+%	Metarule is either a metarule ID or an expanded metarule, as the
+%	output of metarule_expansion/2 or expanded_metarules/2.
+%
+%	__Motivation__
+%
+%	This predicate is the base predicate for pretty-printing
+%	expanded metarules at the top-level for the purpose of debugging
+%	a MIL problem. It is called by print_metarules/[1,2] to print
+%	metarules in "expanded" format at the top-level and by
+%	debug_metarules/[2,3,4] to debug metarules to a debug stream
+%	associated with a degub subject.
+%
+%	Metarules can also be printed to the top-level using
+%	print_clauses/1, however that predicate assigns variable names
+%	to metarule variables according to their order. This can make
+%	metarules difficult to read especially for the user who has the
+%	notation used in MIL literature in mind.
+%
+%	Example:
+%       ==
+%       ?- auxiliaries:output_metarule(expanded,print,user_output,chain).
+%       m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+%       true.
+%       ==
+%
+%	Note the difference with the alternative of printing metarules
+%	using print_clauses/2:
+%	==
+%	?- expanded_metarules([chain],_MS), print_clauses(_MS).
+%	m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E).
+%	true.
+%	==
+%
+%	@tbd Third-order metarules are not expanded into encapsulated
+%	clauses with a metasubstitution atom in the head, and so this
+%	predicate cannot pretty-print third order metarules when Format
+%	is 'expanded'.
+%
+output_metarule(F,_H,_W,_Id):-
+	var(F)
+	,throw('Please supply a non-variable metarule formatting argument').
 output_metarule(expanded,H,W,Id):-
 	!
 	,pretty_expanded_metarule(Id,M)
 	,output_metarule(H,W,M).
 output_metarule(quantified,H,W,Id):-
-	quantified_metarule(Id,M)
+	!
+	,quantified_metarule(Id,M)
 	,output_metarule(H,W,M).
 output_metarule(user_friendly,H,W,Id):-
 	user_friendly_metarule(Id,M)
 	,output_metarule(H,W,M).
+output_metarule(F,_H,_W,_Id):-
+	\+ memberchk(F, [expanded,quantified,user_friendly])
+	,throw('Uknown metarule printing format':F).
 
 
 %!	output_metarule(+How,+Where,+Id) is det.
@@ -1335,6 +1386,7 @@ output_metarule(user_friendly,H,W,Id):-
 %	Business end of otuput_metarule/4.
 %
 output_metarule(H,W,M):-
+% M may be a list of third-order metarules.
 	(   is_list(M)
 	->  forall(member(Hom,M)
 		  ,print_or_debug(H,W,Hom)
