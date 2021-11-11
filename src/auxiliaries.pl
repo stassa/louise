@@ -1285,6 +1285,11 @@ debug_metarules(user_friendly,S,MS):-
 	,forall(member(M,MS)
 	       ,output_user_friendly_metarule(debug,S,M)
 	       ).
+debug_metarules(expanded,S,MS):-
+	!
+	,forall(member(M,MS)
+	       ,output_expanded_metarule(debug,S,M)
+	       ).
 debug_metarules(F,_S,_MS):-
 	throw('Uknown metarule printing format':F).
 
@@ -1460,7 +1465,7 @@ pretty_expanded_metarule(MR,MR_):-
 %	predicate that should ever be in the transitive closure of a
 %	heavy-lifting predicate.
 %
-%	@tbd Well, add this warning at print_expanded_metarule/1, no?
+%	@tbd Well, add this warning at print_metarules/[1,2], no?
 %
 metarule_variables(_A:-M,Ss,Fs):-
 	metarule_variables(M,[],Ss_,[],Fs_)
