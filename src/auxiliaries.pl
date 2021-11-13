@@ -862,10 +862,7 @@ list_encapsulated_problem(T):-
 	       )
 	,nl
 	,format_underlined('Metarules')
-	,forall(member(M,MS_)
-	       ,(print_clauses(M)
-		)
-	       ).
+	,print_metarules(expanded,MS_).
 
 
 
