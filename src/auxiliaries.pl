@@ -1129,13 +1129,10 @@ debug_clauses(T,L):-
 	,!
 	,debug_clauses(T,[L]).
 debug_clauses(T,Cs):-
-	forall(member(C,Cs)
-	      ,(copy_term(C,C_)
-	       ,numbervars(C_)
-	       ,format(atom(A),'~W',[C_, [fullstop(true)
-					 ,numbervars(true)
-					 ,quoted(true)]
-				    ])
+	copy_term(Cs,Cs_)
+	,forall(member(C,Cs_)
+	      ,(numbervars(C)
+	       ,format(atom(A),'~w',[C])
 	       ,debug(T,'~w',A)
 	       )
 	      ).
