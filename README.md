@@ -25,7 +25,7 @@ Table of contents
 [Examples invention](#examples-invention)  
 [Learning with metarules in MIL](#learning-with-metarules-in-mil)  
 [Pretty-printing metarules in Louise](#pretty-printing-metarules-in-louise)  
-[Learning metarules with TOIIL](#learning-metarules-with-toiil)  
+[Learning metarules with TOIL](#learning-metarules-with-toil)  
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
 
@@ -800,8 +800,8 @@ m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
 F = expanded.
 ```
 
-Learning metarules with TOIIL
------------------------------
+Learning metarules with TOIL
+----------------------------
 
 Metarules are usually defined by hand, and are tailored to a possible solution
 of a learning problem. Louise is capable of learning its own metarules.
