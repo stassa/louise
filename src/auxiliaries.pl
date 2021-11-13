@@ -1742,10 +1742,13 @@ user_friendly_metarule(Id,A):-
 	quantified_metarule(Id,M)
 	,atom(M)
 	,atomic_list_concat([_Qs,C],': ',M)
-	,format(atom(R),'\u2190 ',[])
-	,atomic_list_concat([Hd,Bd],R,C)
 	,metarule_id(Id,Id_)
-	,format(atom(A),'configuration:~w metarule \'~w:- ~w\'.',[Id_,Hd,Bd]).
+	,(   atomic_list_concat([Hd,Bd],'\u2190 ',C)
+	 ->  format(atom(A),'configuration:~w metarule \'~w:- ~w\'.',[Id_,Hd,Bd])
+	 ;   atom_concat(Hd,'\u2190',C)
+	    ,format(atom(A),'configuration:~w metarule \'~w\'.',[Id_,Hd])
+	 ).
+
 
 
 %!	metarule_id(+Metarule,-Id) is det.
