@@ -855,12 +855,12 @@ list_encapsulated_problem(T):-
 	,print_clauses(Neg_)
 	,nl
 	,encapsulated_bk(BK,T,BK_)
-	,expanded_metarules(MS,MS_)
 	,format_underlined('Background knowledge')
 	,forall(member(P,BK_)
 	       ,print_clauses(P)
 	       )
 	,nl
+	,expanded_metarules(MS,MS_)
 	,format_underlined('Metarules')
 	,print_metarules(expanded,MS_).
 
