@@ -23,9 +23,9 @@ Table of contents
 [Learning the "ancestor" relation](#learning-the-ancestor-relation)  
 [Dynamic learning and predicate invention](#dynamic-learning-and-predicate-invention)  
 [Examples invention](#examples-invention)  
-[Learning with metarules in MIL](#learning-with-metarules-in-mil) 
-[Pretty-printing metarules in Louise](#pretty-printing-metarules-in-louise) 
-[Learning metarules with TOIIL](#learning-metarules-with-toiil) 
+[Learning with metarules in MIL](#learning-with-metarules-in-mil)  
+[Pretty-printing metarules in Louise](#pretty-printing-metarules-in-louise)  
+[Learning metarules with TOIIL](#learning-metarules-with-toiil)  
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
 
