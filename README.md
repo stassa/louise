@@ -23,6 +23,9 @@ Table of contents
 [Learning the "ancestor" relation](#learning-the-ancestor-relation)  
 [Dynamic learning and predicate invention](#dynamic-learning-and-predicate-invention)  
 [Examples invention](#examples-invention)  
+[Learning with metarules in MIL](#learning-with-metarules-in-mil)
+[Pretty-printing metarules in Louise](#pretty-printing-metarules-in-louise)
+[Learning metarules with TOIIL](#learning-metarules-with-toiil)
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
 
@@ -591,6 +594,635 @@ again following the structure of the examples shown previously.
      m(path,e,f).
      true.
      ```
+
+Learning with metarules in MIL
+------------------------------
+
+Metarules are used in MIL as inductive bias, to determine the structure of
+clauses in learned hypotheses. Metarules are second-order logic clauses, that
+resemble first-order Horn clauses, but have second-order variables existentially
+quantified over the set of predicate symbols.
+
+Below are some examples of metarules in the `H22` language of metarules, with at
+most three literals of arity at most 2 (as output by Louise's metarule
+pretty-printer):
+
+```prolog
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]).
+(Abduce) ∃.P,X,Y: P(X,Y)←
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+true.
+```
+
+The words in parentheses preceding metarules are identifiers used by Louise to
+find metarules declared in an experiment file.
+
+MIL systems like Louise learn by instantiating the existentially quantified
+variables in metarules to form the first-order clauses of a logic program. The
+instantiation is performed during a refutation-proof of the positive examples,
+by SLD-resolution with the metarules and the clauses in the background
+knowledge. Positive examples are first unified with the head literals of
+metarules, then the metarules' body literals are resolved with the background
+knowledge. When resolution succeeds metarules become fully-ground. The
+substitutions of metarules' universally quantified variables are discarded to
+preserve the "wiring" between metarule literals, while _metasubstitutions_ of
+their existentially quantified variables are kept to create first-order clauses
+with ground predicate symbols.
+
+In the example below, the metasubstitution `Theta =
+{P/grandfather,Q/father,R/parent}` is applied to the _Chain_ metarule to produce
+a first-order clause:
+
+```Prolog
+Chain = P(x,y)← Q(x,z),R(z,y)
+Theta = {P/grandfather,Q/father,R/parent}
+Chain.Theta = grandfather(x,y)← father(x,z),parent(z,y)
+```
+
+Metarules can also have existentially quantified _first-order_ variables. The
+metasubstitutions of such variables are also kept, and become _constants_ in the
+learned theories.
+
+In the example below, the metasubstitution `Theta =
+{P/father,X/kostas,Y/stassa}` is applied to the metarule _Abduce_ to produce a
+ground first-order clause with constants:
+
+```Prolog
+Abduce = P(X,Y)←
+Theta = {P/father,X/kostas,Y/stassa}
+Abduce.Theta = father(kostas,stassa)←
+```
+
+Pretty-printing metarules in Louise
+-----------------------------------
+
+In the previous section we have used Louise's pretty-printer for metarules,
+`print_metarules/1` to print metarules in an easy-to-read format.
+
+Louise can pretty-print metarules in three formats: quantified, user-friendly,
+or expanded.
+
+### Quantified metarules
+
+The _quantified_ metarule format is identical to the formal notation of
+metarules that can be found in the MIL literature. Quantified metarules are
+preceded by an identifying name and have their variables quantified by
+existential and universal quantifiers. 
+
+We repeat the example from the previous section but this time we use the
+two-arity `print_metarules/2` to specify the metarule printing format:
+
+```Prolog
+?- print_metarules(quantified, [abduce,chain,identity,inverse,precon,postcon]).
+(Abduce) ∃.P,X,Y: P(X,Y)←
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+true.
+```
+
+The first argument of `print_metarules/2` is used to choose the printing format
+and can be one of: `quantified, user_friendly`, or `expanded`. We describe the
+latter two formats below.
+
+### User-friendly metarules
+
+The _user-friendly_ metarule format is used to manually define metarules for
+learning problems. User-friendly metarules can be defined in experiment files,
+or in the main configuration file, `configuration.pl`. In either case, metarules
+always belong to the configuration module, so when they are defined outside
+`configuration.pl`, they must be preceded by the module identifier
+`configuration`. `print_metarules/2` automatically adds the configuration
+identifier in front of metarules it prints in user-friendly format:
+
+```Prolog
+?- print_metarules(user_friendly, [abduce,chain,identity,inverse,precon,postcon]).
+configuration:abduce metarule 'P(X,Y)'.
+configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
+configuration:identity metarule 'P(x,y):- Q(x,y)'.
+configuration:inverse metarule 'P(x,y):- Q(y,x)'.
+configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
+configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
+true.
+```
+
+This is particularly useful when learning new metarules, as described in a later
+section.
+
+### Expanded metarules
+
+The _expanded_ metarule format is Louise's internal representation of metarules,
+in a form that is more convenient for meta-interpretation. Expanded metarules
+are _encapsulated_ and have an _encapsulation atom_ in their head, holding the
+metarule identifier and the existentially quantified variables in the metarule.
+
+The following is an example of pretty-printing the `H22` metarules from the
+previous examples in Louise's internal, expanded representation:
+
+```Prolog
+?- print_metarules(expanded, [abduce,chain,identity,inverse,precon,postcon]).
+m(abduce,P,X,Y):-m(P,X,Y)
+m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
+m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
+m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
+m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
+true.
+```
+
+Metarules printed in expanded format are useful when debugging a learning
+attempt, at which point it is more informative to inspect Louise's internal
+representation of a metarule to make sure it matches the user's expectation.
+
+### Debugging metarules
+
+Louise can also pretty-print metarules to a debug stream. In SWI-Prolog, debug
+streams are associated with debug _subjects_ and so the `debug_metarules` family
+of predicates takes an additional argument to determine the debug subject.
+
+In the following example we show how to debug metarules in quantified format to
+a debug subject named `pretty`:
+
+```Prolog
+?- debug(pretty), debug_metarules(quantified, pretty, [abduce,chain,identity,inverse,precon,postcon]).
+% (Abduce) ∃.P,X,Y: P(X,Y)←
+% (Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+% (Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+% (Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+% (Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+% (Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+true.
+```
+
+In the output above, the lines preceded by Prolog's comment character, `%`, are
+printed by SWI-Prolog's debugging predicates. Debugging output can be directed
+to a file to keep a log of a learning attempt.
+
+### Configuring a metarule format
+
+The preferred metarule pretty-printing format for both top-level output and
+debugging output can be specified in the configuration, by setting the option
+`metarule_formatting/1` to one of the three metarule formats recognised by
+`print_metarules` and `debug_metarules`. We show how this works below:
+
+```Prolog
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+(Abduce) ∃.P,X,Y: P(X,Y)←
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+F = quantified.
+
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+configuration:abduce metarule 'P(X,Y)'.
+configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
+configuration:identity metarule 'P(x,y):- Q(x,y)'.
+configuration:inverse metarule 'P(x,y):- Q(y,x)'.
+configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
+configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
+F = user_friendly.
+
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+m(abduce,P,X,Y):-m(P,X,Y)
+m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
+m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
+m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
+m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
+F = expanded.
+```
+
+Learning metarules with TOIIL
+-----------------------------
+
+Metarules are usually defined by hand, and are tailored to a possible solution
+of a learning problem. Louise is capable of learning its own metarules.
+
+Metarule learning in Louise is implemented by a sub-system called TOIL (an
+acronym for _Third-Order Inductive Learner_). TOIL learns metarules from
+examples, background knowledge and _generalised_ metarules. Unlike user-defined
+metarules, the generalised metarules used by TOIL do not have to be closely
+tailored to a problem.
+
+TOIL recognises three taxa of metarules. Listed by degrees of generality, these
+are: sort, matrix and punch metarules. Their names are derived from typeset
+printing where successive levels of molds for letters to be typed are carved in
+metals of decreasing hardness.
+
+### Sort metarules
+
+Sort metarules are the kind of metarules normally defined by a user and found
+throughout the MIL literature. They are also widely used in ILP more generally
+as well as in data mining and program sythesis.
+
+Sort metarules are specialised, in the sense that their universally quantified
+first-order variables are _shared_ between literals. For example, in the _Chain_
+metarule, below, the variable `x` is shared between its head literal and its
+first body literal, the variable `y` is shared between its head literal and last
+body literal, and the variable `z` is shared between its two body literals:
+
+```Prolog
+P(x,y)← Q(x,z),R(z,y)
+```
+
+The sharing of universally quantified variables (the "wiring" of the clause)
+determines the metarule's semantincs. For example, _Chain_ denotes a
+transitivity relation between the predicates `P,Q` and `R` (more precisely, the
+predicates whose symbols are _subsituted_ for `P,Q` and `R` during learning).
+
+Sort metarules may also have some, or all, of their existentially quantified
+variables shared. For example, the existentially quantified second-order
+variables in the metarule _Tailrec_ are shared between its head literal and its
+last body literal, forcing _Tailrec_ to be instantiated so as to produce
+tail-recursive clauses:
+
+```Prolog
+(Tailrec) ∃.P,Q ∀.x,y,z: P(x,y)← Q(x,z),P(z,y)
+```
+
+The "wiring" of metarules' variables, both first- and second-order, is preserved
+in their first-order instances learned by MIL. In the example below, the
+substitution `Theta = {P/ancestor,Q/parent}` is applied to _Tailrec_ to produce
+a tail-recursive clause:
+
+```Prolog
+Tailrec = P(x,y)← Q(x,z),P(z,y)
+Theta = {P/ancestor,Q/parent}
+Tailrec.Theta = ancestor(x,y)← parent(x,z),ancestor(z,y)
+```
+
+Sort metarules are usually _fully-connected_, meaning that the variables in the
+head are shared with variables in the body and every literal in the body is
+"connected" through a sharing of variables to the head literal.
+
+Thanks to the specialised "wiring" of their variables sort metarules are used to
+fully-define the set of clauses that will be considered during a MIL-learning
+attempt. At the same time, the wiring can be too-specific resulting in the
+elimintation of clauses necessary to solve a problem.
+
+### Matrix metarules
+
+Matrix metarules are a generalisation of the sort metarules. Matrix metarules
+are also second-order clauses, like the sort metarules, but each variable
+appears _exactly once_ in a matrix metarule. The following are examples of
+matrix metarules:
+
+```Prolog
+?- print_metarules([meta_monadic,meta_dyadic,meta_precon,meta_postcon]).
+(Meta-monadic) ∃.P,Q ∀.x,y,z,u: P(x,y)← Q(z,u)
+(Meta-dyadic) ∃.P,Q,R ∀.x,y,z,u,v,w: P(x,y)← Q(z,u),R(v,w)
+(Meta-precon) ∃.P,Q,R ∀.x,y,z,u,v: P(x,y)← Q(z),R(u,v)
+(Meta-postcon) ∃.P,Q,R ∀.x,y,z,u,v: P(x,y)← Q(z,u),R(v)
+true.
+```
+
+Note how the metarules above generalise multiple of the `H22` metarules in
+previous sections. For example, _Meta-Monadic_ generalises _Identity_ and
+_Inverse_ while _Meta-Dyadic_ generalises _Chain_, _Switch_ and _Swap_ (the
+latter two are defined in `configuration.pl` but ommitted here for brevity).
+
+In practice, for each set of sort metarules, `S`, there exists some minimal set
+of matrix metarules `M`, such that each sort metarule in `S` has a
+generalisation in `M`. Conversely, each sort metarule in `S` can be derived by
+_specialisation_ of a metarule in `M`. This specialisation is performed by TOIL
+to learn sort metarules from matrix metarules. We show examples of this in a
+following section.
+
+### Punch metarules.
+
+We can generalise sort metarules to matrix metarules by replacing each variable
+in a sort metarule by a new, "free" variable. Matrix metarules can themselves be
+generalised by replacing each of their literals by a variable. The resulting
+metarules are the _punch_ metarules:
+
+```Prolog
+(TOM-1) ∃.P: P
+(TOM-2) ∃.P,Q: P ← Q
+(TOM-3) ∃.P,Q,R: P ← Q,R
+```
+
+Punch metarules have variables quantified over the set of _atoms_ and so they
+are _third-order logic_ clauses. Just as matrix metarules can be specialised to
+sort metarules, sets of punch metarules can be specialised to matrix metarules
+with the same number of literals.
+
+### Metarule specialisation in TOIL
+
+TOIL learns metarules by exploiting the generality relation between the three
+taxa of metarules described in the previous sections. TOIL takes as in put the
+examples and background knowledge in a MIL Problem and sets of either matrix, or
+punch metarules. The matrix or punch metarules are specialised by SLD-resolution
+to produce second-order sort metarules.
+
+Specialisation of matrix and punch metarules in TOIL is performed by the Top
+Program Construction algorithm, which is the same algorithm used to learn
+first-order clauses from sort metarules in Louise's other learning predicates.
+In other words, TOIL learns metarules for MIL by MIL.
+
+TOIL defines two new families of learning predicates: `learn_metarules/[1,2,5]`
+and `learn_meta/[1,2,5]`.
+
+#### The `learn_metarules/[1,2,5]` family of learning predicates
+
+The `learn_metarules/[1,2,5]` family of predicates is used to learn and output
+sort metarules. 
+
+Below is an example of specialising the matrix metarules _Meta-Monadic_ and
+_Meta-Dyadic_ to learn a new set of sort metarules for the `ancestor` relation.
+The necessary examples, background knowledge and matrix metarules are defined in
+the experiment file `data/examples/tiny_kinship_toil.pl`:
+
+```Prolog
+% experiment_file('data/examples/tiny_kinship_toil.pl',tiny_kinship_toil).
+?- learn_metarules(ancestor/2).
+(Meta-dyadic-1) ∃.P,P,P ∀.x,y,z: P(x,y)← P(x,z),P(z,y)
+(Meta-dyadic-2) ∃.P,P,P ∀.x,y,z: P(x,y)← P(z,y),P(x,z)
+(Meta-dyadic-3) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(x,z),Q(y,z)
+(Meta-dyadic-4) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(x,z),Q(z,y)
+(Meta-dyadic-5) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(z,y),Q(x,z)
+(Meta-dyadic-6) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(z,y),Q(z,x)
+(Meta-dyadic-7) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(x,z),P(z,y)
+(Meta-dyadic-8) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(y,z),P(x,z)
+(Meta-dyadic-9) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(z,x),P(z,y)
+(Meta-dyadic-10) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(z,y),P(x,z)
+(Meta-dyadic-11) ∃.P,Q,Q ∀.x,y,z: P(x,y)← Q(x,z),Q(z,y)
+(Meta-dyadic-12) ∃.P,Q,Q ∀.x,y,z: P(x,y)← Q(z,y),Q(x,z)
+(Meta-monadic-13) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+true.
+```
+
+Ouch! That's a lot of metarules! Indeed, the most severe limitation of TOIL's
+metarule specialisation approach is that it can easily _over-generate_
+metarules. The reason for that is that there are many possible specialisations
+of a set of matrix (or punch) metarules into sort metarules that allow a correct
+hypothesis to be learned. In practice, we usually want to keep only a few of
+those metarules, for instance, in the example above, just the two metarules
+_Meta-monadic-13_ and _Meta-dyadic-7_ suffice to learn a correct hypotesis for
+`ancestor/2` (according to the MIL problem elements in the experiment file we're
+using).
+
+### Controlling over-generation of metarules in TOIL
+
+To control over-generation, TOIL employs a number of different strategies that
+can be chosen with the two configuration options
+`generalise_learned_metarules/1` and `metarule_learning_limits/1`.
+
+The option `metarule_learning_limits/1` recognises the following settings:
+`none`, `coverset`, `sampling(S)` and `metasubstitutions(K)`. Briefly, option
+`none` places no limit on metarule learning; `coverset` first removes the
+examples "covered" by instances of the last learned metarule before attempting
+to learn a new one; `sampling(S)` learns metarules from a sub-sample of examples
+according to its single argument; and `metasubstitutions(K)` only attempts the
+specified number of metasubstitutions while specialising each matrix or punch
+metarule.
+
+We show examples of each `metarule_learning_limits/1` option below. We ommit the
+result for the setting `none` which is identical with the example of
+`learn_metarules/1` given earlier in this section:
+
+```Prolog
+?- learn_metarules(ancestor/2), metarule_learning_limits(L).
+(Meta-monadic-1) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Meta-dyadic-2) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(z,y),Q(z,x)
+(Meta-dyadic-3) ∃.P,P,P ∀.x,y,z: P(x,y)← P(z,y),P(x,z)
+(Meta-dyadic-4) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(x,z),Q(y,z)
+L = coverset.
+
+?- learn_metarules(ancestor/2), metarule_learning_limits(L).
+(Meta-dyadic-1) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(x,z),Q(y,z)
+(Meta-dyadic-2) ∃.P,Q,P ∀.x,y,z: P(x,y)← Q(y,z),P(x,z)
+(Meta-monadic-3) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+L = sampling(0.1).
+
+?- learn_metarules(ancestor/2), metarule_learning_limits(L).
+(Meta-dyadic-1) ∃.P,P,Q ∀.x,y,z: P(x,y)← P(x,z),Q(y,z)
+(Meta-monadic-2) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+L = metasubstitutions(1).
+```
+
+Note that option `metasubstitutions(1)` allows one metasubstitution of _each_
+matrix or punch metarule.
+
+A different restriction to the set of metarules learned by TOIL can be applied
+by setting the option `generalise_learned_metarules/1` to `true`. The example
+below shows the effect of that setting on the `ancestor` example:
+
+```Prolog
+?- learn_metarules(ancestor/2), metarule_learning_limits(L), generalise_learned_metarules(G).
+(Meta-dyadic-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(y,z)
+(Meta-dyadic-2) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Meta-dyadic-3) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(y,z),R(x,z)
+(Meta-dyadic-4) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(z,x),R(z,y)
+(Meta-dyadic-5) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(z,y),R(x,z)
+(Meta-dyadic-6) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(z,y),R(z,x)
+(Meta-monadic-7) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+L = none,
+G = true.
+```
+
+Note that in the sort metarules learned by TOIL this time around, none of the
+second-order variables are shared between literals. By contrast, in the first
+example of `learn_metarules/1` earlier in this section, where
+`generalise_learned_metarules/1` was left to its default of `false`, TOIL
+learned metarules with some second-order variables shared between literals, for
+instance the two metarules below that only have one second-order variable each:
+
+```Prolog
+(Meta-dyadic-1) ∃.P,P,P ∀.x,y,z: P(x,y)← P(x,z),P(z,y)
+(Meta-dyadic-2) ∃.P,P,P ∀.x,y,z: P(x,y)← P(z,y),P(x,z)
+```
+
+### Specialisation of Punch metarules
+
+Matrix metarules still require some intuition, from the part of the user, about
+the structure of clauses in a target theory. In particular, while no variables
+are shared between the literals of matrix metarules, the user still needs to
+define those literals, with their correct arities.
+
+TOIL can also specialise punch metarules, for which we only need to know the
+number of literals, regardless of arity. The following is an example of using
+punch metarules, again with the `ancestor` example from
+`data/examples/tiny_kinship_toil.pl` (and with `metarule_learning_limits/1`
+again set to "none"):
+
+```Prolog
+?- learn_metarules(ancestor/2), metarule_learning_limits(L), generalise_learned_metarules(G).
+(Hom-1) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Hom-2) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(y,z)
+(Hom-3) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Hom-4) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(y,z),R(x,z)
+(Hom-5) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(z,x),R(z,y)
+(Hom-6) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(z,y),R(x,z)
+(Hom-7) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(z,y),R(z,x)
+L = none,
+G = true.
+```
+
+You can tell that the sort metarules above were learned from punch metarules
+from their automatically generated identifiers- but you can also list the
+learning problem for `ancestor/2`:
+
+```Prolog
+?- list_mil_problem(ancestor/2).
+Positive examples
+-----------------
+ancestor(stathis,kostas).
+ancestor(stefanos,dora).
+ancestor(kostas,stassa).
+ancestor(alexandra,kostas).
+ancestor(paraskevi,dora).
+ancestor(dora,stassa).
+ancestor(stathis,stassa).
+ancestor(stefanos,stassa).
+ancestor(alexandra,stassa).
+ancestor(paraskevi,stassa).
+
+Negative examples
+-----------------
+:-ancestor(kostas,stathis).
+:-ancestor(dora,stefanos).
+:-ancestor(stassa,kostas).
+:-ancestor(kostas,alexandra).
+:-ancestor(dora,paraskevi).
+:-ancestor(stassa,dora).
+:-ancestor(stassa,stathis).
+:-ancestor(stassa,stefanos).
+:-ancestor(stassa,alexandra).
+:-ancestor(stassa,paraskevi).
+
+Background knowledge
+--------------------
+parent/2:
+parent(A,B):-father(A,B).
+parent(A,B):-mother(A,B).
+
+Metarules
+---------
+(TOM-2) ∃.P,Q: P ← Q
+(TOM-3) ∃.P,Q,R: P ← Q,R
+true.
+```
+
+The `learn_metarules/[1,2,5]` family of predicates outputs metarules rather than
+first-order clauses, and so it can be used to _suggest_ metarules to the user.
+That is, the user can copy any of the metarules learned by TOIL into an
+experiment file.
+
+When you use TOIL to suggest metarules, remember to set the
+`metarule_formatting/1` configuration option to `user_friendly`, so that TOIL
+prints out its learned metarules in a format that you can directly copy/paste
+into an experiment file:
+
+```Prolog
+?- learn_metarules(ancestor/2), metarule_formatting(F).configuration:hom_1 metarule 'P(x,y):- Q(x,y)'.
+configuration:hom_2 metarule 'P(x,y):- Q(x,z),R(y,z)'.
+configuration:hom_3 metarule 'P(x,y):- Q(x,z),R(z,y)'.
+configuration:hom_4 metarule 'P(x,y):- Q(y,z),R(x,z)'.
+configuration:hom_5 metarule 'P(x,y):- Q(z,x),R(z,y)'.
+configuration:hom_6 metarule 'P(x,y):- Q(z,y),R(x,z)'.
+configuration:hom_7 metarule 'P(x,y):- Q(z,y),R(z,x)'.
+F = user_friendly.
+```
+
+#### The `learn_meta/[1,2,5]` family of learning predicates
+
+To immediately pass the learned metarules to one of Louise's other learning
+predicates, the `learn_meta/[1,2,5]` family of predicates can be used. We show
+this below.
+
+```Prolog
+?- learn_meta(ancestor/2), metarule_learning_limits(L), generalise_learned_metarules(G).
+ancestor(A,B):-parent(A,B).
+ancestor(A,B):-ancestor(C,B),parent(C,A).
+ancestor(A,B):-ancestor(C,B),ancestor(A,C).
+ancestor(A,B):-ancestor(C,B),parent(A,C).
+ancestor(A,B):-parent(C,B),ancestor(A,C).
+ancestor(A,B):-parent(C,B),parent(A,C).
+ancestor(A,B):-ancestor(A,C),parent(B,C).
+L = coverset,
+G = true.
+```
+
+The predicates in the `learn_meta/[1,2,5]` family pass the metarules learned by
+TOIL to the learning predicate defined in the configuration option
+`learning_predicate/1`. If this is set to one of the `learn_meta` predicates
+itself, and to avoid an infinite recursion tearing a new one to the underlying
+superstructure of the universe, the `learn/5` learning predicate is invoked
+instead, which passes the metarules learned by TOIL to Louise's basic Top
+Program Construction learning algorithm.
+
+#### Limitations of TOIL
+
+The current implementation of TOIL is still a prototype, but we think it goes a
+long way towards addressing an important limitation of MIL, the need to define
+metarules by hand. In this section we discuss some limitations of TOIL itself.
+
+We have already discussed the tendency of TOIL to over-generalise.
+Counter-intuitively TOIL can also _over-specialise_ to its training examples.
+
+TOIL is the first learning system that can learn metarules without first
+generating every possible metarule pattern and testing it against the training
+examples. Rather, TOIL uses the TPC algorithm to efficiently construct metarules
+by SLD-resolution.
+
+In the same way that sort metarules are fully-ground by TPC when learning
+first-order clauses, matrix and punch metarules are fully-ground when learning
+sort metarules. To ensure that the resulting sort metarules are fully-connected,
+TOIL forces the first-order variables in matrix metarules (and in the
+specialisations of punch metarules) to be replaced by constants in literals
+earlier in the clause. This can cause a form of over-specialisation where the
+metarules learned by TOIL overfit to the training examples.
+
+This overfitting can be seen in the examples of `learn_metarules/1` and
+`learn_meta/1` shown in the earlier sections. The following example calls
+`learn_meta/1` with the options `metarule_learning_limits/1` and
+`generalise_learned_metarules/1` chosen so as to force over-specialisation and
+better illustrate overfitting:
+
+```Prolog
+?- learn_meta(ancestor/2), metarule_learning_limits(L), generalise_learned_metarules(G).
+ancestor(stathis,stassa).
+ancestor(stefanos,stassa).
+ancestor(alexandra,stassa).
+ancestor(paraskevi,stassa).
+ancestor(A,B):-parent(A,B).
+ancestor(A,B):-ancestor(A,C),parent(B,C).
+L = metasubstitutions(1),
+G = true.
+```
+
+A further limitation of TOIL is that its current implementation does not perform
+predicate invention when learning new metarules. However, it is often possible
+to learn metarules without predicate invention that suffice to perform predicate
+invention. In the following example, we modify the `data/examples/anbn.pl`
+experiment file to learn the two new metarules, one of which is identical to
+_Chain_ and is then used to learn a correct hypothesis _with_ predicate
+invention. We activate the `learned_metarules` debugging subject to show the
+metarules learned by TOIL and passed to `learn_dynamic/5`:
+
+```Prolog
+?- debug(learned_metarules).
+true.
+
+?- learn_meta('S'/2).
+% Learned metarules:
+% (Hom-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+% (Hom-2) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(z,y),R(x,z)
+'$1'(A,B):-'S'(A,C),'B'(C,B).
+'S'(A,B):-'A'(A,C),'$1'(C,B).
+'S'(A,B):-'A'(A,C),'B'(C,B).
+true.
+```
+
+This is possible because of the generality of metarules, even sort metarules.
 
 Experiment scripts
 ------------------
