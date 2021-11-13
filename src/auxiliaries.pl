@@ -1220,7 +1220,14 @@ print_metarules(MS):-
 print_metarules(F,M):-
 	\+ is_list(M)
 	,!
-	,print_metarules(F,[M])	.
+	,print_metarules(F,[M]).
+print_metarules(F,[I|Is]):-
+% Punch metarules are "expanded" into lists of integers.
+	integer(I)
+	,!
+	,min_list([I|Is],Min)
+	,max_list([I|Is],Max)
+	,output_metarule(F,print,user_output,higher_order(Min,Max)).
 print_metarules(F,MS):-
 	!
 	,forall(member(M,MS)
@@ -1260,6 +1267,13 @@ debug_metarules(F,S,M):-
 	\+ is_list(M)
 	,!
 	,debug_metarules(F,S,[M]).
+debug_metarules(F,S,[I|Is]):-
+% Punch metarules are "expanded" into lists of integers.
+	integer(I)
+	,!
+	,min_list([I|Is],Min)
+	,max_list([I|Is],Max)
+	,output_metarule(F,debug,S,higher_order(Min,Max)).
 debug_metarules(F,S,MS):-
 	!
 	,forall(member(M,MS)
@@ -1400,6 +1414,9 @@ output_metarule(H,W,M):-
 %	defined in the configuration option symbol_range/2. See also
 %	numbered_symbols/3.
 %
+pretty_expanded_metarule(higher_order(M,N),higher_order(M,N)):-
+% Punch metarules aren't really expanded, as such.
+	!.
 pretty_expanded_metarule(Id,M_):-
 	atom(Id)
 	,!
@@ -1718,6 +1735,9 @@ symbol_range(T,Ss,N):-
 %
 %	Transform a Metarule into a user-friendly pretty-printing Atom.
 %
+user_friendly_metarule(higher_order(M,N),higher_order(M,N)):-
+% Punch metarules don't really have a more user-friendly format.
+	!.
 user_friendly_metarule(Id,A):-
 	quantified_metarule(Id,M)
 	,atom(M)
