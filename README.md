@@ -20,8 +20,10 @@ Table of contents
 [Capabilities](#capabilities)  
 [Learning logic programs with Louise](#learning-logic-programs-with-louise)  
 [Learning with metarules](#learning-with-metarules)  
-[Pretty-printing metarules](#pretty-printing-metarules)  
 [Learning metarules with TOIL](#learning-metarules-with-toil)  
+[Pretty-printing metarules](#pretty-printing-metarules)  
+[Debugging-training-data](#debugging-training-data)  
+[Debugging-learnig-attempts](#debugging-learnig-attempts)  
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
 
@@ -653,149 +655,6 @@ Theta = {P/father,X/kostas,Y/stassa}
 Abduce.Theta = father(kostas,stassa)←
 ```
 
-Pretty-printing metarules
--------------------------
-
-In the previous section we have used Louise's pretty-printer for metarules,
-`print_metarules/1` to print metarules in an easy-to-read format.
-
-Louise can pretty-print metarules in three formats: quantified, user-friendly,
-or expanded.
-
-### Quantified metarules
-
-The _quantified_ metarule format is identical to the formal notation of
-metarules that can be found in the MIL literature. Quantified metarules are
-preceded by an identifying name and have their variables quantified by
-existential and universal quantifiers. 
-
-We repeat the example from the previous section but this time we use the
-two-arity `print_metarules/2` to specify the metarule printing format:
-
-```Prolog
-?- print_metarules(quantified, [abduce,chain,identity,inverse,precon,postcon]).
-(Abduce) ∃.P,X,Y: P(X,Y)←
-(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
-(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
-(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
-(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
-(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
-true.
-```
-
-The first argument of `print_metarules/2` is used to choose the printing format
-and can be one of: `quantified, user_friendly`, or `expanded`. We describe the
-latter two formats below.
-
-### User-friendly metarules
-
-The _user-friendly_ metarule format is used to manually define metarules for
-learning problems. User-friendly metarules can be defined in experiment files,
-or in the main configuration file, `configuration.pl`. In either case, metarules
-always belong to the configuration module, so when they are defined outside
-`configuration.pl`, they must be preceded by the module identifier
-`configuration`. `print_metarules/2` automatically adds the configuration
-identifier in front of metarules it prints in user-friendly format:
-
-```Prolog
-?- print_metarules(user_friendly, [abduce,chain,identity,inverse,precon,postcon]).
-configuration:abduce metarule 'P(X,Y)'.
-configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
-configuration:identity metarule 'P(x,y):- Q(x,y)'.
-configuration:inverse metarule 'P(x,y):- Q(y,x)'.
-configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
-configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
-true.
-```
-
-This is particularly useful when learning new metarules, as described in a later
-section.
-
-### Expanded metarules
-
-The _expanded_ metarule format is Louise's internal representation of metarules,
-in a form that is more convenient for meta-interpretation. Expanded metarules
-are _encapsulated_ and have an _encapsulation atom_ in their head, holding the
-metarule identifier and the existentially quantified variables in the metarule.
-
-The following is an example of pretty-printing the `H22` metarules from the
-previous examples in Louise's internal, expanded representation:
-
-```Prolog
-?- print_metarules(expanded, [abduce,chain,identity,inverse,precon,postcon]).
-m(abduce,P,X,Y):-m(P,X,Y)
-m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
-m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
-m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
-m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
-m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
-true.
-```
-
-Metarules printed in expanded format are useful when debugging a learning
-attempt, at which point it is more informative to inspect Louise's internal
-representation of a metarule to make sure it matches the user's expectation.
-
-### Debugging metarules
-
-Louise can also pretty-print metarules to a debug stream. In SWI-Prolog, debug
-streams are associated with debug _subjects_ and so the `debug_metarules` family
-of predicates takes an additional argument to determine the debug subject.
-
-In the following example we show how to debug metarules in quantified format to
-a debug subject named `pretty`:
-
-```Prolog
-?- debug(pretty), debug_metarules(quantified, pretty, [abduce,chain,identity,inverse,precon,postcon]).
-% (Abduce) ∃.P,X,Y: P(X,Y)←
-% (Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
-% (Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
-% (Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
-% (Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
-% (Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
-true.
-```
-
-In the output above, the lines preceded by Prolog's comment character, `%`, are
-printed by SWI-Prolog's debugging predicates. Debugging output can be directed
-to a file to keep a log of a learning attempt.
-
-### Configuring a metarule format
-
-The preferred metarule pretty-printing format for both top-level output and
-debugging output can be specified in the configuration, by setting the option
-`metarule_formatting/1` to one of the three metarule formats recognised by
-`print_metarules` and `debug_metarules`. We show how this works below:
-
-```Prolog
-?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
-(Abduce) ∃.P,X,Y: P(X,Y)←
-(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
-(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
-(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
-(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
-(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
-F = quantified.
-
-?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
-configuration:abduce metarule 'P(X,Y)'.
-configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
-configuration:identity metarule 'P(x,y):- Q(x,y)'.
-configuration:inverse metarule 'P(x,y):- Q(y,x)'.
-configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
-configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
-F = user_friendly.
-
-?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
-m(abduce,P,X,Y):-m(P,X,Y)
-m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
-m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
-m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
-m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
-m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
-F = expanded.
-```
-
 Learning metarules with TOIL
 ----------------------------
 
@@ -1222,8 +1081,151 @@ true.
 
 This is possible because of the generality of metarules, even sort metarules.
 
-Debugging learning problems
----------------------------
+Pretty-printing metarules
+-------------------------
+
+In a previous section we have used Louise's pretty-printer for metarules,
+`print_metarules/1` to print metarules in an easy-to-read format.
+
+Louise can pretty-print metarules in three formats: quantified, user-friendly,
+or expanded.
+
+### Quantified metarules
+
+The _quantified_ metarule format is identical to the formal notation of
+metarules that can be found in the MIL literature. Quantified metarules are
+preceded by an identifying name and have their variables quantified by
+existential and universal quantifiers. 
+
+We repeat the example from the previous section but this time we use the
+two-arity `print_metarules/2` to specify the metarule printing format:
+
+```Prolog
+?- print_metarules(quantified, [abduce,chain,identity,inverse,precon,postcon]).
+(Abduce) ∃.P,X,Y: P(X,Y)←
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+true.
+```
+
+The first argument of `print_metarules/2` is used to choose the printing format
+and can be one of: `quantified, user_friendly`, or `expanded`. We describe the
+latter two formats below.
+
+### User-friendly metarules
+
+The _user-friendly_ metarule format is used to manually define metarules for
+learning problems. User-friendly metarules can be defined in experiment files,
+or in the main configuration file, `configuration.pl`. In either case, metarules
+always belong to the configuration module, so when they are defined outside
+`configuration.pl`, they must be preceded by the module identifier
+`configuration`. `print_metarules/2` automatically adds the configuration
+identifier in front of metarules it prints in user-friendly format:
+
+```Prolog
+?- print_metarules(user_friendly, [abduce,chain,identity,inverse,precon,postcon]).
+configuration:abduce metarule 'P(X,Y)'.
+configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
+configuration:identity metarule 'P(x,y):- Q(x,y)'.
+configuration:inverse metarule 'P(x,y):- Q(y,x)'.
+configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
+configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
+true.
+```
+
+This is particularly useful when learning new metarules, as described in a later
+section.
+
+### Expanded metarules
+
+The _expanded_ metarule format is Louise's internal representation of metarules,
+in a form that is more convenient for meta-interpretation. Expanded metarules
+are _encapsulated_ and have an _encapsulation atom_ in their head, holding the
+metarule identifier and the existentially quantified variables in the metarule.
+
+The following is an example of pretty-printing the `H22` metarules from the
+previous examples in Louise's internal, expanded representation:
+
+```Prolog
+?- print_metarules(expanded, [abduce,chain,identity,inverse,precon,postcon]).
+m(abduce,P,X,Y):-m(P,X,Y)
+m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
+m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
+m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
+m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
+true.
+```
+
+Metarules printed in expanded format are useful when debugging a learning
+attempt, at which point it is more informative to inspect Louise's internal
+representation of a metarule to make sure it matches the user's expectation.
+
+### Debugging metarules
+
+Louise can also pretty-print metarules to a debug stream. In SWI-Prolog, debug
+streams are associated with debug _subjects_ and so the `debug_metarules` family
+of predicates takes an additional argument to determine the debug subject.
+
+In the following example we show how to debug metarules in quantified format to
+a debug subject named `pretty`:
+
+```Prolog
+?- debug(pretty), debug_metarules(quantified, pretty, [abduce,chain,identity,inverse,precon,postcon]).
+% (Abduce) ∃.P,X,Y: P(X,Y)←
+% (Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+% (Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+% (Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+% (Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+% (Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+true.
+```
+
+In the output above, the lines preceded by Prolog's comment character, `%`, are
+printed by SWI-Prolog's debugging predicates. Debugging output can be directed
+to a file to keep a log of a learning attempt.
+
+### Configuring a metarule format
+
+The preferred metarule pretty-printing format for both top-level output and
+debugging output can be specified in the configuration, by setting the option
+`metarule_formatting/1` to one of the three metarule formats recognised by
+`print_metarules` and `debug_metarules`. We show how this works below:
+
+```Prolog
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+(Abduce) ∃.P,X,Y: P(X,Y)←
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+F = quantified.
+
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+configuration:abduce metarule 'P(X,Y)'.
+configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
+configuration:identity metarule 'P(x,y):- Q(x,y)'.
+configuration:inverse metarule 'P(x,y):- Q(y,x)'.
+configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
+configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
+F = user_friendly.
+
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+m(abduce,P,X,Y):-m(P,X,Y)
+m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
+m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
+m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
+m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
+F = expanded.
+```
+
+Debugging training data
+-----------------------
 
 In this section we discuss the facilities offered by Louise to debug learning
 problems.
@@ -1358,7 +1360,7 @@ Encapsulation "wraps" the predicate symbol and arguments of each literal in a
 clause to a new predicate, so that, for example, the atom `p(x,y)` becomes
 `m(p,x,y)` and the clause `p(x,y):- q(x,y)` becomes `m(p,x,y):- m(q,x,y)`.
 Encapsulation facilitates resolution between metarules, that are second-order,
-and first-order background knowledge and examples. Encapsulation also makes
+and the first-order background knowledge and examples. Encapsulation also makes
 resolution between metarules and other clauses decidable by "lowering" them to
 the first-order (even unification is undecidable in second order logic).
 
@@ -1484,7 +1486,8 @@ third argument determines whether to excapsulate the resulting clauses, or not.
 In the example below we list the Top Program learned from the elements of the
 MIL problem for `grandfather/2` in `data/examples/tiny_kinship.pl`. The second
 and third argument are given as "false" to show the ground metasubstitutions
-derived during learning befor they are applied to their corresponding metarules:
+derived during learning before they are applied to their corresponding
+metarules:
 
 ```prolog
 ?- list_top_program(grandfather/2,false,false).
@@ -1512,7 +1515,7 @@ metasubstitution atom is the identifier of a metarule and the remaining
 arguments are predicate symbols and constants to be substituted for
 existentially quantified variables in the metarule. The literals of the metarule
 (in encapsulated form with a non-ground metasubstitution atom in its head) are
-associated to the ground metasubstitution by the functor `-`.
+associated to the ground metasubstitution by the operator `-/2`.
 
 In the following example we repeat the same call but with the second argument
 set to "true" to apply the ground metasubstitutions to their corresponding
@@ -1550,6 +1553,235 @@ learning target, before they can list it. If the Top Program is very large, this
 can take a while and the resulting listing will flood the SWI-Prolog console and
 most of it will be lost.
 
+Debugging learnig attempts
+--------------------------
+
+You can log many steps of the learning algorithms in Louise to the console, or
+redirect the logs to a file.
+
+Much of the code in Louise includes logging statements ultimately calling on the
+SWI-Prolog predicate `debug/3`. This predicate takes as argument the name of a
+debug subject associated with a debug stream, which can be either the default
+debug stream or a file on disk.
+
+The debug messages available to the user (at least those available without
+having to read the source code) are listed near the top of the main
+configuration file, `configuration.pl`, as arguments of `debug/1` directives. We
+copy the relevant lines of the configuration file below:
+
+```prolog
+:-nodebug(_). % Clear all debug topics.
+%:-debug(learn). % Debug learning steps.
+%:-debug(metasubstitution). % Debug metasubstitutions.
+%:-debug(top_program). % Debug Top program construction.
+%:-debug(reduction). % Debug Top program reduction.
+%:-debug(dynamic). % Debug dynamic learning.
+%:-debug(predicate_invention). % Debug predicate invention.
+%:-debug(learn_metarules). % Debug metarule learning
+%:-debug(learned_metarules). % Debug new metarules
+%:-debug(metarule_grounding). % Debug metarule template specialisation
+%:-debug(examples_invention). % Debug examples invention.
+%:-debug(evaluation). % Debug learned program evaluation
+```
+
+By default, only the directive `:-nodebug(_)` is uncommented, which deactivates
+all debugging messages. To activate a debug subject, uncomment the directive
+that has that subject as an argument. For example, to activate the `learn`
+subject, uncomment the following line:
+
+```prolog
+:-debug(learn). % Debug learning steps.
+```
+
+To activate a debug subject you can also call `debug/1` at the SWI-Prolog
+console.
+
+In the example below we show the logging outputs for the debug subjects `learn`,
+`top_program` and `reduction` produced during an attempt of learning the
+`grandfather/2` relation from the elements of the MIL problem defined in
+`data/examples/tiny_kinship.pl`:
+
+```prolog
+?- debug(learn), debug(top_program), debug(reduction), learn(grandfather/2).
+% Encapsulating problem
+% Constructing Top program...
+% Constructing Top program...
+% Generalised Top program
+% m(chain,grandfather,father,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,father,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,husband,grandmother)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,parent,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,parent,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% Specialised Top program
+% m(chain,grandfather,father,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,father,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,husband,grandmother)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% Applied metarules
+% m(grandfather,A,B):-m(father,A,C),m(father,C,B)
+% m(grandfather,A,B):-m(father,A,C),m(parent,C,B)
+% m(grandfather,A,B):-m(husband,A,C),m(grandmother,C,B)
+% Reducing Top program...
+% Reducing Top program by Plotkin's algorithm...
+% Reduced Top program:
+% m(father,stathis,kostas)
+% m(father,stefanos,dora)
+% m(father,kostas,stassa)
+% m(parent,A,B):-m(father,A,B)
+% m(parent,A,B):-p(mother,A,B)
+% m(husband,A,B):-m(father,A,C),p(mother,B,C)
+% m(grandmother,A,B):-p(mother,A,C),m(parent,C,B)
+% p(mother,alexandra,kostas)
+% p(mother,paraskevi,dora)
+% p(mother,dora,stassa)
+% m(grandfather,A,B):-m(father,A,C),m(parent,C,B)
+% m(grandfather,A,B):-m(husband,A,C),m(grandmother,C,B)
+% m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)
+% Excapsulating hypothesis
+grandfather(A,B):-father(A,C),parent(C,B).
+grandfather(A,B):-husband(A,C),grandmother(C,B).
+true.
+```
+
+In the example above, the debug outputs are similar to the output of the
+`list_top_program/[1,3]` predicates discussed in a previous section, however it
+is possible to produce considerably more, and more diverse, output during
+logging, than with those two predicates.
+
+In fact, it is possible to produce _too much_ output while logging a learning
+attempt, particularly when there are many clauses that can be constructed and
+when many debug subjects are activated (the debug subject `metasubstitution` is
+particularly prolific). The SWI-Prolog console has a limited-size buffer and
+text that overflows this buffer is discarded. The result is that the early
+logging output of very long learning attempts will be lost.
+
+To retain the debugging output you can increase the size of the SWI-Prolog
+console buffer (consult the SWI-Prolog documentation on how to do that).
+Alternatively, you can redirect debugging output to a file on disk by appending
+the name of the file to the debug subject with the operator `>/2`. You can do
+that either in one of the `debug/1` directives in the configuration file, or in
+the console. Below we repeat the above example showing how to redirect output to
+a log file on disk from the console:
+
+```prolog
+?- nodebug(_), _F = 'log_file.log', debug(learn>_F), debug(top_program>_F), debug(reduction>_F), learn(grandfather/2).
+grandfather(A,B):-father(A,C),parent(C,B).
+grandfather(A,B):-husband(A,C),grandmother(C,B).
+true.
+```
+
+The `log_file.log` file will now have been written to disk in the directory
+where you started the current SWI-Prolog process. If you've been starting Louise
+by clicking the `load_project.pl` or `load_headless.pl` project load files, the
+SWI-Prolog process will have started in the top-directory of the Louise
+installation, so you should find your log file in that directory.
+
+Below, we cat the contents of the `log_file.log` file that was written in the
+previous example to disk at the top-directory of the Louise installation:
+
+```PowerShell
+PS C:\...\louise> cat .\log_file.log
+% Encapsulating problem
+% Constructing Top program...
+% Constructing Top program...
+% Generalised Top program
+% m(chain,grandfather,father,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,father,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,husband,grandmother)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,parent,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,parent,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% Specialised Top program
+% m(chain,grandfather,father,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,father,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% m(chain,grandfather,husband,grandmother)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E))
+% Applied metarules
+% m(grandfather,A,B):-m(father,A,C),m(father,C,B)
+% m(grandfather,A,B):-m(father,A,C),m(parent,C,B)
+% m(grandfather,A,B):-m(husband,A,C),m(grandmother,C,B)
+% Reducing Top program...
+% Reducing Top program by Plotkin's algorithm...
+% Reduced Top program:
+% m(father,stathis,kostas)
+% m(father,stefanos,dora)
+% m(father,kostas,stassa)
+% m(parent,A,B):-m(father,A,B)
+% m(parent,A,B):-p(mother,A,B)
+% m(husband,A,B):-m(father,A,C),p(mother,B,C)
+% m(grandmother,A,B):-p(mother,A,C),m(parent,C,B)
+% p(mother,alexandra,kostas)
+% p(mother,paraskevi,dora)
+% p(mother,dora,stassa)
+% m(grandfather,A,B):-m(father,A,C),m(parent,C,B)
+% m(grandfather,A,B):-m(husband,A,C),m(grandmother,C,B)
+% m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)
+% Excapsulating hypothesis
+```
+
+Note that in the examples above, the logging output for the specified debug
+subjects was not output to the SWI-Prolog console anymore. This is because we
+called `debug(_)` turning off all debug subjects, first, and SWI-Prolog takes
+`debug(learn)` and `debug(learn>_F)` to be different bebug subjects. This means
+that you can mirror the logging output to the SWI-Prolog console by activating
+the two debug subjects separately. We show how to do this below for the `learn`
+debug subject:
+
+```prolog
+?- nodebug(_), debug(learn), debug(learn>'log_file.log'), learn(grandfather/2).
+% Encapsulating problem
+% Constructing Top program...
+% Reducing Top program...
+% Excapsulating hypothesis
+grandfather(A,B):-father(A,C),parent(C,B).
+grandfather(A,B):-husband(A,C),grandmother(C,B).
+true.
+```
+
+Note that you have to call `debug(_)` at the start of the query above, to turn
+off the debugging subject for `debug(learn>_F)` that was previously activated,
+and that would otherwise suck up the logging output.
+
+Now, if you cat the log file you should see the following log output:
+
+```PowerShell
+PS C:\...\louise> cat .\log_file.log
+% Encapsulating problem
+% Constructing Top program...
+% Reducing Top program...
+% Excapsulating hypothesis
+```
+
+You can also redirect debug output to a log file in a sub-directory of the
+Louise installation. The default installation creates a directory `louise/logs`
+for just this purpose. For example, you can redirect the logging output of the
+debug subject `learn` to the file `louise/logs/logging_file_2.log` as follows:
+
+```prolog
+?- nodebug(_), debug(learn), debug(learn>'logs/log_file.log'), learn(grandfather/2).
+% Encapsulating problem
+% Constructing Top program...
+% Reducing Top program...
+% Excapsulating hypothesis
+grandfather(A,B):-father(A,C),parent(C,B).
+grandfather(A,B):-husband(A,C),grandmother(C,B).
+true.
+```
+
+Now we can inspect that file to find our output logs:
+
+```PowerShell
+PS C:\...\louise> cat .\logs\log_file.log
+% Encapsulating problem
+% Constructing Top program...
+% Reducing Top program...
+% Excapsulating hypothesis
+```
+
+Remember to leave computer memory tidy and close a log file when you're done
+with it:
+
+```prolog
+?- close('logs/log_file.log').
+true.
+```
 
 Experiment scripts
 ------------------
