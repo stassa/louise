@@ -667,6 +667,8 @@ examples, background knowledge and _generalised_ metarules. Unlike user-defined
 metarules, the generalised metarules used by TOIL do not have to be closely
 tailored to a problem.
 
+For more information on TOIL see [(Patsantzis & Muggleton 2021b)].
+
 ### Metarule taxonomy
 
 TOIL recognises three taxa of metarules. Listed by degrees of generality, these
@@ -1994,10 +1996,11 @@ Bibliography
 
 3. S.H. Muggleton. _Inductive Logic Programming_. [New Generation Computing, 8(4):295-318, 1991](https://doi.org/10.1007/BF03037089)
 
-4. S. Patsantzis and S. H. Muggleton. _Top Program Construction for Polynomial-Time Meta-interpretive Learning_. [Machine Learning, 2021](https://link.springer.com/article/10.1007/s10994-020-05945-w)
+4. S. Patsantzis and S. H. Muggleton. _Top Program Construction and Reduction for Polynomial-Time Meta-interpretive Learning_. [Machine Learning, 2021](https://link.springer.com/article/10.1007/s10994-020-05945-w)
 
 [(Muggleton et al. 2014)]: https://link.springer.com/article/10.1007/s10994-013-5358-3 "Meta-interpretive learning: application to grammatical inference"
 [(Muggleton et al. 2015)]: https://link.springer.com/content/pdf/10.1007%2Fs10994-014-5471-y.pdf "Meta Interpretive Learning of higher-order dyadic datalog: predicate invention revisited"
 [(Muggleton, 1991)]: https://doi.org/10.1007/BF03037089 "Inductive Logic Programming"
 [DCG]:https://en.wikipedia.org/wiki/Definite_clause_grammar "Definite Clause Grammars"
-[(Patsantzis & Muggleton 2021)]: https://link.springer.com/article/10.1007/s10994-020-05945-w "Top Program Construction for Polynomial-Time Meta-interpretive Learning"
+[(Patsantzis & Muggleton 2021)]: https://link.springer.com/article/10.1007/s10994-020-05945-w "Top Program Construction and Reduction for Polynomial-Time Meta-interpretive Learning"
+[(Patsantzis & Muggleton 2021b)]: https://arxiv.org/abs/2106.07464 "Meta-Interpretive Learning as Metarule Specialisation"
