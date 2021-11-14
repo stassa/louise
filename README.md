@@ -1998,6 +1998,8 @@ Bibliography
 
 4. S. Patsantzis and S. H. Muggleton. _Top Program Construction and Reduction for Polynomial-Time Meta-interpretive Learning_. [Machine Learning, 2021](https://link.springer.com/article/10.1007/s10994-020-05945-w)
 
+4. S. Patsantzis and S. H. Muggleton. _Meta-Interpretive Learning as Metarule Specialisation_. [Machine Learning, 2021](https://arxiv.org/abs/2106.07464)
+
 [(Muggleton et al. 2014)]: https://link.springer.com/article/10.1007/s10994-013-5358-3 "Meta-interpretive learning: application to grammatical inference"
 [(Muggleton et al. 2015)]: https://link.springer.com/content/pdf/10.1007%2Fs10994-014-5471-y.pdf "Meta Interpretive Learning of higher-order dyadic datalog: predicate invention revisited"
 [(Muggleton, 1991)]: https://doi.org/10.1007/BF03037089 "Inductive Logic Programming"
