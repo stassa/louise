@@ -282,7 +282,7 @@ directory `louise/data/examples`. After going through the examples here, feel
 free to load and run the examples in that directory to better familiarise
 yourself with Louise's functionality.
 
-### Running examples in Swi-Prolog
+### Running the examples in Swi-Prolog
 
 Swi-Prolog is a popular, free and open-source Prolog interpreter and development
 environment. Louise was written for Swi-Prolog. To run the examples in this
@@ -304,7 +304,7 @@ In this section, we assume you have cloned this project into a directory called
 root directory and queries at the Swi-Prolog top-level will assume your current
 working directory is `louise`.
 
-#### Learning the "ancestor" relation
+#### A simple example: learning the ancestor relation
 
 Louise learns Prolog programs from examples, background knowledge and second
 order logic clauses called _metarules_. Together, examples, background knowledge
@@ -392,7 +392,7 @@ below.
     experiment file defines a number of other learning targets from a typical
     kinship relations domain.
 
-### Dynamic learning and predicate invention
+#### Dynamic learning and predicate invention
 
 The predicate `learn/1` implements Louise's default learning setting that learns
 a program one-clause-at-a-time without memory of what was learned before. This
@@ -464,8 +464,8 @@ time the learning predicate is `learn_dynamic/1`:
     clause with three literals:
 
     ```prolog
-   'S'(A,B):-'A'(A,C),'B'(C,B).
-   'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
+    'S'(A,B):-'A'(A,C),'B'(C,B).
+    'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
     ```
 
     However, the _Chain_ metarule only allows clauses with three literals to be
@@ -511,7 +511,7 @@ time the learning predicate is `learn_dynamic/1`:
     invented predicate.
 
 
-### Examples invention
+#### Examples invention
 
 Louise can perform _examples invention_ which is just what it sounds like.
 Examples invention works best when you have relevant background knowledge and
@@ -595,8 +595,8 @@ again following the structure of the examples shown previously.
      true.
      ```
 
-Learning with metarules in MIL
-------------------------------
+Learning with metarules
+-----------------------
 
 Metarules are used in MIL as inductive bias, to determine the structure of
 clauses in learned hypotheses. Metarules are second-order logic clauses, that
@@ -657,8 +657,8 @@ Theta = {P/father,X/kostas,Y/stassa}
 Abduce.Theta = father(kostas,stassa)←
 ```
 
-Pretty-printing metarules in Louise
------------------------------------
+Pretty-printing metarules
+-------------------------
 
 In the previous section we have used Louise's pretty-printer for metarules,
 `print_metarules/1` to print metarules in an easy-to-read format.
@@ -812,12 +812,14 @@ examples, background knowledge and _generalised_ metarules. Unlike user-defined
 metarules, the generalised metarules used by TOIL do not have to be closely
 tailored to a problem.
 
+### Metarule taxonomy
+
 TOIL recognises three taxa of metarules. Listed by degrees of generality, these
 are: sort, matrix and punch metarules. Their names are derived from typeset
 printing where successive levels of molds for letters to be typed are carved in
 metals of decreasing hardness.
 
-### Sort metarules
+#### Sort metarules
 
 Sort metarules are the kind of metarules normally defined by a user and found
 throughout the MIL literature. They are also widely used in ILP more generally
@@ -868,7 +870,7 @@ fully-define the set of clauses that will be considered during a MIL-learning
 attempt. At the same time, the wiring can be too-specific resulting in the
 elimintation of clauses necessary to solve a problem.
 
-### Matrix metarules
+#### Matrix metarules
 
 Matrix metarules are a generalisation of the sort metarules. Matrix metarules
 are also second-order clauses, like the sort metarules, but each variable
@@ -896,7 +898,7 @@ _specialisation_ of a metarule in `M`. This specialisation is performed by TOIL
 to learn sort metarules from matrix metarules. We show examples of this in a
 following section.
 
-### Punch metarules.
+#### Punch metarules.
 
 We can generalise sort metarules to matrix metarules by replacing each variable
 in a sort metarule by a new, "free" variable. Matrix metarules can themselves be
@@ -914,7 +916,7 @@ are _third-order logic_ clauses. Just as matrix metarules can be specialised to
 sort metarules, sets of punch metarules can be specialised to matrix metarules
 with the same number of literals.
 
-### Metarule specialisation in TOIL
+### Metarule specialisation with TOIL
 
 TOIL learns metarules by exploiting the generality relation between the three
 taxa of metarules described in the previous sections. TOIL takes as in put the
@@ -969,7 +971,7 @@ _Meta-monadic-13_ and _Meta-dyadic-7_ suffice to learn a correct hypotesis for
 `ancestor/2` (according to the MIL problem elements in the experiment file we're
 using).
 
-### Controlling over-generation of metarules in TOIL
+#### Controlling over-generation of metarules
 
 To control over-generation, TOIL employs a number of different strategies that
 can be chosen with the two configuration options
@@ -1040,7 +1042,7 @@ instance the two metarules below that only have one second-order variable each:
 (Meta-dyadic-2) ∃.P,P,P ∀.x,y,z: P(x,y)← P(z,y),P(x,z)
 ```
 
-### Specialisation of Punch metarules
+#### Specialisation of Punch metarules
 
 Matrix metarules still require some intuition, from the part of the user, about
 the structure of clauses in a target theory. In particular, while no variables
@@ -1159,7 +1161,7 @@ superstructure of the universe, the `learn/5` learning predicate is invoked
 instead, which passes the metarules learned by TOIL to Louise's basic Top
 Program Construction learning algorithm.
 
-#### Limitations of TOIL
+### Limitations of TOIL
 
 The current implementation of TOIL is still a prototype, but we think it goes a
 long way towards addressing an important limitation of MIL, the need to define
