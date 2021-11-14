@@ -19,10 +19,6 @@ Table of contents
 [Overview](#overview)  
 [Capabilities](#capabilities)  
 [Learning logic programs with Louise](#learning-logic-programs-with-louise)  
-[Running examples in Swi-Prolog](#running-examples-in-swi-prolog)  
-[Learning the "ancestor" relation](#learning-the-ancestor-relation)  
-[Dynamic learning and predicate invention](#dynamic-learning-and-predicate-invention)  
-[Examples invention](#examples-invention)  
 [Learning with metarules](#learning-with-metarules)  
 [Pretty-printing metarules](#pretty-printing-metarules)  
 [Learning metarules with TOIL](#learning-metarules-with-toil)  
@@ -304,7 +300,7 @@ In this section, we assume you have cloned this project into a directory called
 root directory and queries at the Swi-Prolog top-level will assume your current
 working directory is `louise`.
 
-#### A simple example: learning the ancestor relation
+### A simple example
 
 Louise learns Prolog programs from examples, background knowledge and second
 order logic clauses called _metarules_. Together, examples, background knowledge
@@ -392,7 +388,7 @@ below.
     experiment file defines a number of other learning targets from a typical
     kinship relations domain.
 
-#### Dynamic learning and predicate invention
+### Dynamic learning and predicate invention
 
 The predicate `learn/1` implements Louise's default learning setting that learns
 a program one-clause-at-a-time without memory of what was learned before. This
@@ -511,7 +507,7 @@ time the learning predicate is `learn_dynamic/1`:
     invented predicate.
 
 
-#### Examples invention
+### Examples invention
 
 Louise can perform _examples invention_ which is just what it sounds like.
 Examples invention works best when you have relevant background knowledge and
