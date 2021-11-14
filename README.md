@@ -23,7 +23,7 @@ Table of contents
 [Learning metarules with TOIL](#learning-metarules-with-toil)  
 [Pretty-printing metarules](#pretty-printing-metarules)  
 [Debugging-training-data](#debugging-training-data)  
-[Debugging-learnig-attempts](#debugging-learnig-attempts)  
+[Debugging-learning-attempts](#debugging-learning-attempts)  
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
 
@@ -1186,7 +1186,8 @@ true.
 
 In the output above, the lines preceded by Prolog's comment character, `%`, are
 printed by SWI-Prolog's debugging predicates. Debugging output can be directed
-to a file to keep a log of a learning attempt.
+to a file to keep a log of a learning attempt. This is described in a later
+section.
 
 ### Configuring a metarule format
 
@@ -1553,8 +1554,8 @@ learning target, before they can list it. If the Top Program is very large, this
 can take a while and the resulting listing will flood the SWI-Prolog console and
 most of it will be lost.
 
-Debugging learnig attempts
---------------------------
+Debugging learning attempts
+---------------------------
 
 You can log many steps of the learning algorithms in Louise to the console, or
 redirect the logs to a file.
