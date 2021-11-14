@@ -1222,6 +1222,335 @@ true.
 
 This is possible because of the generality of metarules, even sort metarules.
 
+Debugging learning problems
+---------------------------
+
+In this section we discuss the facilities offered by Louise to debug learning
+problems.
+
+### Inspecting the current configuration options
+
+Most of the functionality in Louise is controlled by the settings of
+configuration options in a configuration file, `configuration.pl`, at the top
+directory of the Louise installation.
+
+The current settings of configuration options can be inspected with a call to
+the predicate `list_config/0`. We show an example below:
+
+```prolog
+?- list_config.
+depth_limits(2,1)
+example_clauses(call)
+experiment_file(data/examples/tiny_kinship.pl,tiny_kinship)
+generalise_learned_metarules(false)
+learner(louise)
+max_invented(1)
+metarule_formatting(quantified)
+metarule_learning_limits(none)
+minimal_program_size(2,inf)
+recursion_depth_limit(dynamic_learning,none)
+recursive_reduction(false)
+reduce_learned_metarules(false)
+reduction(plotkins)
+resolutions(5000)
+theorem_prover(resolution)
+unfold_invented(false)
+true.
+```
+
+Consult the documentation of the `configuration.pl` file to learn about the
+various configuration options listed above.
+
+Various sub-systems and libraries in Louise also have their own configuration,
+some of which are imported by `configuration.pl`. These options are not listed
+by `list_config/0`. You can inspect those options with `print_or_debug/3` with
+the last argument `all`:
+
+```prolog
+?- print_config(print,user_output,all).
+configuration:depth_limits(2,1)
+configuration:example_clauses(call)
+configuration:experiment_file(data/examples/tiny_kinship.pl,tiny_kinship)
+configuration:generalise_learned_metarules(false)
+configuration:learner(louise)
+configuration:max_invented(1)
+configuration:metarule_formatting(quantified)
+configuration:metarule_learning_limits(none)
+configuration:minimal_program_size(2,inf)
+configuration:recursion_depth_limit(dynamic_learning,none)
+configuration:recursive_reduction(false)
+configuration:reduce_learned_metarules(false)
+configuration:reduction(plotkins)
+configuration:resolutions(5000)
+configuration:theorem_prover(resolution)
+configuration:unfold_invented(false)
+evaluation_configuration:decimal_places(2)
+evaluation_configuration:evaluate_atomic_residue(include)
+evaluation_configuration:success_set_generation(sld)
+reduction_configuration:call_limit(none)
+reduction_configuration:depth_limit(10000)
+reduction_configuration:derivation_depth(9)
+reduction_configuration:inference_limit(10000)
+reduction_configuration:meta_interpreter(solve_to_depth)
+reduction_configuration:program_module(program)
+reduction_configuration:recursion_depth(10)
+reduction_configuration:time_limit(2)
+sampling_configuration:k_random_sampling(randset)
+thelma_cofiguration:default_ordering(lower)
+thelma_cofiguration:metarule_functor($metarule)
+true.
+```
+
+The configuration options listed by `print_or_debug/3` are preceded by the
+module identifier of the module in which they are defined.
+
+### Inspecting the elements of a MIL Problem
+
+The elements of a MIL problem defined in an experiment file can be listed to the
+console with a call to the predicate `list_mil_problem/1`. This predicate takes
+as argument the symbol and arity of a learning target defined in the currently
+loaded experiment file and prints out the examples, background knowledge and
+metarules declared for that target in that experiment file.
+
+In the following example we call `list_mil_problem/1` to list the elements of
+the MIL problem for the `grandmother/2` learning target, defined in the
+`data/examples/tiny_kinship.pl` experiment file:
+
+```prolog
+?- list_mil_problem(grandmother/2).
+Positive examples
+-----------------
+grandmother(alexandra,stassa).
+grandmother(paraskevi,stassa).
+
+Negative examples
+-----------------
+:-grandmother(stathis,stassa).
+:-grandmother(stefanos,stassa).
+
+Background knowledge
+--------------------
+mother/2:
+mother(alexandra,kostas).
+mother(paraskevi,dora).
+mother(dora,stassa).
+
+parent/2:
+parent(A,B):-father(A,B).
+parent(A,B):-mother(A,B).
+
+Metarules
+---------
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+true.
+```
+
+Listing a MIL problem is particularly helpful when multiple learning targets are
+defined in an experiment file, at which point it can be confusing to look at the
+experiment file itself and try to determine exactly what training data goes to
+what learning target.
+
+### Inspecting the elements of an encapsulated MIL problem
+
+At the start of any learning attempt the elements of a MIL problem are
+transformed by Louise to an internal representation by _encapsulation_.
+Encapsulation "wraps" the predicate symbol and arguments of each literal in a
+clause to a new predicate, so that, for example, the atom `p(x,y)` becomes
+`m(p,x,y)` and the clause `p(x,y):- q(x,y)` becomes `m(p,x,y):- m(q,x,y)`.
+Encapsulation facilitates resolution between metarules, that are second-order,
+and first-order background knowledge and examples. Encapsulation also makes
+resolution between metarules and other clauses decidable by "lowering" them to
+the first-order (even unification is undecidable in second order logic).
+
+The encapsulated elements of a MIL Problem can be listed for inspection with a
+call to the predicate `list_encapsulated_problem/1`. This predicate, too, takes
+as argument the predicate symbol and arity of a learning target in the currently
+loaded experiment file.
+
+In the following example we show how to list the encapsulated elements of the
+MIL problem for the `grandmother/2` target in `data/examples/tiny_kinship.pl`:
+
+```prolog
+?- list_encapsulated_problem(grandmother/2).
+Positive examples
+-----------------
+m(grandmother,alexandra,stassa).
+m(grandmother,paraskevi,stassa).
+
+Negative examples
+-----------------
+:-m(grandmother,stathis,stassa).
+:-m(grandmother,stefanos,stassa).
+
+Background knowledge
+--------------------
+m(mother,alexandra,kostas).
+m(mother,paraskevi,dora).
+m(mother,dora,stassa).
+m(parent,A,B):-p(father,A,B).
+m(parent,A,B):-m(mother,A,B).
+p(father,stathis,kostas).
+p(father,stefanos,dora).
+p(father,kostas,stassa).
+
+Metarules
+---------
+m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+true.
+```
+
+Note that some of the clauses in the `Background knowledge` section are
+encapsulated as clauses of the predicate `m` and some as clauses of the
+predicate `p`. The `m` clauses encapsulate the definitions of predicates
+declared as background knowledge of a learning target, while the `p` clauses
+encapsulate the predicates in the closure of the predicates declared as
+background knowledge. In the case of the `grandmother/1` target, `mother/2` and
+`parent/2` are declared as background knowledge and so they are encapsulated as
+clauses of `m/3`, but `father/2` is in the closure of `parent/2`, therefore it
+is encapsulated in clauses of `p/3`.
+
+### Listing MIL problem statistics
+
+When the elements of a MIL problem are too large (e.g. when there are many
+examples or many clauses in the background knowledge) listing them is not very
+helpful. The predicate `list_problem_statistics/1` lists only the numbers of
+examples and the numbers and predicate symbols or identifiers of background
+predicates and metarules declared for a learning target. 
+
+Below we show an example of listing the problem statistics for the `ancstor/2`
+target defined in `data/examples/tiny_kinship/pl`:
+
+```prolog
+?- list_problem_statistics(ancestor/2).
+Positive examples:    10
+Negative examples:    10
+Background knowledge: 1 [parent/2]
+Metarules:            2 [tailrec,identity] 
+true.
+```
+
+### Listing the Top Program
+
+The Top Program constructed by Louise's Top Program Construction algorithm can
+be inspected by a call to the predicate `list_top_program/1`. This predicate
+takes as argument the symbol and arity of a learning target and outputs the
+results of the two steps of Top Program Construction, the generalisation step,
+where all the clauses that entail positive examples with respect to background
+knowledge are constructed; and the specialisation step, where all the clauses in
+the previous step that entail negative examples are thrown out.
+
+Below, we list the Top Program for the `grandfather/2` learning target defined
+in `data/examples/tiny_kinship.pl`:
+
+```prolog
+?- list_top_program(grandfather/2).
+Generalisation:
+---------------
+grandfather(A,B):-father(A,C),father(C,B).
+grandfather(A,B):-father(A,C),parent(C,B).
+grandfather(A,B):-husband(A,C),grandmother(C,B).
+grandfather(A,B):-parent(A,C),father(C,B).
+grandfather(A,B):-parent(A,C),parent(C,B).
+Length:5
+
+Specialisation:
+---------------
+grandfather(A,B):-father(A,C),father(C,B).
+grandfather(A,B):-father(A,C),parent(C,B).
+grandfather(A,B):-husband(A,C),grandmother(C,B).
+Length:3
+true.
+```
+
+Note how the `Specialisation` step has removed two over-general clauses, found
+to entail negative examples with respect to background knowledge.
+
+### Listing the Top Program with more detail
+
+The implementation of the TPC algorithm in Louise constructs a Top Progam in
+successive stages: first a set of ground _metasubstitutions_ is derived, which
+are then applied to the corresponding metarules to derive a set of encapsulated
+clauses. Finally, clause are excapsulated, turning them back to clauses of the
+learning targets.
+
+Similar to `list_top_program/1` the predicate `list_top_program/3` can list the
+Top Program but this time in varying stages of its construction, particularly
+with respect to application of metasubstitutions and encapsulation. The first
+argument of `list_top_program/3` is the symbol and arity of a learning target,
+as in `list_top_program/1`. The second argument determines whether to show the
+application of derived metasubstitutions to their corresponding metarules. The
+third argument determines whether to excapsulate the resulting clauses, or not.
+
+In the example below we list the Top Program learned from the elements of the
+MIL problem for `grandfather/2` in `data/examples/tiny_kinship.pl`. The second
+and third argument are given as "false" to show the ground metasubstitutions
+derived during learning befor they are applied to their corresponding metarules:
+
+```prolog
+?- list_top_program(grandfather/2,false,false).
+Generalisation:
+---------------
+m(chain,grandfather,father,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)).
+m(chain,grandfather,father,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)).
+m(chain,grandfather,husband,grandmother)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)).
+m(chain,grandfather,parent,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)).
+m(chain,grandfather,parent,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)).
+Length:5
+
+Specialisation:
+---------------
+m(chain,grandfather,father,father)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)).
+m(chain,grandfather,father,parent)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)).
+m(chain,grandfather,husband,grandmother)-(m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)).
+Length:3
+true.
+```
+
+In the output above, the ground metasubstitutions are the atoms
+`m(chain,grandfather,father,father)` etc. The first argument in such a
+metasubstitution atom is the identifier of a metarule and the remaining
+arguments are predicate symbols and constants to be substituted for
+existentially quantified variables in the metarule. The literals of the metarule
+(in encapsulated form with a non-ground metasubstitution atom in its head) are
+associated to the ground metasubstitution by the functor `-`.
+
+In the following example we repeat the same call but with the second argument
+set to "true" to apply the ground metasubstitutions to their corresponding
+metarules:
+
+```prolog
+?- list_top_program(grandfather/2,true,false).
+Generalisation:
+---------------
+m(grandfather,A,B):-m(father,A,C),m(father,C,B).
+m(grandfather,A,B):-m(father,A,C),m(parent,C,B).
+m(grandfather,A,B):-m(husband,A,C),m(grandmother,C,B).
+m(grandfather,A,B):-m(parent,A,C),m(father,C,B).
+m(grandfather,A,B):-m(parent,A,C),m(parent,C,B).
+Length:5
+
+Specialisation:
+---------------
+m(grandfather,A,B):-m(father,A,C),m(father,C,B).
+m(grandfather,A,B):-m(father,A,C),m(parent,C,B).
+m(grandfather,A,B):-m(husband,A,C),m(grandmother,C,B).
+Length:3
+true.
+```
+
+Setting the third argument of `list_top_program/3` to `true` will produce the
+same result as calling `list_top_program/1`.
+
+Inspecting the stages of Top Program construction with `list_top_program/1` and
+`list_top_program/3` is useful to understand the inner workings of the Top
+Program Construction algorithm.
+
+Note however that both predicates must first build the Top Program for a
+learning target, before they can list it. If the Top Program is very large, this
+can take a while and the resulting listing will flood the SWI-Prolog console and
+most of it will be lost.
+
+
 Experiment scripts
 ------------------
 
