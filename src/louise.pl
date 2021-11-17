@@ -225,7 +225,8 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %
 %/*
 metasubstitution(E,M,Sub):-
-	bind_head_literal(E,M,(Sub:-(H,Ls)))
+	configuration:prove_recursive(examples)
+	,bind_head_literal(E,M,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Bound head literal:',H)
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,user:call(Ls)
@@ -248,6 +249,7 @@ metasubstitution(_E,_M,Sub):-
 metasubstitution(E,M,Sub):-
 % Attempt to construct clauses that resolve with themselves.
 	E \= (:-_)
+	,configuration:prove_recursive(self)
 	,configuration:recursion_depth_limit(self_resolution, DL)
 	,bind_head_literal(E,M,(Sub:-(H,Ls)))
 	,debug_clauses(self_resolution,'Bound head literal (2):',H)

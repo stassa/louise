@@ -11,6 +11,7 @@
                         ,metarule_learning_limits/1
                         ,metarule_formatting/1
                         ,order_constraints/5
+                        ,prove_recursive/1
 			,recursion_depth_limit/2
 			,recursive_reduction/1
                         ,reduce_learned_metarules/1
@@ -567,6 +568,45 @@ order_constraints(postcon,[P,Q,R],_Fs,[P>Q,P>R],[]).
 order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 
 
+%!      prove_recursive(?How) is semidet.
+%
+%       Ways to attempt to prove recursive clauses.
+%
+%       How is an atom, one of: [examples, top_program, self] denoting
+%       the kind of clauses with which the Top Program Construction
+%       algorithm in louise.pl will attempt to resolve a metarule to
+%       construct a recursive clause.
+%
+%       With option 'examples', metarules will only be resolved with
+%       positive examples (and background predicates). In this way
+%       the only kind of recursive clauses that can be constructed are
+%       clauses that resolve with positive examples (although once
+%       constructed, those clauses may resolve with others in the Top
+%       Program or themselves).
+%
+%       With option 'top_program', metarules will be resolved with
+%       positive examples and clauses already added to the Top Program
+%       so-far. In this way, clauses that only resolve with others in
+%       the Top Program, but not with posivie examples, can be
+%       constructed.
+%
+%       With option 'self', metarules will be resolved with positive
+%       examples, and themselves. In this way, clauses that only resolve
+%       with themselves can be constructed.
+%
+%       Note that all three clauses of this option can be declared at
+%       any one time. This allows all three kinds of recursive clauses
+%       to be constructed.
+%
+%       @tbd The ability to construct clauses that resolve with others
+%       in the Top Program is not yet implemented. Until it is, setting
+%       the option 'top_program' will have no effect.
+%
+prove_recursive(examples).
+prove_recursive(top_program).
+prove_recursive(self).
+
+
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
 %
 %	Recursion depth Limit for the given Purpose.
@@ -598,7 +638,7 @@ recursion_depth_limit(dynamic_learning,none).
 %recursion_depth_limit(dynamic_learning,100_000).
 %recursion_depth_limit(dynamic_learning,150000).
 %recursion_depth_limit(dynamic_learning,500_000_000_000).
-recursion_depth_limit(self_resolution,5000).
+recursion_depth_limit(self_resolution,none).
 
 
 %!	recursive_reduction(?Bool) is semidet.
