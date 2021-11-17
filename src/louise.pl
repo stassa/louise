@@ -64,37 +64,12 @@ learn(Pos,Neg,BK,MS,Ps):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
-	,examples_targets(Pos,Ss)
-	,table_encapsulated(Ss)
 	,top_program(Pos_,Neg_,BK_,MS_,Ms)
-	,dynamic_learning:untable_encapsulated(Ss)
 	,debug(learn,'Reducing Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
+	,examples_targets(Pos,Ss)
 	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(Ss,Rs,Ps).
-
-
-%!	table_encapsulated(+Targets) is det.
-%
-%	Prepare one or more encapsulated learning Targets for tabling.
-%
-%	Targets is a list of predicate indicators, F/A, the predicate
-%	symbols and arities of a list of target predicates.
-%	table_encapsulated/1 prepares for tabling each predicate m/N,
-%	where N is A+1 for each target predicate in Targets. m/N is the
-%	predicate encapsulating each Target (though not necessarily
-%	_only_ target predicates).
-%
-%	@tbd This is a simpler version of table_encapsulated/1 in
-%	dynamic_learning module, that tables encapsulation predicates
-%	without assuming they are dynamic and incremental.
-%
-table_encapsulated(Ts):-
-	forall(member(_F/A,Ts)
-	      ,(succ(A,A_)
-	       ,table(user:m/A_)
-	       )
-	      ).
 
 
 
@@ -136,7 +111,10 @@ top_program(Pos,Neg,BK,MS,_Ts):-
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	% Negative examples don't need to be added to the dynamic db.
-	,S = write_problem(user,[Pos,BK,MS],Refs)
+	,examples_targets(Pos,Ss)
+	,S = (write_problem(user,[Pos,BK,MS],Refs)
+	     ,dynamic_learning:table_encapsulated(Ss)
+	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise(Pos,MS,Ss_Gen)
 	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
@@ -145,7 +123,10 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,applied_metarules(Ss_Spec,MS,Ts)
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
-	,C = erase_program_clauses(Refs)
+	,C = (erase_program_clauses(Refs)
+	     ,dynamic_learning:untable_encapsulated(Ss)
+	     ,cleanup_experiment
+	     )
 	,setup_call_cleanup(S,G,C)
 	,!.
 top_program(Pos,Neg,BK,MS,Ts):-
@@ -177,16 +158,19 @@ top_program(_Pos,_Neg,_BK,_MS,[]):-
 %	metarule corresponding to the metasubsitution.
 %
 generalise(Pos,MS,Ss_Pos):-
-	findall(H-M
+	findall(H-M-Refs
 	     ,(member(M,MS)
-	      ,copy_term(M,M_)
 	      ,member(Ep,Pos)
 	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
 	      ,debug_clauses(metasubstitution,'Instantiating metarule:',M)
-	      ,metasubstitution(Ep,M_,H)
+	      ,metasubstitution(Ep,M,H,Refs)
 	      ,constraints(H)
 	      )
-	     ,Ss_Pos_)
+	     ,Ps)
+	% Remove clauses added to dynamic db, if any.
+	,pairs_keys_values(Ps,Ss_Pos_,Rs)
+	,flatten(Rs,Rs_f)
+	,erase_program_clauses(Rs_f)
 	,sort(1,@<,Ss_Pos_,Ss_Pos).
 
 
@@ -223,15 +207,23 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	negative example is a ground definite goal (i.e. a clause of the
 %	form :-Example).
 %
-%/*
-metasubstitution(E,M,Sub):-
-	configuration:prove_recursive(examples)
-	,bind_head_literal(E,M,(Sub:-(H,Ls)))
+metasubstitution(:-E,M,Sub):-
+	copy_term(M,M_)
+	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Bound head literal:',H)
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,user:call(Ls)
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
-%*/
+metasubstitution(E,M,Sub,Refs):-
+	E \= (:-_)
+	,configuration:prove_recursive(examples)
+	,copy_term(M,M_)
+	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
+	,debug_clauses(metasubstitution,'Bound head literal:',H)
+	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
+	,user:call(Ls)
+	,debug_clauses(metasubstitution,'Succeeded:',Ls)
+	,assert_clause(Sub-M,Refs).
 /* TODO: Extra debugging; consider adding in properly.
 metasubstitution(E,M,Sub):-
 	bind_head_literal(E,M,(Sub:-(H,Ls)))
@@ -246,14 +238,25 @@ metasubstitution(_E,_M,Sub):-
 	debug_clauses(metasubstitution,'Failed:',Sub)
 	,fail.
 */
-metasubstitution(E,M,Sub):-
+metasubstitution(E,M,Sub,Refs):-
+	E \= (:-_)
+	,configuration:prove_recursive(top_program)
+	,copy_term(M,M_)
+	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
+	,debug_clauses(co_resolution,'Bound head literal (2):',H)
+	,debug_clauses(co_resolution,'Trying metasubstitution (2):',Ls)
+	,user:call(Ls)
+	,debug_clauses(co_resolution,'Succeeded (2):',Ls)
+	,assert_clause(Sub-M,Refs).
+metasubstitution(E,M,Sub,Refs):-
 % Attempt to construct clauses that resolve with themselves.
 	E \= (:-_)
 	,configuration:prove_recursive(self)
 	,configuration:recursion_depth_limit(self_resolution, DL)
-	,bind_head_literal(E,M,(Sub:-(H,Ls)))
-	,debug_clauses(self_resolution,'Bound head literal (2):',H)
-	,debug_clauses(self_resolution,'Trying metasubstitution (2):',Ls)
+	,copy_term(M,M_)
+	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
+	,debug_clauses(self_resolution,'Bound head literal (3):',H)
+	,debug_clauses(self_resolution,'Trying metasubstitution (3):',Ls)
 	,clause(Sub,(H,Ls))
 	,(   DL = none
 	->   resolve_metarules(Sub,Sub,Ls)
@@ -261,8 +264,41 @@ metasubstitution(E,M,Sub):-
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
 	,ground(Sub)
-	,debug_clauses(self_resolution,'Succeeded (2):',Ls).
+	,debug_clauses(self_resolution,'Succeeded (3):',Ls)
+	,assert_clause(Sub-M,Refs).
 
+
+%!	assert_clause(+Metasub,-Refs) is det.
+%
+%	Assert a clause to the dynamic database.
+%
+%	This predicate is responsible for adding clauses to the dynamic
+%	database so that they can be resolved against during
+%	construction of new clauses, when the configuration option
+%	prove_recursive(self) is set.
+%
+%	Metasub is a pair Sub-Metarule where Sub is a ground
+%	metasubstitution atom and Metarule is an expanded metarule. Refs
+%	is a list of a single element, the clause reference of the
+%	clause added to the dynamic db.
+%
+%	Refs is used to remove clauses from the dynamic db at the end of
+%	generalise/3, in order to avoid confusingly proving negative
+%	examples.
+%
+assert_clause(_Sub,[]):-
+	\+ configuration:prove_recursive(top_program)
+	,!.
+assert_clause(Sub-M,Refs):-
+	applied_metarules([Sub-M],[M],[C])
+	,assert_program(user,[C],Refs)
+	,debug_clauses(co_resolution,'Asserted clause:',[C]).
+
+
+% Keep resolve_metarules/3 from going infinite during
+% meta-interpretation if possible. Table as incremental because
+% encapsulated clauses may be added to or removed from the dynamic db.
+:-table(resolve_metarules/3 as incremental).
 
 %!	resolve_metarules(?Metasub,-Acc,+Literals) is nondet.
 %
