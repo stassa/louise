@@ -255,7 +255,7 @@ metasubstitution(E,M,Sub):-
 	,clause(Sub,(H,Ls))
 	,(   DL = none
 	->   resolve_metarules(Sub,Sub,Ls)
-	    ,G = resolve_metarules(Sub,Sub,Ls)
+	;    G = resolve_metarules(Sub,Sub,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
 	,ground(Sub)
