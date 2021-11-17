@@ -633,6 +633,12 @@ prove_recursive(self).
 %       be used to limit uncontrolled recursion, hence the name of the
 %       option.
 %
+%       @tbd Setting these multi-clause options with
+%       set_configuration_option/2 seems to leave behind duplicates and
+%       I'm not sure why, or how to avoid that. Use retract/1 to remove
+%       duplicates, or set an option manually to its defults then set
+%       it again to what you want, seems to do the trick.
+%
 recursion_depth_limit(dynamic_learning,none).
 %recursion_depth_limit(dynamic_learning,5000).
 %recursion_depth_limit(dynamic_learning,100_000).

@@ -5,6 +5,7 @@
 		      ,list_config/0
 		      ,print_config/3
 		      ,reset_defaults/0
+		      ,set_multi_configuration_option/2
 		      ,set_configuration_option/2
 		       % MIL Problem auxiliaries
 		      ,hypothesis_language/1
@@ -117,6 +118,7 @@ Table of Contents
    * list_config/0
    * print_config/3
    * reset_defaults/0
+   * set_multi_configuration_option/2
    * set_configuration_option/2
 
 3. MIL problem auxiliaries [sec_prob]
@@ -364,10 +366,45 @@ reset_defaults:-
 		   ,predicate_property(P, implementation_module(configuration))
 		->  atom_concat(default_,F,DF)
 		   ,functor(D,DF,1)
-		   ,call(defaults:D)
-		   ,D =.. [_|Vs]
-		   ,set_configuration_option(F,Vs)
+		   ,findall(Vs
+			  ,(call(defaults:D)
+			   ,D =.. [_|Vs]
+			   )
+			   ,VS
+			  )
+		   ,set_multi_configuration_option(F,VS)
 		;  true
+		)
+	       ).
+
+
+
+%!	set_multi_configuration_option(+Option,+Values) is det.
+%
+%	Set a configuration option possibly with multiple Values.
+%
+%	As set_configuration_option/2 but allows for options that may
+%	have multiple default values, defined in multiple clauses in
+%	src/defaults.pl. Only recursion_depth_limit/2 is currently of
+%	that type.
+%
+%	If Option has a single default option, Option and Value are both
+%	passed to set_configuration_option/2. This is to allow use of
+%	the same predicate in a loop to set options that may have one or
+%	more defaults.
+%
+set_multi_configuration_option(N, [V]):-
+	is_list(V)
+	,!
+	,set_configuration_option(N,V).
+set_multi_configuration_option(N, [V|Vs]):-
+	!
+	,length([V|Vs],A)
+	,functor(T,N,A)
+	,retractall(configuration:T)
+	,forall(member([Vi],[V|Vs])
+	       ,(T_ =.. [N|Vi]
+		,assert(configuration:T_)
 		)
 	       ).
 
@@ -408,6 +445,11 @@ reset_defaults:-
 %	experiment, which then of course affects subsequent experiments.
 %	It happened to me, it could happen to you.
 %
+set_configuration_option(N,_Vs):-
+	memberchk(N, [recursion_depth_limit])
+	,!
+	,print_message(warning,multi_option(N))
+	,print_message(warning,option_not_set(N)).
 set_configuration_option(N, V):-
 	atomic(V)
 	,!
@@ -422,6 +464,20 @@ set_configuration_option(N, Vs):-
 	,T_ =.. [N|Vs]
 	,retractall(configuration:T)
 	,assert(configuration:T_).
+
+
+% Message hook for multi-option warning in first clause of
+% set_configuration_option/2.
+prolog:message(multi_option(N)) -->
+	{ A = 'You\'re attempting to set the multi-clause option ~w to a single value.~n'
+	 ,B = 'Warning: Some predicates relying on this option may fail unexpectedly.~n'
+	 ,C = 'Warning: Use auxiliaries:set_multi_configuration_option/2 instead \c
+	  or set option by hand. ~n'
+	}
+	,[A-N],[B-[], C-[]].
+
+prolog:message(option_not_set(N)) -->
+	['Option ~w not set!~n'-[N]].
 
 
 
