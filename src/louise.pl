@@ -64,12 +64,37 @@ learn(Pos,Neg,BK,MS,Ps):-
 	debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
+	,examples_targets(Pos,Ss)
+	,table_encapsulated(Ss)
 	,top_program(Pos_,Neg_,BK_,MS_,Ms)
+	,dynamic_learning:untable_encapsulated(Ss)
 	,debug(learn,'Reducing Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
-	,examples_targets(Pos,Ss)
 	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(Ss,Rs,Ps).
+
+
+%!	table_encapsulated(+Targets) is det.
+%
+%	Prepare one or more encapsulated learning Targets for tabling.
+%
+%	Targets is a list of predicate indicators, F/A, the predicate
+%	symbols and arities of a list of target predicates.
+%	table_encapsulated/1 prepares for tabling each predicate m/N,
+%	where N is A+1 for each target predicate in Targets. m/N is the
+%	predicate encapsulating each Target (though not necessarily
+%	_only_ target predicates).
+%
+%	@tbd This is a simpler version of table_encapsulated/1 in
+%	dynamic_learning module, that tables encapsulation predicates
+%	without assuming they are dynamic and incremental.
+%
+table_encapsulated(Ts):-
+	forall(member(_F/A,Ts)
+	      ,(succ(A,A_)
+	       ,table(user:m/A_)
+	       )
+	      ).
 
 
 
@@ -110,8 +135,8 @@ top_program(Pos,Neg,BK,MS,_Ts):-
 	).
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	% Negative examples and metarules don't need to be asserted.
-	,S = write_problem(user,[Pos,BK],Refs)
+	% Negative examples don't need to be added to the dynamic db.
+	,S = write_problem(user,[Pos,BK,MS],Refs)
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise(Pos,MS,Ss_Gen)
 	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
@@ -220,6 +245,85 @@ metasubstitution(_E,_M,Sub):-
 	debug_clauses(metasubstitution,'Failed:',Sub)
 	,fail.
 */
+metasubstitution(E,M,Sub):-
+% Attempt to construct clauses that resolve with themselves.
+	E \= (:-_)
+	,configuration:recursion_depth_limit(self_resolution, DL)
+	,bind_head_literal(E,M,(Sub:-(H,Ls)))
+	,debug_clauses(self_resolution,'Bound head literal (2):',H)
+	,debug_clauses(self_resolution,'Trying metasubstitution (2):',Ls)
+	,clause(Sub,(H,Ls))
+	,(   DL = none
+	->   resolve_metarules(Sub,Sub,Ls)
+	    ,G = resolve_metarules(Sub,Sub,Ls)
+	    ,call_with_inference_limit(G,DL,_R)
+	 )
+	,ground(Sub)
+	,debug_clauses(self_resolution,'Succeeded (2):',Ls).
+
+
+%!	resolve_metarules(?Metasub,-Acc,+Literals) is nondet.
+%
+%	Meta-interpreter for clauses and metarules.
+%
+%	Metasub is a partially ground metasubstitution atom, found in
+%	the head of an expanded metarule.
+%
+%	Acc keeps the grounding of the variables in Metasub.
+%
+%	Literals is the set of body literals of an expanded metarule,
+%	in other words it is the set of literals in a metarule. Literals
+%	in the given metarule are resolved recursively with that
+%	metarule.
+%
+%	__Motivation__
+%
+%	This predicate is called by the second clause of
+%	metasubstitution/2 to attempt to construct clauses by resolving
+%	them with the metarules of which they are instances.
+%
+%	The motivation for this is to be able to add to the Top Program
+%	clauses that can only resolve with themselves. Since the TPC
+%	algorithm constructs a clause during resolution it's not
+%	possible to construct a clause that can only resolve with
+%	itself, because we don't have the clause in the first place.
+%	What we do have is metarules of which each clause in the Top
+%	Program is an instance, and we can implicitly resolve clauses
+%	with themselves by resolving metarules with themselves and
+%	keeping the metasubstitutions resulting from successful
+%	resolution. This is what this meta-interpreter does.
+%
+%	A meta-interpreter is needed here because of the internal
+%	representation of metarules in Louise, as "expanded" metarules
+%	with a metasubstitution atom in the head and the litearls of the
+%	actual metarule clause in the body. The meta interpreter is used
+%	to split the metasubstitution atom in the head of a metarule
+%	from the literals of the metarule in the body and resolve only
+%	the literals in the body.
+%
+%	At the same time this meta-interpreter is responsible for
+%	ensuring that metarules are _only_ resolved with themselves by
+%	filtering the clauses in the program database by their heads,
+%	which should match the Metasubstitution atom at the head of an
+%	expanded metarule. Provided there is only a single metarule with
+%	the same metasubstitution atom in its head (as it should) it is
+%	only possible to resolve such a metarule with itself, using this
+%	meta-interpreter.
+%
+resolve_metarules(Sub,Sub,true):-
+	!.
+resolve_metarules(Sub,Sub,(L,Ls)):-
+	resolve_metarules(Sub,Sub,L)
+	,resolve_metarules(Sub,Sub,Ls).
+resolve_metarules(Sub,Sub,(L)):-
+	L \= (_,_)
+	,clause(Sub,(L,Ls))
+	,resolve_metarules(Sub,Sub,Ls).
+resolve_metarules(Sub,Sub,(L)):-
+	L \= (_,_)
+	,clause(L,Bs)
+	,resolve_metarules(Sub,Sub,Bs).
+
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
 %

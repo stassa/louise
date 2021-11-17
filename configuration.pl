@@ -574,23 +574,31 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %	Limit can be either an integer, which is passed as
 %	the second argument to call_with_depth_limit/3 in order to
 %       limit recursion in the listed Purpose, or the atom 'none' in
-%       which case no limit is placed recursion depth for the listed
+%       which case no limit is placed on recursion depth for the listed
 %       Purpose.
 %
 %	Known purposes are as follows:
 %
-%	* dyamic_learning: Limits recursion during Top program
-%	construction in dynamic learning.
+%       * self_resolution: Limits recursion during self-resolution of
+%       metarules in the base Top Program Construction algorithm. See
+%       the specialised meta-interpreter resolve_metarules/1 in
+%       louise.pl for details.
+%	* dynamic_learning: Limits recursion during Top program
+%       construction in dynamic learning. See the specialised
+%       meta-interpreter prove_body_literals/3 in dynamic_learning.pl
+%       for details.
 %
-%       @tbd Actually, the only known purpose, dynamic_learning, uses an
-%       _inference_ limit, rather than a recursion depth limit. This
-%       should probably be reflected in the name of this option.
+%       @tbd Actually, the limit used is an _inference_ limit, rather
+%       than a recursion depth limit. This inference limit should only
+%       be used to limit uncontrolled recursion, hence the name of the
+%       option.
 %
 recursion_depth_limit(dynamic_learning,none).
 %recursion_depth_limit(dynamic_learning,5000).
 %recursion_depth_limit(dynamic_learning,100_000).
 %recursion_depth_limit(dynamic_learning,150000).
 %recursion_depth_limit(dynamic_learning,500_000_000_000).
+recursion_depth_limit(self_resolution,5000).
 
 
 %!	recursive_reduction(?Bool) is semidet.
