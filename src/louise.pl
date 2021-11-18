@@ -158,13 +158,14 @@ top_program(_Pos,_Neg,_BK,_MS,[]):-
 %	metarule corresponding to the metasubsitution.
 %
 generalise(Pos,MS,Ss_Pos):-
-	findall(H-M-Refs
+	findall(Sub-M-Refs
 	     ,(member(M,MS)
 	      ,member(Ep,Pos)
 	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
 	      ,debug_clauses(metasubstitution,'Instantiating metarule:',M)
-	      ,metasubstitution(Ep,M,H,Refs)
-	      ,constraints(H)
+	      ,metasubstitution(Ep,M,Sub)
+	      ,constraints(Sub)
+	      ,assert_clause(Sub-M,Refs)
 	      )
 	     ,Ps)
 	% Remove clauses added to dynamic db, if any.
@@ -216,19 +217,7 @@ metasubstitution(:-E,M,Sub):-
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
 	,user:call(Ls)
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
-
-
-%!	metasubstitution(+Example,+Metarule,?Metasub,-Refs) is nondet.
-%
-%	Perform one Metasubstutition of Metarule initialised to Example.
-%
-%	As metasubstitution/3 but also returns a list of References of
-%	clauses asserted to the dynamic database in order to be reused.
-%	This is particularly the case when we need to learn clauses that
-%	only resolve with other clauses in the Top Program, or with
-%	themseles (or their parent metarules).
-%
-metasubstitution(E,M,Sub,Refs):-
+metasubstitution(E,M,Sub):-
 	E \= (:-_)
 	,configuration:recursion_depth_limit(self_resolution, DL)
 	,copy_term(M,M_)
@@ -240,8 +229,7 @@ metasubstitution(E,M,Sub,Refs):-
 	;    G = resolve_metarules(Sub,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
-	,debug_clauses(metasubstitution,'Proved body literals:',Ls)
-	,assert_clause(Sub-M,Refs).
+	,debug_clauses(metasubstitution,'Proved body literals:',Ls).
 
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
