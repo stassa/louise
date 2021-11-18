@@ -371,6 +371,9 @@ resolve_metarules(Sub,Sub,(L)):-
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	,clause(L,Bs)
+	,L =.. [m,F|_As]
+	% Avoid resolving with metasub atoms.
+	,\+ configuration:metarule(F,_)
 	,resolve_metarules(Sub,Sub,Bs).
 
 
