@@ -215,6 +215,18 @@ metasubstitution(:-E,M,Sub):-
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
 	,user:call(Ls)
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
+
+
+%!	metasubstitution(+Example,+Metarule,?Metasub,-Refs) is nondet.
+%
+%	Perform one Metasubstutition of Metarule initialised to Example.
+%
+%	As metasubstitution/3 but also returns a list of References of
+%	clauses asserted to the dynamic database in order to be reused.
+%	This is particularly the case when we need to learn clauses that
+%	only resolve with other clauses in the Top Program, or with
+%	themseles (or their parent metarules).
+%
 metasubstitution(E,M,Sub,Refs):-
 % Attempt to construct clauses that resolve with positive examples.
 	E \= (:-_)
