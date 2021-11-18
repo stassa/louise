@@ -231,7 +231,7 @@ metasubstitution(:-E,M,Sub):-
 metasubstitution(E,M,Sub,Refs):-
 	E \= (:-_)
 	,configuration:prove_recursive(P)
-	,configuration:recursion_depth_limit(metasubstitution, DL)
+	,configuration:recursion_depth_limit(self_resolution, DL)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
