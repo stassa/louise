@@ -603,8 +603,8 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %       the option 'top_program' will have no effect.
 %
 prove_recursive(examples).
-prove_recursive(top_program).
-prove_recursive(self).
+%prove_recursive(top_program).
+%prove_recursive(self).
 
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
