@@ -210,8 +210,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 metasubstitution(:-E,M,Sub):-
 	copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
-	,debug_clauses(metasubstitution,'Bound head literal:',H)
-	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
+	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
 	,user:call(Ls)
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
 metasubstitution(E,M,Sub,Refs):-
@@ -219,34 +218,18 @@ metasubstitution(E,M,Sub,Refs):-
 	,configuration:prove_recursive(examples)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
-	,debug_clauses(metasubstitution,'Bound head literal:',H)
-	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
+	,debug_clauses(metasubstitution,'Trying metasubstitution (examples):',H:-Ls)
 	,user:call(Ls)
-	,debug_clauses(metasubstitution,'Succeeded:',Ls)
+	,debug_clauses(metasubstitution,'Proved body literals:',Ls)
 	,assert_clause(Sub-M,Refs).
-/* TODO: Extra debugging; consider adding in properly.
-metasubstitution(E,M,Sub):-
-	bind_head_literal(E,M,(Sub:-(H,Ls)))
-	,debug_clauses(metasubstitution,'Bound head literal:',H)
-	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
-	,(    user:call(Ls)
-	 ->   debug_clauses(metasubstitution,'Succeeded:',Ls)
-	 ;    debug_clauses(metasubstitution,'Failed:',Ls)
-	     ,fail
-	 ).
-metasubstitution(_E,_M,Sub):-
-	debug_clauses(metasubstitution,'Failed:',Sub)
-	,fail.
-*/
 metasubstitution(E,M,Sub,Refs):-
 	E \= (:-_)
 	,configuration:prove_recursive(top_program)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
-	,debug_clauses(co_resolution,'Bound head literal (2):',H)
-	,debug_clauses(co_resolution,'Trying metasubstitution (2):',Ls)
+	,debug_clauses(co_resolution,'Trying metasubstitution (top_program):',H:-Ls)
 	,user:call(Ls)
-	,debug_clauses(co_resolution,'Succeeded (2):',Ls)
+	,debug_clauses(co_resolution,'Proved body literals:',Ls)
 	,assert_clause(Sub-M,Refs).
 metasubstitution(E,M,Sub,Refs):-
 % Attempt to construct clauses that resolve with themselves.
@@ -255,8 +238,7 @@ metasubstitution(E,M,Sub,Refs):-
 	,configuration:recursion_depth_limit(self_resolution, DL)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
-	,debug_clauses(self_resolution,'Bound head literal (3):',H)
-	,debug_clauses(self_resolution,'Trying metasubstitution (3):',Ls)
+	,debug_clauses(self_resolution,'Trying metasubstitution (self):',H:-Ls)
 	,clause(Sub,(H,Ls))
 	,(   DL = none
 	->   resolve_metarules(Sub,Sub,Ls)
@@ -264,7 +246,7 @@ metasubstitution(E,M,Sub,Refs):-
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
 	,ground(Sub)
-	,debug_clauses(self_resolution,'Succeeded (3):',Ls)
+	,debug_clauses(self_resolution,'Proved body literals:',Ls)
 	,assert_clause(Sub-M,Refs).
 
 
