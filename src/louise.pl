@@ -349,7 +349,8 @@ assert_clause(Sub-M,Refs):-
 %	meta-interpreter.
 %
 resolve_metarules(Sub,Sub,true):-
-	!.
+	!
+	,debug_clauses(self_resolution,'Proved atom:',[Sub]).
 resolve_metarules(Sub,Sub,(L,Ls)):-
 	resolve_metarules(Sub,Sub,L)
 	,resolve_metarules(Sub,Sub,Ls).
@@ -360,11 +361,13 @@ resolve_metarules(Sub,Sub,(L)):-
 	L \= (_,_)
 	,predicate_property(L,foreign)
 	,call(L)
+	,debug_clauses(self_resolution,'Proved foreign literal:',[L])
 	,resolve_metarules(Sub,Sub,true).
 resolve_metarules(Sub,Sub,(L)):-
 % L unifies with the head of an expanded metarule.
 	L \= (_,_)
 	,clause(Sub,(L,Ls))
+	,debug_clauses(self_resolution,'Proving metarule literal:',[L])
 	,resolve_metarules(Sub,Sub,Ls).
 resolve_metarules(Sub,Sub,(L)):-
 % L unifies with the head of a BK predicate.
@@ -374,6 +377,7 @@ resolve_metarules(Sub,Sub,(L)):-
 	,L =.. [m,F|_As]
 	% Avoid resolving with metasub atoms.
 	,\+ configuration:metarule(F,_)
+	,debug_clauses(self_resolution,'Proving BK literal:',[L])
 	,resolve_metarules(Sub,Sub,Bs).
 
 
