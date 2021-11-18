@@ -183,6 +183,8 @@ generalise(Pos,MS,Ss_Pos):-
 %	examples against the Negative examples by discarding each
 %	metasubstitution that entails a negative example.
 %
+specialise(Ss_Pos,[],Ss_Pos):-
+	!.
 specialise(Ss_Pos,Neg,Ss_Neg):-
 	setof(H-M
 	     ,H^M^Ss_Pos^En^Neg^
