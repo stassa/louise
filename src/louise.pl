@@ -199,6 +199,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 	     ,Ss_Neg).
 
 
+
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
 %!	nondet.
 %
@@ -228,40 +229,19 @@ metasubstitution(:-E,M,Sub):-
 %	themseles (or their parent metarules).
 %
 metasubstitution(E,M,Sub,Refs):-
-% Attempt to construct clauses that resolve with positive examples.
 	E \= (:-_)
-	,configuration:prove_recursive(examples)
+	,configuration:prove_recursive(P)
+	,configuration:recursion_depth_limit(metasubstitution, DL)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
-	,debug_clauses(metasubstitution,'Trying metasubstitution (examples):',H:-Ls)
-	,user:call(Ls)
-	,debug_clauses(metasubstitution,'Proved body literals:',Ls)
-	,assert_clause(Sub-M,Refs).
-metasubstitution(E,M,Sub,Refs):-
-% Attempt to construct clauses that resolve with the Top Program.
-	E \= (:-_)
-	,configuration:prove_recursive(top_program)
-	,copy_term(M,M_)
-	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
-	,debug_clauses(co_resolution,'Trying metasubstitution (top_program):',H:-Ls)
-	,user:call(Ls)
-	,debug_clauses(co_resolution,'Proved body literals:',Ls)
-	,assert_clause(Sub-M,Refs).
-metasubstitution(E,M,Sub,Refs):-
-% Attempt to construct clauses that resolve with themselves.
-	E \= (:-_)
-	,configuration:prove_recursive(self)
-	,configuration:recursion_depth_limit(self_resolution, DL)
-	,copy_term(M,M_)
-	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
-	,debug_clauses(self_resolution,'Trying metasubstitution (self):',H:-Ls)
+	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
 	,clause(Sub,(H,Ls))
 	,(   DL = none
-	->   resolve_metarules(Sub,Ls)
-	;    G = resolve_metarules(Sub,Ls)
+	->   resolve_metarules(P,Sub,Ls)
+	;    G = resolve_metarules(P,Sub,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
-	,debug_clauses(self_resolution,'Proved body literals:',Ls)
+	,debug_clauses(metasubstitution,'Proved body literals:',Ls)
 	,assert_clause(Sub-M,Refs).
 
 
@@ -292,25 +272,32 @@ assert_clause(Sub-M,Refs):-
 	,debug_clauses(co_resolution,'Asserted clause:',[C]).
 
 
-%!	resolve_metarules(?Metasub,+Literals) is nondet.
+%!	resolve_metarules(+Prove,?Metasub,+Literals) is nondet.
 %
 %	Resolve a set of Literals with a set of Metarules.
 %
 %	Top-level for resolve_metarules/3. See that predicate for
 %	details.
 %
-resolve_metarules(Sub,Ls):-
-	resolve_metarules(Sub,Sub_,Ls)
+resolve_metarules(P,Sub,Ls):-
+	resolve_metarules(P,Sub,Sub_,Ls)
 	,ground(Sub_).
 
-% Keep resolve_metarules/3 from going infinite during
+% Keep resolve_metarules/4 from going infinite during
 % meta-interpretation if possible. Table as incremental because
 % encapsulated clauses may be added to or removed from the dynamic db.
-:-table(resolve_metarules/3 as incremental).
+:-table(resolve_metarules/4 as incremental).
 
-%!	resolve_metarules(?Metasub,-Acc,+Literals) is nondet.
+%!	resolve_metarules(+Prove,?Metasub,-Acc,+Literals) is nondet.
 %
 %	Meta-interpreter for clauses and metarules.
+%
+%	Prove is an atom inherited from the option prove_recursive/1,
+%	denoting how Literals are proved. If Prove is 'examples',
+%	Literals are resolved with the positive examples. If Prove is
+%	'self' Literals are reolved with the metarules. If Prove is
+%	'top_program', Literals is resolved with the clauses added to
+%	the Top Program so-far.
 %
 %	Metasub is a partially ground metasubstitution atom, found in
 %	the head of an expanded metarule.
@@ -320,13 +307,14 @@ resolve_metarules(Sub,Ls):-
 %	Literals is the set of body literals of an expanded metarule,
 %	in other words it is the set of literals in a metarule. Literals
 %	in the given metarule are resolved recursively with that
-%	metarule.
+%	metarule, positive examples, background predicates and clauses
+%	in the Top Program, according to Prove.
 %
 %	__Motivation__
 %
-%	This predicate is called by the second clause of
-%	metasubstitution/2 to attempt to construct clauses by resolving
-%	them with the metarules of which they are instances.
+%	This predicate is called by metasubstitution/4 to attempt to
+%	construct clauses by resolving them with the metarules of which
+%	they are instances, as well as with the BK.
 %
 %	The motivation for this is to be able to add to the Top Program
 %	clauses that can only resolve with themselves. Since the TPC
@@ -348,21 +336,21 @@ resolve_metarules(Sub,Ls):-
 %	the literals in the body.
 %
 %	At the same time this meta-interpreter is responsible for
-%	ensuring that metarules are _only_ resolved with themselves by
-%	filtering the clauses in the program database by their heads,
-%	which should match the Metasubstitution atom at the head of an
-%	expanded metarule. Provided there is only a single metarule with
-%	the same metasubstitution atom in its head (as it should) it is
-%	only possible to resolve such a metarule with itself, using this
-%	meta-interpreter.
+%	ensuring that metarules are _only_ resolved with themselves (not
+%	other metarules) by filtering the clauses in the program
+%	database by their heads, which should match the Metasubstitution
+%	atom at the head of an expanded metarule. Provided there is only
+%	a single metarule with the same metasubstitution atom in its
+%	head (as it should) it is only possible to resolve such a
+%	metarule with itself, using this meta-interpreter.
 %
-resolve_metarules(Sub,Sub,true):-
+resolve_metarules(_,Sub,Sub,true):-
 	!
 	,debug_clauses(self_resolution,'Proved atom:',[Sub]).
-resolve_metarules(Sub,Sub,(L,Ls)):-
-	resolve_metarules(Sub,Sub,L)
-	,resolve_metarules(Sub,Sub,Ls).
-resolve_metarules(Sub,Sub,(L)):-
+resolve_metarules(P,Sub,Acc,(L,Ls)):-
+	resolve_metarules(P,Sub,Acc_1,L)
+	,resolve_metarules(P,Acc_1,Acc,Ls).
+resolve_metarules(P,Sub,Acc,(L)):-
 % L is an atom of a foreign predicate.
 % clause/2 would raise an access permission error.
 % So we just call(L).
@@ -370,23 +358,37 @@ resolve_metarules(Sub,Sub,(L)):-
 	,predicate_property(L,foreign)
 	,call(L)
 	,debug_clauses(self_resolution,'Proved foreign literal:',[L])
-	,resolve_metarules(Sub,Sub,true).
-resolve_metarules(Sub,Sub,(L)):-
+	,resolve_metarules(P,Sub,Acc,true).
+resolve_metarules(self,Sub,Acc,(L)):-
 % L unifies with the head of an expanded metarule.
 	L \= (_,_)
+	,\+ predicate_property(L,foreign)
 	,clause(Sub,(L,Ls))
 	,debug_clauses(self_resolution,'Proving metarule literal:',[L])
-	,resolve_metarules(Sub,Sub,Ls).
-resolve_metarules(Sub,Sub,(L)):-
+	,resolve_metarules(self,Sub,Acc,Ls).
+resolve_metarules(P,Sub,Acc,(L)):-
 % L unifies with the head of a BK predicate.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	,clause(L,Bs)
-	,L =.. [m,F|_As]
-	% Avoid resolving with metasub atoms.
-	,\+ configuration:metarule(F,_)
+	,bk_atom(L)
 	,debug_clauses(self_resolution,'Proving BK literal:',[L])
-	,resolve_metarules(Sub,Sub,Bs).
+	,resolve_metarules(P,Sub,Acc,Bs).
+
+
+%!	bk_atom(?Literal) is det.
+%
+%	True when Literal is an atom of a BK predicate.
+%
+%	Literal is an encapsulated atom of a BK predicate. This
+%	predicate checks that Literal is not the metasubstitution atom
+%	of an expanded metarule.
+%
+bk_atom(L):-
+	L =.. [S,F|_As]
+	,memberchk(S,[m,p])
+	% Avoid resolving with metasub atoms.
+	,\+ configuration:metarule(F,_).
 
 
 
