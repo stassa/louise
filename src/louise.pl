@@ -219,7 +219,7 @@ metasubstitution(:-E,M,Sub):-
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
 metasubstitution(E,M,Sub):-
 	E \= (:-_)
-	,configuration:recursion_depth_limit(self_resolution, DL)
+	,configuration:recursion_depth_limit(metasubstitution, DL)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
@@ -229,7 +229,12 @@ metasubstitution(E,M,Sub):-
 	;    G = resolve_metarules(Sub,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
-	,debug_clauses(metasubstitution,'Proved body literals:',Ls).
+	% Has to be checked here.
+	% Because resolve_metarules/2 backtracks over prove_recursive/1
+	% So it can succeed even when resolve_metarules/3 fails
+	% Leaving Sub non-ground.
+	,ground(Sub)
+	,debug_clauses(metasubstitution,'Proved Metasubstitution:',Sub).
 
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
@@ -285,8 +290,7 @@ bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
 %
 resolve_metarules(Sub,Ls):-
 	configuration:prove_recursive(P)
-	,resolve_metarules(P,Sub,Sub_,Ls)
-	,ground(Sub_).
+	,resolve_metarules(P,Sub,Sub,Ls).
 
 % Keep resolve_metarules/4 from going infinite during
 % meta-interpretation if possible. Table as incremental because

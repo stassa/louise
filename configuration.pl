@@ -644,7 +644,7 @@ recursion_depth_limit(dynamic_learning,none).
 %recursion_depth_limit(dynamic_learning,100_000).
 %recursion_depth_limit(dynamic_learning,150000).
 %recursion_depth_limit(dynamic_learning,500_000_000_000).
-recursion_depth_limit(self_resolution,none).
+recursion_depth_limit(metasubstitution,none).
 
 
 %!	recursive_reduction(?Bool) is semidet.
