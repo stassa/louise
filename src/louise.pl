@@ -230,15 +230,14 @@ metasubstitution(:-E,M,Sub):-
 %
 metasubstitution(E,M,Sub,Refs):-
 	E \= (:-_)
-	,configuration:prove_recursive(P)
 	,configuration:recursion_depth_limit(self_resolution, DL)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
 	,clause(Sub,(H,Ls))
 	,(   DL = none
-	->   resolve_metarules(P,Sub,Ls)
-	;    G = resolve_metarules(P,Sub,Ls)
+	->   resolve_metarules(Sub,Ls)
+	;    G = resolve_metarules(Sub,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
 	,debug_clauses(metasubstitution,'Proved body literals:',Ls)
@@ -289,15 +288,16 @@ bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
 	,!.
 
 
-%!	resolve_metarules(+Prove,?Metasub,+Literals) is nondet.
+%!	resolve_metarules(?Metasub,+Literals) is nondet.
 %
 %	Resolve a set of Literals with a set of Metarules.
 %
 %	Top-level for resolve_metarules/3. See that predicate for
 %	details.
 %
-resolve_metarules(P,Sub,Ls):-
-	resolve_metarules(P,Sub,Sub_,Ls)
+resolve_metarules(Sub,Ls):-
+	configuration:prove_recursive(P)
+	,resolve_metarules(P,Sub,Sub_,Ls)
 	,ground(Sub_).
 
 % Keep resolve_metarules/4 from going infinite during
