@@ -245,31 +245,48 @@ metasubstitution(E,M,Sub,Refs):-
 	,assert_clause(Sub-M,Refs).
 
 
-%!	assert_clause(+Metasub,-Refs) is det.
+%!	bind_head_literal(+Example,+Metarule,-Head) is det.
 %
-%	Assert a clause to the dynamic database.
+%	Bind an Example to the encapsulated Head literal of a Metarule.
 %
-%	This predicate is responsible for adding clauses to the dynamic
-%	database so that they can be resolved against during
-%	construction of new clauses, when the configuration option
-%	prove_recursive(self) is set.
+%	Abstracts the complex patterns of binding examples to the heads
+%	of metarules with and without body literals.
 %
-%	Metasub is a pair Sub-Metarule where Sub is a ground
-%	metasubstitution atom and Metarule is an expanded metarule. Refs
-%	is a list of a single element, the clause reference of the
-%	clause added to the dynamic db.
-%
-%	Refs is used to remove clauses from the dynamic db at the end of
-%	generalise/3, in order to avoid confusingly proving negative
-%	examples.
-%
-assert_clause(_Sub,[]):-
-	\+ configuration:prove_recursive(top_program)
+bind_head_literal(H:-B,(Sub:-(H,B)),(Sub:-(H,B))):-
+% Positive or negative example given as a definite clause
+% with one or more body literals.
+	configuration:example_clauses(bind)
 	,!.
-assert_clause(Sub-M,Refs):-
-	applied_metarules([Sub-M],[M],[C])
-	,assert_program(user,[C],Refs)
-	,debug_clauses(co_resolution,'Asserted clause:',[C]).
+bind_head_literal(H:-B,(Sub:-(H,Ls)),(Sub:-(H,Ls))):-
+	configuration:example_clauses(call)
+	,user:call(B)
+	,!.
+bind_head_literal(E,M,(H:-(E,Ls))):-
+% Positive example given as a unit clause.
+	M = (H:-(E,Ls))
+	,!.
+bind_head_literal(:-E,M,(H:-(E,Ls))):-
+% Negative example given as a unit clause
+	M = (H:-(E,Ls))
+	,!.
+bind_head_literal(E,M,(H:-(E,true))):-
+% Positive example given as a unit clause.
+% M is the Abduce metarule, i.e. body-less clause.
+	M = (H:-E)
+	,!.
+bind_head_literal(:-E,M,(H:-(E,true))):-
+% Negative example given as a unit clause.
+% M is the Adbuce metarule, i.e. body-less clause.
+	M = (H:-E)
+	,!.
+bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
+% Negative example given as a Horn goal with no head literal.
+% In this case, metasubstitution/3 must fail if the head of the
+% metarule is entailed by its body literals.
+% Note that binding the example to the body literals of the metarule
+% will also bind the shared variables in the head of the metarule.
+	M = (S:-(H,L,Ls))
+	,!.
 
 
 %!	resolve_metarules(+Prove,?Metasub,+Literals) is nondet.
@@ -391,49 +408,32 @@ bk_atom(L):-
 	,\+ configuration:metarule(F,_).
 
 
+%!	assert_clause(+Metasub,-Refs) is det.
+%
+%	Assert a clause to the dynamic database.
+%
+%	This predicate is responsible for adding clauses to the dynamic
+%	database so that they can be resolved against during
+%	construction of new clauses, when the configuration option
+%	prove_recursive(self) is set.
+%
+%	Metasub is a pair Sub-Metarule where Sub is a ground
+%	metasubstitution atom and Metarule is an expanded metarule. Refs
+%	is a list of a single element, the clause reference of the
+%	clause added to the dynamic db.
+%
+%	Refs is used to remove clauses from the dynamic db at the end of
+%	generalise/3, in order to avoid confusingly proving negative
+%	examples.
+%
+assert_clause(_Sub,[]):-
+	\+ configuration:prove_recursive(top_program)
+	,!.
+assert_clause(Sub-M,Refs):-
+	applied_metarules([Sub-M],[M],[C])
+	,assert_program(user,[C],Refs)
+	,debug_clauses(co_resolution,'Asserted clause:',[C]).
 
-%!	bind_head_literal(+Example,+Metarule,-Head) is det.
-%
-%	Bind an Example to the encapsulated Head literal of a Metarule.
-%
-%	Abstracts the complex patterns of binding examples to the heads
-%	of metarules with and without body literals.
-%
-bind_head_literal(H:-B,(Sub:-(H,B)),(Sub:-(H,B))):-
-% Positive or negative example given as a definite clause
-% with one or more body literals.
-	configuration:example_clauses(bind)
-	,!.
-bind_head_literal(H:-B,(Sub:-(H,Ls)),(Sub:-(H,Ls))):-
-	configuration:example_clauses(call)
-	,user:call(B)
-	,!.
-bind_head_literal(E,M,(H:-(E,Ls))):-
-% Positive example given as a unit clause.
-	M = (H:-(E,Ls))
-	,!.
-bind_head_literal(:-E,M,(H:-(E,Ls))):-
-% Negative example given as a unit clause
-	M = (H:-(E,Ls))
-	,!.
-bind_head_literal(E,M,(H:-(E,true))):-
-% Positive example given as a unit clause.
-% M is the Abduce metarule, i.e. body-less clause.
-	M = (H:-E)
-	,!.
-bind_head_literal(:-E,M,(H:-(E,true))):-
-% Negative example given as a unit clause.
-% M is the Adbuce metarule, i.e. body-less clause.
-	M = (H:-E)
-	,!.
-bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
-% Negative example given as a Horn goal with no head literal.
-% In this case, metasubstitution/3 must fail if the head of the
-% metarule is entailed by its body literals.
-% Note that binding the example to the body literals of the metarule
-% will also bind the shared variables in the head of the metarule.
-	M = (S:-(H,L,Ls))
-	,!.
 
 
 %!	bind_target(+Metarules,+Target,-Bound) is det.
