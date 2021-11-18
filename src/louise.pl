@@ -216,6 +216,7 @@ metasubstitution(:-E,M,Sub):-
 	,user:call(Ls)
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
 metasubstitution(E,M,Sub,Refs):-
+% Attempt to construct clauses that resolve with positive examples.
 	E \= (:-_)
 	,configuration:prove_recursive(examples)
 	,copy_term(M,M_)
@@ -225,6 +226,7 @@ metasubstitution(E,M,Sub,Refs):-
 	,debug_clauses(metasubstitution,'Proved body literals:',Ls)
 	,assert_clause(Sub-M,Refs).
 metasubstitution(E,M,Sub,Refs):-
+% Attempt to construct clauses that resolve with the Top Program.
 	E \= (:-_)
 	,configuration:prove_recursive(top_program)
 	,copy_term(M,M_)
@@ -243,11 +245,10 @@ metasubstitution(E,M,Sub,Refs):-
 	,debug_clauses(self_resolution,'Trying metasubstitution (self):',H:-Ls)
 	,clause(Sub,(H,Ls))
 	,(   DL = none
-	->   resolve_metarules(Sub,Sub,Ls)
-	;    G = resolve_metarules(Sub,Sub,Ls)
+	->   resolve_metarules(Sub,Ls)
+	;    G = resolve_metarules(Sub,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
-	,ground(Sub)
 	,debug_clauses(self_resolution,'Proved body literals:',Ls)
 	,assert_clause(Sub-M,Refs).
 
@@ -278,6 +279,17 @@ assert_clause(Sub-M,Refs):-
 	,assert_program(user,[C],Refs)
 	,debug_clauses(co_resolution,'Asserted clause:',[C]).
 
+
+%!	resolve_metarules(?Metasub,+Literals) is nondet.
+%
+%	Resolve a set of Literals with a set of Metarules.
+%
+%	Top-level for resolve_metarules/3. See that predicate for
+%	details.
+%
+resolve_metarules(Sub,Ls):-
+	resolve_metarules(Sub,Sub_,Ls)
+	,ground(Sub_).
 
 % Keep resolve_metarules/3 from going infinite during
 % meta-interpretation if possible. Table as incremental because
