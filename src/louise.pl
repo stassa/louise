@@ -354,13 +354,25 @@ resolve_metarules(Sub,Sub,(L,Ls)):-
 	resolve_metarules(Sub,Sub,L)
 	,resolve_metarules(Sub,Sub,Ls).
 resolve_metarules(Sub,Sub,(L)):-
+% L is an atom of a foreign predicate.
+% clause/2 would raise an access permission error.
+% So we just call(L).
+	L \= (_,_)
+	,predicate_property(L,foreign)
+	,call(L)
+	,resolve_metarules(Sub,Sub,true).
+resolve_metarules(Sub,Sub,(L)):-
+% L unifies with the head of an expanded metarule.
 	L \= (_,_)
 	,clause(Sub,(L,Ls))
 	,resolve_metarules(Sub,Sub,Ls).
 resolve_metarules(Sub,Sub,(L)):-
+% L unifies with the head of a BK predicate.
 	L \= (_,_)
+	,\+ predicate_property(L,foreign)
 	,clause(L,Bs)
 	,resolve_metarules(Sub,Sub,Bs).
+
 
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
