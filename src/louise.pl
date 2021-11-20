@@ -250,6 +250,14 @@ metasubstitution(:-E,M,Sub):-
 %	the configuration option prove_recursive/1. See
 %	resolve_metarules/4 for details.
 %
+%	@tbd Since this now takes as input the entire list of Metarules
+%	for this MIL problem, we could do the selection of single
+%	metarules here, rather than in generalise/3. However, I'd like
+%	to separate the "vanilla" version of TPC from this, more complex
+%	version, in the future and for that we may need to have the
+%	selection of the current metarule in generalise/3. Or not. We'll
+%	see.
+%
 metasubstitution(E,M,MS,S-M_e):-
 	E \= (:-_)
 	,configuration:recursion_depth_limit(metasubstitution, DL)
@@ -340,8 +348,47 @@ bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
 %	details.
 %
 resolve_metarules(Sub,MS,Subs,Ls):-
-	configuration:prove_recursive(P)
-	,resolve_metarules(P,[Sub],MS,Subs,Ls).
+	proof_steps(Ss)
+	,resolve_metarules(Ss,[Sub],MS,Subs,Ls).
+
+
+%!	proof_steps(-Steps) is det.
+%
+%	Construct a listing of allowed recursive proof Steps.
+%
+%	Steps is a list [E,T,S,M], where each element is an atom 't' or
+%	'f', denoting "true" and "false" respectively. Each of the
+%	elements in the list stands for one of the recognised values of
+%	the configuration option prove_recursive/1: E for 'examples', T
+%	for 'top_program, S for 'self' and M for 'metarules'. The list
+%	is populated with a 't' for each value actually set in the
+%	configuration, and 'f' for each value not actually set in the
+%	configuration.
+%
+%	For example, if only the values 'examples' and 'self' are set,
+%	the list Steps will be [t,f,t,f].
+%
+%	Steps is passed to resolve_metarules/5 to determine how to prove
+%	metasubstitutions.
+%
+%	Yeah, I know it looks procedural as all hell, but it's also very
+%	much more efficient than calling memberchk/2 on a list of
+%	options in each clause of resolve_metarules/5. _Much_ more.
+%
+proof_steps(Ss):-
+	Os = [examples
+	     ,top_program
+	     ,self
+	     ,metarules]
+	,Ss = [_E,_T,_S,_M]
+	,findall(T
+		,(member(O,Os)
+		 ,(   configuration:prove_recursive(O)
+		  ->  T = t
+		  ;   T = f
+		  )
+		 )
+		,Ss).
 
 
 % Keep resolve_metarules/4 from going infinite during
@@ -349,26 +396,44 @@ resolve_metarules(Sub,MS,Subs,Ls):-
 % encapsulated clauses may be added to or removed from the dynamic db.
 :-table(resolve_metarules/5 as incremental).
 
-%!	resolve_metarules(+Prove,?Metasub,+Metarules,-Acc,+Literals) is
+%!	resolve_metarules(+Steps,?Metasub,+Metarules,-Acc,+Literals) is
 %!	nondet.
 %
 %	Meta-interpreter for clauses and metarules.
 %
-%	Prove is an atom inherited from the option prove_recursive/1,
-%	denoting how Literals are proved. If Prove is 'examples',
-%	Literals are resolved with the positive examples. If Prove is
-%	'self' Literals are reolved with the metarules. If Prove is
-%	'top_program', Literals is resolved with the clauses added to
-%	the Top Program so-far.
+%	Steps is the list [E,T,S,M], built by proof_steps/1 as a compact
+%	representation of all the values of the configuration option
+%	prove_recursive/1, which determines how Literals are proved. If
+%	the first element of Steps, E, is 't', meaning that
+%	prove_recursive/1 is set to 'examples', Literals are resolved
+%	with the positive examples. If the second element, T, is 't',
+%	meaning that prove_recursive/1 is set to 'self', Literals is
+%	resolved recursively with the "current" metarule (bound to the
+%	second argument of metasubstitution/4). If S is 't', meaning
+%	that prove_recursive/1 is set to 'top_program', Literals is
+%	resolved with the clauses added to the Top-Program so-far (these
+%	are asserted to the BK upon a completed proof). If M is 't',
+%	meaning that prove_recursive/1 is set to 'others', Literals
+%	is resolved with every metarule in the current MIL problem
+%	except for the "current" metarule (in the second argument of
+%	metasubstitution/4). Each element of Steps that is not 't' is
+%	'f', meaning that the corresponding prove_recursive/1 option is
+%	"off" (unset, whatever you want to call it). The combination of
+%	't' and 'f' atoms in Steps determines how Literals is resolved.
 %
 %	Metasub is a partially ground metasubstitution atom, found in
-%	the head of an expanded metarule.
+%	the head of an expanded metarule. That is the "current"
+%	metarule, selected in generalise/3 and passed as the second
+%	argument of metasubstitution/4.
 %
 %	Metarules is the list of expanded metarules for the current MIL
-%	Problem.
+%	Problem. These are resolved with iff the last element of Steps
+%	is 't'.
 %
 %	Acc is a list of metasubstitutions of metarules in Metarules
-%	derived during proof of Literals.
+%	derived during proof of Literals. These may include
+%	metasubstitutions of any metarules in Metarules, or the
+%	metarule of Metasub itself.
 %
 %	Literals is the set of body literals of an expanded metarule.
 %	Literals in the given metarule are resolved recursively with
@@ -422,7 +487,7 @@ resolve_metarules(P,Sub,MS,Acc,(L,Ls)):-
 	resolve_metarules(P,Sub,MS,Acc_1,L)
 	,resolve_metarules(P,Acc_1,MS,Acc,Ls).
 resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
-% L is an atom of a foreign predicate.
+% L is an atom of a foreign predicate in the body of BK clause.
 % clause/2 would raise an access permission error.
 % So we just call(L).
 	L \= (_,_)
@@ -430,13 +495,13 @@ resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 	,call(L)
 	,debug_clauses(self_resolution,'Proved foreign literal:',[L])
 	,resolve_metarules(P,[Sub|Ss],MS,Acc,true).
-resolve_metarules(self,[Sub|Ss],MS,Acc,(L)):-
-% L unifies with the head of an expanded metarule.
+resolve_metarules([E,T,t,M],[Sub|Ss],MS,Acc,(L)):-
+% L unifies with the head of the "current" expanded metarule.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	,metarule_clause(Sub,L,Ls)
 	,debug_clauses(self_resolution,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules(self,[Sub|Ss],MS,Acc,Ls).
+	,resolve_metarules([E,T,t,M],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
 	L \= (_,_)
@@ -445,17 +510,18 @@ resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 	,bk_atom(L)
 	,debug_clauses(self_resolution,'Proving BK literal:',[L])
 	,resolve_metarules(P,[Sub|Ss],MS,Acc,Bs).
-resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
+resolve_metarules([E,T,S,t],[Sub|Ss],MS,Acc,(L)):-
+% L unifies with the head of an expanded metarule in MS.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	,ground(L)
 	,ground(Sub)
 	,member(Sub_:-_,MS)
-	% Only allows resolution with different metarules
+	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
 	,metarule_clause(Sub_,L,Ls)
 	,debug_clauses(self_resolution,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules(P,[Sub_,Sub|Ss],MS,Acc,Ls).
+	,resolve_metarules([E,T,S,t],[Sub_,Sub|Ss],MS,Acc,Ls).
 
 
 %!	bk_atom(?Literal) is det.

@@ -605,6 +605,7 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 prove_recursive(examples).
 %prove_recursive(top_program).
 %prove_recursive(self).
+%prove_recursive(metarules).
 
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
