@@ -594,6 +594,9 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %       examples, and themselves. In this way, clauses that only resolve
 %       with themselves can be constructed.
 %
+%       With option 'others' metarules will be resolved with other
+%       metarules in the current MIL problem.
+%
 %       Note that all three clauses of this option can be declared at
 %       any one time. This allows all three kinds of recursive clauses
 %       to be constructed.
@@ -605,7 +608,7 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 prove_recursive(examples).
 %prove_recursive(top_program).
 %prove_recursive(self).
-%prove_recursive(metarules).
+%prove_recursive(others).
 
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.

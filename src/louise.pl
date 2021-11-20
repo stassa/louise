@@ -234,7 +234,7 @@ metasubstitution(:-E,M,Sub):-
 %	Metarules is the list of all metarules for the current MIL
 %	problem, expandned.
 %
-%	Metasubs is a list of paris Sub-Metarule where Sub is a ground
+%	Metasubs is a list of pairs: Sub-Metarule, where Sub is a ground
 %	metasubstitution atom and Metarule is a non-ground metarule in
 %	Metarules, which may or may not be Metarule.
 %
@@ -356,11 +356,11 @@ resolve_metarules(Sub,MS,Subs,Ls):-
 %
 %	Construct a listing of allowed recursive proof Steps.
 %
-%	Steps is a list [E,T,S,M], where each element is an atom 't' or
+%	Steps is a list [E,T,S,O], where each element is an atom 't' or
 %	'f', denoting "true" and "false" respectively. Each of the
 %	elements in the list stands for one of the recognised values of
 %	the configuration option prove_recursive/1: E for 'examples', T
-%	for 'top_program, S for 'self' and M for 'metarules'. The list
+%	for 'top_program, S for 'self' and O for 'others'. The list
 %	is populated with a 't' for each value actually set in the
 %	configuration, and 'f' for each value not actually set in the
 %	configuration.
@@ -376,14 +376,14 @@ resolve_metarules(Sub,MS,Subs,Ls):-
 %	options in each clause of resolve_metarules/5. _Much_ more.
 %
 proof_steps(Ss):-
-	Os = [examples
+	Vs = [examples
 	     ,top_program
 	     ,self
-	     ,metarules]
+	     ,others]
 	,Ss = [_E,_T,_S,_M]
 	,findall(T
-		,(member(O,Os)
-		 ,(   configuration:prove_recursive(O)
+		,(member(V,Vs)
+		 ,(   configuration:prove_recursive(V)
 		  ->  T = t
 		  ;   T = f
 		  )
@@ -401,7 +401,7 @@ proof_steps(Ss):-
 %
 %	Meta-interpreter for clauses and metarules.
 %
-%	Steps is the list [E,T,S,M], built by proof_steps/1 as a compact
+%	Steps is the list [E,T,S,O], built by proof_steps/1 as a compact
 %	representation of all the values of the configuration option
 %	prove_recursive/1, which determines how Literals are proved. If
 %	the first element of Steps, E, is 't', meaning that
@@ -412,7 +412,7 @@ proof_steps(Ss):-
 %	second argument of metasubstitution/4). If S is 't', meaning
 %	that prove_recursive/1 is set to 'top_program', Literals is
 %	resolved with the clauses added to the Top-Program so-far (these
-%	are asserted to the BK upon a completed proof). If M is 't',
+%	are asserted to the BK upon a completed proof). If O is 't',
 %	meaning that prove_recursive/1 is set to 'others', Literals
 %	is resolved with every metarule in the current MIL problem
 %	except for the "current" metarule (in the second argument of
@@ -495,13 +495,13 @@ resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 	,call(L)
 	,debug_clauses(self_resolution,'Proved foreign literal:',[L])
 	,resolve_metarules(P,[Sub|Ss],MS,Acc,true).
-resolve_metarules([E,T,t,M],[Sub|Ss],MS,Acc,(L)):-
+resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of the "current" expanded metarule.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	,metarule_clause(Sub,L,Ls)
 	,debug_clauses(self_resolution,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules([E,T,t,M],[Sub|Ss],MS,Acc,Ls).
+	,resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
 	L \= (_,_)
