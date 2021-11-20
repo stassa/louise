@@ -223,7 +223,7 @@ metasubstitution(E,M,Sub):-
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
-	,clause(Sub,(H,Ls))
+	,metarule_clause(Sub,H,Ls)
 	,(   DL = none
 	->   resolve_metarules(Sub,Ls)
 	;    G = resolve_metarules(Sub,Ls)
@@ -235,6 +235,20 @@ metasubstitution(E,M,Sub):-
 	% Leaving Sub non-ground.
 	,ground(Sub)
 	,debug_clauses(metasubstitution,'Proved Metasubstitution:',Sub).
+
+
+%!	metarule_clause(?Metasub,?Head,?Body) is det.
+%
+%	clause/2 alternative for metarules in the program database.
+%
+%	Abstracts calling clause/2 to get the body literals of metarules
+%	that may have no body literals. Magick!
+%
+metarule_clause(Sub,L,Ls):-
+	clause(Sub,(L,Ls))
+	,!.
+metarule_clause(Sub,L,true):-
+	clause(Sub,(L)).
 
 
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
@@ -372,7 +386,7 @@ resolve_metarules(self,Sub,Acc,(L)):-
 % L unifies with the head of an expanded metarule.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
-	,clause(Sub,(L,Ls))
+	,metarule_clause(Sub,L,Ls)
 	,debug_clauses(self_resolution,'Proving metarule literal:',[L])
 	,resolve_metarules(self,Sub,Acc,Ls).
 resolve_metarules(P,Sub,Acc,(L)):-
