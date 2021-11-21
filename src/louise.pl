@@ -520,7 +520,7 @@ resolve_metarules(P,Tgt,Sub,MS,Acc,(L,Ls)):-
 % Split the proof tree.
 	resolve_metarules(P,Tgt,Sub,MS,Acc_1,L)
 	,resolve_metarules(P,Tgt,Acc_1,MS,Acc,Ls).
-resolve_metarules(P,Tgt,[Sub|Ss],MS,Acc,(L)):-
+resolve_metarules(P,Tgt,Subs,MS,Acc,(L)):-
 % L is an atom of a foreign predicate in the body of a BK clause.
 % clause/2 would raise an access permission error.
 % So we just call(L).
@@ -528,7 +528,7 @@ resolve_metarules(P,Tgt,[Sub|Ss],MS,Acc,(L)):-
 	,predicate_property(L,foreign)
 	,call(L)
 	,debug_clauses(meta_interpreter,'Proved foreign literal:',[L])
-	,resolve_metarules(P,Tgt,[Sub|Ss],MS,Acc,true).
+	,resolve_metarules(P,Tgt,Subs,MS,Acc,true).
 resolve_metarules(P,Tgt,Subs,MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
 	L \= (_,_)
