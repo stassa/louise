@@ -295,9 +295,7 @@ metasubstitution(E,M,Sub):-
 %	Top Program derived so-far. So, everything, really.
 %
 metasubstitutions(E,MS,S-M_e):-
-	% TODO: is this necessary?
-	E \= (:-_)
-	,examples_targets([E],[T])
+	examples_targets([E],[T])
 	,configuration:recursion_depth_limit(metasubstitution, DL)
 	,member(M,MS)
 	,debug_msg_metarules(metasubstitution,'Instantiating metarule:',M)
