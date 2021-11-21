@@ -312,11 +312,11 @@ metasubstitution(E,M,MS,S-M_e):-
 	;    G = resolve_metarules(Sub,MS,Subs,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
+	,member(S, Subs)
 	% Has to be checked here.
 	% Because resolve_metarules/2 backtracks over prove_recursive/1
-	% So it can succeed even when resolve_metarules/3 fails
+	% So it can succeed even when resolve_metarules/4 fails
 	% Leaving Sub non-ground.
-	,member(S, Subs)
 	,ground(S)
 	,S =.. [_,Id|_Ps]
 	,expanded_metarules([Id],[M_e])
