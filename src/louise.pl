@@ -540,13 +540,6 @@ resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 	,call(L)
 	,debug_clauses(self_resolution,'Proved foreign literal:',[L])
 	,resolve_metarules(P,[Sub|Ss],MS,Acc,true).
-resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,(L)):-
-% L unifies with the head of the "current" expanded metarule.
-	L \= (_,_)
-	,\+ predicate_property(L,foreign)
-	,metarule_clause(Sub,L,Ls)
-	,debug_clauses(self_resolution,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
 	L \= (_,_)
@@ -555,6 +548,13 @@ resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 	,bk_atom(L)
 	,debug_clauses(self_resolution,'Proving BK literal:',[L])
 	,resolve_metarules(P,[Sub|Ss],MS,Acc,Bs).
+resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,(L)):-
+% L unifies with the head of the "current" expanded metarule.
+	L \= (_,_)
+	,\+ predicate_property(L,foreign)
+	,metarule_clause(Sub,L,Ls)
+	,debug_clauses(self_resolution,'Proving metarule literals:',[L:-Ls])
+	,resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules([E,T,S,t],[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of an expanded metarule in MS.
 	L \= (_,_)
