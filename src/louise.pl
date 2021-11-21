@@ -321,20 +321,6 @@ metasubstitutions(E,MS,S-M_e):-
 	,debug_clauses(metasubstitution,'Proved Metasubstitution:',S-M_e).
 
 
-%!	metarule_clause(?Metasub,?Head,?Body) is det.
-%
-%	clause/2 alternative for metarules in the program database.
-%
-%	Abstracts calling clause/2 to get the body literals of metarules
-%	that may have no body literals. Magick!
-%
-metarule_clause(Sub,L,Ls):-
-	clause(Sub,(L,Ls))
-	,!.
-metarule_clause(Sub,L,true):-
-	clause(Sub,(L)).
-
-
 %!	bind_head_literal(+Example,+Metarule,-Head) is det.
 %
 %	Bind an Example to the encapsulated Head literal of a Metarule.
@@ -647,6 +633,20 @@ assert_clause(Sub-M,Refs):-
 	applied_metarules([Sub-M],[M],[C])
 	,assert_program(user,[C],Refs)
 	,debug_clauses(meta_interpreter,'Asserted clause:',[C]).
+
+
+%!	metarule_clause(?Metasub,?Head,?Body) is det.
+%
+%	clause/2 alternative for metarules in the program database.
+%
+%	Abstracts calling clause/2 to get the body literals of metarules
+%	that may have no body literals. Magick!
+%
+metarule_clause(Sub,L,Ls):-
+	clause(Sub,(L,Ls))
+	,!.
+metarule_clause(Sub,L,true):-
+	clause(Sub,(L)).
 
 
 
