@@ -199,7 +199,7 @@ generalise(Pos,MS,Ss_Pos):-
 % meta-interpretation if possible. Tabled as incremental because
 % encapsulated clauses may be added to or removed from the dynamic db
 % during meta-interpretation.
-        table(resolve_metarules/5 as incremental)
+        table(resolve_metarules/6 as incremental)
 	,findall(Sub-M_-Refs
 	     ,(member(M,MS)
 	      ,member(Ep,Pos)
@@ -210,7 +210,7 @@ generalise(Pos,MS,Ss_Pos):-
 	      ,assert_clause(Sub-M_,Refs)
 	      )
 	     ,Ps)
-	,untable(resolve_metarules/5)
+	,untable(resolve_metarules/6)
 	% Remove clauses added to dynamic db, if any.
 	,pairs_keys_values(Ps,Ss_Pos_,Rs)
 	,flatten(Rs,Rs_f)
@@ -310,14 +310,16 @@ metasubstitution(E,M,Sub):-
 %
 metasubstitution(E,M,MS,S-M_e):-
 	E \= (:-_)
+	,examples_targets([E],[T])
 	,configuration:recursion_depth_limit(metasubstitution, DL)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
+	% Not necessary?
 	,metarule_clause(Sub,H,Ls)
 	,(   DL = none
-	->   resolve_metarules(Sub,MS,Subs,Ls)
-	;    G = resolve_metarules(Sub,MS,Subs,Ls)
+	->   resolve_metarules(T,Sub,MS,Subs,Ls)
+	;    G = resolve_metarules(T,Sub,MS,Subs,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
 	,member(S, Subs)
@@ -329,6 +331,7 @@ metasubstitution(E,M,MS,S-M_e):-
 	,S =.. [_,Id|_Ps]
 	,expanded_metarules([Id],[M_e])
 	,debug_clauses(metasubstitution,'Proved Metasubstitution:',S-M_e).
+
 
 
 %!	metarule_clause(?Metasub,?Head,?Body) is det.
@@ -389,17 +392,17 @@ bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
 	,!.
 
 
-%!	resolve_metarules(?Metasub,+Metarules,-Metasubs,+Literals) is
-%!	nondet.
+%!	resolve_metarules(+Target,?Metasub,+Metarules,-Metasubs,+Literals)
+%!	is nondet.
 %
 %	Resolve a set of Literals with a set of Metarules.
 %
 %	Top-level for resolve_metarules/3. See that predicate for
 %	details.
 %
-resolve_metarules(Sub,MS,Subs,Ls):-
+resolve_metarules(T,Sub,MS,Subs,Ls):-
 	proof_steps(Ss)
-	,resolve_metarules(Ss,[Sub],MS,Subs,Ls).
+	,resolve_metarules(Ss,T,[Sub],MS,Subs,Ls).
 
 
 %!	proof_steps(-Steps) is det.
@@ -441,10 +444,15 @@ proof_steps(Ss):-
 		,Ss).
 
 
-%!	resolve_metarules(+Steps,?Metasub,+Metarules,-Acc,+Literals) is
-%!	nondet.
+%!	resolve_metarules(+Target,+Steps,?Metasub,+Metarules,-Acc,+Literals)
+%!	is nondet.
 %
 %	Meta-interpreter for clauses and metarules.
+%
+%	Target is the predicate symbol and arity of the target
+%	predicate, used to only keep metasubstitutions of metarules
+%	that are clauses of the Target. Otherwise, this meta-interpreter
+%	can perform accidentaly non-Observational Predicate Learning.
 %
 %	Steps is the list [E,T,S,O], built by proof_steps/1 as a compact
 %	representation of all the values of the configuration option
@@ -525,39 +533,49 @@ proof_steps(Ss):-
 %	metarules with other metarules to derive mutually recursive
 %	clauses.
 %
-resolve_metarules(_,Sub,_MS,Sub,true):-
+%	@tbd The ability to derive clauses of non-observational
+%	predicates is interesting and should probably be explicitly
+%	allowed in the future.
+%
+resolve_metarules(_,Tgt,[Sub|Ss],_MS,Subs,true):-
+% Only keep metasubstitutions that are clauses of a target predicate.
 	!
+        ,(   target_atom(Tgt,Sub)
+	 ->  Subs = [Sub|Ss]
+	 ;   Subs = Ss
+	 )
 	,debug_clauses(self_resolution,'Proved atom:',[Sub]).
-resolve_metarules(P,Sub,MS,Acc,(L,Ls)):-
-	resolve_metarules(P,Sub,MS,Acc_1,L)
-	,resolve_metarules(P,Acc_1,MS,Acc,Ls).
-resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
-% L is an atom of a foreign predicate in the body of BK clause.
+resolve_metarules(P,Tgt,Sub,MS,Acc,(L,Ls)):-
+% Split the proof tree.
+	resolve_metarules(P,Tgt,Sub,MS,Acc_1,L)
+	,resolve_metarules(P,Tgt,Acc_1,MS,Acc,Ls).
+resolve_metarules(P,Tgt,[Sub|Ss],MS,Acc,(L)):-
+% L is an atom of a foreign predicate in the body of a BK clause.
 % clause/2 would raise an access permission error.
 % So we just call(L).
 	L \= (_,_)
 	,predicate_property(L,foreign)
 	,call(L)
 	,debug_clauses(self_resolution,'Proved foreign literal:',[L])
-	,resolve_metarules(P,[Sub|Ss],MS,Acc,true).
-resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
+	,resolve_metarules(P,Tgt,[Sub|Ss],MS,Acc,true).
+resolve_metarules(P,Tgt,Subs,MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	% This grounds L.
 	,clause(L,Bs)
 	% So we must call this only after clause/2.
-	,bk_atom(L)
+	,bk_atom(Tgt,L)
 	,debug_clauses(self_resolution,'Proving BK literal:',[L])
-	,resolve_metarules(P,[Sub|Ss],MS,Acc,Bs).
-resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,(L)):-
+	,resolve_metarules(P,Tgt,Subs,MS,Acc,Bs).
+resolve_metarules([E,T,t,O],Tgt,[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of the "current" expanded metarule.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	,metarule_clause(Sub,L,Ls)
 	,debug_clauses(self_resolution,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,Ls).
-resolve_metarules([E,T,S,t],[Sub|Ss],MS,Acc,(L)):-
+	,resolve_metarules([E,T,t,O],Tgt,[Sub|Ss],MS,Acc,Ls).
+resolve_metarules([E,T,S,t],Tgt,[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of an expanded metarule in MS.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
@@ -567,8 +585,33 @@ resolve_metarules([E,T,S,t],[Sub|Ss],MS,Acc,(L)):-
 	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
 	,metarule_clause(Sub_,L,Ls)
-	,debug_clauses(self_resolution,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules([E,T,S,t],[Sub_,Sub|Ss],MS,Acc,Ls).
+	,debug_clauses(self_resolution,'Proving other metarule literals:',[L:-Ls])
+	,resolve_metarules([E,T,S,t],Tgt,[Sub_,Sub|Ss],MS,Acc,Ls).
+
+
+%!	target_atom(+Symbol,+Literal) is det.
+%
+%	True when Literal is an atom of the given predicate.
+%
+%	Symbol is the predicate symbol and arity of a target predicate
+%	in the current MIL problem.
+%
+%	Literal is an atom, which may be a metasubstitution atom.
+%	target_atom/2 checks that Literal is an atom of the target
+%	predicate.
+%
+%	This predicate is used to ensure that only metasubstitutions of
+%	target predicates are returned by the resolve_metarules/6
+%	meta-interpreter.
+%
+target_atom(F/A, L):-
+	L =.. [S,F|As]
+	,memberchk(S,[m,p])
+	,length(As,A)
+	,!.
+target_atom(F/_A, L):-
+	L =.. [m,Id,F|_As]
+	,configuration:metarule(Id,_).
 
 
 %!	bk_atom(?Literal) is det.
@@ -579,7 +622,13 @@ resolve_metarules([E,T,S,t],[Sub|Ss],MS,Acc,(L)):-
 %	predicate checks that Literal is not the metasubstitution atom
 %	of an expanded metarule.
 %
-bk_atom(L):-
+%	Used to avoid forming metasubstitutions with metarule
+%	identifiers in the place of predicate symbols, which can happen
+%	when a literal that is currently being refuted unifies with the
+%	metasubstitution atom at the head of an expanded metarule clause
+%	in the dynamic database.
+%
+bk_atom(_,L):-
 	L =.. [S,F|_As]
 	,memberchk(S,[m,p])
 	% Avoid resolving with metasub atoms.
