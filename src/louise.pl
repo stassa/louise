@@ -544,7 +544,9 @@ resolve_metarules(P,[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
+	% This grounds L.
 	,clause(L,Bs)
+	% So we must call this only after clause/2.
 	,bk_atom(L)
 	,debug_clauses(self_resolution,'Proving BK literal:',[L])
 	,resolve_metarules(P,[Sub|Ss],MS,Acc,Bs).
