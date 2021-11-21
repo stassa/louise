@@ -109,6 +109,25 @@ top_program(Pos,Neg,BK,MS,_Ts):-
 	;   fail
 	).
 top_program(Pos,Neg,BK,MS,Ts):-
+% Uses the Prolog engine and avoids using the dynamic db too much.
+	configuration:theorem_prover(resolution)
+	,configuration:prove_recursive(fast)
+	,!
+	% Metarules and negative examples don't need to be added to the dynamic db.
+	,S = write_problem(user,[Pos,BK],Refs)
+	,G = (debug(top_program,'Constructing Top program...',[])
+	     ,generalise(Pos,MS,Ss_Gen)
+	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
+	     ,specialise(Ss_Gen,Neg,Ss_Spec)
+	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
+	     ,applied_metarules(Ss_Spec,MS,Ts)
+	     ,debug_clauses(top_program,'Applied metarules',Ts)
+	     )
+	,C = erase_program_clauses(Refs)
+	,setup_call_cleanup(S,G,C).
+top_program(Pos,Neg,BK,MS,Ts):-
+% Uses the specialised metarule meta-interpreter resolve_metarules/5
+% Runs slower and manipulates the dynamic db.
 	configuration:theorem_prover(resolution)
 	% Negative examples don't need to be added to the dynamic db.
 	,examples_targets(Pos,Ss)
@@ -158,6 +177,22 @@ top_program(_Pos,_Neg,_BK,_MS,[]):-
 %	metarule corresponding to the metasubsitution.
 %
 generalise(Pos,MS,Ss_Pos):-
+% Hands proofs to the Prolog engine.
+% Runs faster and avoids manipulating the dynamic db.
+	configuration:prove_recursive(fast)
+	,!
+	,findall(Sub-M
+	     ,(member(M,MS)
+	      ,member(Ep,Pos)
+	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
+	      ,debug_clauses(metasubstitution,'Instantiating metarule:',M)
+	      ,metasubstitution(Ep,M,Sub)
+	      ,constraints(Sub)
+	      )
+	     ,Ps)
+	,sort(1,@<,Ps,Ss_Pos).
+generalise(Pos,MS,Ss_Pos):-
+% Hands proofs to the metarule meta-interpreter resolve_metarules/5.
 	findall(Sub-M_-Refs
 	     ,(member(M,MS)
 	      ,member(Ep,Pos)
@@ -211,7 +246,14 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	negative example is a ground definite goal (i.e. a clause of the
 %	form :-Example).
 %
-metasubstitution(:-E,M,Sub):-
+%	@tbd This version of metasubstitution/n hands proofs of body
+%	literals of a metarule to the Prolog engine and only resolves
+%	metarules with examples and BK predicates. That means that this
+%	version is much faster than metasubstitution/4 but can only
+%	derive one kind of recursive clause, the kind that can resolve
+%	with positive examples (and BK predicates).
+%
+metasubstitution(E,M,Sub):-
 	copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)

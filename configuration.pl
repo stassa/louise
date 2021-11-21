@@ -572,8 +572,8 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %
 %       Ways to attempt to prove recursive clauses.
 %
-%       How is an atom, one of: [examples, top_program, self] denoting
-%       the kind of clauses with which the Top Program Construction
+%       How is an atom, one of: [examples, top_program, self, others,
+%       fast] denoting the way in which the Top Program Construction
 %       algorithm in louise.pl will attempt to resolve a metarule to
 %       construct a recursive clause.
 %
@@ -587,7 +587,7 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %       With option 'top_program', metarules will be resolved with
 %       positive examples and clauses already added to the Top Program
 %       so-far. In this way, clauses that only resolve with others in
-%       the Top Program, but not with posivie examples, can be
+%       the Top Program, but not with positive examples, can be
 %       constructed.
 %
 %       With option 'self', metarules will be resolved with positive
@@ -595,17 +595,26 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %       with themselves can be constructed.
 %
 %       With option 'others' metarules will be resolved with other
-%       metarules in the current MIL problem.
+%       metarules in the current MIL problem. In this way, clauses that
+%       depend on each other can be constructed, for example mutually
+%       recursive clauses or a recursive clause and its corresponding
+%       terminating condition, etc.
 %
-%       Note that all three clauses of this option can be declared at
-%       any one time. This allows all three kinds of recursive clauses
-%       to be constructed.
+%       Option 'fast' (default) is like option 'examples', but
+%       resolution of metarules' body literals is handed to the Prolog
+%       engine, rather than the metarule meta-interpreter
+%       resolve_metarules/4 and is therefore faster.
 %
-%       @tbd The ability to construct clauses that resolve with others
-%       in the Top Program is not yet implemented. Until it is, setting
-%       the option 'top_program' will have no effect.
+%       Note well: option 'fast' automatically excludes all other
+%       options. That is, if prove_recursive(fast) is chosen, no other
+%       prove_recursive/1 options will take effect, even if set.
 %
-prove_recursive(examples).
+%       Conversely, all of the other options ('examples',
+%       'top_program', 'self' and 'others') can be declared together.
+%       This allows all possible recursive clauses to be derived.
+%
+prove_recursive(fast).
+%prove_recursive(examples).
 %prove_recursive(top_program).
 %prove_recursive(self).
 %prove_recursive(others).
