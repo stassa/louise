@@ -200,22 +200,22 @@ generalise(Pos,MS,Ss_Pos):-
 % encapsulated clauses may be added to or removed from the dynamic db
 % during meta-interpretation.
         table(resolve_metarules/6 as incremental)
-	,findall(Sub-M_-Refs
-	     ,(member(M,MS)
-	      ,member(Ep,Pos)
+	,findall(Sub-M-Refs
+	     ,(member(Ep,Pos)
 	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
-	      ,debug_msg_metarules(metasubstitution,'Instantiating metarule:',M)
-	      ,metasubstitution(Ep,M,MS,Sub-M_)
+	      ,metasubstitutions(Ep,MS,Sub-M)
 	      ,constraints(Sub)
-	      ,assert_clause(Sub-M_,Refs)
+	      ,assert_clause(Sub-M,Refs)
 	      )
 	     ,Ps)
 	,untable(resolve_metarules/6)
 	% Remove clauses added to dynamic db, if any.
+	% To avoid falsely proving negative examples.
 	,pairs_keys_values(Ps,Ss_Pos_,Rs)
 	,flatten(Rs,Rs_f)
 	,erase_program_clauses(Rs_f)
 	,sort(1,@<,Ss_Pos_,Ss_Pos).
+
 
 
 
@@ -269,17 +269,17 @@ metasubstitution(E,M,Sub):-
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
 
 
-%!	metasubstitution(+Example,+Metarule,+Metarules,-Metasubss) is
+%!	metasubstitutions(+Example,+Metarule,+Metarules,-Metasubs) is
 %!	nondet.
 %
-%	Derive a list of Metasubs entailing an Example.
+%	Derive a list of Metasubstitutions entailing an Example.
 %
 %	As metasubstitution/3 but this one can derive multiple
-%	metasubstitutions of either Metarule or a metarule in Metarules.
+%	metasubstitutions of multiple Metarules. Additionally, proofs
+%	are performed by the metarule meta-interpreter
+%	resolve_metarules/5.
 %
 %	Example is a positive example, only.
-%
-%	Metarule is one expanded metarule.
 %
 %	Metarules is the list of all metarules for the current MIL
 %	problem, expandned.
@@ -289,49 +289,37 @@ metasubstitution(E,M,Sub):-
 %	Metarules, which may or may not be Metarule.
 %
 %	The point of this variant is that metasubstitutions are derived
-%	by meta-interpretation with a call to resolve_metarules/4, which
-%	is capable of resolving the single input metarule M with a)
-%	positive examples (including, but not only, Example), b)
-%	Metarule itself, c) other metarules in Metarules and d) clauses
-%	in the Top Program derived so-far. So, everything, really.
+%	by meta-interpretation with a call to resolve_metarules/5, which
+%	is capable of resolving a metarule M in Metarules with a)
+%	positive examples (including, but not only, Example), b) M
+%	itself, c) other metarules in Metarules and d) clauses in the
+%	Top Program derived so-far. So, everything, really.
 %
-%	Most of those capabilities veer off towards Metagol, or anyway,
-%	search-based MIL and so are separated according to the value of
-%	the configuration option prove_recursive/1. See
-%	resolve_metarules/4 for details.
-%
-%	@tbd Since this now takes as input the entire list of Metarules
-%	for this MIL problem, we could do the selection of single
-%	metarules here, rather than in generalise/3. However, I'd like
-%	to separate the "vanilla" version of TPC from this, more complex
-%	version, in the future and for that we may need to have the
-%	selection of the current metarule in generalise/3. Or not. We'll
-%	see.
-%
-metasubstitution(E,M,MS,S-M_e):-
+metasubstitutions(E,MS,S-M_e):-
+	% TODO: is this necessary?
 	E \= (:-_)
 	,examples_targets([E],[T])
 	,configuration:recursion_depth_limit(metasubstitution, DL)
+	,member(M,MS)
+	,debug_msg_metarules(metasubstitution,'Instantiating metarule:',M)
 	,copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
-	% Not necessary?
-	,metarule_clause(Sub,H,Ls)
 	,(   DL = none
 	->   resolve_metarules(T,Sub,MS,Subs,Ls)
 	;    G = resolve_metarules(T,Sub,MS,Subs,Ls)
 	    ,call_with_inference_limit(G,DL,_R)
 	 )
 	,member(S, Subs)
-	% Has to be checked here.
+	% That Sub is ground has to be checked here.
 	% Because resolve_metarules/2 backtracks over prove_recursive/1
 	% So it can succeed even when resolve_metarules/4 fails
 	% Leaving Sub non-ground.
+	% TODO: not sure about this anymore.
 	,ground(S)
 	,S =.. [_,Id|_Ps]
 	,expanded_metarules([Id],[M_e])
 	,debug_clauses(metasubstitution,'Proved Metasubstitution:',S-M_e).
-
 
 
 %!	metarule_clause(?Metasub,?Head,?Body) is det.
