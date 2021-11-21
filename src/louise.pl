@@ -218,7 +218,6 @@ generalise(Pos,MS,Ss_Pos):-
 
 
 
-
 %!	specialise(+Generalised,+Negatives,-Specialised) is det.
 %
 %	Specialisation step of Top program construction.
