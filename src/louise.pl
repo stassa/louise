@@ -193,7 +193,14 @@ generalise(Pos,MS,Ss_Pos):-
 	,sort(1,@<,Ps,Ss_Pos).
 generalise(Pos,MS,Ss_Pos):-
 % Hands proofs to the metarule meta-interpreter resolve_metarules/5.
-	findall(Sub-M_-Refs
+% Runs slower, but is more complete.
+%
+% Tabling keeps resolve_metarules/5 from going infinite during
+% meta-interpretation if possible. Tabled as incremental because
+% encapsulated clauses may be added to or removed from the dynamic db
+% during meta-interpretation.
+        table(resolve_metarules/5 as incremental)
+	,findall(Sub-M_-Refs
 	     ,(member(M,MS)
 	      ,member(Ep,Pos)
 	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
@@ -203,6 +210,7 @@ generalise(Pos,MS,Ss_Pos):-
 	      ,assert_clause(Sub-M_,Refs)
 	      )
 	     ,Ps)
+	,untable(resolve_metarules/5)
 	% Remove clauses added to dynamic db, if any.
 	,pairs_keys_values(Ps,Ss_Pos_,Rs)
 	,flatten(Rs,Rs_f)
@@ -432,11 +440,6 @@ proof_steps(Ss):-
 		 )
 		,Ss).
 
-
-% Keep resolve_metarules/4 from going infinite during
-% meta-interpretation if possible. Table as incremental because
-% encapsulated clauses may be added to or removed from the dynamic db.
-:-table(resolve_metarules/5 as incremental).
 
 %!	resolve_metarules(+Steps,?Metasub,+Metarules,-Acc,+Literals) is
 %!	nondet.
