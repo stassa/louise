@@ -271,7 +271,7 @@ metasubstitution(E,M,Sub):-
 %!	metasubstitutions(+Example,+Metarule,+Metarules,-Metasubs) is
 %!	nondet.
 %
-%	Derive a list of Metasubstitutions entailing an Example.
+%	Derive all Metasubstitutions entailing an Example.
 %
 %	As metasubstitution/3 but this one can derive multiple
 %	metasubstitutions of multiple Metarules. Additionally, proofs
