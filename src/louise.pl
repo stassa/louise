@@ -544,7 +544,7 @@ resolve_metarules(_,Tgt,[Sub|Ss],_MS,Subs,true):-
 	 ->  Subs = [Sub|Ss]
 	 ;   Subs = Ss
 	 )
-	,debug_clauses(self_resolution,'Proved atom:',[Sub]).
+	,debug_clauses(meta_interpreter,'Proved atom:',[Sub]).
 resolve_metarules(P,Tgt,Sub,MS,Acc,(L,Ls)):-
 % Split the proof tree.
 	resolve_metarules(P,Tgt,Sub,MS,Acc_1,L)
@@ -556,7 +556,7 @@ resolve_metarules(P,Tgt,[Sub|Ss],MS,Acc,(L)):-
 	L \= (_,_)
 	,predicate_property(L,foreign)
 	,call(L)
-	,debug_clauses(self_resolution,'Proved foreign literal:',[L])
+	,debug_clauses(meta_interpreter,'Proved foreign literal:',[L])
 	,resolve_metarules(P,Tgt,[Sub|Ss],MS,Acc,true).
 resolve_metarules(P,Tgt,Subs,MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
@@ -566,14 +566,14 @@ resolve_metarules(P,Tgt,Subs,MS,Acc,(L)):-
 	,clause(L,Bs)
 	% So we must call this only after clause/2.
 	,bk_atom(Tgt,L)
-	,debug_clauses(self_resolution,'Proving BK literal:',[L])
+	,debug_clauses(meta_interpreter,'Proving BK literal:',[L])
 	,resolve_metarules(P,Tgt,Subs,MS,Acc,Bs).
 resolve_metarules([E,T,t,O],Tgt,[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of the "current" expanded metarule.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	,metarule_clause(Sub,L,Ls)
-	,debug_clauses(self_resolution,'Proving metarule literals:',[L:-Ls])
+	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
 	,resolve_metarules([E,T,t,O],Tgt,[Sub|Ss],MS,Acc,Ls).
 resolve_metarules([E,T,S,t],Tgt,[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of an expanded metarule in MS.
@@ -585,7 +585,7 @@ resolve_metarules([E,T,S,t],Tgt,[Sub|Ss],MS,Acc,(L)):-
 	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
 	,metarule_clause(Sub_,L,Ls)
-	,debug_clauses(self_resolution,'Proving other metarule literals:',[L:-Ls])
+	,debug_clauses(meta_interpreter,'Proving other metarule literals:',[L:-Ls])
 	,resolve_metarules([E,T,S,t],Tgt,[Sub_,Sub|Ss],MS,Acc,Ls).
 
 
@@ -659,7 +659,7 @@ assert_clause(_Sub,[]):-
 assert_clause(Sub-M,Refs):-
 	applied_metarules([Sub-M],[M],[C])
 	,assert_program(user,[C],Refs)
-	,debug_clauses(co_resolution,'Asserted clause:',[C]).
+	,debug_clauses(meta_interpreter,'Asserted clause:',[C]).
 
 
 
