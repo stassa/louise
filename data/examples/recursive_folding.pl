@@ -14,22 +14,23 @@
 1. Known good configuration:
 ==
 ?- list_config.
+depth_limits(2,1)
 example_clauses(call)
 experiment_file(data/examples/recursive_folding.pl,recursive_folding)
+fold_recursive(false)
 generalise_learned_metarules(false)
-generalised_examples(fully)
-learned_metarules_printing(pretty)
 learner(louise)
 max_invented(1)
-metarule_learning_limits(metasubstitutions(1))
+metarule_formatting(quantified)
+metarule_learning_limits(none)
 minimal_program_size(2,inf)
+prove_recursive(fast)
 recursion_depth_limit(dynamic_learning,none)
+recursion_depth_limit(metasubstitution,none)
 recursive_reduction(false)
 reduce_learned_metarules(false)
 reduction(plotkins)
 resolutions(5000)
-symbol_range(predicate,[P,Q,R,S,T])
-symbol_range(variable,[X,Y,Z,U,V,W])
 theorem_prover(resolution)
 unfold_invented(false)
 true.
@@ -67,29 +68,25 @@ Metarules
 true.
 ==
 
-4. First learning attempt:
+4. First learning attempt with fold_recursive/1 set to 'false':
 ==
-?- learn(list_last/2).
+?- learn(list_last/2), fold_recursive(F).
 list_last(A,B):-tail(A,C),empty(C),head(A,B).
 list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
 list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
-true.
+F = false.
 ==
 
-5. An over-specialised hypothesis is learned from the elements of the
-MIL problem in 3. Now, post-process the hypothesis to turn it into a
-recursive program:
+5. The elements of the MIL problem listed in step 3 above are designed
+to lead to an over-specialised hypothesis as in step 4. Setting the
+configuration option fold_recursive/1 to 'true' will cause Louise to
+fold the recursive hypothesis at the end of learning to attempt to
+introduce recursion:
 ==
-?- learn(list_last/2, _Ps), print_clauses('Learned', _Ps), fold_recursive(_Ps, _Fs), nl, print_clauses('Folded', _Fs).
-Learned
-list_last(A,B):-tail(A,C),empty(C),head(A,B).
-list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
-list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
-
-Folded
+?- learn(list_last/2), fold_recursive(F).
 list_last(A,B):-tail(A,C),empty(C),head(A,B).
 list_last(A,B):-tail(A,C),list_last(C,B).
-true.
+F = true.
 ==
 
 6. Add the recursive hypothesis to a source file and load it, then test
@@ -99,7 +96,6 @@ it to verify it's a correct hypothesis:
 L = 5 ;
 false.
 ==
-
 */
 
 configuration:m1 metarule 'P(x,y):- Q(x,z),R(z),S(x,y)'.
@@ -119,8 +115,3 @@ negative_example(list_last/2,_):- false.
 head([H|_T], H).
 tail([_H|T],T).
 empty([]).
-
-/* Folded hypothesis:
-list_last(A,B):-tail(A,C),empty(C),head(A,B).
-list_last(A,B):-tail(A,C),list_last(C,B).
-*/

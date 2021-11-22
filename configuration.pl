@@ -1,5 +1,6 @@
 :-module(configuration, [experiment_file/2
                         ,example_clauses/1
+                        ,fold_recursive/1
                         ,depth_limits/2
                         ,generalise_learned_metarules/1
 			,learner/1
@@ -117,6 +118,19 @@ example_clauses(call).
 %       treated as being one lower than Clauses.
 %
 depth_limits(2,1).
+
+
+%!      fold_recursive(?Bool) is semidet.
+%
+%       Whether to fold overspecialised programs.
+%
+%       If Bool is set to 'true' Louise will attempt to fold an
+%       over-specialised program to introduce recursion.
+%
+%       @tbd Currently, only learn/5 and its family recognise this
+%       option.
+%
+fold_recursive(false).
 
 
 %!      generalise_learned_metarules(?Bool) is semidet.

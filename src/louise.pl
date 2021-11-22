@@ -62,18 +62,25 @@ learn(Pos,Neg,BK,MS,_Ts):-
 	).
 learn(Pos,Neg,BK,MS,Ps):-
 	configuration:unfold_invented(U)
-	,debug(learn,'Encapsulating problem',[])
+	,configuration:fold_recursive(F)
+	,debug(learn,'Encapsulating problem...',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
 	,top_program(Pos_,Neg_,BK_,MS_,Ms)
 	,debug(learn,'Reducing Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
 	,examples_targets(Pos,Ss)
-	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(Ss,Rs,Ps_)
+	,debug(learn,'Excapsulating hypothesis...',[])
+	,excapsulated_clauses(Ss,Rs,Ps_1)
 	,(   U ==  true
-	 ->  unfold_clauses(Ps_,Pos,BK,Ps)
-	 ;   Ps_ = Ps
+	 ->  debug(learn,'Unfolding invented...',[])
+	    ,unfold_clauses(Ps_1,Pos,BK,Ps_2)
+	 ;   Ps_2 = Ps_1
+	 )
+	,(   F == true
+	 ->  debug(learn,'Folding to introduce recursion...',[])
+	    ,fold_recursive(Ps_2,Ps)
+	 ;   Ps = Ps_2
 	 ).
 
 
