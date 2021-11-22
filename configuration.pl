@@ -75,6 +75,21 @@
 %:-debug(examples_invention). % Debug examples invention.
 %:-debug(evaluation).
 
+%!      depth_limits(?Clauses,?Invented) is semidet.
+%
+%       Depth limits for Thelma's hypothesis search.
+%
+%       Clauses is the maximum number of clauses in hypotheses
+%       considered in the Hypothesis Space search restricted by these
+%       depth limits. Invented is the maximum number of clauses of
+%       invented predicates in hypotheses.
+%
+%       If Invented is not at most 1 lower than Clauses, it will be
+%       treated as being one lower than Clauses.
+%
+depth_limits(2,1).
+
+
 %!      example_clauses(?What) is semidet.
 %
 %       What to do with example clauses.
@@ -103,21 +118,6 @@
 %
 %example_clauses(bind).
 example_clauses(call).
-
-
-%!      depth_limits(?Clauses,?Invented) is semidet.
-%
-%       Depth limits for Thelma's hypothesis search.
-%
-%       Clauses is the maximum number of clauses in hypotheses
-%       considered in the Hypothesis Space search restricted by these
-%       depth limits. Invented is the maximum number of clauses of
-%       invented predicates in hypotheses.
-%
-%       If Invented is not at most 1 lower than Clauses, it will be
-%       treated as being one lower than Clauses.
-%
-depth_limits(2,1).
 
 
 %!      fold_recursive(?Bool) is semidet.
