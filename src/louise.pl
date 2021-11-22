@@ -563,18 +563,20 @@ resolve_metarules([E,T,S,t],[Sub|Ss],MS,Acc,(L)):-
 %	Assert a clause to the dynamic database.
 %
 %	This predicate is responsible for adding clauses to the dynamic
-%	database so that they can be resolved against during
-%	construction of new clauses, when the configuration option
-%	prove_recursive(self) is set.
+%	database so that they can be resolved with during construction
+%	of new clauses, when the configuration option
+%	prove_recursive(top_program) is set. If that options is not set,
+%	nothing is written.
 %
 %	Metasub is a pair Sub-Metarule where Sub is a ground
 %	metasubstitution atom and Metarule is an expanded metarule. Refs
 %	is a list of a single element, the clause reference of the
 %	clause added to the dynamic db.
 %
-%	Refs is used to remove clauses from the dynamic db at the end of
-%	generalise/3, in order to avoid confusingly proving negative
-%	examples.
+%	Refs is meant to be used to remove clauses from the dynamic db
+%	at the end of learning. However, this is currently not done and
+%	instead cleanup_experiment/0 is called at the end of
+%	top_program/5 to gather up any garbage left.
 %
 assert_clause(_Sub,[]):-
 	\+ configuration:prove_recursive(top_program)
