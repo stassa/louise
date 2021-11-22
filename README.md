@@ -109,6 +109,8 @@ Here are some of the things that Louise can do.
    See `data/examples/findlast.pl` for the `list_last/2` one-shot recursion
    learning example.
 
+   The above experiment was proposed by Andrew Cropper, maintainer of [Metagol].
+
 3. Louise can simultaneously learn multiple dependent programs, including
    mutuallly recursive programs. This is called multi-predicate learning:
 
@@ -2027,3 +2029,4 @@ Bibliography
 [DCG]:https://en.wikipedia.org/wiki/Definite_clause_grammar "Definite Clause Grammars"
 [(Patsantzis & Muggleton 2021)]: https://link.springer.com/article/10.1007/s10994-020-05945-w "Top Program Construction and Reduction for Polynomial-Time Meta-interpretive Learning"
 [(Patsantzis & Muggleton 2021b)]: https://arxiv.org/abs/2106.07464 "Meta-Interpretive Learning as Metarule Specialisation"
+[Metagol]: https://github.com/metagol/metagol "Metagol"
