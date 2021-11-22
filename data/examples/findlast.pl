@@ -90,6 +90,8 @@ empty([]).
 
 Metarules
 ---------
+(Tailrec-1) ∃.P,Q ∀.x,y,z: P(x,y)← Q(x,z),P(z,y)
+(Midcon) ∃.P,Q,R,S ∀.x,y,z: P(x,y)← Q(x,z),R(z),S(x,y)
 true.
 ==
 
