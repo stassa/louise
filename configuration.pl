@@ -574,9 +574,9 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %       Ways to attempt to prove recursive clauses.
 %
 %       How is an atom, one of: [examples, top_program, self, others,
-%       fast] denoting the way in which the Top Program Construction
-%       algorithm in louise.pl will attempt to resolve a metarule to
-%       construct a recursive clause.
+%       invented, fast] denoting the way in which the Top Program
+%       Construction algorithm in louise.pl will attempt to resolve a
+%       metarule to construct a recursive clause.
 %
 %       With option 'examples', metarules will only be resolved with
 %       positive examples (and background predicates). In this way
@@ -601,6 +601,10 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %       recursive clauses or a recursive clause and its corresponding
 %       terminating condition, etc.
 %
+%       With option 'invented' literals of metarules that fail
+%       resolution otherwise are given an invented predicate symbol and
+%       resolved recursively, to perform predicate invention.
+%
 %       Option 'fast' (default) is like option 'examples', but
 %       resolution of metarules' body literals is handed to the Prolog
 %       engine, rather than the metarule meta-interpreter
@@ -611,14 +615,16 @@ order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 %       prove_recursive/1 options will take effect, even if set.
 %
 %       Conversely, all of the other options ('examples',
-%       'top_program', 'self' and 'others') can be declared together.
-%       This allows all possible recursive clauses to be derived.
+%       'top_program', 'self', 'others' and 'invented') can be declared
+%       together. This allows all possible ways to derive recursive
+%       clauses to be attempted at once.
 %
 prove_recursive(fast).
 %prove_recursive(examples).
 %prove_recursive(top_program).
 %prove_recursive(self).
 %prove_recursive(others).
+%prove_recursive(invented).
 
 
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.

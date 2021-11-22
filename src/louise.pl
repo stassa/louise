@@ -61,7 +61,8 @@ learn(Pos,Neg,BK,MS,_Ts):-
 	;   fail
 	).
 learn(Pos,Neg,BK,MS,Ps):-
-	debug(learn,'Encapsulating problem',[])
+	configuration:unfold_invented(U)
+	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(learn,'Constructing Top program...',[])
 	,top_program(Pos_,Neg_,BK_,MS_,Ms)
@@ -69,7 +70,11 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
 	,examples_targets(Pos,Ss)
 	,debug(learn,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(Ss,Rs,Ps).
+	,excapsulated_clauses(Ss,Rs,Ps_)
+	,(   U ==  true
+	 ->  unfold_clauses(Ps_,Pos,BK,Ps)
+	 ;   Ps_ = Ps
+	 ).
 
 
 
@@ -314,10 +319,12 @@ metasubstitutions(E,MS,S-M_e):-
 	% Leaving Sub non-ground.
 	% TODO: not sure about this anymore.
 	,ground(S)
-	,examples_targets([E],[T/_A])
+	,examples_targets([E],Ts)
 	% Check that S is a clause of the target predicate.
 	% And that it does not have a metarule id as a symbol.
 	,S =.. [_,Id,T|_Ps]
+	% Passing only a symbol without arity is asking for trouble...
+	,target_or_invention(Ts,T/_)
 	,expanded_metarules([Id],[M_e])
 	,debug_clauses(metasubstitution,'Proved Metasubstitution:',S-M_e).
 
@@ -383,14 +390,14 @@ resolve_metarules(Sub,MS,Subs,Ls):-
 %
 %	Construct a listing of allowed recursive proof Steps.
 %
-%	Steps is a list [E,T,S,O], where each element is an atom 't' or
-%	'f', denoting "true" and "false" respectively. Each of the
+%	Steps is a list [E,T,S,O,I], where each element is an atom 't'
+%	or 'f', denoting "true" and "false" respectively. Each of the
 %	elements in the list stands for one of the recognised values of
 %	the configuration option prove_recursive/1: E for 'examples', T
-%	for 'top_program, S for 'self' and O for 'others'. The list
-%	is populated with a 't' for each value actually set in the
-%	configuration, and 'f' for each value not actually set in the
-%	configuration.
+%	for 'top_program, S for 'self', O for 'others' and I for
+%	'invented'. The list is populated with a 't' for each value
+%	actually set in the configuration, and 'f' for each value not
+%	actually set in the configuration.
 %
 %	For example, if only the values 'examples' and 'self' are set,
 %	the list Steps will be [t,f,t,f].
@@ -406,8 +413,9 @@ proof_steps(Ss):-
 	Vs = [examples
 	     ,top_program
 	     ,self
-	     ,others]
-	,Ss = [_E,_T,_S,_M]
+	     ,others
+	     ,invented]
+	,Ss = [_E,_T,_S,_O,_I]
 	,findall(T
 		,(member(V,Vs)
 		 ,(   configuration:prove_recursive(V)
@@ -423,10 +431,10 @@ proof_steps(Ss):-
 %
 %	Meta-interpreter for clauses and metarules.
 %
-%	Steps is the list [E,T,S,O], built by proof_steps/1 as a compact
-%	representation of all the values of the configuration option
-%	prove_recursive/1, which determines how Literals are proved. If
-%	the first element of Steps, E, is 't', meaning that
+%	Steps is the list [E,T,S,O,I], built by proof_steps/1 as a
+%	compact representation of all the values of the configuration
+%	option prove_recursive/1, which determines how Literals are
+%	proved. If the first element of Steps, E, is 't', meaning that
 %	prove_recursive/1 is set to 'examples', Literals are resolved
 %	with the positive examples. If the second element, T, is 't',
 %	meaning that prove_recursive/1 is set to 'self', Literals is
@@ -435,13 +443,15 @@ proof_steps(Ss):-
 %	that prove_recursive/1 is set to 'top_program', Literals is
 %	resolved with the clauses added to the Top-Program so-far (these
 %	are asserted to the BK upon a completed proof). If O is 't',
-%	meaning that prove_recursive/1 is set to 'others', Literals
-%	is resolved with every metarule in the current MIL problem
-%	except for the "current" metarule (in the second argument of
-%	metasubstitution/4). Each element of Steps that is not 't' is
-%	'f', meaning that the corresponding prove_recursive/1 option is
-%	"off" (unset, whatever you want to call it). The combination of
-%	't' and 'f' atoms in Steps determines how Literals is resolved.
+%	meaning that prove_recursive/1 is set to 'others', Literals is
+%	resolved with every metarule in the current MIL problem except
+%	for the "current" metarule (in the second argument of
+%	metasubstitution/4). If I is 't', meaning that prove_recursive/1
+%	is set to 'invented' predicate invention is attempted to
+%	resolve Literals. Each element of Steps that is not 't' is 'f',
+%	meaning that the corresponding prove_recursive/1 option is "off"
+%	(unset, whatever you want to call it). The combination of 't'
+%	and 'f' atoms in Steps determines how Literals is resolved.
 %
 %	Metasub is a partially ground metasubstitution atom, found in
 %	the head of an expanded metarule. That is the "current"
@@ -509,6 +519,12 @@ proof_steps(Ss):-
 %	don't remove them here because that would cut off necessary
 %	branches of the proof tree.
 %
+%	@tbd The predicate invention in this meta-interpreter is
+%	currently extremely rickety. In particular, I'm not convinced
+%	that invented_literal/2 is capable of inventing more than one
+%	symbol for each example. More work is needed before dynamic
+%	learning can be replaced.
+%
 resolve_metarules(_,[Sub|Ss],_MS,[Sub|Ss],true):-
 % We split head from tail in [Sub|Ss] only to log Sub.
 	!
@@ -537,14 +553,14 @@ resolve_metarules(P,Subs,MS,Acc,(L)):-
 	,clause(L,Bs)
 	,debug_clauses(meta_interpreter,'Proving BK literal:',[L])
 	,resolve_metarules(P,Subs,MS,Acc,Bs).
-resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,(L)):-
+resolve_metarules([E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of the "current" expanded metarule.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
 	,metarule_clause(Sub,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules([E,T,t,O],[Sub|Ss],MS,Acc,Ls).
-resolve_metarules([E,T,S,t],[Sub|Ss],MS,Acc,(L)):-
+	,resolve_metarules([E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
+resolve_metarules([E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of a new expanded metarule in MS.
 	L \= (_,_)
 	,\+ predicate_property(L,foreign)
@@ -555,7 +571,58 @@ resolve_metarules([E,T,S,t],[Sub|Ss],MS,Acc,(L)):-
 	,\+ unifiable(Sub,Sub_,_)
 	,metarule_clause(Sub_,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving other metarule literals:',[L:-Ls])
-	,resolve_metarules([E,T,S,t],[Sub_,Sub|Ss],MS,Acc,Ls).
+	,resolve_metarules([E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
+resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
+% L is taken as an example of an invented predicate.
+	L \= (_,_)
+	,\+ predicate_property(L,foreign)
+	,\+ ground(Sub)
+	% TODO: This checks L is not a BK predicate.
+	% TODO: There must be a better way to do that.
+	,\+ call(L)
+	,invented_literal(L,L)
+	,member(Sub_:-_,MS)
+	,metarule_clause(Sub_,L,Ls)
+	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
+	,resolve_metarules([E,T,S,O,t],[Sub_|Ss],MS,Acc_1,Ls)
+	,resolve_metarules([E,T,S,O,t],[Sub|Acc_1],MS,Acc,true).
+
+
+%!	invented_literal(+Literal,-Invented) is det.
+%
+%	Invent a predicate symbol for a Literal.
+%
+%	Creates invented predicate symbols for predicate invention in
+%	resolve_metarules/5.
+%
+%	Literal is a well, literal -encapsulated. If the predicate
+%	symbol of Literal is a second-order variable (i.e. we're in the
+%	process of proving it) and the configuration option
+%	max_invented/1 is set to a number more than 0, the second-order
+%	variable in Invented is bound to the first invented predicate
+%	symbol, '$1'. If the predicate symbol of Literal is already an
+%	invented predicate, then Invented is Literal with a new invented
+%	predicate symbol, '$I' where I is incremented each time this
+%	predicate is called, starting at 1 and until it is equal to the
+%	setting of max_invented/1.
+%
+invented_literal(L,L_):-
+	configuration:max_invented(I)
+	,I > 0
+	,L =.. [m,S|As]
+	,var(S)
+	,!
+	,L_ =.. [m,'$1'|As].
+invented_literal(L,L_):-
+	configuration:max_invented(I)
+	,L =.. [m,S|As]
+	,\+ var(S)
+	,atom_concat('$',N,S)
+	,atom_number(N,J)
+	,J < I
+	,J_ is J + 1
+	,atom_concat('$',J_,S_)
+	,L_ =.. [m,S_|As].
 
 
 %!	assert_clause(+Metasub,-Refs) is det.
