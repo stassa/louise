@@ -144,6 +144,9 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     )
 	,C = (erase_program_clauses(Refs)
 	     ,dynamic_learning:untable_encapsulated(Ss)
+	     % TODO: this is mainly to catch clauses written to the
+	     % TODO: dynamic db by generalise/3 for which we don't
+	     % TODO: have references. Is there a better way to do it?
 	     ,cleanup_experiment
 	     )
 	,setup_call_cleanup(S,G,C)
@@ -154,9 +157,9 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,bind_target(MS,Ss,MS_)
 	,flatten([Pos,BK],Ps)
 	,debug(top_program,'Constructing Top program...',[])
-	,generalise(MS_,Ps,Is,Ts_Pos)
+	,generalise_tp(MS_,Ps,Is,Ts_Pos)
 	,applied_metarules(Ts_Pos,MS,Ts_Pos_)
-	,specialise(Ts_Pos_,Is,Neg,Ts)
+	,specialise_tp(Ts_Pos_,Is,Neg,Ts)
 	,!.
 top_program(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
@@ -209,11 +212,9 @@ generalise(Pos,MS,Ss_Pos):-
 	      )
 	     ,Ps)
 	,untable(resolve_metarules/6)
-	% Remove clauses added to dynamic db, if any.
-	% To avoid falsely proving negative examples.
-	,pairs_keys_values(Ps,Ss_Pos_,Rs)
-	,flatten(Rs,Rs_f)
-	,erase_program_clauses(Rs_f)
+	% TODO: References are ignored because it's a bother to remove them.
+	% TODO: There should be a better way to do this.
+	,pairs_keys_values(Ps,Ss_Pos_,_Rs)
 	,sort(1,@<,Ss_Pos_,Ss_Pos).
 
 
@@ -618,8 +619,7 @@ bind_target(MS,Ts,MS_):-
 	       ,MS_).
 
 
-%!	generalise(+Metarules,+Program,-Model,-Generalised) is
-%!	det.
+%!	generalise_tp(+Metarules,+Program,-Model,-Generalised) is det.
 %
 %	Top program generalisation step with TP operator.
 %
@@ -638,7 +638,7 @@ bind_target(MS,Ts,MS_):-
 %	keep it around - makes it clear this is a distinct step in the
 %	construction of the Top program.
 %
-generalise(MS,Ps,Is,Ts_Pos):-
+generalise_tp(MS,Ps,Is,Ts_Pos):-
 	lfp_query(MS,Ps,Is,Ts_Pos)
 	%,writeln('Top program - generalise:')
 	%,print_clauses(Ts_Pos)
@@ -649,7 +649,7 @@ generalise(MS,Ps,Is,Ts_Pos):-
 	.
 
 
-%!	specialise(+Generalised,+Model,+Negatives,-Specialised) is
+%!	specialise_tp(+Generalised,+Model,+Negatives,-Specialised) is
 %!	det.
 %
 %	Top program specialisation step with TP operator.
@@ -658,7 +658,7 @@ generalise(MS,Ps,Is,Ts_Pos):-
 %	Herbrand model of the positive examples and background
 %	knowledge, calculated during execution of generalise/4.
 %
-specialise(Ts_Pos,Ps,Neg,Ts_Neg):-
+specialise_tp(Ts_Pos,Ps,Neg,Ts_Neg):-
 	findall(H:-B
 		,(member(H:-B,Ts_Pos)
 		 ,lfp_query([H:-B],Ps,As)
