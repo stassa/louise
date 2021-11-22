@@ -16,16 +16,31 @@ following configuration options.
 
 ==
 ?- list_config.
-experiment_file(data/drafts/examples_invention/path.pl,path)
+depth_limits(2,1)
+example_clauses(call)
+experiment_file(data/examples/example_invention.pl,path)
+generalise_learned_metarules(false)
 learner(louise)
-max_invented(0)
-recursion_depth_limit(dynamic_learning,200)
+learning_predicate(learn_with_examples_invention/2)
+max_invented(1)
+metarule_formatting(quantified)
+metarule_learning_limits(none)
+minimal_program_size(2,inf)
+prove_recursive(fast)
+recursion_depth_limit(dynamic_learning,none)
+recursion_depth_limit(metasubstitution,none)
 recursive_reduction(false)
+reduce_learned_metarules(false)
 reduction(plotkins)
 resolutions(5000)
 theorem_prover(resolution)
+unfold_invented(false)
 true.
 ==
+
+Ensure in particular that the configuration option prove_recursive/1 is
+set to "fast", otherwise examples invention can enter an infinite
+recursion (this is a bug).
 
 Examples invention
 ------------------
@@ -55,11 +70,13 @@ m(chain,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
 
 In particular, the H22 _Chain_, having only two body literals, cannot
 represent a path from a to f, which are separated by a distance of five
-edges. A first learning attempt therefore fails:
+edges. A first learning attempt therefore fails to learn a general
+hypothesis and simply returns the single example:
 
 ==
 ?- learn(path/2).
-false.
+path(a,f).
+true.
 ==
 
 With examples invention, atoms of path/2 represenging shorter paths

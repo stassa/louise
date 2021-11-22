@@ -88,7 +88,28 @@ Here are some of the things that Louise can do.
    Louise](#learning-logic-programs-with-louise) for more information on
    learning logic programs with Louise.
 
-2. Louise can simultaneously learn multiple dependent programs, including
+2. Louise can learn recursive programs one-shot, from a single example that is
+   not an example of the base-case:
+
+   ```prolog
+   % Single example given:
+   ?- experiment_file:positive_example(list_last/2, E).
+   E = list_last([a, b, c, d, e, f, g, h|...], i).
+
+   ?- learn(list_last/2).
+   list_last(A,B):-tail(A,C),list_last(C,B).
+   list_last(A,B):-tail(A,C),empty(C),head(A,B).
+   true.
+   ```
+
+   Note that this is true one-shot learning, from a single example of inputs and
+   outputs of the target program, without any pre-training or anything silly
+   like that.
+
+   See `data/examples/findlast.pl` for the `list_last/2` one-shot recursion
+   learning example.
+
+3. Louise can simultaneously learn multiple dependent programs, including
    mutuallly recursive programs. This is called multi-predicate learning:
 
 
@@ -103,7 +124,7 @@ Here are some of the things that Louise can do.
    See `data/examples/multi_pred.pl` for the `odd/1` and `even/1`
    multi-predicate learning example. 
 
-3. Louise can discover relevant background knowledge. In the `odd/1` and
+4. Louise can discover relevant background knowledge. In the `odd/1` and
    `even/1` example above, each predicate is only explicitly given
    `predecessor/2` as a background predicate. The following are the background
    knowledge declarations for `even/1` and `odd/1` in
@@ -118,7 +139,7 @@ Here are some of the things that Louise can do.
    Louise figures out that `odd/1` is necessary to learn `even/1` and vice-versa
    on its own.
 
-4. Louise can perform _predicate invention_ to incrase its background knowledge
+5. Louise can perform _predicate invention_ to incrase its background knowledge
    with new predicates that are necessary for learning. In the following example
    the predicate `'$'1/2` is an invented predicate:
 
@@ -140,7 +161,7 @@ Here are some of the things that Louise can do.
    invention](#dynamic-learning-and-predicate-invention) for more information on
    predicate invention in Louise. 
 
-5. Louise can unfold programs to eliminate invented predicates. This is a
+6. Louise can unfold programs to eliminate invented predicates. This is a
    version of the program in the previous example with the invented predicate
    `'$1'/2` eliminated by unfolding:
    
@@ -154,7 +175,7 @@ Here are some of the things that Louise can do.
    Eliminating invented predicates can sometimes improve comprehensibility of
    the learned program.
 
-6. Louise can fold over-specialised programs to introduce recursion. In the
+7. Louise can fold over-specialised programs to introduce recursion. In the
    following example, an over-specialised program is learned that finds the last
    element of a list of length up to 3:
 
@@ -192,7 +213,7 @@ Here are some of the things that Louise can do.
    30_ (Cropper et al., Machine Learning 2021, to appear). See
    `data/examples/recursive_folding.pl` for the complete example source code.
 
-7. Louise can invent new examples. In the following query a number of examples
+8. Louise can invent new examples. In the following query a number of examples
    of `path/2` are invented. The background knowledge for this MIL problem
    consists of 6 `edge/2` ground facts that determine the structure of a graph
    and a few facts of `not_edge/2` that represent nodes not connected by edges.
@@ -236,7 +257,7 @@ Here are some of the things that Louise can do.
    See the section [Examples invention](#examples-invention) for more
    information on examples invention in Louise.
 
-8. Louise can learn new metarules from examples of a target predicate. In the
+9. Louise can learn new metarules from examples of a target predicate. In the
    following example, Louise learns a new metarule from examples of the
    predicate `'S'/2` (as in item 4, above):
 
@@ -265,10 +286,10 @@ Here are some of the things that Louise can do.
    of specifying Meta-dyadic, we can instead give an upper and lower bound of 3,
    with a declaration of `higher_order(3,3)`.
 
-9. Louise comes with a number of libraries for tasks that are useful when
-   learning programs with MIL, e.g. metarule generation, program reduction,
-   lifting of ground predicates, etc. These will be discussed in detail in the
-   upcoming Louise manual.
+Louise comes with a number of libraries for tasks that are useful when learning
+programs with MIL, e.g. metarule generation, program reduction, lifting of
+ground predicates, etc. These will be discussed in detail in the upcoming Louise
+manual.
 
 Learning logic programs with Louise
 -----------------------------------
