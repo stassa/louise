@@ -269,11 +269,14 @@ unfold_clauses(Cs,Pos,BK,Us):-
 	,examples_targets(Pos,Ss)
 	,closure(BK,experiment_file,Bs)
 	,flatten(Bs,Bs_f)
-	,S = write_problem(unfolding,[Cs,Pos,Bs_f],Refs)
+	,S = (write_problem(unfolding,[Cs,Pos,Bs_f],Refs)
+	     ,table(unfold_literals/5)
+	     )
 	,G = unfold_invented(Cs,Ss,Us)
-	,C = erase_program_clauses(Refs)
+	,C = (erase_program_clauses(Refs)
+	     ,untable(unfold_literals/5)
+	     )
 	,setup_call_cleanup(S,G,C).
-
 
 
 %!	unfold_invented(+Program,+Targets,-Unfolded) is det.
