@@ -2003,7 +2003,7 @@ If you wish to use Louise, please cite our work with the reference below:
 ```bib
 @article{Patsantzis2021,
 author = {Patsantzis, Stassa and Muggleton, Stephen},
-title = {Top Program Construction for Polynomial Meta-Interpretive Learning},
+title = {Top Program Construction and Reduction for polynomial-time Meta-Interpretive Learning},
 journal = {Machine Learning},
 year = {2021},
 doi = {https://doi.org/10.1007/s10994-020-05945-w}
