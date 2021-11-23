@@ -724,6 +724,7 @@ tail-recursive clauses:
 
 ```Prolog
 (Tailrec) ∃.P,Q ∀.x,y,z: P(x,y)← Q(x,z),P(z,y)
+                          `-------------'
 ```
 
 The "wiring" of metarules' variables, both first- and second-order, is preserved
