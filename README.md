@@ -697,7 +697,7 @@ metals of decreasing hardness.
 
 Sort metarules are the kind of metarules normally defined by a user and found
 throughout the MIL literature. They are also widely used in ILP more generally
-as well as in data mining and program sythesis.
+as well as in data mining and program synthesis.
 
 Sort metarules are specialised, in the sense that their universally quantified
 first-order variables are _shared_ between literals. For example, in the _Chain_
