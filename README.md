@@ -54,11 +54,11 @@ extend its set of given examples.
 In this manual we show simple examples where Louise is trained on small, "toy"
 problems, designed to demonstrate its use. Louise is still new and actively
 being worked on and so has not yet been used in large-scale real-world
-applications. Published work on Louise has so far demonstrated the working
-principles behind Louise's Top Program Constructiona algorithm rather than
-realise its full potential as a learning system. Louise is maintained by a
-single PhD student, currently writing her PhD thesis. New developments should be
-expected to come at a leisurely pace.
+applications. Published work on Louise has so far focused on describing the
+working principles behind Louise's Top Program Construction algorithm rather
+than demonstrating its full potential as a learning system. Louise is maintained
+by a single PhD student, currently writing her PhD thesis. New developments
+should be expected to come at a leisurely pace.
 
 Capabilities
 ------------
