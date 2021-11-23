@@ -26,6 +26,8 @@ Table of contents
 [Debugging-learning-attempts](#debugging-learning-attempts)  
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
+[Citing-Louise](#citing-louise)  
+[Bibliography](#bibliography)  
 
 Overview
 --------
