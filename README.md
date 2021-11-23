@@ -97,8 +97,8 @@ Here are some of the things that Louise can do.
    ```
 
    Note that this is true one-shot learning, from a single example of inputs and
-   outputs of the target program, without any pre-training or anything silly
-   like that.
+   outputs of the target program, without pre-training on billions of examples
+   or anything silly like that.
 
    See `data/examples/findlast.pl` for the `list_last/2` one-shot recursion
    learning example.
