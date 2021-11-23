@@ -707,6 +707,8 @@ body literal, and the variable `z` is shared between its two body literals:
 
 ```Prolog
 P(x,y)← Q(x,z),R(z,y)
+  `-|-----' `----' |
+    `--------------'
 ```
 
 The sharing of universally quantified variables (the "wiring" of the clause)
