@@ -22,11 +22,11 @@ Table of contents
 [Learning with metarules](#learning-with-metarules)  
 [Learning metarules with TOIL](#learning-metarules-with-toil)  
 [Pretty-printing metarules](#pretty-printing-metarules)  
-[Debugging-training-data](#debugging-training-data)  
-[Debugging-learning-attempts](#debugging-learning-attempts)  
+[Debugging training data](#debugging-training-data)  
+[Debugging learning attempts](#debugging-learning-attempts)  
 [Experiment scripts](#experiment-scripts)  
 [Further documentation](#further-documentation)  
-[Citing-Louise](#citing-louise)  
+[Citing Louise](#citing-louise)  
 [Bibliography](#bibliography)  
 
 Overview
