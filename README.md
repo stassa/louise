@@ -796,7 +796,7 @@ with the same number of literals.
 ### Metarule specialisation with TOIL
 
 TOIL learns metarules by exploiting the generality relation between the three
-taxa of metarules described in the previous sections. TOIL takes as in put the
+taxa of metarules described in the previous sections. TOIL takes as input the
 examples and background knowledge in a MIL Problem and sets of either matrix, or
 punch metarules. The matrix or punch metarules are specialised by SLD-resolution
 to produce second-order sort metarules.
