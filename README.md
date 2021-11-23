@@ -36,11 +36,7 @@ Louise [(Patsantzis & Muggleton 2021)] is a machine learning system that learns
 Prolog programs.
 
 Louise is based on a new program learning algorithm, called _Top Program
-Construction_, that runs in polynomial time. Louise can learn recursive
-programs, including left-recursive and mutually recursive programs and perform
-multi-predicate learning, predicate invention and examples invention, among
-other things. Louise includes the program TOIL that can learn metarules for MIL
-systems, including Louise itself.
+Construction_, that runs in polynomial time.
 
 Louise is a Meta-Interpretive Learning (MIL) system. MIL [(Muggleton et al.
 2014)], [(Muggleton et al. 2015)], is a new setting for Inductive Logic
@@ -56,17 +52,13 @@ examples of a learning target. Finally, Louise can perform examples invention to
 extend its set of given examples.
 
 In this manual we show simple examples where Louise is trained on small, "toy"
-problems, designed to demonstrate its use. However, Louise's learning algorithm,
-_Top Program Construction_, is efficient enough to learn very large programs. In
-one of the example datasets included with Louise, a program of more than 2,500
-clauses is learned in under 5 minutes.
-
-In general, Louise's novelty means that it has so far primarily been applied to
-artificial datasets designed to demonstrate its working principles rather than
-realise its full potential. Work is underway to apply Louise on more challenging
-problems, including more real-world applications. Keep in mind that Louise is
-maintained by a single PhD student. New developments should be expected to come
-at a leisurely pace.
+problems, designed to demonstrate its use. Louise is still new and actively
+being worked on and so has not yet been used in large-scale real-world
+applications. Published work on Louise has so far demonstrated the working
+principles behind Louise's Top Program Constructiona algorithm rather than
+realise its full potential as a learning system. Louise is maintained by a
+single PhD student, currently writing her PhD thesis. New developments should be
+expected to come at a leisurely pace.
 
 Capabilities
 ------------
