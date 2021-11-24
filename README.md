@@ -288,6 +288,23 @@ Here are some of the things that Louise can do.
    of specifying Meta-dyadic, we can instead give an upper and lower bound of 3,
    with a declaration of `higher_order(3,3)`.
 
+10. Louise can learn large programs efficiently:
+
+    ```Prolog
+    ?- time(learn(move/2,_Ps)), length(_Ps,N).
+    % 15,952,615 inferences, 4.531 CPU in 4.596 seconds (99% CPU, 3520577 Lips)
+    N = 2101.
+    ```
+
+    In the example above, we train Louise on a grid-world navigation task set up
+    so that the size of the search space of hypotheses grows exponentially with
+    the size of the target theory. Louise completes the learning task in under 5
+    seconds thanks to the efficiency of its Top Program Construction algorithm
+    (TPC) that avoids an expensive search of the space of hypotheses and instead
+    directly constructs a unique object. The TPC algorithm runs in polynomial
+    time and can learn efficiently regardless of the size of the Hypothesis
+    Space.
+
 Louise comes with a number of libraries for tasks that are useful when learning
 programs with MIL, e.g. metarule generation, program reduction, lifting of
 ground predicates, etc. These will be discussed in detail in the upcoming Louise
