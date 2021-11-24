@@ -305,6 +305,9 @@ Here are some of the things that Louise can do.
     time and can learn efficiently regardless of the size of the Hypothesis
     Space.
 
+    See `data/examples/robots.pl` for the `move/2` example.
+
+
 Louise comes with a number of libraries for tasks that are useful when learning
 programs with MIL, e.g. metarule generation, program reduction, lifting of
 ground predicates, etc. These will be discussed in detail in the upcoming Louise
