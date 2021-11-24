@@ -55,10 +55,10 @@ In this manual we show simple examples where Louise is trained on small, "toy"
 problems, designed to demonstrate its use. Louise is still new and actively
 being worked on and so has not yet been used in large-scale real-world
 applications. Published work on Louise has so far focused on describing the
-working principles behind Louise's Top Program Construction algorithm rather
-than demonstrating its full potential as a learning system. Louise is maintained
-by a single PhD student, currently writing her PhD thesis. New developments
-should be expected to come at a leisurely pace.
+working principles behind Louise's Top Program Construction algorithm (TPC)
+rather than demonstrating its full potential as a learning system. Louise is
+maintained by a single PhD student, currently writing her PhD thesis. New
+developments should be expected to come at a leisurely pace.
 
 Capabilities
 ------------
@@ -119,7 +119,12 @@ Here are some of the things that Louise can do.
    odd(A):-predecessor(A,B),even(B).
    true.
    ```
-   
+
+   In the example above, `even/1` and `odd/1` are "dependent" on each other in
+   the sense that `even/1` is defined in terms of `odd/1` and `odd/1` is defined
+   in terms of `even/1`. Neither definition was given by the user prior to
+   training and so neither program could be learned independently.
+
    See `data/examples/multi_pred.pl` for the `odd/1` and `even/1`
    multi-predicate learning example. 
 
@@ -178,8 +183,9 @@ Here are some of the things that Louise can do.
    the learned program.
 
 7. Louise can fold over-specialised programs to introduce recursion. In the
-   following example, an over-specialised program is learned that finds the last
-   element of a list of length up to 3:
+   following example, the learning problem is set up so as to force Louise to
+   learn an over-specialised program that finds the last element of a list of
+   length up to 3:
 
    ```prolog
    ?- learn(list_last/2).
@@ -219,11 +225,12 @@ Here are some of the things that Louise can do.
    of `path/2` are invented. The background knowledge for this MIL problem
    consists of 6 `edge/2` ground facts that determine the structure of a graph
    and a few facts of `not_edge/2` that represent nodes not connected by edges.
-   `path(a,f)` is the single given example. The target theory for this problem
-   is a recursive definition of `path/2` that includes a "base case" for which
-   no example is given. Louise can invent examples of the base-case and so learn
-   a correct hypothesis that represents the full path from node 'a' to node 'f',
-   without crossing any non-edges.
+   `path(a,f)` is the single given example. The target theory (the program we
+   wish the system to learn) for this problem is a recursive definition of
+   `path/2` that includes a "base case" for which no example is given. Louise
+   can invent examples of the base-case and so learn a correct hypothesis that
+   represents the full path from node 'a' to node 'f', without crossing any
+   non-edges.
 
    ```prolog
    ?- learn(path/2).
@@ -298,12 +305,23 @@ Here are some of the things that Louise can do.
 
     In the example above, we train Louise on a grid-world navigation task set up
     so that the size of the search space of hypotheses (Hypothesis Space) grows
-    exponentially with the number of training examples. Louise completes the
-    learning task in under 5 seconds thanks to the efficiency of its Top Program
-    Construction algorithm (TPC) that avoids an expensive search of the
-    Hypothesis Space and instead directly constructs a unique object. The TPC
-    algorithm runs in polynomial time and can learn efficiently regardless of
-    the size of the Hypothesis Space.
+    exponentially with the size of the target theory. The target theory in turn
+    grows linearly with the number of training examples. Louise completes the
+    learning task and learns a theory of more than 2000 clauses in under 5
+    seconds (although running time will depend on the system; for the example
+    above, we trained Louise on a six-year old laptop with an i7 processor
+    clocked at 2.6 GHz and 16 GB of RAM).
+
+    The target theory for th `move/2` learning problem is around 600 clauses so
+    the hypothesis learned by Louise has much redundancy, although it is a
+    correct hypothesis that is consistent with the examples. The reason for the
+    redundancy is that there are multiple "versions" of the target theory and
+    the Top Program learned by Louise includes each of them as a subset. Louise
+    can learn this "super-theory" in only a few seconds thanks to the efficiency
+    of its Top Program Construction algorithm (TPC) that avoids an expensive
+    search of the Hypothesis Space and instead directly constructs a unique
+    object. The TPC algorithm runs in polynomial time and can learn efficiently
+    regardless of the size of the Hypothesis Space.
 
     See `data/examples/robots.pl` for the `move/2` example.
 
