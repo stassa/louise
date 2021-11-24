@@ -298,7 +298,7 @@ Here are some of the things that Louise can do.
 
     In the example above, we train Louise on a grid-world navigation task set up
     so that the size of the search space of hypotheses (Hypothesis Space) grows
-    exponentially with the size of the target theory. Louise completes the
+    exponentially with the number of training examples. Louise completes the
     learning task in under 5 seconds thanks to the efficiency of its Top Program
     Construction algorithm (TPC) that avoids an expensive search of the
     Hypothesis Space and instead directly constructs a unique object. The TPC
