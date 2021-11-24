@@ -233,11 +233,13 @@ Here are some of the things that Louise can do.
    crossing any non-edges.
 
    ```prolog
+   % Try learning with the single given example:
    ?- learn(path/2).
    path(a,f).
    true.
-   
-   ?- examples_invention(path/2,_Es), print_clauses(_Es).
+
+   % List invented examples:
+   ?- examples_invention(path/2).
    m(path,a,b).
    m(path,a,c).
    m(path,a,d).
@@ -254,7 +256,8 @@ Here are some of the things that Louise can do.
    m(path,d,f).
    m(path,e,f).
    true.
-   
+
+   % Invent examples and try again:
    ?- learn_with_examples_invention(path/2).
    path(A,B):-edge(A,B).
    path(A,B):-edge(A,C),path(C,B).
