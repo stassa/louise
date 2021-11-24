@@ -143,7 +143,7 @@ Here are some of the things that Louise can do.
    Louise figures out that `odd/1` is necessary to learn `even/1` and vice-versa
    on its own.
 
-5. Louise can perform _predicate invention_ to incrase its background knowledge
+5. Louise can perform _predicate invention_ to increase its background knowledge
    with new predicates that are necessary for learning. In the following example
    the predicate `'$1'/2` is an _invented_ predicate. That means that `'$1'/2`
    was not given by the user as background knowledge, nor did the user provide
@@ -221,16 +221,16 @@ Here are some of the things that Louise can do.
    30_ (Cropper et al., Machine Learning 2021, to appear). See
    `data/examples/recursive_folding.pl` for the complete example source code.
 
-8. Louise can invent new examples. In the following query a number of examples
+8. Louise can invent new examples. In the listing below a number of examples
    of `path/2` are invented. The background knowledge for this MIL problem
    consists of 6 `edge/2` ground facts that determine the structure of a graph
    and a few facts of `not_edge/2` that represent nodes not connected by edges.
-   `path(a,f)` is the single given example. The target theory (the program we
-   wish the system to learn) for this problem is a recursive definition of
-   `path/2` that includes a "base case" for which no example is given. Louise
-   can invent examples of the base-case and so learn a correct hypothesis that
-   represents the full path from node 'a' to node 'f', without crossing any
-   non-edges.
+   `path(a,f)` is the single example given by the user. The target theory (the
+   program we wish the system to learn) for this problem is a recursive
+   definition of `path/2` that includes a "base case" for which no example is
+   given. Louise can invent examples of the base-case and so learn a correct
+   hypothesis that represents the full path from node 'a' to node 'f', without
+   crossing any non-edges.
 
    ```prolog
    ?- learn(path/2).
@@ -637,20 +637,25 @@ again following the structure of the examples shown previously.
     complete theory of `path/2`.
 
   6. You can list the examples invented by Louise with a call to the predicate
-     `examples_invention/2`:
+     `examples_invention/1`:
 
      ```prolog
-     ?- examples_invention(path/2,_Ps), print_clauses(_Ps).
-     m(path,a,b).
-     m(path,a,c).
-     m(path,a,f).
-     m(path,b,c).
-     m(path,b,d).
-     m(path,c,d).
-     m(path,c,e).
-     m(path,d,e).
-     m(path,d,f).
-     m(path,e,f).
+     ?- examples_invention(path/2).
+     path(a,b).
+     path(a,c).
+     path(a,d).
+     path(a,e).
+     path(a,f).
+     path(b,c).
+     path(b,d).
+     path(b,e).
+     path(b,f).
+     path(c,d).
+     path(c,e).
+     path(c,f).
+     path(d,e).
+     path(d,f).
+     path(e,f).
      true.
      ```
 
