@@ -82,8 +82,7 @@ Here are some of the things that Louise can do.
    Louise](#learning-logic-programs-with-louise) for more information on
    learning logic programs with Louise.
 
-2. Louise can learn recursive programs one-shot, from a single example that is
-   not an example of the base-case:
+2. Louise can learn recursive programs one-shot:
 
    ```prolog
    % Single example given:
@@ -96,9 +95,13 @@ Here are some of the things that Louise can do.
    true.
    ```
 
+   In the example above, the learned program consists of a recursive clause and
+   a "base-case" that terminates the recursion. Both clauses were learned from
+   the single provided example that neither clause suffices to prove on its own.
+
    Note that this is true one-shot learning, from a single example of inputs and
-   outputs of the target program, without pre-training on billions of examples
-   or anything silly like that.
+   outputs of the target program, not examples of _programs_, and without
+   pre-training on billions of examples or anything silly like that.
 
    See `data/examples/findlast.pl` for the `list_last/2` one-shot recursion
    learning example.
