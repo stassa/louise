@@ -456,6 +456,14 @@ below.
 
 ### Dynamic learning and predicate invention
 
+_NOTE: Since November 2021, the main TPC algorithm implementation in Louise is
+capable of learning dependent clauses and performing predicate invention.
+Dynamic learning, described in this section, is not strictly needed anymore.
+The new capabilities are not yet fully documented and their implementation is
+still in active development so for the time being dynamic learning remains the
+recommended method for predicate invention in Louise, as explained below. See
+also the note in the [Examples invention](#examples-invention) section._
+
 The predicate `learn/1` implements Louise's default learning setting that learns
 a program one-clause-at-a-time without memory of what was learned before. This
 is limited in that clauses learned in an earlier step cannot be re-used and so
@@ -574,6 +582,15 @@ time the learning predicate is `learn_dynamic/1`:
 
 
 ### Examples invention
+
+_NOTE: Since November 2021, the main TPC algorithm implementation in Louise is
+capable of learning recursive programs from a single example which was the main
+motivation for examples invention, described in this section. Examples invention
+is therefore not strictly needed anymore. The new capabilities are not yet fully
+documented and their implementation is still under active development so for the
+time being, examples invention should continue to be used when more examples are
+needed, as explained below. See also the note in section [Dynamic learning and
+predicate invention](#dynamic-learning-and-predicate-invention)._
 
 Louise can perform _examples invention_ which is just what it sounds like.
 Examples invention works best when you have relevant background knowledge and
