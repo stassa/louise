@@ -137,7 +137,10 @@ Here are some of the things that Louise can do.
 
 5. Louise can perform _predicate invention_ to incrase its background knowledge
    with new predicates that are necessary for learning. In the following example
-   the predicate `'$'1/2` is an invented predicate:
+   the predicate `'$'1/2` is an invented predicate. That means that `'$1'/2` was
+   not given by the user as background knowledge, nor did the user provide
+   examples of `'$1'/2`, rather Louise invented it independently in the process
+   of learning the target predicate `'S'/2`:
 
    ```prolog
    ?- learn_dynamic('S'/2).
