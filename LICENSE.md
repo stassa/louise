@@ -36,14 +36,14 @@ To make it plain: do not use this work in anything that has anything to do with
 armies, war, weapons, death, destruction, fire, bombs, killing, guns, soldiers,
 refugees, and so on, unless it's a video game and even then, better don't.
 
-4. Clowns.
+5. Clowns.
 
 A sole exception shall be made for clowns (actual clowns) and only so far as the
 purpose of using this work is to entertain the children of military personnel.
 Think of the children! In particular, think how the experience will scar them
 for life.
 
-5. Future terms.
+6. Future terms.
 
 A special provision is made hereby for the future inclusion in this license of
 additional prohibitions of use of this work for other antisocial and anti-human
@@ -52,10 +52,14 @@ identification and behavioural prediction and control of citizens by
 governments, the prediction and control of the behaviour of refugees for any
 purpose other than providing humanitarian aid to them, and so on. The latest
 version of the text of this license shall take precedence over any prior
-versions. The original authors of this license retain the exclusive right to
-modify the text of this license and only as described in this section.
+versions. 
 
-6. GNU license.
+7. License modifications.
+
+The original authors of this license retain the exclusive right to modify the
+text of this license.
+
+8. GNU license.
 
 Other than the above terms, the author of this work grants the same rights and
 wrongs to the user of this software as are granted by the GNU General Public
