@@ -50,7 +50,10 @@ additional prohibitions of use of this work for other antisocial and anti-human
 applications such as the extraction and burning of fossil fuel, the
 identification and behavioural prediction and control of citizens by
 governments, the prediction and control of the behaviour of refugees for any
-purpose other than providing humanitarian aid to them, and so on.
+purpose other than providing humanitarian aid to them, and so on. The latest
+version of the text of this license shall take precedence over any prior
+versions. The original authors of this license retain the exclusive right to
+modify the text of this license.
 
 6. GNU license.
 
