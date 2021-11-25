@@ -46,7 +46,7 @@ for life.
 6. Future terms.
 
 A special provision is made hereby for the future inclusion in this license of
-additional prohibitions of use of this work for other antisocial and anti-human
+additional prohibitions of use of this work in other antisocial and anti-human
 applications such as the extraction and burning of fossil fuel, the
 identification and behavioural prediction and control of citizens by
 governments, the prediction and control of the behaviour of refugees for any
