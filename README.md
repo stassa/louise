@@ -2064,17 +2064,25 @@ of how to use Louise and what it can do.
 Citing Louise
 -------------
 
-If you wish to use Louise, please cite our work with the reference below:
+If you decide to use Louise in your own work, you will probably want to cite
+earlier work that gives more details about it. In that case, you are welcome to
+use the reference to the original Top Program Construction paper, listed below
+(in bib format) and which contains the most complete discussion of the Top
+Program Construction algorithm:
 
 ```bib
 @article{Patsantzis2021,
 author = {Patsantzis, Stassa and Muggleton, Stephen},
-title = {Top Program Construction and Reduction for polynomial-time Meta-Interpretive Learning},
+title = {Top Program Construction and Reduction for Polynomial-Time Meta-Interpretive Learning},
 journal = {Machine Learning},
 year = {2021},
 doi = {https://doi.org/10.1007/s10994-020-05945-w}
 }
 ```
+
+To clarify, you are not _required_ to cite our work to use Louise. You're also
+not _required_ to wash your hands after going to the loo, it's just good form to
+do so :P
 
 Bibliography
 ------------
