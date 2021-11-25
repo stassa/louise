@@ -3,7 +3,7 @@ The Anti-Mil GNU-add-on license.
 1. Prohibition of military use.
 
 The author of this work prohibits its use in any military application by the
-military of any nation on Earth, or beyond, or by any private organisation or
+military of any nation on Earth, or beyond, or by any civilian organisation or
 individual contracted in any faculty by, and to provide any kind of services to,
 the military of such a nation.
 
@@ -21,7 +21,7 @@ ETC.
 
 3. Military contractors.
 
-Private organisations and individuals contracted by militaries of nations are
+Civilian organisations and individuals contracted by militaries of nations are
 heareby defined in the context of this license to include but not be limited to
 scientists and researchers funded by the military of any nation specifically in
 the time period that covers the use of this work. Scientists and researchers
