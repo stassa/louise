@@ -60,4 +60,5 @@ modify the text of this license and only as described in this section.
 Other than the above terms, the author of this work grants the same rights and
 wrongs to the user of this software as are granted by the GNU General Public
 License v3.0 ("the GNU license"), except where conflicts between the GNU License
-and the terms above may arise.
+and the terms above may arise in which case this license takes precedence over
+the GNU license.
