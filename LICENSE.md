@@ -38,10 +38,10 @@ refugees, and so on, unless it's a video game and even then, better don't.
 
 4. Clowns.
 
-A sole exception shall be made for clowns (actual clowns, not army officers) and
-only so far as the purpose of using this work is to entertain the children of
-military personnel. Think of the children! In particular, think how the
-experience will scar them for life.
+A sole exception shall be made for clowns (actual clowns) and only so far as the
+purpose of using this work is to entertain the children of military personnel.
+Think of the children! In particular, think how the experience will scar them
+for life.
 
 5. Future terms.
 
