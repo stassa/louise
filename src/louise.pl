@@ -553,37 +553,38 @@ resolve_metarules(P,Subs,MS,Acc,(L)):-
 	,resolve_metarules(P,Subs,MS,Acc,true).
 resolve_metarules(P,Subs,MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
-	provable_literal(L,MS)
+	provable_literal(L)
 	,clause(L,Bs)
+	,\+ metasub_atom(L,MS)
 	,debug_clauses(meta_interpreter,'Proving BK literal:',[L])
 	,resolve_metarules(P,Subs,MS,Acc,Bs).
 resolve_metarules([E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of the "current" expanded metarule.
-	provable_literal(L,MS)
-	,metarule_clause(Sub,L,Ls)
+	provable_literal(L)
+	,metarule_clause(Sub,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
 	,resolve_metarules([E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules([E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of a new expanded metarule in MS.
-	provable_literal(L,MS)
+	provable_literal(L)
 	,ground(L)
 	,ground(Sub)
 	,member(Sub_:-_,MS)
 	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
-	,metarule_clause(Sub_,L,Ls)
+	,metarule_clause(Sub_,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving other metarule literals:',[L:-Ls])
 	,resolve_metarules([E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
 resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 % L is taken as an example of an invented predicate.
-	provable_literal(L,MS)
+	provable_literal(L)
 	,\+ ground(Sub)
 	% TODO: This checks L is not a BK predicate.
 	% TODO: There must be a better way to do that.
 	,\+ call(L)
 	,invented_literal(L,L)
 	,member(Sub_:-_,MS)
-	,metarule_clause(Sub_,L,Ls)
+	,metarule_clause(Sub_,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
 	,resolve_metarules([E,T,S,O,t],[Sub_|Ss],MS,Acc_1,Ls)
 	,resolve_metarules([E,T,S,O,t],[Sub|Acc_1],MS,Acc,true).
@@ -596,22 +597,22 @@ resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 %	Checks the following:
 %	* Literal is a single literal.
 %	* Literal is not an atom of a foreign predicate.
-%	* Literal is not a metasubstitution atom of an expanded
-%	  metarule.
 %
-provable_literal(L,MS):-
+provable_literal(L):-
 	L \= (_,_)
-	,\+ predicate_property(L,foreign)
-	,L =.. [m,S|_As]
-	,\+ once(metarule_id(S,MS)).
+	,\+ predicate_property(L,foreign).
 
 
-%!	metarule_id(+Symbol,+Metarules) is det.
+%!	metasub_atom(+Atom,+Metarules) is det.
 %
-%	True when Symbol is the Id of an extended metarule.
+%	True Atom is a metasubstitution atom of an expanded metarule.
 %
-metarule_id(S,MS):-
-	member(Sub:-_,MS)
+%	Used to check that a literal we are trying to prove is _not_ the
+%	encapsulated metasubstitution atom of an expanded metarule.
+%
+metasub_atom(L,MS):-
+	L =.. [m,S|_As]
+	,member(Sub:-_,MS)
 	,Sub =.. [m,Id|_]
 	,S == Id.
 
@@ -682,18 +683,24 @@ assert_clause(Sub-M,Refs):-
 	,debug_clauses(meta_interpreter,'Asserted clause:',[C]).
 
 
-%!	metarule_clause(?Metasub,?Head,?Body) is det.
+%!	metarule_clause(?Metasub,+Metarules,?Head,?Body) is det.
 %
 %	clause/2 alternative for metarules in the program database.
 %
 %	Abstracts calling clause/2 to get the body literals of metarules
 %	that may have no body literals. Magick!
 %
-metarule_clause(Sub,L,Ls):-
+%	Metarules is the set of encapsulated metarules passed to
+%	resolve_metarules/5. It is used to check that Head is not bound
+%	to the metasubstitution atom of an expanded metarule.
+%
+metarule_clause(Sub,MS,L,Ls):-
 	clause(Sub,(L,Ls))
+	,\+ metasub_atom(L,MS)
 	,!.
-metarule_clause(Sub,L,true):-
-	clause(Sub,(L)).
+metarule_clause(Sub,MS,L,true):-
+	clause(Sub,(L))
+	,\+ metasub_atom(L,MS).
 
 
 
