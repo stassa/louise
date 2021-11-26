@@ -553,25 +553,19 @@ resolve_metarules(P,Subs,MS,Acc,(L)):-
 	,resolve_metarules(P,Subs,MS,Acc,true).
 resolve_metarules(P,Subs,MS,Acc,(L)):-
 % L unifies with the head of a BK predicate.
-% TODO: L may also unify with the metasub atom of an expanded metarule.
-% TODO: That allows clauses like p(x,y):- chain(x,z), q(z,y) to be
-% TODO: derived. That should not be allowed. Or should it?
-	L \= (_,_)
-	,\+ predicate_property(L,foreign)
+	provable_literal(L,MS)
 	,clause(L,Bs)
 	,debug_clauses(meta_interpreter,'Proving BK literal:',[L])
 	,resolve_metarules(P,Subs,MS,Acc,Bs).
 resolve_metarules([E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of the "current" expanded metarule.
-	L \= (_,_)
-	,\+ predicate_property(L,foreign)
+	provable_literal(L,MS)
 	,metarule_clause(Sub,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
 	,resolve_metarules([E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules([E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 % L unifies with the head of a new expanded metarule in MS.
-	L \= (_,_)
-	,\+ predicate_property(L,foreign)
+	provable_literal(L,MS)
 	,ground(L)
 	,ground(Sub)
 	,member(Sub_:-_,MS)
@@ -582,8 +576,7 @@ resolve_metarules([E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	,resolve_metarules([E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
 resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 % L is taken as an example of an invented predicate.
-	L \= (_,_)
-	,\+ predicate_property(L,foreign)
+	provable_literal(L,MS)
 	,\+ ground(Sub)
 	% TODO: This checks L is not a BK predicate.
 	% TODO: There must be a better way to do that.
@@ -594,6 +587,33 @@ resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
 	,resolve_metarules([E,T,S,O,t],[Sub_|Ss],MS,Acc_1,Ls)
 	,resolve_metarules([E,T,S,O,t],[Sub|Acc_1],MS,Acc,true).
+
+
+%!	provable_literal(+Literal,+Metarules) is det.
+%
+%	True when a Literal is to be proved by meta-interpretation.
+%
+%	Checks the following:
+%	* Literal is a single literal.
+%	* Literal is not an atom of a foreign predicate.
+%	* Literal is not a metasubstitution atom of an expanded
+%	  metarule.
+%
+provable_literal(L,MS):-
+	L \= (_,_)
+	,\+ predicate_property(L,foreign)
+	,L =.. [m,S|_As]
+	,\+ once(metarule_id(S,MS)).
+
+
+%!	metarule_id(+Symbol,+Metarules) is det.
+%
+%	True when Symbol is the Id of an extended metarule.
+%
+metarule_id(S,MS):-
+	member(Sub:-_,MS)
+	,Sub =.. [m,Id|_]
+	,S == Id.
 
 
 %!	invented_literal(+Literal,-Invented) is det.
