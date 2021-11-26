@@ -327,10 +327,10 @@ metasubstitutions(E,MS,S-M_e):-
 	% TODO: is this	needed?
 	% TODO: Can resolve_metarules/4 succeed but leave S non-ground?
 	,ground(S)
-	,examples_targets([E],Ts)
-	% Check that S is a clause of the target predicate.
-	% And that it does not have a metarule id as a symbol.
 	,S =.. [_,Id,T|_Ps]
+	,examples_targets([E],Ts)
+	% Now we check that S is a clause of the target predicate.
+	% And that it does not have a metarule id as a symbol.
 	% Passing only a symbol without arity is asking for trouble...
 	,target_or_invention(Ts,T/_)
 	,expanded_metarules([Id],[M_e])
