@@ -315,16 +315,17 @@ metasubstitutions(E,MS,S-M_e):-
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
 	,(   DL = none
-	->   resolve_metarules(Sub,MS,Subs,Ls)
-	;    G = resolve_metarules(Sub,MS,Subs,Ls)
-	    ,call_with_inference_limit(G,DL,_R)
+	 ->  resolve_metarules(Sub,MS,Subs,Ls)
+	 ;   G1 = resolve_metarules(Sub,MS,Subs,Ls)
+	    ,D = ( debug(metasubstitution,'Inference limit exceeded!',[])
+		  ,fail
+		 )
+	    ,G2 = catch(G1,inference_limit_exceeded,D)
+	    ,call_with_inference_limit(G2,DL,_R)
 	 )
 	,member(S, Subs)
-	% That Sub is ground has to be checked here.
-	% Because resolve_metarules/2 backtracks over prove_recursive/1
-	% So it can succeed even when resolve_metarules/4 fails
-	% Leaving Sub non-ground.
-	% TODO: not sure about this anymore.
+	% TODO: is this	needed?
+	% TODO: Can resolve_metarules/4 succeed but leave S non-ground?
 	,ground(S)
 	,examples_targets([E],Ts)
 	% Check that S is a clause of the target predicate.
