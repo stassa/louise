@@ -543,29 +543,34 @@ resolve_metarules(P,Sub,MS,Acc,(L,Ls)):-
 	resolve_metarules(P,Sub,MS,Acc_1,L)
 	,resolve_metarules(P,Acc_1,MS,Acc,Ls).
 resolve_metarules(P,Subs,MS,Acc,(L)):-
-% L unifies with an atom in the background knowledge.
-% Remember that the background knowledge includes the examples!
+% L will be proved by calling it directly.
+% If L can be proved by calling it, that usually means that L unifies
+% with the head of a BK predicate for which we have a complete
+% definition, or a positive example.
         L \= (_,_)
 	,call(L)
 	,debug_clauses(meta_interpreter,'Proved BK atom:',[L])
 	,resolve_metarules(P,Subs,MS,Acc,true).
 resolve_metarules(P,Subs,MS,Acc,(L)):-
-% L unifies with the head of a clause in the BK.
-% If prove_recursive(top_program) is set, the BK includes the clauses of
-% the Top Program derived so-far.
+% L will be proved by meta-interpretation.
+% If L can be proved (only) by meta-interpretation usually that means
+% that L unifies with the head of a clause of a partial definition of a
+% predicate in the program database, most likely the definition of a
+% target predicate that is in the process of being constructed, i.e. a
+% clause in the Top Program.
 	provable_literal(L)
 	,clause(L,Bs)
 	,\+ metasub_atom(L,MS)
 	,debug_clauses(meta_interpreter,'Proving BK literal:',[L])
 	,resolve_metarules(P,Subs,MS,Acc,Bs).
 resolve_metarules([E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
-% L unifies with the head of the "current" expanded metarule.
+% L will be proved by meta-interpretation with the "current" metarule.
 	provable_literal(L)
 	,metarule_clause(Sub,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
 	,resolve_metarules([E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules([E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
-% L unifies with the head of a new expanded metarule in MS.
+% L will be proved by meta-interpretation with a new metarule in MS.
 	provable_literal(L)
 	,ground(L)
 	,ground(Sub)
@@ -576,7 +581,9 @@ resolve_metarules([E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	,debug_clauses(meta_interpreter,'Proving other metarule literals:',[L:-Ls])
 	,resolve_metarules([E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
 resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
-% L is taken as an example of an invented predicate.
+% L will be proved as an example of an invented predicate.
+% Note the double-recursion in the end. We prove L, then we prove the
+% original metasubstitution using the invented predicate as BK.
 	provable_literal(L)
 	,\+ ground(Sub)
 	% TODO: This checks L is not an atom in the BK.
