@@ -147,12 +147,10 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,dynamic_learning:table_encapsulated(Ss)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
-	     ,generalise(Pos,MS,Ss_Gen)
-	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
-	     ,specialise(Ss_Gen,Neg,Ss_Spec)
-	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
-	     ,applied_metarules(Ss_Spec,MS,Ts)
-	     ,debug_clauses(top_program,'Applied metarules',Ts)
+	     ,generalise_specialise(Pos,Neg,MS,Subs)
+	     ,debug_clauses(top_program,'Constructed Top program:',Subs)
+	     ,applied_metarules(Subs,MS,Ts)
+	     ,debug_clauses(top_program,'Applied metarules:',Ts)
 	     )
 	,C = (erase_program_clauses(Refs)
 	     ,dynamic_learning:untable_encapsulated(Ss)
@@ -206,28 +204,6 @@ generalise(Pos,MS,Ss_Pos):-
 	      )
 	     ,Ps)
 	,sort(1,@<,Ps,Ss_Pos).
-generalise(Pos,MS,Ss_Pos):-
-% Hands proofs to the metarule meta-interpreter resolve_metarules/5.
-% Runs slower, but is more complete.
-%
-% Tabling keeps resolve_metarules/5 from going infinite during
-% meta-interpretation if possible. Tabled as incremental because
-% encapsulated clauses may be added to or removed from the dynamic db
-% during meta-interpretation.
-        table(resolve_metarules/5 as incremental)
-	,findall(Sub-M-Refs
-	     ,(member(Ep,Pos)
-	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
-	      ,metasubstitutions(Ep,MS,Sub-M)
-	      ,constraints(Sub)
-	      ,assert_clause(Sub-M,Refs)
-	      )
-	     ,Ps)
-	,untable(resolve_metarules/6)
-	% TODO: References are ignored because it's a bother to remove them.
-	% TODO: There should be a better way to do this.
-	,pairs_keys_values(Ps,Ss_Pos_,_Rs)
-	,sort(1,@<,Ss_Pos_,Ss_Pos).
 
 
 
@@ -254,6 +230,75 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 	      )
 	     ,Ss_Neg).
 
+
+
+%!	generalise_specialise(+Pos,+Neg,+Metarules,-Metasubs) is det.
+%
+%	Variant Top Program Construction implementation.
+%
+%	This predicate implements a variant of the Top Program
+%	Construction algorithm designed to learn more kinds of recursive
+%	clauses than the "vanilla" implementation.
+%
+%	The "vanilla" TPC version is only capable of constructing
+%	recursive clauses that can resolve with positive examples. The
+%	variant implemented by this predicate can also construct
+%	recursive clauses that resolve with other clauses in the Top
+%	Program, such as self-resolving clauses or a pair of a recursive
+%	clause and its base-case.
+%
+%	The "vanilla" implementation of TPC is split into two steps,
+%	generalisation and specialisation. Generalisation adds to the
+%	Top Program all clauses that entail one or more positive
+%	examples with respect to background knowledge. The
+%	specialisation step removes from the Top Program each clause
+%	that entails one or more negative examples. In the vanilla TPC
+%	version, first all positive examples are processed in the
+%	generalisation step, then all negative examples are processed in
+%	the specialisation step. The variant implemented by this
+%	predicate instead combines the generalise and specialise step
+%	into one: first it constructs all clauses that entail one
+%	positive example with respect to background knowledge, then it
+%	throws out all the ones that entail any negative example. Then
+%	it picks up the next positive example. The increased overhead is
+%	justified by the reduced opportunity for over-generalisation.
+%
+%	This variant also hands proofs to the metarule meta-interpreter
+%	resolve_metarules/5, rather than directly to Prolog. The
+%	resolve_metarules/5 meta-interpreter allows resolution with, you
+%	guessed it, metarules, which avoids all sorts of complications
+%	that arise from the fact that TPC must first prove a clause
+%	before adding it to the Top Program.
+%
+%	In general this variant runs slower, but is more complete than
+%	"vanilla" TPC.
+%
+%	@see the configuration option prove_recursive/1 that controls
+%	the resolve_metarules/5 meta-interpreter.
+%
+generalise_specialise(Pos,Neg,MS,Ss_Pos):-
+% Tabling keeps resolve_metarules/5 from going infinite during
+% meta-interpretation if possible. Tabled as incremental because
+% encapsulated clauses may be added to or removed from the dynamic db
+% during meta-interpretation.
+        table(resolve_metarules/5 as incremental)
+	,findall(Sub-M-Refs
+	     ,(member(Ep,Pos)
+	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
+	      ,metasubstitutions(Ep,MS,Sub-M)
+	      ,constraints(Sub)
+	      ,\+((member(En,Neg)
+		  ,debug_clauses(dynamic,'Negative example:',[En])
+		  ,metasubstitution(En,M,Sub)
+		  ))
+	      ,assert_clause(Sub-M,Refs)
+	      )
+	     ,Ps)
+	,untable(resolve_metarules/6)
+	% TODO: References are ignored because it's a bother to remove them.
+	% TODO: There should be a better way to do this.
+	,pairs_keys_values(Ps,Ss_Pos_,_Rs)
+	,sort(1,@<,Ss_Pos_,Ss_Pos).
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
@@ -595,7 +640,6 @@ resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
 	,resolve_metarules([E,T,S,O,t],[Sub_|Ss],MS,Acc_1,Ls)
 	,resolve_metarules([E,T,S,O,t],[Sub|Acc_1],MS,Acc,true).
-
 
 
 %!	provable_literal(+Literal,+Metarules) is det.
