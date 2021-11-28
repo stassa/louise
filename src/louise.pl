@@ -543,16 +543,16 @@ resolve_metarules(P,Sub,MS,Acc,(L,Ls)):-
 	resolve_metarules(P,Sub,MS,Acc_1,L)
 	,resolve_metarules(P,Acc_1,MS,Acc,Ls).
 resolve_metarules(P,Subs,MS,Acc,(L)):-
-% L is an atom of a foreign predicate in the body of a BK clause.
-% clause/2 would raise an access permission error.
-% So we just call(L) and leaf the proof branch if it succeeds.
-	L \= (_,_)
-	,predicate_property(L,foreign)
+% L unifies with an atom in the background knowledge.
+% Remember that the background knowledge includes the examples!
+        L \= (_,_)
 	,call(L)
-	,debug_clauses(meta_interpreter,'Proved foreign literal:',[L])
+	,debug_clauses(meta_interpreter,'Proved BK atom:',[L])
 	,resolve_metarules(P,Subs,MS,Acc,true).
 resolve_metarules(P,Subs,MS,Acc,(L)):-
-% L unifies with the head of a BK predicate.
+% L unifies with the head of a clause in the BK.
+% If prove_recursive(top_program) is set, the BK includes the clauses of
+% the Top Program derived so-far.
 	provable_literal(L)
 	,clause(L,Bs)
 	,\+ metasub_atom(L,MS)
@@ -579,7 +579,7 @@ resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 % L is taken as an example of an invented predicate.
 	provable_literal(L)
 	,\+ ground(Sub)
-	% TODO: This checks L is not a BK predicate.
+	% TODO: This checks L is not an atom in the BK.
 	% TODO: There must be a better way to do that.
 	,\+ call(L)
 	,invented_literal(L,L)
@@ -588,6 +588,7 @@ resolve_metarules([E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
 	,resolve_metarules([E,T,S,O,t],[Sub_|Ss],MS,Acc_1,Ls)
 	,resolve_metarules([E,T,S,O,t],[Sub|Acc_1],MS,Acc,true).
+
 
 
 %!	provable_literal(+Literal,+Metarules) is det.
