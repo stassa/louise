@@ -286,7 +286,6 @@ generalise_specialise(Pos,Neg,MS,Ss_Pos):-
 	     ,(member(Ep,Pos)
 	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
 	      ,metasubstitutions(Ep,MS,Sub-M)
-	      ,constraints(Sub)
 	      ,\+((member(En,Neg)
 		  ,debug_clauses(dynamic,'Negative example:',[En])
 		  ,metasubstitution(En,M,Sub)
@@ -372,6 +371,11 @@ metasubstitutions(E,MS,S-M_e):-
 	% TODO: is this	needed?
 	% TODO: Can resolve_metarules/4 succeed but leave S non-ground?
 	,ground(S)
+	,(   configuration:test_constraints(clause)
+	 ->  debug_clauses(const,'Testing constraint for metasub:',[S])
+            ,constraints(S)
+	 ;   true
+	 )
 	,S =.. [_,Id,T|_Ps]
 	,examples_targets([E],Ts)
 	% Now we check that S is a clause of the target predicate.
@@ -579,8 +583,16 @@ proof_steps(Ss):-
 %	learning can be replaced.
 %
 resolve_metarules(_,[Sub|Ss],_MS,[Sub|Ss],true):-
-% We split head from tail in [Sub|Ss] only to log Sub.
-	!
+% If Sub is ground we're at the leaf of a proof branch.
+% That's a good time to test constraints, depending on the value of
+% test_constraints/1.
+	(   configuration:test_constraints(proof)
+	   ,ground(Sub)
+	->  debug_clauses(const,'Testing constraints for ground metasub:',[Sub])
+	   ,constraints(Sub)
+	;   true
+	)
+	,!
 	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub]).
 resolve_metarules(P,Sub,MS,Acc,(L,Ls)):-
 % Split the proof tree.
@@ -619,6 +631,11 @@ resolve_metarules([E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	provable_literal(L)
 	,ground(L)
 	,ground(Sub)
+	,(   configuration:test_constraints(proof)
+	 ->  debug_clauses(const,'Testing constraints for ground metasub:',[Sub])
+	    ,constraints(Sub)
+	 ;   true
+	 )
 	,member(Sub_:-_,MS)
 	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
