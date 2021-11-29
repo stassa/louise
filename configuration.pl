@@ -892,7 +892,7 @@ tautology(H:-B):-
 %       set, constraints are tested right after the proof of an
 %       example, regardless of the value of this option.
 %
-test_constraints(proof).
+test_constraints(clause).
 
 
 %!	theorem_prover(?Algorithm) is semidet.
