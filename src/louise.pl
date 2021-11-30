@@ -610,7 +610,8 @@ resolve_metarules(_C,_P,[Sub|Ss],_MS,[Sub|Ss],true):-
 	;   true
 	)
 	,!
-	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub]).
+	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub])
+	,debug_clauses(meta_interpreter,'Accumulated metasubs:',[Ss]).
 resolve_metarules(C,P,Sub,MS,Acc,(L,Ls)):-
 % Split the proof tree.
 % I actually had to do this kind of thing in java, once. :shiver:
@@ -660,21 +661,19 @@ resolve_metarules(C,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	,debug_clauses(meta_interpreter,'Proving other metarule literals:',[L:-Ls])
 	,resolve_metarules(C,[E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
 resolve_metarules(C,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
-% L will be proved as an example of an invented predicate.
-% Note the double-recursion in the end. We prove L, then we prove the
-% original metasubstitution using the invented predicate as BK.
+% L will be proved by meta-interpretation with a new metarule in MS.
 	provable_literal(L)
-	,\+ ground(Sub)
-	% TODO: This checks L is not an atom in the BK.
-	% TODO: There must be a better way to do that.
+	% TODO: This checks L already has a proof and we know it, so that we will
+	% TODO: only attempt predicate invention when necessary to prove L.
+	% TODO: There _must_ be a better way to check that!
 	,\+ call(L)
+	,debug_clauses(meta_interpreter,'Try inventing a new symbol for literal:', [L])
 	,invented_literal(C,L,L)
+	,debug(meta_interpreter,'Succeeded: ~w',[L])
 	,member(Sub_:-_,MS)
 	,metarule_clause(Sub_,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
-	,resolve_metarules(C,[E,T,S,O,t],[Sub_|Ss],MS,Acc_1,Ls)
-	,resolve_metarules(C,[E,T,S,O,t],[Sub|Acc_1],MS,Acc,true).
-
+	,resolve_metarules(C,[E,T,S,O,t],[Sub_,Sub|Ss],MS,Acc,Ls).
 
 
 %!	provable_literal(+Literal,+Metarules) is det.
@@ -687,7 +686,8 @@ resolve_metarules(C,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 %
 provable_literal(L):-
 	L \= (_,_)
-	,\+ predicate_property(L,foreign).
+	,\+ predicate_property(L,foreign)
+	,\+ built_in_or_library_predicate(L).
 
 
 %!	metasub_atom(+Atom,+Metarules) is det.
@@ -729,7 +729,9 @@ metasub_atom(L,MS):-
 %
 invented_literal(C,L,L_):-
 	L =.. [m,P|As]
+	,\+ ground(P)
 	,new_symbol(C,P)
+	,debug(predicate_invention,'Invented new predicate symbol: ~w',[P])
 	,L_ =.. [m,P|As].
 
 %!	new_symbol(+Counter,?Symbol) is det.
