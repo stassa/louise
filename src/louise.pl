@@ -141,9 +141,15 @@ top_program(Pos,Neg,BK,MS,Ts):-
 % Uses the specialised metarule meta-interpreter resolve_metarules/5
 % Runs slower and manipulates the dynamic db.
 	configuration:theorem_prover(resolution)
-	% Negative examples don't need to be added to the dynamic db.
 	,examples_targets(Pos,Ss)
-	,S = (write_problem(user,[Pos,BK,MS],Refs)
+	% Negative examples don't need to be added to the dynamic db.
+	% Metarules may need to, depending on whether we want to resolve them.
+	,(   configuration:prove_recursive(H)
+	    ,member(H,[self,others])
+	 ->  Ws = [Pos,BK,MS]
+	 ;   Ws = [Pos,BK]
+	 )
+	,S = (write_problem(user,Ws,Refs)
 	     ,dynamic_learning:table_encapsulated(Ss)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
