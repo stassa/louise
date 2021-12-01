@@ -142,12 +142,15 @@ top_program(Pos,Neg,BK,MS,Ts):-
 % Runs slower and manipulates the dynamic db.
 	configuration:theorem_prover(resolution)
 	,examples_targets(Pos,Ss)
-	% Negative examples don't need to be added to the dynamic db.
-	% Metarules may need to, depending on whether we want to resolve them.
+	% The following tests determine the structure of the program db.
+	,(   configuration:prove_recursive(examples)
+	 ->  Ws_ = [Pos,BK]
+	 ;   Ws_ = [BK]
+	 )
 	,(   configuration:prove_recursive(H)
 	    ,member(H,[self,others])
-	 ->  Ws = [Pos,BK,MS]
-	 ;   Ws = [Pos,BK]
+	 ->  Ws = [MS|Ws_]
+	 ;   Ws = Ws_
 	 )
 	,S = (write_problem(user,Ws,Refs)
 	     ,dynamic_learning:table_encapsulated(Ss)
