@@ -648,10 +648,26 @@ resolve_metarules(C,P,Subs,MS,Acc,(L)):-
 	,resolve_metarules(C,P,Subs,MS,Acc,Bs).
 resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 % L will be proved by meta-interpretation with the "current" metarule.
+% If Sub is not ground we keep trying to ground it. This forces
+% resolution with the same instance of the current metarule, i.e. we
+% only resolve a clause with a copy of itself.
 	provable_literal(L)
+	% Notice the check here. See note above.
+	,\+ ground(Sub)
 	,metarule_clause(Sub,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
 	,resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
+resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
+% L will be proved by meta-interpretation with the "current" metarule.
+% If Sub is ground, we can try to construct a new instance of its parent
+% metarule. This allows resolution between clauses that are instances of
+% the same metarule, but that are not the same clause.
+	provable_literal(L)
+	,ground(Sub)
+	,copy_term(Sub,Sub_)
+	,metarule_clause(Sub_,MS,L,Ls)
+	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
+	,resolve_metarules(C,[E,T,t,O,I],[Sub_|Ss],MS,Acc,Ls).
 resolve_metarules(C,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 % L will be proved by meta-interpretation with a new metarule in MS.
 	provable_literal(L)
