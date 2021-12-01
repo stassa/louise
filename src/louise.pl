@@ -621,7 +621,9 @@ resolve_metarules(_C,_P,[Sub|Ss],_MS,[Sub|Ss],true):-
 resolve_metarules(C,P,Sub,MS,Acc,(L,Ls)):-
 % Split the proof tree.
 % I actually had to do this kind of thing in java, once. :shiver:
-	resolve_metarules(C,P,Sub,MS,Acc_1,L)
+	debug_clauses(meta_interpreter,'Proving one literal:',[L])
+	,resolve_metarules(C,P,Sub,MS,Acc_1,L)
+	,debug_clauses(meta_interpreter,'Proving remaining literals:',[Ls])
 	,resolve_metarules(C,P,Acc_1,MS,Acc,Ls).
 resolve_metarules(C,P,Subs,MS,Acc,(L)):-
 % L will be proved by calling it directly.
@@ -653,6 +655,7 @@ resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 resolve_metarules(C,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 % L will be proved by meta-interpretation with a new metarule in MS.
 	provable_literal(L)
+	% TODO: Yes, but why?
 	,ground(L)
 	,ground(Sub)
 	,(   configuration:test_constraints(proof)
@@ -660,7 +663,7 @@ resolve_metarules(C,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	    ,constraints(Sub)
 	 ;   true
 	 )
-	,member(Sub_:-_,MS)
+        ,next_metarule(MS,Sub_)
 	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
 	,metarule_clause(Sub_,MS,L,Ls)
@@ -676,7 +679,7 @@ resolve_metarules(C,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 	,debug_clauses(meta_interpreter,'Try inventing a new symbol for literal:', [L])
 	,invented_literal(C,L,L)
 	,debug(meta_interpreter,'Succeeded: ~w',[L])
-	,member(Sub_:-_,MS)
+        ,next_metarule(MS,Sub_)
 	,metarule_clause(Sub_,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
 	,resolve_metarules(C,[E,T,S,O,t],[Sub_,Sub|Ss],MS,Acc,Ls).
@@ -708,6 +711,24 @@ metasub_atom(L,MS):-
 	,member(Sub:-_,MS)
 	,Sub =.. [m,Id|_]
 	,S == Id.
+
+
+%!	next_metarule(+Metarules,-Metasub) is nondet.
+%
+%	Generate metasubstitution atoms from a list of Metarules.
+%
+%	Avoids smushing together the variables in metasubstitution atoms
+%	while going over Metarules with member/2. We want to avoid that
+%	because it cuts off paths of the proof tree. One particular
+%	situation where this becomes apparent is during predicate
+%	invention where we end up not being able to invent more than one
+%	new predicate symbol, because the same symbol gets passed around
+%	inadvertently through unification at the boundary condition of
+%	member/2.
+%
+next_metarule(MS, Sub_):-
+	member(Sub:-_, MS)
+	,copy_term(Sub,Sub_).
 
 
 %!	invented_literal(+Counter,+Literal,-Invented) is det.
