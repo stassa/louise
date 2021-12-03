@@ -148,7 +148,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	 ;   Ws_ = [BK]
 	 )
 	,(   configuration:prove_recursive(H)
-	    ,member(H,[self,others])
+	    ,member(H,[self,others,invented])
 	 ->  Ws = [MS|Ws_]
 	 ;   Ws = Ws_
 	 )
