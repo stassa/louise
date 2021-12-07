@@ -955,6 +955,6 @@ literals_list_to_clause([H|[B]],(H:-B)):-
 % One body literal
 	!.
 literals_list_to_clause([H|Ls],(H:-Bs)):-
-% A vector of body literals that should be joined by ','/2.
-	Bs =.. [,|Ls].
+% A vector of body literals that should be turned into a list.
+	once(list_tree(Ls,Bs)).
 
