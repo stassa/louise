@@ -90,15 +90,14 @@ thelma(Pos,Neg,BK,MS,Prog):-
 	configuration:unfold_invented(U)
 	,debug(thelma,'Converting examples...',[])
 	,convert_examples(pos,Pos,Pos_c)
-	,convert_examples(neg,Neg,Neg_c)
 	,S = (debug(thelma,'Transforming metarules...',[])
              ,transform_metarules(MS)
 	     )
 	,G = (debug(thelma,'Proving examples...',[])
 	     ,prove(Pos_c,BK,MS,Ps)
 	     ,debug(thelma,'Disproving examples...',[])
-	     ,disprove(Neg_c,BK,Ps)
 	     ,project_metasubs(Ps, Prog_)
+	     ,disprove(Neg,BK,Prog_)
 	     )
 	,Cl = (debug(thelma,'Cleaning up metarules...',[]),
 	       cleanup_metarules
@@ -110,6 +109,7 @@ thelma(Pos,Neg,BK,MS,Prog):-
 	 ;   Prog_ = Prog
 	 ).
 thelma(_Pos,_Neg,_BK,_MS,[]).
+
 
 
 
@@ -817,63 +817,57 @@ disprove([],_BK,_Ms):-
 % Skip further processing if there are no negative examples.
 	!.
 disprove(Neg,BK,Ps):-
-	examples_targets(Neg,Ts)
-        ,S  = (assert_program(thelma,Ps,Refs)
-              ,table_encapsulated(Ts,m)
-              ,table_encapsulated(BK,p)
+	(   closure(BK,user,Bs)
+	->  true
+	;   closure(BK,experiment_file,Bs)
+	;   throw('Missing BK definition of predicate in':BK)
+	)
+	,flatten(Bs,Bs_f)
+	,examples_targets(Neg,Ts)
+	,S  = (assert_program(program,Ps,Refs_Ps)
+	      ,assert_program(program,Bs_f,Refs_Bs)
+	      ,maplist(table_program,[Ts,Bs_f])
               )
         % Succeed if the program fails, otherwise fail;
 	% Erase the newly asserted clauses eitherwise.
         ,G = forall(member(:-A,Neg)
                     ,(debug(thelma,'Disproving atom: ~w',[:-A])
-                     ,\+ once(call(thelma:A))
+                     ,\+ once(call(program:A))
                      )
                    )
-        ,C = (erase_program_clauses(Refs)
-             ,untable_encapsulated(Ts,m)
-             ,untable_encapsulated(BK,p)
+        ,C = (erase_program_clauses(Refs_Ps)
+	     ,erase_program_clauses(Refs_Bs)
+	      ,maplist(untable_program,[Ts,Bs_f])
              )
+	% Don't backtrack over disproofs
+	% Particularly after erasing BK and program clauses.
+	,!
         ,setup_call_cleanup(S,G,C).
 
 
-%!      table_encapsulated(+Targets,+Symbol) is det.
+%!	table_program(+Symbols) is det.
 %
-%       Table a set of Targets encapsulated by a Symbol.
+%	Table each of a list of predicates given their Symbols.
 %
-%       This is a variant of the table_encapsulated/1 defined in
-%       dynamic_learning, that also accepts an encapsulation predicate
-%       so that BK predicates (encapsulated using 'p' rather than 'm')
-%       can also be encapsulated.
+%	Used to prevent BK and target predicates from going infinite
+%	while trying to disprove negative examples.
 %
-%       @tbd Move this to auxiliaries and replace the dynamic_learning
-%       version with it.
-%
-table_encapsulated(Ts,P):-
-	forall(member(_F/A,Ts)
-	      ,(succ(A,A_)
-               ,table(thelma:P/A_)
-               %,writeln('Tabled':P/A_)
-	       )
+table_program(Ss):-
+	forall(member(F/A,Ss)
+	      ,table(program:F/A)
 	      ).
 
 
-%!      untable_encapsulated(+Targets,+Symbol) is det.
+%!	untable_program(+Symbols) is det.
 %
-%       Untable a set of Target predicates encapsulated by a Symbol.
+%	Untable a list of predicates given their Symbols.
 %
-%       Variant of the untable_encapsulated/1 predicate defined in
-%       dynamic_learning that also accepts an encapsulation predicate
-%       similar to table_encapsulated/2.
+%	Counterpart to table_program/1, untabling BK and target
+%	predicates after we're done disproving them.
 %
-%       @tbd Also move to auxiliaries and replace the dynamic_learning
-%       version.
-%
-untable_encapsulated(Ts,P):-
-	forall(member(_F/A,Ts)
-	      ,(succ(A,A_)
-	       ,untable(thelma:P/A_)
-               %,writeln('Untabled':P/A_)
-	       )
+untable_program(Ss):-
+	forall(member(F/A,Ss)
+	      ,untable(program:F/A)
 	      ).
 
 
