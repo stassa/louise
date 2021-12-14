@@ -292,11 +292,11 @@ generalise_specialise(Pos,Neg,MS,Ss_Pos):-
 % during meta-interpretation.
         table(resolve_metarules/6 as incremental)
 	,configuration:max_invented(I)
-	,C = c(1,I)
+	,invented_symbols(I,Is)
 	,findall(Sub-M-Refs
 	     ,(member(Ep,Pos)
 	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
-	      ,metasubstitutions(C,Ep,MS,Sub-M)
+	      ,metasubstitutions(Is,Ep,MS,Sub-M)
 	      ,\+((member(En,Neg)
 		  ,debug_clauses(dynamic,'Negative example:',[En])
 		  ,metasubstitution(En,M,Sub)
@@ -309,6 +309,7 @@ generalise_specialise(Pos,Neg,MS,Ss_Pos):-
 	% TODO: There should be a better way to do this.
 	,pairs_keys_values(Ps,Ss_Pos_,_Rs)
 	,sort(1,@<,Ss_Pos_,Ss_Pos).
+
 
 
 %!	metasubstitution(+Example,+Metarule,-Metasubstitution) is
@@ -336,7 +337,7 @@ metasubstitution(E,M,Sub):-
 	,debug_clauses(metasubstitution,'Succeeded:',Ls).
 
 
-%!	metasubstitutions(+Counter,+Example,+Metarule,+Metarules,-Metasubs)
+%!	metasubstitutions(+Invented,+Example,+Metarule,+Metarules,-Metasubs)
 %!	is nondet.
 %
 %	Derive all Metasubstitutions entailing an Example.
@@ -346,10 +347,9 @@ metasubstitution(E,M,Sub):-
 %	are performed by the metarule meta-interpreter
 %	resolve_metarules/5.
 %
-%	Counter is a counter for invented predicates, an atom of the
-%	form c(I,K) where I is initially 1 and K is initially equal to
-%	the value of the configuration option max_invented/1, but may be
-%	updated as learning proceeds.
+%	Invented is a list of symbols reserved for invented predicates,
+%	up to the maximum defined in the configuration option
+%	max_invented/1.
 %
 %	Example is a positive example, only.
 %
@@ -367,7 +367,7 @@ metasubstitution(E,M,Sub):-
 %	itself, c) other metarules in Metarules and d) clauses in the
 %	Top Program derived so-far. So, everything, really.
 %
-metasubstitutions(C,E,MS,S-M_e):-
+metasubstitutions(Is,E,MS,S-M_e):-
 	configuration:recursion_depth_limit(metasubstitution, DL)
 	,member(M,MS)
 	,debug_msg_metarules(metasubstitution,'Instantiating metarule:',M)
@@ -375,8 +375,8 @@ metasubstitutions(C,E,MS,S-M_e):-
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',H:-Ls)
 	,(   DL = none
-	 ->  resolve_metarules(C,Sub,MS,Subs,Ls)
-	 ;   G1 = resolve_metarules(C,Sub,MS,Subs,Ls)
+	 ->  resolve_metarules(Is,Sub,MS,Subs,Ls)
+	 ;   G1 = resolve_metarules(Is,Sub,MS,Subs,Ls)
 	    ,D = ( debug(metasubstitution,'Inference limit exceeded!',[])
 		  ,fail
 		 )
@@ -454,9 +454,9 @@ bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
 %	Top-level for resolve_metarules/3. See that predicate for
 %	details.
 %
-resolve_metarules(C,Sub,MS,Subs,Ls):-
+resolve_metarules(Is,Sub,MS,Subs,Ls):-
 	proof_steps(Ss)
-	,resolve_metarules(C,Ss,[Sub],MS,Subs,Ls).
+	,resolve_metarules(Is,Ss,[Sub],MS,Subs,Ls).
 
 
 %!	proof_steps(-Steps) is det.
@@ -499,20 +499,14 @@ proof_steps(Ss):-
 		,Ss).
 
 
-%!	resolve_metarules(+Counter,+Steps,?Metasub,+Metarules,-Acc,+Literals)
+%!	resolve_metarules(+Invented,+Steps,?Metasub,+Metarules,-Acc,+Literals)
 %!	is nondet.
 %
 %	Meta-interpreter for clauses and metarules.
 %
-%	Counter is a predicate invention counter, an atom c(I,K) where I
-%	is the number of invented predicates' definitions learned so-far
-%	and K is the maximum number of invented predicates that may be
-%	defined. I is updated destructively to increment it each time a
-%	new invented predicate's definition is learned. K is initialised
-%	to the value of the configuration option max_invented/1. If
-%	max_invented/1 is set to 0, no predicate invention is attemped.
-%	When Counter becomes c(K,K), predicate invention is not
-%	attempted any more.
+%	Invented is a list of symbols reserved for invented predicates.
+%	The number of symbols in Invented is equal to the value of the
+%	configuration option max_invented/1.
 %
 %	Steps is the list [E,T,S,O,I], built by proof_steps/1 as a
 %	compact representation of all the values of the configuration
@@ -608,7 +602,7 @@ proof_steps(Ss):-
 %	symbol for each example. More work is needed before dynamic
 %	learning can be replaced.
 %
-resolve_metarules(_C,_P,[Sub|Ss],_MS,[Sub|Ss],true):-
+resolve_metarules(_Is,_P,[Sub|Ss],_MS,[Sub|Ss],true):-
 % If Sub is ground we're at the leaf of a proof branch.
 % That's a good time to test constraints, depending on the value of
 % test_constraints/1.
@@ -621,14 +615,14 @@ resolve_metarules(_C,_P,[Sub|Ss],_MS,[Sub|Ss],true):-
 	,!
 	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub])
 	,debug_clauses(meta_interpreter,'Accumulated metasubs:',[Ss]).
-resolve_metarules(C,P,Sub,MS,Acc,(L,Ls)):-
+resolve_metarules(Is,P,Sub,MS,Acc,(L,Ls)):-
 % Split the proof tree.
 % I actually had to do this kind of thing in java, once. :shiver:
 	debug_clauses(meta_interpreter,'Proving one literal:',[L])
-	,resolve_metarules(C,P,Sub,MS,Acc_1,L)
+	,resolve_metarules(Is,P,Sub,MS,Acc_1,L)
 	,debug_clauses(meta_interpreter,'Proving remaining literals:',[Ls])
-	,resolve_metarules(C,P,Acc_1,MS,Acc,Ls).
-resolve_metarules(C,P,Subs,MS,Acc,(L)):-
+	,resolve_metarules(Is,P,Acc_1,MS,Acc,Ls).
+resolve_metarules(Is,P,Subs,MS,Acc,(L)):-
 % L will be proved by calling it directly.
 % If L can be proved by calling it, that usually means that L unifies
 % with the head of a BK predicate for which we have a complete
@@ -636,8 +630,8 @@ resolve_metarules(C,P,Subs,MS,Acc,(L)):-
         L \= (_,_)
 	,call(L)
 	,debug_clauses(meta_interpreter,'Proved BK atom:',[L])
-	,resolve_metarules(C,P,Subs,MS,Acc,true).
-resolve_metarules(C,P,Subs,MS,Acc,(L)):-
+	,resolve_metarules(Is,P,Subs,MS,Acc,true).
+resolve_metarules(Is,P,Subs,MS,Acc,(L)):-
 % L will be proved by meta-interpretation.
 % If L can be proved (only) by meta-interpretation usually that means
 % that L unifies with the head of a clause of a partial definition of a
@@ -648,8 +642,8 @@ resolve_metarules(C,P,Subs,MS,Acc,(L)):-
 	,clause(L,Bs)
 	,\+ metasub_atom(L,MS)
 	,debug_clauses(meta_interpreter,'Proving BK literal:',[L])
-	,resolve_metarules(C,P,Subs,MS,Acc,Bs).
-resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
+	,resolve_metarules(Is,P,Subs,MS,Acc,Bs).
+resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 % L will be proved by meta-interpretation with the "current" metarule.
 % If Sub is not ground we keep trying to ground it. This forces
 % resolution with the same instance of the current metarule, i.e. we
@@ -659,8 +653,8 @@ resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 	,\+ ground(Sub)
 	,metarule_clause(Sub,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
-resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
+	,resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
+resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 % L will be proved by meta-interpretation with the "current" metarule.
 % If Sub is ground, we can try to construct a new instance of its parent
 % metarule. This allows resolution between clauses that are instances of
@@ -670,8 +664,8 @@ resolve_metarules(C,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 	,copy_term(Sub,Sub_)
 	,metarule_clause(Sub_,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
-	,resolve_metarules(C,[E,T,t,O,I],[Sub_|Ss],MS,Acc,Ls).
-resolve_metarules(C,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
+	,resolve_metarules(Is,[E,T,t,O,I],[Sub_|Ss],MS,Acc,Ls).
+resolve_metarules(Is,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 % L will be proved by meta-interpretation with a new metarule in MS.
 	provable_literal(L)
 	% TODO: Yes, but why?
@@ -687,21 +681,18 @@ resolve_metarules(C,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	,\+ unifiable(Sub,Sub_,_)
 	,metarule_clause(Sub_,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving other metarule literals:',[L:-Ls])
-	,resolve_metarules(C,[E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
-resolve_metarules(C,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
+	,resolve_metarules(Is,[E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
+resolve_metarules(Is,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 % L will be proved by meta-interpretation with a new metarule in MS.
 	provable_literal(L)
-	% TODO: This checks L already has a proof and we know it, so that we will
-	% TODO: only attempt predicate invention when necessary to prove L.
-	% TODO: There _must_ be a better way to check that!
-	,\+ call(L)
 	,debug_clauses(meta_interpreter,'Try inventing a new symbol for literal:', [L])
-	,invented_literal(C,L,L)
+	,invented_literal(Is,L,Is_,L)
 	,debug(meta_interpreter,'Succeeded: ~w',[L])
         ,next_metarule(MS,Sub_)
 	,metarule_clause(Sub_,MS,L,Ls)
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
-	,resolve_metarules(C,[E,T,S,O,t],[Sub_,Sub|Ss],MS,Acc,Ls).
+	,resolve_metarules(Is_,[E,T,S,O,t],[Sub_,Sub|Ss],MS,Acc,Ls).
+
 
 
 %!	provable_literal(+Literal,+Metarules) is det.
@@ -750,70 +741,34 @@ next_metarule(MS, Sub_):-
 	,copy_term(Sub,Sub_).
 
 
-%!	invented_literal(+Counter,+Literal,-Invented) is det.
+%!	invented_literal(+Invented,+Literal,-Literal_new,-Invented_new)
+%!	is det.
 %
 %	Invent a predicate symbol for a Literal.
 %
 %	Creates invented predicate symbols for predicate invention in
 %	resolve_metarules/5.
 %
-%	Counter is the predicate invention counter inherited by
-%	resolve_metarules/6, an atom of the form c(I,K) where I is the
-%	number of invented predicates' definitions learned so-far and K
-%	is the maximun number of predicates allowed to be invented. See
-%	resolve_metarules/6 for more details about how Counter is used.
+%	Invented is the list of invented symbols not yet used in the
+%	current proof branch.
 %
 %	Literal is an encapsulated literal whose second-order variable
 %	is as yet unbound.
 %
-%	Invented is Literal with its second-order variable bound to a
-%	new invented predicate symbol. Invented predicates' symbols are
-%	of the form '$n' where n is an integer higher than 0.
+%	Literal_new is Literal with its second-order variable bound to a
+%	new invented predicate symbol selected from Invented. Invented
+%	predicates' symbols are of the form '$n' where n is an integer
+%	higher than 0.
 %
-%	This predicate is a renamed copy of new_atom/3 originally
-%	defined in the dynamic_learning module.
+%	Invented_new is the list of invented predicate symbols remaining
+%	in Invented once a symbol is removed to add to Literal.
 %
-invented_literal(C,L,L_):-
+invented_literal(Ss,L,Ss_,L_):-
 	L =.. [m,P|As]
 	,\+ ground(P)
-	,new_symbol(C,P)
+	,select(S,Ss,Ss_)
 	,debug(predicate_invention,'Invented new predicate symbol: ~w',[P])
-	,L_ =.. [m,P|As].
-
-%!	new_symbol(+Counter,?Symbol) is det.
-%
-%	Create a new invented predicate Symbol.
-%
-%	Auxiliary to invented_literal/2. Responsible for destructively
-%	updating Counter and creating new invented predicate symbols.
-%
-%	Counter is a predicate invention counter c(I,K), as detailed in
-%	invented_literal/3.
-%
-%	Symbol is second-order variable to be bound to a new, invented
-%	predicate symbol.
-%
-%	This predicate is a copy of new_symbol/2 in the dynamic_learning
-%	module. I also copy the following note from the structured
-%	comment of new_symbol/2, below:
-%
-%	Counter is _destructively updated_ by a call to setarg/3 (and
-%	_not_ to nb_setarg/3) in this predicate. Invented symbols are
-%	created before an attempt is made to construct a definition for
-%	them and if a (non-empty) definition cannot be constructed, the
-%	same symbol (i.e. a symbol with the current index in Counter as
-%	an index) must be available for a subsequent attempt to define a
-%	different invented predicate. Therefore, new_symbol/2 must be
-%	allowed to backtrack over destructive assignment and
-%	re-crate a Symbol with an index previously tried (and failed).
-%
-new_symbol(C,P):-
-	arg(1,C,I)
-	,arg(2,C,K)
-	,I =< K
-	,atomic_list_concat(['$',I],'',P)
-	,succ(I, I_)
-	,setarg(1,C,I_).
+	,L_ =.. [m,S|As].
 
 
 %!	assert_clause(+Metasub,-Refs) is det.
