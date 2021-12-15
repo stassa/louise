@@ -72,8 +72,11 @@ derive new clauses by resolution with clauses of invented predicates.
 This is the option that activates predicate invention, proper.
 
 
-2. Ensure also that the output of list_mil_problem/2 matches the
-following, to make sure the elements of the MIL problem are as expected:
+2. MIL Problem elements.
+
+Ensure also that the output of list_mil_problem/2 matches the following,
+to make sure the elements of the MIL problem are as expected:
+
 ==
 ?- list_mil_problem(s/2).
 Positive examples
@@ -120,7 +123,7 @@ neither are training examples of it given by the user. '$1'/2 is learned
 in the process of learning the target predicate s/2.
 
 
-4. Eyballing the results.
+4. Eyballing results.
 
 The learned hypothesis is the Top Program for the MIL problem defined in
 this experiment file. The Top Program is the set of all clauses that
@@ -187,7 +190,7 @@ right after learning (and before unfolding). There is no option to
 reduce the Top Program only before or only after unfolding!
 
 
-6. Weaker reduction
+6. Weakenig reduction.
 
 To inhibit reduction and reveal the unfolded clause that is
 equivalent to Sub-program 3 in the learned Top Program, set the
@@ -307,7 +310,7 @@ this MIL problem in particular, informally speaking "subsumed" by the
 prove_recursive(invented) option.
 
 
-9. Ordering of examples
+9. Ordering of examples.
 
 The current implementation of predicate invention in Louise is sensitive
 to the order of training examples. Suppose we rearrange the positive
@@ -370,7 +373,7 @@ then a new learning attempt is made. Episodic learning is not yet
 implemented in Louise!
 
 
-8. Discussion
+8. Discussion.
 
 In all the examples above, we can note that the definition of the
 invented predicate '$1' is a bit of a jumble. Ideally, we'd like to have
