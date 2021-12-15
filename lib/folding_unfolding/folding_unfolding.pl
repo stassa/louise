@@ -270,13 +270,12 @@ unfold_clauses(Cs,Pos,BK,Us):-
 	,closure(BK,experiment_file,Bs)
 	,flatten(Bs,Bs_f)
 	,S = (write_problem(unfolding,[Cs,Pos,Bs_f],Refs)
-	     ,table(unfold_literals/5)
 	     )
 	,G = unfold_invented(Cs,Ss,Us)
 	,C = (erase_program_clauses(Refs)
-	     ,untable(unfold_literals/5)
 	     )
 	,setup_call_cleanup(S,G,C).
+
 
 
 %!	unfold_invented(+Program,+Targets,-Unfolded) is det.
@@ -410,13 +409,21 @@ unfold_invented(Ps,Ts,Us):-
 	program_invented(Ps,Ts,Cs,Is)
 	,invented_symbols_(Is,Ss)
 	,!
-	,unfold_clauses(Cs,Ss,Is,[],Us_)
+	,S = (table(unfold_literals/5)
+	     ,table(prove/1)
+	     )
+	,G = unfold_clauses(Cs,Ss,Is,[],Us_)
+	,C = (untable(unfold_literals/5)
+	     ,untable(prove/1)
+	     )
+	,setup_call_cleanup(S,G,C)
 	,flatten(Us_,Us_f)
 	,theory_constants(Ps,Ps_Cs)
 	,lifted_program(Us_f,Ps_Cs,Us_l)
 	,predsort(unifiable_compare,Us_l, Us).
 unfold_invented(Ps,Ts,Ps):-
 	program_invented(Ps,Ts,_Cs,[]).
+
 
 
 %!	program_invented(+Program,+Targets,-Clauses,-Invented) is det.
@@ -606,14 +613,35 @@ unfold_literals(L,Ss,Is,Acc,Bind):-
 unfold_literals(L,Ss,Is,Acc,Bind):-
 % At this point, the clause of which L is a body literal may be any
 % resolvent of the original clause. We want to keep only clauses that
-% entail any positive examples, so we call L. The head of the parent
-% clause of L has been instantiated to a positive example, so L, too, is
-% instantiated accordingly, therefore call(L) will only succeed if L is
-% a literal in the refutation sequence of a positive example.
+% entail any positive examples, so we try to prove L. The head of the
+% parent clause of L has been instantiated to a positive example, so L,
+% too, is instantiated accordingly, therefore prove(L) will only succeed
+% if L is a literal in the refutation sequence of a positive example.
 	L \= (_,_)
 	,\+ clause_of(L,Ss)
-	,call(unfolding:L)
+	,prove(L)
 	,unfold_literals(true,Ss,Is,(L,Acc),Bind).
+
+
+%!	prove(?Literal) is nondet.
+%
+%	Vanilla Prolog meta-interpreter.
+%
+%	Why? Because we need to table this to ensure termination. The
+%	alternative is to table every predicate symbol of every literal
+%	we want to prove in unfold_literals/5. This is just more
+%	convenient. It's weird though.
+%
+prove(true):-
+	!.
+prove((L,Ls)):-
+	prove(L)
+	,prove(Ls).
+prove(L):-
+	L \= (_,_)
+	,clause(unfolding:L,Ls)
+	,prove(Ls).
+
 
 
 %!	head_body(+Clause,+Literal,-Body) is det.
