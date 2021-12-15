@@ -410,7 +410,9 @@ unfold_invented(Ps,Pos,BK,Us):-
 	,flatten(Us_,Us_f)
 	,theory_constants(Ps,Ps_Cs)
 	,lifted_program(Us_f,Ps_Cs,Us_1)
-	,predsort(unifiable_compare,Us_1,Us).
+	,predsort(unifiable_compare,Us_1,Us_s)
+	,reduced_top_program(Pos,Bs,[],Us_s,Us_r)
+	,filter_targets(Ts,Us_r,Us).
 unfold_invented(Ps,Pos,_BK,Ps):-
 	examples_targets(Pos,Ts)
 	,program_invented(Ps,Ts,_Cs,[]).
@@ -722,6 +724,20 @@ theory_constants(Ps,Ss):-
 		)
 	       ,Ss_)
 	,sort(Ss_,Ss).
+
+
+%!	filter_targets(+Symbols,+Clauses,-Filtered) is det.
+%
+%	Filter a set of Clauses to keep only those of target predicates.
+%
+filter_targets(Ss,Ps,Ps_):-
+	findall(C
+	       ,(member(C,Ps)
+		,head_body(C,H,_B)
+		,functor(H,F,A)
+		,target_or_invention(Ss,F/A)
+		)
+	       ,Ps_).
 
 
 
