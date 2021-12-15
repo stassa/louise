@@ -639,9 +639,18 @@ prove((L,Ls)):-
 	,prove(Ls).
 prove(L):-
 	L \= (_,_)
+	% Otherwise clause/2 raises errors.
+	,\+ predicate_property(L,foreign)
+	,\+ built_in_or_library_predicate(L)
 	,clause(unfolding:L,Ls)
 	,prove(Ls).
-
+prove(L):-
+	L \= (_,_)
+	% No meta-interpretation for this literal.
+	,(   predicate_property(L,foreign)
+	 ;   built_in_or_library_predicate(L)
+	 )
+	,call(L).
 
 
 %!	head_body(+Clause,+Literal,-Body) is det.
