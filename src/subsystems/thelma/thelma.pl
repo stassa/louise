@@ -105,7 +105,7 @@ thelma(Pos,Neg,BK,MS,Prog):-
 	,setup_call_cleanup(S,G,Cl)
 	,(   U == true
 	 ->  debug(thelma,'Unfolding invented predicates...',[])
-	    ,unfold_clauses(Prog_,Pos,BK,Prog)
+	    ,unfold_invented(Prog_,Pos,BK,Prog)
 	 ;   Prog_ = Prog
 	 ).
 thelma(_Pos,_Neg,_BK,_MS,[]).
@@ -176,7 +176,7 @@ thelma_complete(Pos,Neg,BK,MS,Hs,Prog):-
 	,setup_call_cleanup(S,G,Cl)
 	,(   U == true
 	 ->  debug(thelma,'Unfolding invented predicates...',[])
-	    ,unfold_clauses(Prog_,Pos,BK,Prog)
+	    ,unfold_invented(Prog_,Pos,BK,Prog)
 	 ;   Prog_ = Prog
 	 ).
 thelma_complete(_Pos,_Neg,_BK,_MS,_Hs,[]).

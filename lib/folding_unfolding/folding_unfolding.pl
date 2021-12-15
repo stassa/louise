@@ -1,6 +1,5 @@
 :-module(folding_unfolding, [fold_recursive/2
-			    ,unfold_clauses/4
-			    ,unfold_invented/3
+			    ,unfold_invented/4
 			    ,pseudo_unfold_invented/3
 			    ,reduce_unfolded/2
                             ]).
@@ -33,31 +32,39 @@ list_last(A,B):-tail(A,C),list_last(C,B).
 true.
 ==
 
-2. unfold_clauses/3, unfold_invented/3, pseudo_unfold_invented/3 and
-reduce_unfolded/2.
+2. unfold_invented/4, pseudo_unfold_invented/3 and reduce_unfolded/2.
 
 These three predicates unfold hypotheses with invented predicates,
 learned by dynamic learning or Thelma, to remove invented symbols.
 
-unfold_invented/3 is automatically applied to hypotheses learned with
-learn_dynamic/[1,3,5], if the option unfold_invened/1 is set to "true".
+unfold_invented/4 is automatically applied to hypotheses learned with
+learning predicates capable of predicate invention, such as
+learn/[1,2,5] or thelma/[1,2,5], when the configuration option
+unfold_invened/1 is set to "true".
 
-unfold_invented/3 is used to prepare the dynamic database with the
-program needed to perform unfolding.
-
-For example, see the query below, taken from the experiment file in
+For an example of unfolding a learned program to remove invented
+predicates see the query below, taken from the experiment file in
 data/examples/anbn.pl:
 
 ==
-?- learn_dynamic('S'/2), unfold_invented(Bool).'$1'(A,B):-'S'(A,C),'B'(C,B).
-'S'(A,B):-'A'(A,C),'$1'(C,B).
-'S'(A,B):-'A'(A,C),'B'(C,B).
-Bool = false.
+?- learn(s/2), nl, unfold_invented(Unfolded).
+'$1'(A,B):-a(A,C),a(C,B).
+'$1'(A,B):-a(A,C),s(C,B).
+'$1'(A,B):-b(A,C),b(C,B).
+'$1'(A,B):-s(A,C),b(C,B).
+s(A,B):-'$1'(A,C),'$1'(C,B).
+s(A,B):-'$1'(A,C),b(C,B).
+s(A,B):-a(A,C),'$1'(C,B).
+s(A,B):-a(A,C),b(C,B).
 
-?- learn_dynamic('S'/2), unfold_invented(Bool).
-'S'(A,B):-'A'(A,C),'B'(C,B).
-'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
-Bool = true.
+Unfolded = false.
+
+?- learn(s/2), nl, unfold_invented(Unfolded).
+s(A,B):-a(A,C),b(C,B).
+s(A,B):-a(A,C),a(C,D),b(D,E),b(E,B).
+s(A,B):-a(A,C),s(C,D),b(D,B).
+
+Unfolded = true.
 ==
 
 */
@@ -250,86 +257,57 @@ drop([Y|Xs],[Y|Ys],Acc):-
 
 
 
-%!	unfold_clauses(+Clauses,+Pos,+BK,-Unfolded) is det.
+%!	unfold_invented(+Program,+Pos,+BK,-Unfolded) is det.
 %
-%	Unfold Clauses to remove invented predicates.
+%	Unfold a Program to remove invented predicates.
 %
-%	Clauses is a set of Clauses learned by top_program_dynamic/4,
-%	possibly including definitions of invented predicates.
+%	Program is a set of clauses learned by one of Louise's learning
+%	predicates and possibly including definitions of invented
+%	predicates.
 %
 %	Pos and BK are the sets of positive examples and BK symbols and
 %	arities of target predicates in Clauses.
 %
-%	Unfolded is the list of clauses in Clauses unfolded to remove
-%	invented predicates. See unfold_invented/3 for an explanation of
-%	unfolding invented predicates.
+%	Unfolded is the list of clauses in Program unfolded to remove
+%	invented predicates.
 %
-unfold_clauses(Cs,Pos,BK,Us):-
-	debug(top_program,'Unfolding invented Top Progam',[])
-	,examples_targets(Pos,Ss)
-	,closure(BK,experiment_file,Bs)
-	,flatten(Bs,Bs_f)
-	,S = (write_problem(unfolding,[Cs,Pos,Bs_f],Refs)
-	     )
-	,G = unfold_invented(Cs,Ss,Us)
-	,C = (erase_program_clauses(Refs)
-	     )
-	,setup_call_cleanup(S,G,C).
-
-
-
-%!	unfold_invented(+Program,+Targets,-Unfolded) is det.
-%
-%	Unfold a Program, removing invented predicates.
-%
-%	Program is a list of clauses forming a program which may include
-%	definitions of one or more invented predicates with symbols such
-%	as '$1', '$2', etc.
-%
-%	Targets is the list of predicate symbols and arities of the
-%	target predicates in Program, as F/A predicate indicators.
-%
-%	Unfolded is the set of resolvents of clauses of target
-%	predicates in Programs with the clauses of invented predicates'
-%	definitions. Unfolded does not include any invented predicates.
-%
-%	The following example should help clarify the above explanation:
-%
+%	It is easier to explain unfolding by means of an example:
 %	==
-%	?- unfold_invented(Bool).
-%	Bool = false.
+%	?- learn(s/2), nl, unfold_invented(Unfolded).
+%	'$1'(A,B):-a(A,C),a(C,B).
+%	'$1'(A,B):-a(A,C),s(C,B).
+%	'$1'(A,B):-b(A,C),b(C,B).
+%	'$1'(A,B):-s(A,C),b(C,B).
+%	s(A,B):-'$1'(A,C),'$1'(C,B).
+%	s(A,B):-'$1'(A,C),b(C,B).
+%	s(A,B):-a(A,C),'$1'(C,B).
+%	s(A,B):-a(A,C),b(C,B).
 %
-%	?- learn_dynamic('S'/2).
-%	'$1'(A,B):-'S'(A,C),'B'(C,B).
-%	'S'(A,B):-'A'(A,C),'$1'(C,B).
-%	'S'(A,B):-'A'(A,C),'B'(C,B).
-%	true.
+%	Unfolded = false.
 %
-%	?- unfold_invented(Bool).
-%	Bool = true.
+%	?- learn(s/2), nl, unfold_invented(Unfolded).
+%	s(A,B):-a(A,C),b(C,B).
+%	s(A,B):-a(A,C),a(C,D),b(D,E),b(E,B).
+%	s(A,B):-a(A,C),s(C,D),b(D,B).
 %
-%	?- learn_dynamic('S'/2).
-%	'S'(A,B):-'A'(A,C),'B'(C,B).
-%	'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
-%	true.
+%	Unfolded = true.
 %	==
 %
-%	Motivation
-%	----------
+%	__Motivation__
 %
 %	The purpose of this predicate is to make programs learned with
-%	dynamic learning more comprehensible by removing invented
+%	predicate invention more comprehensible by removing invented
 %	predicates, while still maintaining programs' semantics.
 %
-%	Predicates invented by Louise with dynamic learning have
-%	automatically assigned symbols such as '$1', '$2' etc, so that
-%	their meaning is not immediately obvious. Although such
-%	predicate can sometimes make a program _more_ comprehensible by
-%	reducing its size, in general it's safe to assume that a program
-%	without invented predicates will be at least as comprehensible
-%	as a program of the same size and _with_ invented predicates.
+%	Predicates invented by Louise have automatically assigned
+%	symbols such as '$1', '$2' etc, so that their meaning is not
+%	immediately obvious. Although such predicates can sometimes make
+%	a program _more_ comprehensible by reducing its size, in general
+%	it's safe to assume that a program without invented predicates
+%	will be at least as comprehensible as a program of the same size
+%	and _with_ invented predicates.
 %
-%	The 'S'/2 example above is such a case. In the "Invented" form
+%	The s/2 example above is such a case. In the "Invented" form
 %	of the program, it's hard to say what the predicate '$1'/2 is
 %	meant to represent. Unfolding the program we obtain a version
 %	without '$1'/2 that is closer to (if not identical with) a
@@ -337,8 +315,7 @@ unfold_clauses(Cs,Pos,BK,Us):-
 %	proram is a classic definition of a grammar for the anbn
 %	language).
 %
-%	Unfolding
-%	---------
+%	__Unfolding__
 %
 %	Unfolding is the dual of folding, a program transformation that,
 %	in logic programs, replaces goals in the bodies of clauses with
@@ -353,13 +330,18 @@ unfold_clauses(Cs,Pos,BK,Us):-
 %	unfolding D onto L in C would result in a new clause, E = p:-
 %	s,t,r.
 %
-%	As the 'S'/2 example in the prvious section demonstrates, if L
+%	As the s/2 example in the prvious section demonstrates, if L
 %	is the literal of an invented predicate in a clause of a target
 %	predicate, unfolding will produce a new clause without any
 %	literals of invented predicates.
 %
-%	Restricted unfolding
-%	--------------------
+%	Note that unfolding is resolution. The unfolded clause of p/0 in
+%	the example above is a resolvent of the two original clauses.
+%	unfold_invented/4 indeed resolves input clauses by means of a
+%	meta-interpreter modified to collect resolvents of clauses of
+%	target predicates with clauses of invented predicates.
+%
+%	__Restricted unfolding__
 %
 %	Unlike general unfolding this predicate does not
 %	indiscriminately generate all resolvents of the clauses of
@@ -368,16 +350,13 @@ unfold_clauses(Cs,Pos,BK,Us):-
 %	respect to background knowledge are constructed, i.e. the
 %	process is driven by the positive examples.
 %
-%	For this reason, unfold_invented _cannot be used_ unless the
+%	For this reason, unfold_invented/4 needs to be given the
 %	positive examples and the background knowledge for a MIL problem
-%	from which Program was learned are in the dynamic database.
+%	from which the input Program was learned. Example atoms and BK
+%	predicate indicators are passed in the second and third
+%	arguments of unfold_invented/4.
 %
-%	In other words, it is not possible to use unfold_invented/3 as a
-%	stand-alone predicate. It _must_ be used as part of learning
-%	with a dynamic learning predicate.
-%
-%	Limitations
-%	-----------
+%	__Limitations__
 %
 %	This predicate does not take into account the negative examples
 %	and instead generates the set of all resolvents of clauses in
@@ -390,7 +369,7 @@ unfold_clauses(Cs,Pos,BK,Us):-
 %	that does most of the actual unfolding) returns clauses ground
 %	to constants obtained during a refutation of a positive example.
 %	This is actually not that bad, because it incidentally forces
-%	unfold_clauses/3 to succeed or fail exactly once for each
+%	unfold_clauses/5 to succeed or fail exactly once for each
 %	resolvent of a clause of a target predicate (whereas otherwise
 %	it would potentially backtrack over all positive examples).
 %	Unfortunately, this also requires the unfolded program to be
@@ -405,25 +384,36 @@ unfold_clauses(Cs,Pos,BK,Us):-
 %	will be slow if we have too many clauses with too many damn
 %	literals. OK.
 %
-unfold_invented(Ps,Ts,Us):-
-	program_invented(Ps,Ts,Cs,Is)
+%	@bug If a clause in Program does not directly entail any
+%	positive examples unfold_invented/4 will silently drop it from
+%	its output. This is the case, for example, with the base-case of
+%	a recursive definition learned from a single example that is not
+%	an example of the base case.
+%
+unfold_invented(Ps,Pos,BK,Us):-
+	examples_targets(Pos,Ts)
+	,program_invented(Ps,Ts,Cs,Is)
 	,invented_symbols_(Is,Ss)
+	,closure(BK,experiment_file,Bs)
+	,flatten(Bs,Bs_f)
 	,!
-	,S = (table(unfold_literals/5)
+	,S = (write_problem(unfolding,[Ps,Pos,Bs_f],Refs)
+	     ,table(unfold_literals/5)
 	     ,table(prove/1)
 	     )
 	,G = unfold_clauses(Cs,Ss,Is,[],Us_)
-	,C = (untable(unfold_literals/5)
+	,C = (erase_program_clauses(Refs)
+	     ,untable(unfold_literals/5)
 	     ,untable(prove/1)
 	     )
 	,setup_call_cleanup(S,G,C)
 	,flatten(Us_,Us_f)
 	,theory_constants(Ps,Ps_Cs)
-	,lifted_program(Us_f,Ps_Cs,Us_l)
-	,predsort(unifiable_compare,Us_l, Us).
-unfold_invented(Ps,Ts,Ps):-
-	program_invented(Ps,Ts,_Cs,[]).
-
+	,lifted_program(Us_f,Ps_Cs,Us_1)
+	,predsort(unifiable_compare,Us_1,Us).
+unfold_invented(Ps,Pos,_BK,Ps):-
+	examples_targets(Pos,Ts)
+	,program_invented(Ps,Ts,_Cs,[]).
 
 
 %!	program_invented(+Program,+Targets,-Clauses,-Invented) is det.

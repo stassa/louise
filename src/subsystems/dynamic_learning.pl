@@ -145,7 +145,7 @@ learn_dynamic(Pos,Neg,BK,MS,Ps):-
 	,debug(learn,'Excapsulating hypothesis',[])
 	,excapsulated_clauses(Ss,Rs,Ps_)
 	,(   U ==  true
-	 ->  unfold_clauses(Ps_,Pos,BK,Ps)
+	 ->  unfold_invented(Ps_,Pos,BK,Ps)
 	 ;   Ps_ = Ps
 	 ).
 

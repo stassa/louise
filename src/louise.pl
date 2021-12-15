@@ -74,7 +74,7 @@ learn(Pos,Neg,BK,MS,Ps):-
 	,excapsulated_clauses(Ss,Rs,Ps_1)
 	,(   U ==  true
 	 ->  debug(learn,'Unfolding invented...',[])
-	    ,unfold_clauses(Ps_1,Pos,BK,Ps_2)
+	    ,unfold_invented(Ps_1,Pos,BK,Ps_2)
 	 ;   Ps_2 = Ps_1
 	 )
 	,(   F == true
