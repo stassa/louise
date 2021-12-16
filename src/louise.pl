@@ -1032,7 +1032,8 @@ constraints(_Sub):-
 constraints(Sub):-
 	predicate_property(metarule_constraints(_,_), number_of_clauses(N))
 	,N > 0
-	,forall(configuration:metarule_constraints(Sub, C)
+	,copy_term(Sub,Sub_)
+	,forall(configuration:metarule_constraints(Sub_, C)
 	       ,user:call(C)
 	       ).
 
