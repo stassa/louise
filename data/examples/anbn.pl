@@ -404,8 +404,8 @@ background_knowledge(s/2,[a/2,b/2]).
 metarules(s/2,[chain]).
 
 positive_example(s/2,E):-
-	member(E, [s([a,a,b,b],[])
-		  ,s([a,b],[])
+	member(E, [s([a,b],[])
+		  ,s([a,a,b,b],[])
 %		  ,s([a,a,a,b,b,b],[])
 %		  ,s([a,a,a,a,b,b,b,b],[])
 %		  ,s([a,a,a,a,a,b,b,b,b,b],[])
