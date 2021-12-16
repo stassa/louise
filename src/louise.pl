@@ -603,15 +603,11 @@ proof_steps(Ss):-
 %	learning can be replaced.
 %
 resolve_metarules(_Is,_P,[Sub|Ss],_MS,[Sub|Ss],true):-
-% If Sub is ground we're at the leaf of a proof branch.
-% That's a good time to test constraints, depending on the value of
-% test_constraints/1.
-	(   configuration:test_constraints(proof)
-	   ,ground(Sub)
-	->  debug_clauses(const,'Testing constraints for ground metasub:',[Sub])
-	   ,constraints(Sub)
-	;   true
-	)
+% When a proof completes there may be metasubstitutions that just got
+% fully ground, e.g. because we just finished proving some invented
+% predicate. So we must test all the metasubstitutions we have so far.
+% TODO: is there no better way to do this?
+	constrained_metasubs(Sub)
 	,!
 	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub])
 	,debug_clauses(meta_interpreter,'Accumulated metasubs:',[Ss]).
@@ -652,6 +648,7 @@ resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 	% Notice the check here. See note above.
 	,\+ ground(Sub)
 	,metarule_clause(Sub,MS,L,Ls)
+	,constrained_metasub(Sub)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
 	,resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
@@ -663,6 +660,7 @@ resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 	,ground(Sub)
 	,copy_term(Sub,Sub_)
 	,metarule_clause(Sub_,MS,L,Ls)
+	,constrained_metasub(Sub_)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
 	,resolve_metarules(Is,[E,T,t,O,I],[Sub_|Ss],MS,Acc,Ls).
 resolve_metarules(Is,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
@@ -671,15 +669,11 @@ resolve_metarules(Is,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	% TODO: Yes, but why?
 	,ground(L)
 	,ground(Sub)
-	,(   configuration:test_constraints(proof)
-	 ->  debug_clauses(const,'Testing constraints for ground metasub:',[Sub])
-	    ,constraints(Sub)
-	 ;   true
-	 )
         ,next_metarule(MS,Sub_)
 	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
 	,metarule_clause(Sub_,MS,L,Ls)
+	,constrained_metasub(Sub_)
 	,debug_clauses(meta_interpreter,'Proving other metarule literals:',[L:-Ls])
 	,resolve_metarules(Is,[E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
 resolve_metarules(Is,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
@@ -690,9 +684,41 @@ resolve_metarules(Is,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 	,debug(meta_interpreter,'Succeeded: ~w',[L])
         ,next_metarule(MS,Sub_)
 	,metarule_clause(Sub_,MS,L,Ls)
+	,constrained_metasub(Sub_)
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
 	,resolve_metarules(Is_,[E,T,S,O,t],[Sub_,Sub|Ss],MS,Acc,Ls).
 
+
+%!	constrained_metasubs(+Metasubstitutions) is det.
+%
+%	Check constraints on a list of Metasubstitutions.
+%
+%	Called at the end of a proof to ensure that all
+%	metasubstitutions derived so-far obey constraints.
+%
+constrained_metasubs(Subs):-
+	forall(member(Sub,Subs)
+	      ,constrained_metasub(Sub)
+	      ).
+
+
+%!	constrained_metasub(?Metasubstitution) is det.
+%
+%	Check constraints on a Metasubstitution.
+%
+%	Called whenever a new metasubstitution is constructed to ensure
+%	that it does not violate constraints. Metasubstitution may not
+%	be fully ground.
+%
+constrained_metasub(_Sub):-
+	\+ configuration:test_constraints(proof)
+	,!.
+constrained_metasub(Sub):-
+	configuration:test_constraints(proof)
+	,debug_clauses(constraints,'Testing constraints for metasub:',[Sub])
+	,copy_term(Sub,Sub_)
+	,constraints(Sub_)
+	,debug(constraints,'Constraint test succeeded!',[]).
 
 
 %!	provable_literal(+Literal,+Metarules) is det.
