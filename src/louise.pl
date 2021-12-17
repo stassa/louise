@@ -602,25 +602,24 @@ proof_steps(Ss):-
 %	symbol for each example. More work is needed before dynamic
 %	learning can be replaced.
 %
-resolve_metarules(_Is,_P,[Sub|Ss],_MS,[Sub|Ss],true):-
-% When a proof completes there may be metasubstitutions that just got
-% fully ground, e.g. because we just finished proving some invented
-% predicate. So we must test all the metasubstitutions we have so far.
-% TODO: is there no better way to do this?
-	constrained_metasubs(Sub)
-	,!
-	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub])
-	,debug_clauses(meta_interpreter,'Accumulated metasubs:',[Ss]).
-resolve_metarules(_Is,_P,Subs,_MS,Subs,(L)):-
+resolve_metarules(_Is,_P,[Sub|Ss],_MS,[Sub|Ss],(L)):-
 % L will be proved by calling it directly.
 % If L can be proved by calling it, that usually means that L unifies
 % with the head of a BK predicate for which we have a complete
-% definition, or a positive example.
-% TODO: Or, L could be the atom "true" in which case this clause can be
-% merged with the one above.
+% definition, or a positive example, or the atom "true", thus
+% completing the current proof branch.
+% When a proof completes there may be metasubstitutions that just got
+% fully ground, e.g. because we just finished proving some invented
+% predicate. So we must test constraints on _all_ the metasubstitutions
+% we have so far f.
+% TODO: is there no better way to do this?
         L \= (_,_)
 	,call(L)
-	,debug_clauses(meta_interpreter,'Proved BK atom:',[L]).
+	,constrained_metasubs(Sub)
+%	,! %?
+	,debug_clauses(meta_interpreter,'Proved atom:',[L])
+	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub])
+	,debug_clauses(meta_interpreter,'Accumulated metasubs:',[Ss]).
 resolve_metarules(Is,P,Sub,MS,Acc,(L,Ls)):-
 % Split the proof tree.
 % I actually had to do this kind of thing in java, once. :shiver:
