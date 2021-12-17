@@ -611,6 +611,16 @@ resolve_metarules(_Is,_P,[Sub|Ss],_MS,[Sub|Ss],true):-
 	,!
 	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub])
 	,debug_clauses(meta_interpreter,'Accumulated metasubs:',[Ss]).
+resolve_metarules(_Is,_P,Subs,_MS,Subs,(L)):-
+% L will be proved by calling it directly.
+% If L can be proved by calling it, that usually means that L unifies
+% with the head of a BK predicate for which we have a complete
+% definition, or a positive example.
+% TODO: Or, L could be the atom "true" in which case this clause can be
+% merged with the one above.
+        L \= (_,_)
+	,call(L)
+	,debug_clauses(meta_interpreter,'Proved BK atom:',[L]).
 resolve_metarules(Is,P,Sub,MS,Acc,(L,Ls)):-
 % Split the proof tree.
 % I actually had to do this kind of thing in java, once. :shiver:
@@ -618,15 +628,6 @@ resolve_metarules(Is,P,Sub,MS,Acc,(L,Ls)):-
 	,resolve_metarules(Is,P,Sub,MS,Acc_1,L)
 	,debug_clauses(meta_interpreter,'Proving remaining literals:',[Ls])
 	,resolve_metarules(Is,P,Acc_1,MS,Acc,Ls).
-resolve_metarules(Is,P,Subs,MS,Acc,(L)):-
-% L will be proved by calling it directly.
-% If L can be proved by calling it, that usually means that L unifies
-% with the head of a BK predicate for which we have a complete
-% definition, or a positive example.
-        L \= (_,_)
-	,call(L)
-	,debug_clauses(meta_interpreter,'Proved BK atom:',[L])
-	,resolve_metarules(Is,P,Subs,MS,Acc,true).
 resolve_metarules(Is,P,Subs,MS,Acc,(L)):-
 % L will be proved by meta-interpretation.
 % If L can be proved (only) by meta-interpretation usually that means
