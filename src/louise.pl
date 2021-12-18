@@ -644,7 +644,6 @@ resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 % We call this self-resolution.
 	provable_literal(L)
 	,metarule_clause(Sub,MS,L,Ls)
-	,constrained_metasub(Sub)
 	,debug_clauses(meta_interpreter,'Proving metarule literals:',[L:-Ls])
 	,resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,Ls).
 resolve_metarules(Is,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
@@ -658,7 +657,6 @@ resolve_metarules(Is,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
 	,metarule_clause(Sub_,MS,L,Ls)
-	,constrained_metasub(Sub_)
 	,debug_clauses(meta_interpreter,'Proving other metarule literals:',[L:-Ls])
 	,resolve_metarules(Is,[E,T,S,t,I],[Sub_,Sub|Ss],MS,Acc,Ls).
 resolve_metarules(Is,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
@@ -669,7 +667,6 @@ resolve_metarules(Is,[E,T,S,O,t],[Sub|Ss],MS,Acc,(L)):-
 	,debug(meta_interpreter,'Succeeded: ~w',[L])
         ,next_metarule(MS,Sub_)
 	,metarule_clause(Sub_,MS,L,Ls)
-	,constrained_metasub(Sub_)
 	,debug_clauses(meta_interpreter,'Proving invented predicate literals:',[L:-Ls])
 	,resolve_metarules(Is_,[E,T,S,O,t],[Sub_,Sub|Ss],MS,Acc,Ls).
 
@@ -825,10 +822,12 @@ assert_clause(Sub-M,Refs):-
 metarule_clause(Sub,MS,L,Ls):-
 	clause(Sub,(L,Ls))
 	,\+ metasub_atom(L,MS)
+	,constrained_metasub(Sub)
 	,!.
 metarule_clause(Sub,MS,L,true):-
 	clause(Sub,(L))
-	,\+ metasub_atom(L,MS).
+	,\+ metasub_atom(L,MS)
+	,constrained_metasub(Sub).
 
 
 
