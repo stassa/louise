@@ -652,7 +652,6 @@ resolve_metarules(Is,[E,T,S,t,I],[Sub|Ss],MS,Acc,(L)):-
 	provable_literal(L)
 	% TODO: Yes, but why?
 	,ground(L)
-	,ground(Sub)
         ,next_metarule(MS,Sub_)
 	% Only allows resolution between different metarules.
 	,\+ unifiable(Sub,Sub_,_)
