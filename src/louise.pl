@@ -613,7 +613,7 @@ resolve_metarules(_Is,_P,[Sub|Ss],_MS,[Sub|Ss],(L)):-
 % TODO: is there no better way to do this?
         L \= (_,_)
 	,call(L)
-	,constrained_metasubs(Sub)
+	,constrained_metasubs([Sub|Ss])
 %	,! %?
 	,debug_clauses(meta_interpreter,'Proved atom:',[L])
 	,debug_clauses(meta_interpreter,'Proved metasub:',[Sub])
