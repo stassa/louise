@@ -152,6 +152,11 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	 ;   Ws = Ws_
 	 )
 	,S = (write_problem(user,Ws,Refs)
+	     % Tabling keeps resolve_metarules/6 from going infinite during
+	     % meta-interpretation if possible. Tabled as incremental because
+	     % encapsulated clauses may be added to or removed from the dynamic db
+	     % during meta-interpretation.
+	     ,table(resolve_metarules/6 as incremental)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise_specialise(Pos,Neg,MS,Subs)
@@ -160,6 +165,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,debug_clauses(top_program,'Applied metarules:',Ts)
 	     )
 	,C = (erase_program_clauses(Refs)
+	     ,untable(resolve_metarules/6)
 	     % TODO: this is mainly to catch clauses written to the
 	     % TODO: dynamic db by generalise/3 for which we don't
 	     % TODO: have references. Is there a better way to do it?
@@ -283,12 +289,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %	the resolve_metarules/5 meta-interpreter.
 %
 generalise_specialise(Pos,Neg,MS,Ss_Pos):-
-% Tabling keeps resolve_metarules/6 from going infinite during
-% meta-interpretation if possible. Tabled as incremental because
-% encapsulated clauses may be added to or removed from the dynamic db
-% during meta-interpretation.
-        table(resolve_metarules/6 as incremental)
-	,configuration:max_invented(I)
+        configuration:max_invented(I)
 	,invented_symbols(I,Is)
 	,findall(Sub-M-Refs
 	     ,(member(Ep,Pos)
@@ -301,11 +302,11 @@ generalise_specialise(Pos,Neg,MS,Ss_Pos):-
 	      ,assert_clause(Sub-M,Refs)
 	      )
 	     ,Ps)
-	,untable(resolve_metarules/6)
 	% TODO: References are ignored because it's a bother to remove them.
 	% TODO: There should be a better way to do this.
 	,pairs_keys_values(Ps,Ss_Pos_,_Rs)
 	,sort(1,@<,Ss_Pos_,Ss_Pos).
+
 
 
 
