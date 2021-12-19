@@ -141,7 +141,6 @@ top_program(Pos,Neg,BK,MS,Ts):-
 % Uses the specialised metarule meta-interpreter resolve_metarules/5
 % Runs slower and manipulates the dynamic db.
 	configuration:theorem_prover(resolution)
-	,examples_targets(Pos,Ss)
 	% The following tests determine the structure of the program db.
 	,(   configuration:prove_recursive(examples)
 	 ->  Ws_ = [Pos,BK]
@@ -153,7 +152,6 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	 ;   Ws = Ws_
 	 )
 	,S = (write_problem(user,Ws,Refs)
-	     ,dynamic_learning:table_encapsulated(Ss)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise_specialise(Pos,Neg,MS,Subs)
@@ -162,7 +160,6 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,debug_clauses(top_program,'Applied metarules:',Ts)
 	     )
 	,C = (erase_program_clauses(Refs)
-	     ,dynamic_learning:untable_encapsulated(Ss)
 	     % TODO: this is mainly to catch clauses written to the
 	     % TODO: dynamic db by generalise/3 for which we don't
 	     % TODO: have references. Is there a better way to do it?
