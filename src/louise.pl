@@ -625,18 +625,22 @@ resolve_metarules(Is,P,Sub,MS,Acc,(L,Ls)):-
 	,resolve_metarules(Is,P,Sub,MS,Acc_1,L)
 	,debug_clauses(meta_interpreter,'Proving remaining literals:',[Ls])
 	,resolve_metarules(Is,P,Acc_1,MS,Acc,Ls).
-resolve_metarules(Is,P,Subs,MS,Acc,(L)):-
+resolve_metarules(Is,[E,T,S,O,I],Subs,MS,Acc,(L)):-
 % L will be proved by meta-interpretation.
 % If L can be proved (only) by meta-interpretation usually that means
 % that L unifies with the head of a clause of a partial definition of a
 % predicate in the program database, most likely the definition of a
 % target predicate that is in the process of being constructed, i.e. a
 % clause in the Top Program.
-	provable_literal(L)
+        (   S = t
+	;   O = t
+	;   I = t
+	)
+	,provable_literal(L)
 	,clause(L,Bs)
 	,\+ metasub_atom(L,MS)
 	,debug_clauses(meta_interpreter,'Proving BK literal:',[L])
-	,resolve_metarules(Is,P,Subs,MS,Acc,Bs).
+	,resolve_metarules(Is,[E,T,S,O,I],Subs,MS,Acc,Bs).
 resolve_metarules(Is,[E,T,t,O,I],[Sub|Ss],MS,Acc,(L)):-
 % L will be proved by meta-interpretation with the "current" metarule.
 % We call this self-resolution.
