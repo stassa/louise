@@ -60,6 +60,8 @@
 		      ,print_clauses/1
 		      ,program/3
 		      ,unifiable_compare/3
+		      ,table_program/1
+		      ,untable_program/1
 	              % Timing auxiliaries
 	              ,timing/2
 		      ,timing/3
@@ -175,6 +177,8 @@ Table of Contents
    * print_clauses/1
    * program/3
    * unifiable_compare/3
+   * table_program/1
+   * untable_program/1
 
 8. Timing auxiliaries [sec_learn]
    * learning_query/5
@@ -2609,6 +2613,32 @@ unifiable_compare(Delta, A, B) :-
     ->  Delta = (=)
     ;   compare(Delta, A, B)
     ).
+
+
+
+%!	table_program(+Symbols) is det.
+%
+%	Table each of a list of predicates given their Symbols.
+%
+table_program(Ss):-
+	forall(member(F/A,Ss)
+	      ,(table(program:F/A)
+	       ,debug(tabling,'Tabled ~w',[F/A])
+	       )
+	      ).
+
+
+
+%!	untable_program(+Symbols) is det.
+%
+%	Untable a list of predicates given their Symbols.
+%
+untable_program(Ss):-
+	forall(member(F/A,Ss)
+	      ,(untable(program:F/A)
+	       ,debug(tabling,'Removed tabling for ~w',[F/A])
+	       )
+	      ).
 
 
 
