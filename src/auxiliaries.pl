@@ -1097,7 +1097,9 @@ print_constraints(MS,order):-
 	,format_underlined('Order constraints')
 	,forall(member(Id,MS)
 	       ,(configuration:order_constraints(Id,Ss,Fs,PS,CS)
-		,print_clauses(order_constraints(Id,Ss,Fs,PS,CS))
+		,prettify_vars(Ss,predicate,Ss_)
+		,prettify_vars(Fs,variable,Fs_)
+		,print_or_debug(print,user_output,order_constraints(Id,Ss_,Fs_,PS,CS))
 		)
 	       ).
 print_constraints(_MS,metasub):-
@@ -1107,6 +1109,24 @@ print_constraints(_MS,metasub):-
 	    ,listing(metarule_constraints)
 	 ;   true
 	 ).
+
+
+%!	prettify_vars(+Vars,+Type,-Pretty) is det.
+%
+%	Prettify order constraints variables for pretty-printing.
+%
+%	@tbd This is a generalisation of two sets of repeating lines of
+%	code in pretty_expanded_metarule/2. Perhaps consider replacing
+%	the repeating lines in that predicate, too?
+%
+prettify_vars(Vs,T,Ps):-
+	length(Vs,N)
+	,numbered_symbols(N,Vs,T)
+	,findall('$VAR'(P)
+		,(nth1(I,Vs,P)
+		 ,nth1(I,Ps,'$VAR'(P))
+		 )
+		,Ps).
 
 
 
