@@ -1,9 +1,12 @@
-:-module(thelma, [thelma/1
-		 ,thelma/2
-		 ,thelma/5
+:-module(thelma, [thelma_tpc/1
+		 ,thelma_tpc/2
+		 ,thelma_tpc/5
 		 ,thelma_complete/2
 		 ,thelma_complete/3
 		 ,thelma_complete/6
+		 ,thelma/1
+		 ,thelma/2
+		 ,thelma/5
 		 ]).
 
 :-use_module(project_root(configuration)).
@@ -11,6 +14,164 @@
 
 /** <module> A Meta-Interpretive Learning system.
 */
+
+
+%!	thelma_tpc(+Targets) is det.
+%
+%	Use Thelma to construct a Top Program for a set of Targets.
+%
+%	Prints the learned Top Program to the Swi-Prolog command line.
+%
+thelma_tpc(T):-
+	thelma_tpc(T,Ps)
+	,print_clauses(Ps).
+
+
+
+%!	thelma_tpc(+Targets,-Program) is det.
+%
+%	Use Thelma to construct a Top Program for a set of Targets.
+%
+thelma_tpc(T,Prog):-
+	experiment_data(T,Pos,Neg,BK,MS)
+	,thelma_tpc(Pos,Neg,BK,MS,Prog).
+
+
+
+%!	thelma_tpc(+Pos,+Neg,+BK,+Metarules,-Program) is det.
+%
+%	Use Thelma to construct a Top Program for a set of Targets.
+%
+%	This is a version of the Top Program Construction algorithm
+%	(TPC) implemented by means of Thelma, itself an implementation
+%	of Metagol.
+%
+%	The main difference between Thelma (Metagol) and TPC is that
+%	Metagol constructs a hypothesis by proving the conjunction of
+%	the positive examples while TPC constructs each clause in
+%	isolation. There are tradeoffs between the two methods, most
+%	notably the efficiency of TPC and the ability of Metagol to
+%	learn multiple, dependent clauses from a single example, such as
+%	the clauses of a recursive program.
+%
+%	This predicate implements TPC as a variant of Metagol that
+%	learns a Top Program by nondeterministically running Thelma's
+%	meta-interpreter on each example. Constructing a Top Program in
+%	this way takes advantage of Thelma's ability to learn complex
+%	programs with dependent clauses from single examples, while
+%	preserving some of the efficiency of TPC.
+%
+%	TPC is efficient because it avoids a search of the MIL
+%	Hypothesis Space, that can grow very large when the target
+%	theory is large and when there are many competing hypotheses
+%	that resemble the target theory. Thelma learns by searching the
+%	Hypothesis Space, but training it on a single example at a time
+%	keeps the Hypothesis Space to a manageable size, more often than
+%	not. Yet, there are no guarantees and there are going to be
+%	problems for which the Hypothesis Space increases at an
+%	exponential rate (exponential to the number of constructible
+%	clauses) even given a single example.
+%
+thelma_tpc(Pos,Neg,BK,MS,Ps):-
+	configuration:unfold_invented(U)
+	,configuration:fold_recursive(F)
+	,debug(thelma_tpc,'Converting examples...',[])
+	,convert_examples(pos,Pos,Pos_c)
+	,top_program_thelma(Pos_c,Neg,BK,MS,Prog)
+	,closure(BK,experiment_file,Bs)
+	,flatten(Bs,Bs_f)
+	,reduced_top_program(Pos,Bs_f,[],Prog,Rs_)
+	,examples_targets(Pos,Ss)
+	,filter_targets(Ss,Rs_,Ps_1)
+	,(   U ==  true
+	 ->  debug(learn,'Unfolding invented...',[])
+	    ,unfold_invented(Ps_1,Pos,BK,Ps_2)
+	 ;   Ps_2 = Ps_1
+	 )
+	,(   F == true
+	 ->  debug(learn,'Folding to introduce recursion...',[])
+	    ,fold_recursive(Ps_2,Ps)
+	 ;   Ps = Ps_2
+	 ).
+
+
+%!	filter_targets(+Targets,+Clauses,-Filtered) is det.
+%
+%	Remove non-target predicates from a set of Clauses.
+%
+%	Used to clear BK out of the learned Top Program before
+%	reduction.
+%
+filter_targets(Ss,Ps,Ps_):-
+	findall(C
+	       ,(member(C,Ps)
+		,symbol(C,S)
+		,target_or_invention(Ss,S)
+		)
+	       ,Ps_).
+
+
+%!	symbol(+Clause,-Symbol) is det.
+%
+%	Extract the predicate symbol at the head of Clause.
+%
+symbol(C,F/A):-
+	head_body(C,H,_B)
+	,functor(H,F,A).
+
+
+%!	head_body(+Clause,-Head,-Body) is semidet.
+%
+%	Split the Head and Body of a Clause.
+%
+head_body(H:-B,H,B).
+head_body(H,H,true):-
+	H \= (_:-_).
+
+
+%!	top_program_thelma(+Pos,+Neg,+BK,+Metarules,-Top) is det.
+%
+%	Construct a Top Program for a MIL problem using Thelma.
+%
+top_program_thelma(Pos_c,Neg,BK,MS,Ps):-
+	S = (debug(thelma_tpc,'Transforming metarules...',[])
+             ,transform_metarules(MS)
+	     )
+	,G = (debug(thelma_tpc,'Proving examples...',[])
+	     ,generalise_specialise(Pos_c,Neg,BK,MS,Ps)
+	     )
+	,Cl = (debug(thelma_tpc,'Cleaning up metarules...',[]),
+	       cleanup_metarules
+	      )
+	,setup_call_cleanup(S,G,Cl).
+
+
+%!	generalise_specialise(+Pos,+Neg,+BK,+Metarules,-Top) is det.
+%
+%	Combined Top Program Construction specialise, generalise steps.
+%
+generalise_specialise(Pos,Neg,BK,MS,Ss):-
+	findall(C
+	       ,(member(Ep,Pos)
+		,debug_clauses(thelma_tpc,'Positive example:',[Ep])
+		,prove([Ep],BK,MS,Subs)
+		,debug_clauses(thelma_tpc,'Learned metasubs:',Subs)
+		,project_metasubs(Subs,Cs)
+		,debug_clauses(thelma_tpc,'Disproving metasub:',Cs)
+		,disprove(Neg,BK,Cs)
+		,debug_clauses(thelma_tpc,'Keeping metasub:',Cs)
+		,Cs \= []
+		,member(C,Cs)
+		% Skolemise to sort ignoring variable ages.
+		,numbervars(C)
+		)
+	       ,Ss_)
+	,sort(Ss_, Ss_s)
+	% Unskolemise.
+	,varnumbers(Ss_s,Ss)
+	,debug_clauses(thelma_tpc,'Learned Top Program:',Ss).
+
+
 
 %!	thelma(+Target) is nondet.
 %
