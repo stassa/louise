@@ -13,7 +13,6 @@
 
 :-use_module(project_root(configuration)).
 :-use_module(lib(term_utilities/term_utilities)).
-:-use_module(subsystems(dynamic_learning)).
 :-use_module(src(auxiliaries)).
 :-use_module(src(metarules_parser)).
 
