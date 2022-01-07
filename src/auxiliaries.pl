@@ -28,6 +28,7 @@
 		      ,list_encapsulated_problem/1
 		      ,list_learning_results/0
 		      ,list_mil_problem/1
+		      ,list_mil_problem_thelma/1
 		      ,list_problem_statistics/1
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
@@ -141,6 +142,7 @@ Table of Contents
    * list_encapsulated_problem/1
    * list_learning_results/0
    * list_mil_problem/1
+   * list_mil_problem_thelma/1
    * list_problem_statistics/1
    * list_top_program_reduction/1
    * list_top_program/1
@@ -1016,7 +1018,32 @@ list_learning_results(P/2):-
 %
 list_mil_problem(T):-
 	experiment_data(T,Pos,Neg,BK,MS)
-	,format_underlined('Positive examples')
+	,list_mil_problem(Pos,Neg,BK,MS)
+	,nl
+	,print_constraints(MS,metasub).
+
+
+
+%!	list_mil_problem_thelma(+Targets) is det.
+%
+%	List the elements of a MIL Problem for Thelma.
+%
+%	As list_mil_problem/1 but also prints out information about
+%	metarule constraints and order constraints.
+%
+list_mil_problem_thelma(Ts):-
+	experiment_data(Ts,Pos,Neg,BK,MS)
+	,list_mil_problem(Pos,Neg,BK,MS)
+	,nl
+	,print_constraints(MS,order).
+
+
+%!	list_mil_problem(+Pos,+Neg,+BK,+MS) is det.
+%
+%	Business end of list_mil_problem/1, list_mil_problem_thelma/1.
+%
+list_mil_problem(Pos,Neg,BK,MS):-
+	format_underlined('Positive examples')
 	,print_clauses(Pos)
 	,nl
 	,format_underlined('Negative examples')
@@ -1054,6 +1081,32 @@ atom_underline(A,A_):-
 		,between(1,N,_)
 		,Ds)
 	,atomic_list_concat(Ds,A_).
+
+
+%!	print_constraints(+Metarules,+Constraints) is det.
+%
+%	Print out information about metarule and order constraints.
+%
+%	Constraints is one of [order, metasub], denoting whether
+%	information about order constraints or metasubstitution
+%	constraints (currently defined as clauses
+%	of metarule_constraints/2) will be printed.
+%
+print_constraints(MS,order):-
+	!
+	,format_underlined('Order constraints')
+	,forall(member(Id,MS)
+	       ,(configuration:order_constraints(Id,Ss,Fs,PS,CS)
+		,print_clauses(order_constraints(Id,Ss,Fs,PS,CS))
+		)
+	       ).
+print_constraints(_MS,metasub):-
+	predicate_property(metarule_constraints(_,_), number_of_clauses(N))
+	,(   N > 0
+	 ->  format_underlined('Metasubstitution constraints')
+	    ,listing(metarule_constraints)
+	 ;   true
+	 ).
 
 
 
