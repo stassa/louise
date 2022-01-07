@@ -1031,6 +1031,10 @@ list_mil_problem(T):-
 %	As list_mil_problem/1 but also prints out information about
 %	metarule constraints and order constraints.
 %
+%	@tbd This should really be in subsystems(thelma_auxiliaries) but
+%	it would make such a mess of copy/pasting or trying to split
+%	code here to reuse there, that it's better to keep it here.
+%
 list_mil_problem_thelma(Ts):-
 	experiment_data(Ts,Pos,Neg,BK,MS)
 	,list_mil_problem(Pos,Neg,BK,MS)
