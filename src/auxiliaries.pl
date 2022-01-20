@@ -699,11 +699,13 @@ predicate_signature(T/A,I,Ss):-
 predicate_signature(Ts,I,Ss):-
 	setof(S
 	      ,T^A^Ts^BK^(member(T/A,Ts)
-			 ,experiment_file:background_knowledge(T/A,BK)
-			 ,member(S,BK)
-			 ,\+memberchk(S,Ts)
+			 ,(   experiment_file:background_knowledge(T/A,BK)
+			  ->  member(S,BK)
+			     ,\+memberchk(S,Ts)
+			  ;   print_message(warning, bk_declaration(T/A))
+			  )
 			 )
-	      ,Bs)
+	     ,Bs)
 	% Branching allows for 0 invented predicates.
 	,(   setof(I_i
 		  ,T^A^Bs^I^Is_i^(member(T/A,Bs)
@@ -717,6 +719,10 @@ predicate_signature(Ts,I,Ss):-
 	,sort(Ts,Ts_)
 	,append(Ts_,Is,Ps)
 	,append(Bs,Ps,Ss).
+
+
+prolog:message(bk_declaration(T/A)) -->
+	['predicate_signature/3 found no BK declarations for target predicate ~w!~n'-[T/A]].
 
 
 
