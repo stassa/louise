@@ -210,7 +210,7 @@ generalise(Pos,MS,Ss_Pos):-
 	,findall(Sub-M
 	     ,(member(M,MS)
 	      ,member(Ep,Pos)
-	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
+	      ,debug_clauses(examples,'Positive example:',Ep)
 	      ,debug_msg_metarules(metasubstitution,'Instantiating metarule:',M)
 	      ,metasubstitution(Ep,M,Sub)
 	      ,constraints(Sub)
@@ -235,7 +235,7 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 	     ,H^M^Ss_Pos^En^Neg^
 	      (member(H-M,Ss_Pos)
 	      ,\+((member(En,Neg)
-		  ,debug_clauses(metasubstitution,'Negative example:',En)
+		  ,debug_clauses(examples,'Negative example:',En)
 		  ,debug_clauses(metasubstitution,'Ground metasubstitution atom:',H)
 		  ,metasubstitution(En,M,H)
 		  )
@@ -294,10 +294,10 @@ generalise_specialise(Pos,Neg,MS,Ss_Pos):-
 	,invented_symbols(I,Is)
 	,findall(Sub-M-Refs
 	     ,(member(Ep,Pos)
-	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
+	      ,debug_clauses(examples,'Positive example:',Ep)
 	      ,metasubstitutions(Is,Ep,MS,Sub-M)
 	      ,\+((member(En,Neg)
-		  ,debug_clauses(metasubstitution,'Negative example:',[En])
+		  ,debug_clauses(examples,'Negative example:',[En])
 		  ,metasubstitution(En,M,Sub)
 		  ))
 	      ,assert_clause(Sub-M,Refs)
