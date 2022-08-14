@@ -141,6 +141,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 % Uses the specialised metarule meta-interpreter resolve_metarules/5
 % Runs slower and manipulates the dynamic db.
 	configuration:theorem_prover(resolution)
+	,\+ configuration:prove_recursive(fast)
 	% The following tests determine the structure of the program db.
 	,(   configuration:prove_recursive(examples)
 	 ->  Ws_ = [Pos,BK]
@@ -296,7 +297,7 @@ generalise_specialise(Pos,Neg,MS,Ss_Pos):-
 	      ,debug_clauses(metasubstitution,'Positive example:',Ep)
 	      ,metasubstitutions(Is,Ep,MS,Sub-M)
 	      ,\+((member(En,Neg)
-		  ,debug_clauses(dynamic,'Negative example:',[En])
+		  ,debug_clauses(metasubstitution,'Negative example:',[En])
 		  ,metasubstitution(En,M,Sub)
 		  ))
 	      ,assert_clause(Sub-M,Refs)
@@ -327,6 +328,7 @@ generalise_specialise(Pos,Neg,MS,Ss_Pos):-
 %	derive one kind of recursive clause, the kind that can resolve
 %	with positive examples (and BK predicates).
 %
+
 metasubstitution(E,M,Sub):-
 	copy_term(M,M_)
 	,bind_head_literal(E,M_,(Sub:-(H,Ls)))
@@ -609,10 +611,11 @@ resolve_metarules(_Is,_P,[Sub|Ss],_MS,[Sub|Ss],(L)):-
 % When a proof completes there may be metasubstitutions that just got
 % fully ground, e.g. because we just finished proving some invented
 % predicate. So we must test constraints on _all_ the metasubstitutions
-% we have so far f.
+% we have so far.
 % TODO: is there no better way to do this?
         L \= (_,_)
-	,call(L)
+	,debug_clauses(meta_interpreter,'Calling atom:',[L])
+	,experiment_file:call(L)
 	,constrained_metasubs([Sub|Ss])
 %	,! %?
 	,debug_clauses(meta_interpreter,'Proved atom:',[L])
@@ -637,7 +640,7 @@ resolve_metarules(Is,[E,T,S,O,I],Subs,MS,Acc,(L)):-
 	;   I = t
 	)
 	,provable_literal(L)
-	,clause(L,Bs)
+	,experiment_file:clause(L,Bs)
 	,\+ metasub_atom(L,MS)
 	,debug_clauses(meta_interpreter,'Proving BK literal:',[L])
 	,resolve_metarules(Is,[E,T,S,O,I],Subs,MS,Acc,Bs).
