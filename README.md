@@ -35,30 +35,34 @@ Overview
 Louise [(Patsantzis & Muggleton 2021)] is a machine learning system that learns
 Prolog programs.
 
-Louise is based on a new program learning algorithm, called _Top Program
-Construction_, that runs in polynomial time.
-
 Louise is a Meta-Interpretive Learning (MIL) system. MIL [(Muggleton et al.
 2014)], [(Muggleton et al. 2015)], is a new setting for Inductive Logic
-Programming (ILP) [(Muggleton, 1991)]. ILP is the branch of machine learning
-that studies algorithms learning logic programs from examples, background
-knowledge and a language bias that determines the structure of learned programs.
-In MIL, the language bias is defined by a set of second order logic clauses
-called _metarules_. Examples, background knowledge and metarules must be
-provided by the user, but Louise can perform predicate invention to extend its
-background knowledge and metarules and so learn programs that are impossible to
-learn only from its initial data. Louise can also learn new metarules from
-examples of a learning target. Finally, Louise can perform examples invention to
-extend its set of given examples.
+Programming (ILP) [(Muggleton, 1991)]. ILP is a form of weakly-supervised
+machine learning of logic programs from examples of program behaviour (meaning
+examples of the inputs and outputs of the programs to be learned). Unlike
+conventional, statistical machine learning algorithms, ILP approaches do not
+need to see examples of programs to learn new programs and instead rely on
+_background knowledge_, a library of pre-existing logic programs that they reuse
+to compose new programs. In MIL, the background knowledge is a higher-order
+logic program that includes both first- and second-order clauses, the latter
+called _metarules_. MIL systems like Louise learn by specialising their
+metarules by SLD-resolution. Examples and background knowledge, including
+metarules, are provided by the user, but Louise can learn its own background
+knowledge and metarules.
+
+Louise is based on a new MIL algorithm, called _Top Program Construction_ (TPC),
+that runs in polynomial time. TPC avoids an expensive search of the program
+search space and instead learns by construcing a unique object that is a correct
+hypothesis, consistent with the training examples.
 
 In this manual we show simple examples where Louise is trained on small, "toy"
 problems, designed to demonstrate its use. Louise is still new and actively
 being worked on and so has not yet been used in large-scale real-world
 applications. Published work on Louise has so far focused on describing the
-working principles behind Louise's Top Program Construction algorithm (TPC)
-rather than demonstrating its full potential as a learning system. Louise is
-maintained by a single PhD student, currently writing her PhD thesis. New
-developments should be expected to come at a leisurely pace.
+working principles behind Louise's underlying TPC algorithm rather than
+demonstrating its full potential as a learning system. Louise is maintained by a
+single PhD student, currently writing her PhD thesis. New developments should be
+expected to come at a leisurely pace.
 
 Capabilities
 ------------
