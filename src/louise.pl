@@ -124,7 +124,6 @@ top_program(Pos,Neg,BK,MS,Ts):-
 % Uses the Prolog engine and avoids using the dynamic db too much.
 	configuration:theorem_prover(resolution)
 	,configuration:prove_recursive(fast)
-	,!
 	% Metarules and negative examples don't need to be added to the dynamic db.
 	,S = write_problem(user,[Pos,BK],Refs)
 	,G = (debug(top_program,'Constructing Top program...',[])
@@ -136,7 +135,10 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
 	,C = erase_program_clauses(Refs)
-	,setup_call_cleanup(S,G,C).
+	,setup_call_cleanup(S,G,C)
+	% Fail if Top Program is empty.
+	,Ts \= []
+	,!.
 top_program(Pos,Neg,BK,MS,Ts):-
 % Uses the specialised metarule meta-interpreter resolve_metarules/5
 % Runs slower and manipulates the dynamic db.
@@ -173,6 +175,8 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,cleanup_experiment
 	     )
 	,setup_call_cleanup(S,G,C)
+	% Fail if Top Program is empty.
+	,Ts \= []
 	,!.
 top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(tp)
@@ -186,6 +190,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,!.
 top_program(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
+% This is meant to send a clear message that learning failed.
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
