@@ -286,6 +286,13 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 %	metasubstitution already in Subs, or a new one constructed by
 %	new_metasub/6.
 %
+clause(L,_MS,_Ss,Subs,Subs,true):-
+	(   predicate_property(L,foreign)
+	;   built_in_or_library_predicate(L)
+	)
+	,debug(prove,'Proving built-in literal: ~w', [L])
+        ,call(L)
+	,debug(prove,'Proved built-in clause: ~w', [L:-true]).
 clause(L,_MS,_Ss,Subs,Subs,Ls):-
 	\+ predicate_property(L,foreign)
 	,\+ built_in_or_library_predicate(L)
