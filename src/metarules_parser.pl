@@ -352,4 +352,4 @@ right --> [')'].
 %
 %	A comma.
 %
-comma --> [,].
+comma --> [','].
