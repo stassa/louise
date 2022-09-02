@@ -303,7 +303,10 @@ clause(L,MS,_Ss,Subs,Subs,Ls):-
         debug(prove,'Proving literal with known metasubs: ~w',[L])
         ,known_metasub(L,MS,Subs,Ls).
 clause(L,MS,Ss,Subs,Subs_,Ls):-
-        debug(prove,'Proving literal with new metasub: ~w',[L])
+	configuration:depth_limits(N,_)
+	,length(Subs,M)
+	,M < N
+        ,debug(prove,'Proving literal with new metasub: ~w',[L])
         ,new_metasub(L,MS,Ss,Subs,Subs_,Ls).
 
 
@@ -363,7 +366,6 @@ new_metasub(L,MS,Ss,Subs,[Sub|Subs],Ls):-
         ,applied_metasub(Sub,M,Ss,L,Ls)
 	,debug(prove,'Adding new metasub: ~w',[Sub])
 	%,debug_clauses(prove,'Known metasubs:',[Subs])
-	,\+ member(Sub,Subs)
 	,debug(prove,'Added new metasub: ~w',[Sub]).
 
 
