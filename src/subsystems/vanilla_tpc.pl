@@ -117,7 +117,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,configuration:prove_recursive(fast)
 	% Metarules and examples don't need to be added to the dynamic db.
-	,S = (write_problem(user,[BK],Refs)
+	,S = (write_problem(user,[Pos,BK],Refs)
 	     ,table(prove/5)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
@@ -126,7 +126,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,vanilla_tpc:specialise(Ss_Gen,Neg,Ss_Spec)
 	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
 	     ,flatten(Ss_Spec,Ss_Spec_f)
-	     ,sort(Ss_Spec_f,Ss_Spec_s)
+	     ,sort(1,@<,Ss_Spec_f,Ss_Spec_s)
 	     ,applied_metarules(Ss_Spec_s,MS,Ts)
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
@@ -236,7 +236,8 @@ signature(L,[T|Ss]):-
 %	A vanilla MIL meta-interpreter for Top Program Construction.
 %
 prove(true,_MS,_Ss,Subs,Subs):-
-	debug(prove,'Metasubs so-far: ~w',[Subs]).
+	!
+	,debug(prove,'Metasubs so-far: ~w',[Subs]).
 prove((L,Ls),MS,Ss,Subs,Acc):-
 	debug(prove,'Proving literal (1): ~w',[L])
         ,prove(L,MS,Ss,Subs,Subs_)
@@ -250,7 +251,7 @@ prove((L),MS,Ss,Subs,Acc):-
         ,clause(L,MS,Ss,Subs,Subs_,Ls)
 	,debug(prove,'Proving literals (5): ~w',[Ls])
         ,prove(Ls,MS,Ss,Subs_,Acc).
-prove(L,_MS,_Ss,Subs,_Acc):-
+prove_(L,_MS,_Ss,Subs,_Acc):-
 	L \= true
         ,debug(prove,'Failed to prove literals: ~w',[L])
 	,debug(prove,'Metasubs so-far: ~w',[Subs])
