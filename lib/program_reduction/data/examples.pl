@@ -289,7 +289,7 @@ example('2c', [(lessthan(X1,Y1) :- successor(X1,Y1))
 	      ,(lessthan(X2,Y2) :- successor(X2,Z2), successor(Z2,Y2))
 	      ,(lessthan(X3,Y3) :- successor(X3,Z3), lessthan(Z3,Y3))
 	      ,(lessthan(U,V) :- successor(U,W), successor(W,X), successor(X,V))
-	      ,(lessthan(X1,Y1) :- successor(Y1,X1))
+	      ,(lessthan(X4,Y4) :- successor(Y4,X4))
 	      ]).
 
 example(3, [(q(X1) :- p(X1))
