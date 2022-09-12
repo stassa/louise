@@ -365,8 +365,6 @@ free_member(X,[_|Ys],Z):-
 new_metasub(L,MS,Ss,Subs,[Sub|Subs],Ls):-
         member(M,MS)
         ,applied_metasub(Sub,M,Ss,L,Ls)
-	,debug(prove,'Adding new metasub: ~w',[Sub])
-	%,debug_clauses(prove,'Known metasubs:',[Subs])
 	,debug(prove,'Added new metasub: ~w',[Sub]).
 
 
