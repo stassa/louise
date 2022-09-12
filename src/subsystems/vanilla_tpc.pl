@@ -117,13 +117,13 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,configuration:prove_recursive(fast)
 	% Metarules and examples don't need to be added to the dynamic db.
-	,S = (write_problem(user,[Pos,BK],Refs)
+	,S = (write_problem(user,[BK],Refs)
 	     ,table(prove/5)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,vanilla_tpc:generalise(Pos,MS,Ss_Gen)
 	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
-	     ,vanilla_tpc:specialise(Ss_Gen,Neg,Ss_Spec)
+	     ,vanilla_tpc:specialise(Ss_Gen,MS,Neg,Ss_Spec)
 	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
 	     ,flatten(Ss_Spec,Ss_Spec_f)
 	     ,sort(1,@<,Ss_Spec_f,Ss_Spec_s)
@@ -172,7 +172,8 @@ generalise(Pos,MS,Ss_Pos):-
 	,sort(Ss_Pos_,Ss_Pos).
 
 
-%!	specialise(+Generalised,+Negatives,-Specialised) is det.
+%!	specialise(+Generalised,+Metarules,+Negatives,-Specialised) is
+%!	det.
 %
 %	Specialisation step of Top program construction.
 %
@@ -180,23 +181,26 @@ generalise(Pos,MS,Ss_Pos):-
 %	examples against the Negative examples by discarding each
 %	metasubstitution that entails a negative example.
 %
-%	TODO: temp version until I sort out meta-interpretation.
+%	Unlike the original, one-clause TPC version this one specialises
+%	sub-hypotheses derived by generalise/3.
 %
-specialise(Ss_Pos,[],Ss_Pos):-
+specialise(Ss_Pos,_MS,[],Ss_Pos):-
 	!.
-specialise(Ss_Pos,Neg,Ss_Neg):-
-	setof(H-M
-	     ,H^M^Ss_Pos^En^Neg^
-	      (member(Subs,Ss_Pos)
-              ,member(H-M,Subs)
-	      ,\+((member(En,Neg)
-		  ,debug_clauses(examples,'Negative example:',En)
-		  ,debug_clauses(metasubstitution,'Ground metasubstitution atom:',H)
-		  ,louise:metasubstitution(En,M,H)
-		  )
-		 )
-	      )
-	     ,Ss_Neg).
+specialise(Ss_Pos,MS,Neg,Ss_Neg):-
+	findall(Subs
+	       ,(member(Subs,Ss_Pos)
+		,findall(Sub
+			,member(Sub-_M,Subs)
+			,Subs_)
+		,debug_clauses(metasubstitutions,'Ground metasubstitutions:',[Subs_])
+		,\+((member(En,Neg)
+		    ,debug_clauses(examples,'Negative example:',En)
+		    ,once(metasubstitutions(En,MS,Subs_))
+		    ,debug_clauses(examples,'Proved negative example:',En)
+		    )
+		   )
+		)
+	       ,Ss_Neg).
 
 
 %!	metasubstitutions(+Example,+Metarules,-Metasubstitutions) is
@@ -204,6 +208,11 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 %
 %	Derive all possible Metasubstitutions entailing an Example.
 %
+metasubstitutions(:-En,MS,Subs):-
+	!
+        ,prove(En,MS,[],Subs,Subs)
+	,debug(metasubstitutions,'Proved Example: ~w',[:-En])
+	,debug_clauses(metasubstitutions,'With Metasubs:',[Subs]).
 metasubstitutions(Ep,MS,Subs):-
         signature(Ep,Ss)
 	,debug(signature,'Signature: ~w',[Ss])
