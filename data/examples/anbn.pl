@@ -378,10 +378,10 @@ program reduction.
 
 8. Use of constraints.
 
-Metasubstitution constraints can be used to shape the Top Program to
-your needs, for example to remove unwanted clauses from the learned
-program. This is most useful when you have no negative examples and
-observe a clear over-generalisation caused by spurious recursion.
+Metarule constraints can be used to shape the Top Program to your needs,
+for example to remove unwanted clauses from the learned program. This is
+most useful when you have no negative examples and observe a clear
+over-generalisation caused by spurious recursion.
 
 To begin with, comment-out all the negative examples of s/2 defined in
 negative_example/2. Call make/0 to rebuild the project and check that
@@ -581,13 +581,6 @@ to the construction of an over-specialised clause that matches only the
 example s([a,a,b,b],[]), when unfolded. By cutting out recursive clauses
 to avoid over-generalisation, we managed to also avoid
 over-specialisation. This will not always be the case!
-
-Note well that metarule constraints are applied _after_ Louise has
-finished learning the Top Program. They can only be used to modify the
-finally output hypothesis, but not the way it is learned. Extreme
-over-generalisation may eventually hurt performance. Such
-over-generalisation can only be controlled with appropriate negative
-examples.
 
 We can unfold our hypothesis learned with constraints to verify that it
 matches the target theory. You should now know how to do this:

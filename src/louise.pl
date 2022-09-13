@@ -448,6 +448,10 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 %	metasubstitution already in Subs, or a new one constructed by
 %	new_metasub/6.
 %
+clause(_L,_MS,_Ss,Subs,_Acc,_Ls):-
+	\+ check_constraints(Subs)
+	,!
+	,fail.
 clause(L,_MS,_Ss,Subs,Subs,true):-
 	(   predicate_property(L,foreign)
 	;   built_in_or_library_predicate(L)
@@ -471,6 +475,23 @@ clause(L,MS,Ss,Subs,Subs_,Ls):-
         ,debug(prove,'Proving literal with new metasub: ~w',[L])
         ,new_metasub(L,MS,Ss,Subs,Subs_,Ls).
 
+
+%!	check_constraints(+Metasubs) is det.
+%
+%	True if all ground metasubstitutions obey constraints.
+%
+%	Metasubs is the list of metasubstitutions derived so-far. For
+%	each _ground_ metasubstitution in Metasubs, this predicate
+%	checks that it does not violate any constraints declared in a
+%	metarule_constraints/2 clause.
+%
+check_constraints(Subs):-
+	forall(member(Sub,Subs)
+	      ,(   ground(Sub)
+	       ->  constraints(Sub)
+	       ;   \+ ground(Sub)
+	       )
+	      ).
 
 
 %!	known_metasub(?Literal,+Subs,-Body) is nondet.
