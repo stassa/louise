@@ -1,7 +1,6 @@
 :-module(defaults, [default_depth_limits/1
                    ,default_max_invented/1
                    ,default_minimal_program_size/1
-		   ,default_recursion_depth_limit/1
 		   ,default_recursive_reduction/1
 		   ,default_reduction/1
 		   ,default_resolutions/1
@@ -43,17 +42,6 @@ default_max_invented(1).
 %       The default value is [2,inf].
 %
 default_minimal_program_size([2,inf]).
-
-
-%!	default_recursion_depth_limit(?Default) is semidet.
-%
-%	Default value for recursion_depth_limit/2 option.
-%
-%	The default value is "[dynamic_learning, none]". Note that while
-%	the configuration option takes two arguments, the default has a
-%	single argument.
-%
-default_recursion_depth_limit([dynamic_learning, none]).
 
 
 %!	default_recursive_reduction(?Default) is semidet.

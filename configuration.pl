@@ -13,7 +13,6 @@
                         ,metarule_learning_limits/1
                         ,metarule_formatting/1
                         ,order_constraints/5
-			,recursion_depth_limit/2
 			,recursive_reduction/1
                         ,reduce_learned_metarules/1
 			,reduction/1
@@ -208,7 +207,6 @@ comment).
 %:-debug(examples). % Debug positive and negative examples.
 %:-debug(top_program). % Debug Top program construction.
 %:-debug(reduction). % Debug Top program reduction.
-%:-debug(dynamic). % Debug dynamic learning.
 %:-debug(predicate_invention). % Debug predicate invention.
 %:-debug(learn_metarules). % Debug metarule learning
 %:-debug(learned_metarules). % Debug new metarules
@@ -478,7 +476,6 @@ learner(louise).
 %	arity of one of the following learning predicates defined in
 %       Louise:
 %       * learn/1
-%       * learn_dynamic/1
 %       * learn_meta/1
 %       * learn_metarules/1
 %       * learn_minimal/1
@@ -496,10 +493,10 @@ learner(louise).
 %
 %	For example, the following clause:
 %	==
-%	configuration:learning_predicate(learn_dynamic/1).
+%	configuration:learning_predicate(learn_meta/1).
 %	==
 %
-%	Will cause list_learning_results/0 to use learn_dynamic/1 for
+%	Will cause list_learning_results/0 to use learn_meta/1 for
 %	all predicates in the experiment file containing that clause.
 %
 %	learning_predicate/1 is declared dynamic. You do not have to
@@ -528,14 +525,15 @@ learner(louise).
 :-dynamic learning_predicate/1.
 :-multifile learning_predicate/1.
 %learning_predicate(learn/1).
-%learning_predicate(learn_dynamic/1).
 %learning_predicate(learn_minimal/1).
 % etc.
 
 
 %!	max_invented(?Number) is semidet.
 %
-%	Maximum number of invented predicates in dynamic learning.
+%	Maximum number of invented predicates.
+%
+%	Assumes clause_limit(K) where K > 1.
 %
 max_invented(0).
 
@@ -636,14 +634,14 @@ xy_zy_zx metarule 'P(x,y):- Q(z,y), R(z,x)'.
 %
 %	@tbd This predicate is multifile so that it can be declared by
 %	experiment files, however the definitions below are pretty
-%	universally necessary to allow learning hypotheses with
-%	left-recursions using dynamic learning and predicate invention.
-%	So in they goes into the configuration that they might be used
-%	by every experiment file. On the other hand, left-recursive
-%	hypotheses may be required for some problems so this definition
-%	is left commented out. This will not raise any errors because
-%	metarule_constraints/2 is declared dynamic so a definition is
-%	not necessary to exist in this module (or anywhere).
+%       universally necessary to allow learning hypotheses with
+%       left-recursions and predicate invention. So in they goes into
+%       the configuration that they might be used by every experiment
+%       file. On the other hand, left-recursive hypotheses may be
+%       required for some problems so this definition is left commented
+%       out. This will not raise any errors because
+%       metarule_constraints/2 is declared dynamic so a definition is
+%       not necessary to exist in this module (or anywhere).
 %
 % Experiment files may or may not define metarule constraints to filter
 % the Top program for unwanted clause structures (e.g. I don't like
@@ -856,41 +854,6 @@ order_constraints(tailrec,[P,Q],[X,Y,Z],[P>Q],[X>Z,Z>Y]).
 order_constraints(precon,[P,Q,R],_Fs,[P>Q,P>R],[]).
 order_constraints(postcon,[P,Q,R],_Fs,[P>Q,P>R],[]).
 order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
-
-
-%!	recursion_depth_limit(?Purpose,?Limit) is semidet.
-%
-%	Recursion depth Limit for the given Purpose.
-%
-%	Limit can be either an integer, which is passed as
-%	the second argument to call_with_depth_limit/3 in order to
-%       limit recursion in the listed Purpose, or the atom 'none' in
-%       which case no limit is placed on recursion depth for the listed
-%       Purpose.
-%
-%	Known purposes are as follows:
-%
-%	* dynamic_learning: Limits recursion during Top program
-%       construction in dynamic learning. See the specialised
-%       meta-interpreter prove_body_literals/3 in dynamic_learning.pl
-%       for details.
-%
-%       @tbd Actually, the limit used is an _inference_ limit, rather
-%       than a recursion depth limit. This inference limit should only
-%       be used to limit uncontrolled recursion, hence the name of the
-%       option.
-%
-%       @tbd Setting these multi-clause options with
-%       set_configuration_option/2 seems to leave behind duplicates and
-%       I'm not sure why, or how to avoid that. Use retract/1 to remove
-%       duplicates, or set an option manually to its defults then set
-%       it again to what you want, seems to do the trick.
-%
-recursion_depth_limit(dynamic_learning,none).
-%recursion_depth_limit(dynamic_learning,5000).
-%recursion_depth_limit(dynamic_learning,100_000).
-%recursion_depth_limit(dynamic_learning,150000).
-%recursion_depth_limit(dynamic_learning,500_000_000_000).
 
 
 %!	recursive_reduction(?Bool) is semidet.

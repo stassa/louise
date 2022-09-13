@@ -187,10 +187,10 @@ prove_examples([E|Pos]):-
 %	learning targets defined in a Top Program learned from partial
 %	examples.
 %
-%	Variant of dynamic_learning:table_encapsulated/1 that also
-%	declares target predicates dynamic and incremental, allowing
-%	incremental tables to be updated when a tabled predicate depends
-%	on itself.
+%	Variant of dynamic_learning:table_encapsulated/1 (now removed)
+%	that also declares target predicates dynamic and incremental,
+%	allowing incremental tables to be updated when a tabled
+%	predicate depends on itself.
 %
 %	The motivation for this is that if we have a target predicate
 %	f/2 in Top and this is defined in terms of itself, tabled

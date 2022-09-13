@@ -391,8 +391,7 @@ reset_defaults:-
 %
 %	As set_configuration_option/2 but allows for options that may
 %	have multiple default values, defined in multiple clauses in
-%	src/defaults.pl. Only recursion_depth_limit/2 is currently of
-%	that type.
+%	src/defaults.pl. No option is currently of that type.
 %
 %	If Option has a single default option, Option and Value are both
 %	passed to set_configuration_option/2. This is to allow use of
@@ -451,11 +450,14 @@ set_multi_configuration_option(N, [V|Vs]):-
 %	experiment, which then of course affects subsequent experiments.
 %	It happened to me, it could happen to you.
 %
+/*
+% Modify when multi-options are added to configuration.
 set_configuration_option(N,_Vs):-
 	memberchk(N, [recursion_depth_limit])
 	,!
 	,print_message(warning,multi_option(N))
 	,print_message(warning,option_not_set(N)).
+*/
 set_configuration_option(N, V):-
 	atomic(V)
 	,!
@@ -948,13 +950,14 @@ list_encapsulated_problem(T):-
 %	multifile predicate learning_predicate/1 to select a different
 %	learning predicate.
 %
-%	Alternative learning predicates must be one of [learn_dynamic/1,
-%	learn_with_examples_invention/2]. learn/2 can also be specified,
-%	but it will have the same results as learn/1.
+%	Alternative learning predicates must be one of [learn_meta/1,
+%	learn_with_examples_invention/2 learn_metarules/1,
+%	learn_minimal/1]. learn/2 can also be specified, but it will
+%	have the same results as learn/1.
 %
-%	If a predicate with a symbol other than learn, learn_dynamic or
-%	learn_with_examples_invention, or with arity other than 1 or 2
-%	is specified, an informative error is raised.
+%	If a predicate with a symbol other than the above listed
+%	alternatives, or with arity other than 1 or 2 is specified, an
+%	informative error is raised.
 %
 %	@see learning_predicate/1, learning_targets/1
 %
@@ -981,7 +984,6 @@ list_learning_results:-
 %
 list_learning_results(P/N):-
 	\+ memberchk(P,[learn
-		       ,learn_dynamic
 		       ,learn_meta
 		       ,learn_metarules
 		       ,learn_minimal
