@@ -1,4 +1,5 @@
-:-module(defaults, [default_depth_limits/1
+:-module(defaults, [default_clause_limit/1
+                   ,default_depth_limits/1
                    ,default_max_invented/1
                    ,default_minimal_program_size/1
 		   ,default_recursive_reduction/1
@@ -15,6 +16,14 @@ options that are declared dynamic so that they can be manipulated by
 set_configuration_option/2. The auxilary predicate reset_defaults/0 sets
 dynamic configuration options to the values specified in this file.
 */
+
+%!      default_clause_limit(?Clauses) is semidet.
+%
+%       Default values for clause_limit/1 option.
+%
+%       The default value is [1]
+%
+default_clause_limit([1]).
 
 
 %!      default_depth_limits(?Clauses,?Invented) is semidet.
