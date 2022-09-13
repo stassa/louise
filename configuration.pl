@@ -13,7 +13,6 @@
                         ,metarule_learning_limits/1
                         ,metarule_formatting/1
                         ,order_constraints/5
-                        ,prove_recursive/1
 			,recursion_depth_limit/2
 			,recursive_reduction/1
                         ,reduce_learned_metarules/1
@@ -337,7 +336,7 @@ comment).
 %
 %       __Vanilla TPC meta-interpreter__
 %
-%       This configuration option is called by the predicate prove/2,
+%       This configuration option is called by the predicate prove/5,
 %       Louise's implementation of a Meta-Interpretive Learning
 %       inductive meta-interpreter. Louise's meta-interpreter is based
 %       on a "vanilla" Prolog meta-interpreter, hence it's named
@@ -538,7 +537,7 @@ learner(louise).
 %
 %	Maximum number of invented predicates in dynamic learning.
 %
-max_invented(1).
+max_invented(0).
 
 
 %!      minimal_program_size(?Minimum,?Maximum) is semidet.
@@ -859,64 +858,6 @@ order_constraints(postcon,[P,Q,R],_Fs,[P>Q,P>R],[]).
 order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
 
 
-%!      prove_recursive(?How) is semidet.
-%
-%       Ways to attempt to prove recursive clauses.
-%
-%       How is an atom, one of: [examples, top_program, self, others,
-%       invented, fast] denoting the way in which the Top Program
-%       Construction algorithm in louise.pl will attempt to resolve a
-%       metarule to construct a recursive clause.
-%
-%       With option 'examples', metarules will only be resolved with
-%       positive examples (and background predicates). In this way
-%       the only kind of recursive clauses that can be constructed are
-%       clauses that resolve with positive examples (although once
-%       constructed, those clauses may resolve with others in the Top
-%       Program or themselves).
-%
-%       With option 'top_program', metarules will be resolved with
-%       positive examples and clauses already added to the Top Program
-%       so-far. In this way, clauses that only resolve with others in
-%       the Top Program, but not with positive examples, can be
-%       constructed.
-%
-%       With option 'self', metarules will be resolved with positive
-%       examples, and themselves. In this way, clauses that only resolve
-%       with themselves can be constructed.
-%
-%       With option 'others' metarules will be resolved with other
-%       metarules in the current MIL problem. In this way, clauses that
-%       depend on each other can be constructed, for example mutually
-%       recursive clauses or a recursive clause and its corresponding
-%       terminating condition, etc.
-%
-%       With option 'invented' literals of metarules that fail
-%       resolution otherwise are given an invented predicate symbol and
-%       resolved recursively, to perform predicate invention.
-%
-%       Option 'fast' (default) is like option 'examples', but
-%       resolution of metarules' body literals is handed to the Prolog
-%       engine, rather than the metarule meta-interpreter
-%       resolve_metarules/4 and is therefore faster.
-%
-%       Note well: option 'fast' automatically excludes all other
-%       options. That is, if prove_recursive(fast) is chosen, no other
-%       prove_recursive/1 options will take effect, even if set.
-%
-%       Conversely, all of the other options ('examples',
-%       'top_program', 'self', 'others' and 'invented') can be declared
-%       together. This allows all possible ways to derive recursive
-%       clauses to be attempted at once.
-%
-prove_recursive(fast).
-%prove_recursive(examples).
-%prove_recursive(top_program).
-%prove_recursive(self).
-%prove_recursive(others).
-%prove_recursive(invented).
-
-
 %!	recursion_depth_limit(?Purpose,?Limit) is semidet.
 %
 %	Recursion depth Limit for the given Purpose.
@@ -929,10 +870,6 @@ prove_recursive(fast).
 %
 %	Known purposes are as follows:
 %
-%       * self_resolution: Limits recursion during self-resolution of
-%       metarules in the base Top Program Construction algorithm. See
-%       the specialised meta-interpreter resolve_metarules/1 in
-%       louise.pl for details.
 %	* dynamic_learning: Limits recursion during Top program
 %       construction in dynamic learning. See the specialised
 %       meta-interpreter prove_body_literals/3 in dynamic_learning.pl
@@ -954,7 +891,6 @@ recursion_depth_limit(dynamic_learning,none).
 %recursion_depth_limit(dynamic_learning,100_000).
 %recursion_depth_limit(dynamic_learning,150000).
 %recursion_depth_limit(dynamic_learning,500_000_000_000).
-recursion_depth_limit(metasubstitution,none).
 
 
 %!	recursive_reduction(?Bool) is semidet.

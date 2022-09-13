@@ -54,7 +54,6 @@ default_minimal_program_size([2,inf]).
 %	single argument.
 %
 default_recursion_depth_limit([dynamic_learning, none]).
-default_recursion_depth_limit([metasubstitution, none]).
 
 
 %!	default_recursive_reduction(?Default) is semidet.
