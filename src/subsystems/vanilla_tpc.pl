@@ -313,7 +313,7 @@ clause(L,MS,_Ss,Subs,Subs,Ls):-
         debug(prove,'Proving literal with known metasubs: ~w',[L])
         ,known_metasub(L,MS,Subs,Ls).
 clause(L,MS,Ss,Subs,Subs_,Ls):-
-	configuration:depth_limits(N,_)
+	configuration:clause_limit(N)
 	,length(Subs,M)
 	,M < N
         ,debug(prove,'Proving literal with new metasub: ~w',[L])
