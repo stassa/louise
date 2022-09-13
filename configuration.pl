@@ -19,7 +19,6 @@
 			,resolutions/1
 			,symbol_range/2
                         ,tautology/1
-                        ,test_constraints/1
 			,theorem_prover/1
                         ,unfold_invented/1
 			,op(100,xfx,metarule)
@@ -1029,43 +1028,6 @@ tautology(H:-B):-
         ,clause_literals(C_,Ls)
         ,numbervars(Ls)
         ,sort(Ls,[_]).
-
-
-%!      test_constraints(?When) is semidet.
-%
-%       When to test metasubstitution constraints.
-%
-%       One of: [proof, clause]
-%
-%       If When is 'proof', metasubstitution constraints are tested
-%       during the proof of an example by meta-interpretation, at the
-%       end of a successful proof branch. Testing constraints during the
-%       proof can prune proof branches directly. This is useful when a
-%       proof is stuck in an infinite recursion because of a spurious
-%       instantiation pattern (this is particularly common when using
-%       the Inverse metarule that can cause proofs to flip-flop
-%       endlessly).
-%
-%       If When is 'clause', metasubstitution constraints are _only_
-%       tested once a proof has been completed and before a clause is
-%       added to the Top Program. Testing constraints before addition to
-%       the Top Program cannot prune proof branches but can eliminate
-%       further proofs and remove unwanted clauses from the learned
-%       hypothesis. This is useful when over-general clauses are added
-%       to the Top Program during learning.
-%
-%       Metasubstitution constraints are _always_ tested before adding a
-%       clause to the Top Program. Setting this option to 'clause' only
-%       has the effect that constraints are not tested during a proof by
-%       meta-interpretation.
-%
-%       This option is only relevant to the prove_recursive/1 options
-%       that activate Louise's metarule meta-interpreter, i.e. all other
-%       options than prove_recursive(fast). If prove_recursive(fast) is
-%       set, constraints are tested right after the proof of an
-%       example, regardless of the value of this option.
-%
-test_constraints(clause).
 
 
 %!	theorem_prover(?Algorithm) is semidet.
