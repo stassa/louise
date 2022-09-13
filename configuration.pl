@@ -446,7 +446,6 @@ experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/robots/robots.pl',robots).
 %experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
 %experiment_file('data/examples/multi_pred.pl',multi_pred).
-%experiment_file('data/examples/incremental_refinmnt.pl',incremental_refinmnt).
 %experiment_file('data/examples/tiny_kinship_toil.pl',tiny_kinship_toil).
 %experiment_file('data/examples/yamamoto.pl',yamamoto).
 %experiment_file('data/examples/recursive_folding.pl',recursive_folding).
