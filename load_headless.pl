@@ -14,11 +14,9 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(louise)).
 :-use_module(src(mil_problem)).
 :-use_module(src(auxiliaries)).
-:-use_module(subsystems(dynamic_learning)).
 :-use_module(subsystems(examples_invention)).
 :-use_module(subsystems(metagen)).
 :-use_module(subsystems(metarule_extraction)).
-:-use_module(subsystems(soil)).
 :-use_module(subsystems(toil)).
 :-use_module(subsystems(minimal_program)).
 :-use_module(subsystems(thelma/thelma)).

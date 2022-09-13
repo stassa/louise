@@ -21,11 +21,9 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(src(louise)).
 :-use_module(src(mil_problem)).
 :-use_module(src(auxiliaries)).
-:-use_module(subsystems(dynamic_learning)).
 :-use_module(subsystems(examples_invention)).
 :-use_module(subsystems(metagen)).
 :-use_module(subsystems(metarule_extraction)).
-:-use_module(subsystems(soil)).
 :-use_module(subsystems(toil)).
 :-use_module(subsystems(minimal_program)).
 :-use_module(subsystems(thelma/thelma)).
@@ -45,18 +43,16 @@ edit_files:-
 	,edit(src(auxiliaries))
 	%,edit(src(metarules_parser))
 	%,edit(src(subhypothesis_selection))
-	%,edit(subsystems(dynamic_learning))
 	%,edit(subsystems(examples_invention))
 	%,edit(subsystems(incremental_refinement))
-	%,edit(subsystems(thelma/thelma))
+%	,edit(subsystems(thelma/thelma))
 	%,edit(subsystems(thelma/thelma_auxiliaries))
 	%,edit(subsystems(thelma/thelma_configuration))
 	%,edit(subsystems(metagen))
 	%,edit(subsystems(toil))
-	%,edit(subsystems(soil))
 	%,edit(subsystems(minimal_program))
 	%,edit(lib(evaluation/evaluation))
-	%,edit(lib(folding_unfolding/folding_unfolding))
+%	,edit(lib(folding_unfolding/folding_unfolding))
 	%,edit(lib(program_reduction/program_reduction))
 	,edit(P)
 	.
