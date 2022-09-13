@@ -169,7 +169,7 @@ generalise(Pos,MS,Ss_Pos):-
 		 ,debug_clauses(prove,'Passed metasub constraints:',[Subs])
 		 )
 		,Ss_Pos_)
-	,sort(Ss_Pos_,Ss_Pos).
+	,predsort(unifiable_compare,Ss_Pos_,Ss_Pos).
 
 
 %!	specialise(+Generalised,+Metarules,+Negatives,-Specialised) is
