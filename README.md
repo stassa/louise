@@ -48,7 +48,7 @@ logic program that includes both first- and second-order clauses, the latter
 called _metarules_. MIL systems like Louise learn by specialising their
 metarules by SLD-resolution. Examples and background knowledge, including
 metarules, are provided by the user, but Louise can learn its own background
-knowledge and metarules.
+knowledge, indlucing metarules.
 
 Louise is based on a new MIL algorithm, called _Top Program Construction_ (TPC),
 that runs in polynomial time. TPC avoids an expensive search of the program
@@ -105,7 +105,9 @@ Here are some of the things that Louise can do.
 
    Note that this is true one-shot learning, from a single example of inputs and
    outputs of the target program, not examples of _programs_, and without
-   pre-training on billions of examples or anything silly like that.
+   pre-training on billions of examples or anything silly like that. Note also
+   that the single positive example given is an example of the inductive case of
+   the recursion. Louise must learn the "base-case" on its own.
 
    See `data/examples/findlast.pl` for the `list_last/2` one-shot recursion
    learning example.
@@ -113,8 +115,7 @@ Here are some of the things that Louise can do.
    The above experiment was proposed by Andrew Cropper, maintainer of [Metagol].
 
 3. Louise can simultaneously learn multiple dependent programs, including
-   mutuallly recursive programs. This is called multi-predicate learning:
-
+   mutuallly recursive programs (this is called multi-predicate learning):
 
    ```prolog
    ?- learn([even/1,odd/1]).
@@ -141,24 +142,47 @@ Here are some of the things that Louise can do.
    ```prolog
    background_knowledge(even/1, [predecessor/2]).
    background_knowledge(odd/1, [predecessor/2]).
-   
    ```
 
    Louise figures out that `odd/1` is necessary to learn `even/1` and vice-versa
-   on its own.
+   on its own. Aaw. Isn't it smart?
 
 5. Louise can perform _predicate invention_ to increase its background knowledge
    with new predicates that are necessary for learning. In the following example
-   the predicate `'$1'/2` is an _invented_ predicate. That means that `'$1'/2`
-   was not given by the user as background knowledge, nor did the user provide
-   examples of `'$1'/2`, rather Louise invented it independently in the process
-   of learning the target predicate `'S'/2`:
+   Louise learns a grammar of the context-free a^nb^n language in Prolog's
+   Definite Clause Grammars form. In the learned program the predicate `'$1'/2`
+   is an _invented_ predicate. That means that `'$1'/2` was not given by the
+   user as background knowledge, nor did the user provide examples of `'$1'/2`,
+   rather Louise invented it independently in the process of learning the target
+   predicate, `s/2`:
 
    ```prolog
-   ?- learn_dynamic('S'/2).
-   '$1'(A,B):-'S'(A,C),'B'(C,B).
-   'S'(A,B):-'A'(A,C),'$1'(C,B).
-   'S'(A,B):-'A'(A,C),'B'(C,B).
+   % Learning a grammar of the a^nb^n context-free language
+   ?- experiment_file:positive_example(s/2,E).
+   E = s([a, a, b, b], []).
+
+   ?- experiment_file:negative_example(s/2,E).
+   E = s([a, a], []) ;
+   E = s([b, b], []) ;
+   E = s([a, a, b], []) ;
+   E = s([a, b, b], []).
+
+   ?- experiment_file:background_knowledge(s/2,BK).
+   BK = [a/2, b/2].
+
+   ?- experiment_file:metarules(s/2,MS), print_metarules(MS).
+   (Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+   MS = [chain].
+
+   ?- learn(s/2).
+   '$1'(A,B):-a(A,C),a(C,B).
+   '$1'(A,B):-a(A,C),s(C,B).
+   '$1'(A,B):-b(A,C),b(C,B).
+   '$1'(A,B):-s(A,C),b(C,B).
+   s(A,B):-'$1'(A,C),'$1'(C,B).
+   s(A,B):-'$1'(A,C),b(C,B).
+   s(A,B):-a(A,C),'$1'(C,B).
+   s(A,B):-a(A,C),b(C,B).
    true.
    ```
 
@@ -166,20 +190,17 @@ Here are some of the things that Louise can do.
    programs that are not possible to learn from its initial set of background
    knowledge and metarules.
 
-   See `data/examples/anbn.pl` for the `'S'/2` example.
+   See `data/examples/anbn.pl` for the `s/2` example and discussion of predicate
+   invention in Louise.
 
-   See the section [Dynamic learning and predicate
-   invention](#dynamic-learning-and-predicate-invention) for more information on
-   predicate invention in Louise. 
+6. Louise can unfold programs to eliminate invented predicates. In the query
+   listed below, Louise learns the same program as in the previous example, but
+   this time the invented predicate `'$1'/2` is eliminated by unfolding:
 
-6. Louise can unfold programs to eliminate invented predicates. This is a
-   version of the program in the previous example with the invented predicate
-   `'$1'/2` eliminated by unfolding:
-   
    ```prolog
-   ?- learn_dynamic('S'/2).
-   'S'(A,B):-'A'(A,C),'B'(C,B).
-   'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
+   ?- learn(s/2).
+   s(A,B):-a(A,C),b(C,B).
+   s(A,B):-a(A,C),s(C,D),b(D,B).
    true.
    ```
 
@@ -269,22 +290,19 @@ Here are some of the things that Louise can do.
    ```
    
    See `data/examples/example_invention.pl` for the `path/2` example.
-   
-   See the section [Examples invention](#examples-invention) for more
-   information on examples invention in Louise.
 
 9. Louise can learn new metarules from examples of a target predicate. In the
    following example, Louise learns a new metarule from examples of the
-   predicate `'S'/2` (as in item 4, above):
+   predicate `s/2` (as in item 5, above):
 
    ```Prolog
-   ?- learn_metarules('S'/2).
+   ?- learn_metarules(s/2).
    (Meta-dyadic-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
    true.
    ```
 
    The new metarule, Meta-dyadic-1 corresponds to the common _Chain_ metarule
-   that is used in item 4 to learn a grammar of the a^nb^n language.
+   that we saw used in item 5 above to learn a grammar of the a^nb^n language.
 
    Louise can learn new metarules by specialising the most-general metarule in
    each language class. In the example above, the language class is H(2,2), the
@@ -292,17 +310,34 @@ Here are some of the things that Louise can do.
    general metarule in H(2,2) is Meta-dyadic:
 
    ```Prolog
-   ?- print_quantified_metarules(meta_dyadic).
+   ?- print_metarules(meta_dyadic).
    (Meta-dyadic) ∃.P,Q,R ∀.x,y,z,u,v,w: P(x,y)← Q(z,u),R(v,w)
-   true.   
+   true.
    ```
 
    Louise can also learn new metarules given only an upper and lower bound on
-   their numbers of literals. In the example of learning _Chain_ above, instead
-   of specifying Meta-dyadic, we can instead give an upper and lower bound of 3,
-   with a declaration of `higher_order(3,3)`.
+   their numbers of literals as a _third order_ metarule. In the example of
+   learning _Chain_ above, instead of specifying Meta-dyadic, we can instead
+   give an upper and lower bound of 3, with a declaration of
+   `higher_order(3,3)`:
 
-10. Louise can learn large programs efficiently:
+   ```Prolog
+   ?- print_metarules(higher_order(3,3)).
+   (TOM-3) ∃.P,Q,R: P ← Q,R
+   true.
+   ```
+
+   ```Prolog
+   ?- learn_metarules(s/2).
+   (Hom-1) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+   true.
+   ```
+
+   See the section [Learning metarules with TOIL](#learning-metarules-with-toil)
+   for more information on learning metarules with Louise.
+
+10. Louise can learn large programs efficiently. Below, note the output of
+    `length/2`, counting the clauses in the learned program:
 
     ```Prolog
     ?- time(learn(move/2,_Ps)), length(_Ps,N).
@@ -319,7 +354,7 @@ Here are some of the things that Louise can do.
     above, we trained Louise on a six-year old laptop with an i7 processor
     clocked at 2.6 GHz and 16 GB of RAM).
 
-    The target theory for th `move/2` learning problem is around 600 clauses so
+    The target theory for the `move/2` learning problem is around 600 clauses so
     the hypothesis learned by Louise has much redundancy, although it is a
     correct hypothesis that is consistent with the examples. The reason for the
     redundancy is that there are multiple "versions" of the target theory and
@@ -457,231 +492,6 @@ below.
     `tiny_kinship.pl`, the experiment file selected in step 2. The same
     experiment file defines a number of other learning targets from a typical
     kinship relations domain.
-
-### Dynamic learning and predicate invention
-
-_NOTE: Since November 2021, the main TPC algorithm implementation in Louise is
-capable of learning dependent clauses and performing predicate invention.
-Dynamic learning, described in this section, is not strictly needed anymore.
-The new capabilities are not yet fully documented and their implementation is
-still in active development so for the time being dynamic learning remains the
-recommended method for predicate invention in Louise, as explained below. See
-also the note in the [Examples invention](#examples-invention) section._
-
-The predicate `learn/1` implements Louise's default learning setting that learns
-a program one-clause-at-a-time without memory of what was learned before. This
-is limited in that clauses learned in an earlier step cannot be re-used and so
-it's not possible to learn programs with mutliple clauses "calling" each other,
-particularly recursive clauses that must resolve with each other.
-
-Louise overcomes this limitation with Dynamic learning, a learning setting where
-programs are learned incrementally: the program learned in each dynamic learning
-episode is added to the background knowledge for the next episode. Dynamic
-learning also permits predicate invention, by inventing, and then re-using,
-definitions of new predicates that are necessary for learning but are not in the
-background knowledge defined by the user.
-
-The example of learning the `a^nb^n` language in section
-[Capabilities](#capabilities) is an example of learning with dynamic learning.
-The result is a grammar in Prolog's Definite Clause Grammars formalism (see:
-[DCG]). Below, we list the steps to run this example yourself. The steps to run
-this example are similar to the steps to run the `ancestor/2` example, only this
-time the learning predicate is `learn_dynamic/1`:
-
- 1. Start the project:
-
-    In a graphical environment:
-    
-    ```prolog
-    ?- [load_project].
-    ```
-
-    In a text-based environment:
-
-    ```prolog
-    ?- [load_headless].
-    ```
-
- 2. Edit the project's configuration file to select the `anbn.pl` experiment
-    file.
-
-    ```prolog
-    experiment_file('data/examples/anbn.pl',anbn).
-    ```
-
- 3. Reload the configuration file to pick up the new experiment file option.
-
-    ```prolog
-    ?- make.
-    ```
-
- 4. Perform an initial learning attempt _without_ Dynamic learning:
-    
-    ```prolog
-    ?- learn('S'/2).
-    'S'([a,a,a,b,b,b],[]).
-    'S'([a,a,b,b],[]).
-    'S'(A,B):-'A'(A,C),'B'(C,B).
-    true.
-    ```
-
-    The elements for the learning problem defined in the `anbn.pl` experiment
-    file only include three example strings in the `a^nb^n` language, and the
-    pre-terminals in the language, `'A' --> [a].` and `'B' --> [b].` as
-    background knowledge (where `'A','B'` are nonterminal symbols and `[a],[b]`
-    are terminals) and the _Chain_ metarule. Given this problem definition,
-    Louise can only learn a single new clause of 'S/2' (the starting symbol in
-    the grammar), that only covers its first example, the string 'ab'.
-
-    The real limit in what can be learned in this case is the single metarule,
-    _Chain_. The target theory for a DCG of the `a^nb^n` language includes a
-    clause with three literals:
-
-    ```prolog
-    'S'(A,B):-'A'(A,C),'B'(C,B).
-    'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
-    ```
-
-    However, the _Chain_ metarule only allows clauses with three literals to be
-    learned. To construct a complete definition of the target grammar, it is
-    necessary to add a new symbol to the background knowledge by inventing a new
-    predicate, to act as `glue' between clauses of _Chain_. We show how to do
-    this in the next step of the experiment.
-
- 5. Perform a second learning attemt with dynamic lerning:
-
-    ```prolog
-    ?- learn_dynamic('S'/2).
-    '$1'(A,B):-'S'(A,C),'B'(C,B).
-    'S'(A,B):-'A'(A,C),'$1'(C,B).
-    'S'(A,B):-'A'(A,C),'B'(C,B).
-    true.
-    ```
-
-    With dynamic learning, Louise can re-use the first clause it learns (the one
-    covering 'ab', listed above) to invented a new nonterminal, `$1/2`, that it
-    can then use to construct the full grammar.
-
- 6. Note that the grammar learned in the previous step is equivalent to the
-    target theory listed in step 4. This can be seen by unfolding the learned
-    grammar to remove the invented predicate.
-
-    First, set the configuration option `unfold_invented/1` to "true":
-
-    ```prolog
-    unfold_invented(true).
-    ```
-
-    Now, repeat the call to dynamic_learning/1 in the previous step:
-
-    ```prolog
-    ?- learn_dynamic('S'/2).
-    'S'(A,B):-'A'(A,C),'B'(C,B).
-    'S'(A,B):-'A'(A,C),'S'(C,D),'B'(D,B).
-    true.
-    ```
-
-    Unfolding is automatically applied to the learned hypothesis eliminating the
-    invented predicate.
-
-
-### Examples invention
-
-_NOTE: Since November 2021, the main TPC algorithm implementation in Louise is
-capable of learning recursive programs from a single example which was the main
-motivation for examples invention, described in this section. Examples invention
-is therefore not strictly needed anymore. The new capabilities are not yet fully
-documented and their implementation is still under active development so for the
-time being, examples invention should continue to be used when more examples are
-needed, as explained below. See also the note in section [Dynamic learning and
-predicate invention](#dynamic-learning-and-predicate-invention)._
-
-Louise can perform _examples invention_ which is just what it sounds like.
-Examples invention works best when you have relevant background knowledge and
-metarules but insufficient positive examples to learn a correct hypothesis. It
-works even better when you have at least some negative examples. If your
-background knowledge is irrelevant or you don't have "enough" negative examples
-(where "enough" depends on the MIL problem) then examples invention can
-over-generalise and produce spurious results.
-
-The learning predicate for examples invention in Louise is
-`learn_with_examples_invention/2`. Below is an example showing how to use it,
-again following the structure of the examples shown previously.
-
- 1. Start the project:
-
-    In a graphical environment:
-    
-    ```prolog
-    ?- [load_project].
-    ```
-
-    In a text-based environment:
-
-    ```prolog
-    ?- [load_headless].
-    ```
-
- 2. Edit the project's configuration file to select the `examples_invention.pl`
-    experiment file.
-
-    ```prolog
-    experiment_file('data/examples/examples_invention.pl',path).
-    ```
-
- 3. Reload the configuration file to pick up the new experiment file option.
-
-    ```prolog
-    ?- make.
-    ```
-
- 4. Try a first learning attempt without examples invention:
-    
-    ```prolog
-    ?- learn(path/2).
-    path(a,f).
-    true.
-    ```
-
-    The single positive example in `examples_invention.pl` are insufficient for
-    Louise to learn a general theory of `path/2`. Louise simply returns the
-    single positive example, un-generalised.
-
- 5. Perform a second learning attempt with examples invention:
-
-    ```prolog
-    ?- learn_with_examples_invention(path/2).
-    path(A,B):-edge(A,B).
-    path(A,B):-edge(A,C),path(C,B).
-    true.
-    ```
-
-    This time, Louise first tries to invent new examples of `path/2` by training
-    in a semi-supervised manner, and then uses these new examples to learn a
-    complete theory of `path/2`.
-
-  6. You can list the examples invented by Louise with a call to the predicate
-     `examples_invention/1`:
-
-     ```prolog
-     ?- examples_invention(path/2).
-     path(a,b).
-     path(a,c).
-     path(a,d).
-     path(a,e).
-     path(a,f).
-     path(b,c).
-     path(b,d).
-     path(b,e).
-     path(b,f).
-     path(c,d).
-     path(c,e).
-     path(c,f).
-     path(d,e).
-     path(d,f).
-     path(e,f).
-     true.
-     ```
 
 Learning with metarules
 -----------------------
