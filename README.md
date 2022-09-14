@@ -368,7 +368,6 @@ Here are some of the things that Louise can do.
 
     See `data/examples/robots.pl` for the `move/2` example.
 
-
 Louise comes with a number of libraries for tasks that are useful when learning
 programs with MIL, e.g. metarule generation, program reduction, lifting of
 ground predicates, etc. These will be discussed in detail in the upcoming Louise
@@ -384,11 +383,11 @@ directory `louise/data/examples`. After going through the examples here, feel
 free to load and run the examples in that directory to better familiarise
 yourself with Louise's functionality.
 
-### Running the examples in Swi-Prolog
+### Running the examples in SWI-Prolog
 
-Swi-Prolog is a popular, free and open-source Prolog interpreter and development
-environment. Louise was written for Swi-Prolog. To run the examples in this
-section you will need to install Swi-Prolog. You can download Swi-Prolog from
+SWI-Prolog is a popular, free and open-source Prolog interpreter and development
+environment. Louise was written for SWI-Prolog. To run the examples in this
+section you will need to install SWI-Prolog. You can download SWI-Prolog from
 the following URL:
 
 [https://www.swi-prolog.org/Download.html](https://www.swi-prolog.org/Download.html)
@@ -396,14 +395,14 @@ the following URL:
 Louise runs with any of the latest stable or development releases listed on that
 page. Choose the one you prefer to download.
 
-It is recommended that you run the examples using the Swi-Prolog graphical IDE,
+It is recommended that you run the examples using the SWI-Prolog graphical IDE,
 rather than in a system console. On operating systems with a graphical
-environment the Swi-Prolog IDE should start automaticaly when you open a Prolog
+environment the SWI-Prolog IDE should start automaticaly when you open a Prolog
 file.
 
 In this section, we assume you have cloned this project into a directory called
 `louise`. Paths to various files will be given relative to the `louise` project
-root directory and queries at the Swi-Prolog top-level will assume your current
+root directory and queries at the SWI-Prolog top-level will assume your current
 working directory is `louise`.
 
 ### A simple example
@@ -412,18 +411,18 @@ Louise learns Prolog programs from examples, background knowledge and second
 order logic clauses called _metarules_. Together, examples, background knowledge
 and metarules form the elements of a _MIL problem_.
 
-Louise expects the elements of a MIL problem to be in an _experiment file_ with
-a standard format.  The following is an example showing how to use Louise to
-learn the "ancestor" relation from the examples, background knowledge and
-metarules defined in the experiment file `louise/data/examples/tiny_kinship.pl`
-using the learning predicate `learn/1`.
+Louise expects the elements of a MIL problem to be in an _experiment file_
+which is a Prolog module file with a standard format. The following is an
+example showing how to use Louise to learn the "ancestor" relation from the
+examples, background knowledge and metarules defined in the experiment file
+`louise/data/examples/tiny_kinship.pl` using the learning predicate `learn/1`.
 
 In summary, there are four steps to running an example: a) start Louise; b) edit
 the configuration file to select an experiment file; c) load the experiment file
 into memory; d) run a learning query. These four steps are described in detail
 below.
 
- 1. Consult the project's load file into Swi-Prolog to load necessary files into
+ 1. Consult the project's load file into SWI-Prolog to load necessary files into
     memory:
 
     In a graphical environment:
@@ -438,13 +437,13 @@ below.
     ?- [load_headless].
     ```
 
-    The first query will also start the Swi-Prolog IDE and documentation
+    The first query will also start the SWI-Prolog IDE and documentation
     browser, which you probably don't want if you're in a text-based
     environment.
 
  2. Edit the project's configuration file to select an experiment file.
 
-    Edit `louise/configuration.pl` in the Swi-Prolog editor (or your favourite
+    Edit `louise/configuration.pl` in the SWI-Prolog editor (or your favourite
     text editor) and make sure the name of the current experiment file is set to
     `tiny_kinship.pl`:
 
@@ -462,22 +461,22 @@ below.
 
  3. Reload the configuration file to pick up the new experiment file option.
 
-    The easiest way to reload the configuration file is to use Swi-Prolog's `make/0`
+    The easiest way to reload the configuration file is to use SWI-Prolog's `make/0`
     predicate to recompile the project (don't worry- this takes less than a
     second). To recompile the project with `make/0` enter the following query in
-    the Swi-Prolog console:
+    the SWI-Prolog console:
 
     ```prolog
     ?- make.
     ```
 
-    Note again: this is the Swi-Prolog predicate `make/0`. It's not the _make_
+    Note again: this is the SWI-Prolog predicate `make/0`. It's not the _make_
     build automation tool!
 
  4. Perform a learning attempt using the examples, background knowledge and
     metarules defined in `tiny_kinship.pl` for `ancestor/2`.
 
-    Execute the following query in the Swi-Prolog console; you should see the
+    Execute the following query in the SWI-Prolog console; you should see the
     listed output:
  
     ```prolog
