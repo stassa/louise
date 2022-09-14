@@ -193,105 +193,7 @@ Here are some of the things that Louise can do.
    See `data/examples/anbn.pl` for the `s/2` example and discussion of predicate
    invention in Louise.
 
-6. Louise can unfold programs to eliminate invented predicates. In the query
-   listed below, Louise learns the same program as in the previous example, but
-   this time the invented predicate `'$1'/2` is eliminated by unfolding:
-
-   ```prolog
-   ?- learn(s/2).
-   s(A,B):-a(A,C),b(C,B).
-   s(A,B):-a(A,C),s(C,D),b(D,B).
-   true.
-   ```
-
-   Eliminating invented predicates can sometimes improve comprehensibility of
-   the learned program.
-
-7. Louise can fold over-specialised programs to introduce recursion. In the
-   following example, the learning problem is set up so as to force Louise to
-   learn an over-specialised program that finds the last element of a list of
-   length up to 3:
-
-   ```prolog
-   ?- learn(list_last/2).
-   list_last(A,B):-tail(A,C),empty(C),head(A,B).
-   list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
-   list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
-   true.
-   ```
-
-   We can observe that some clauses in the program above include sequences of
-   body literals that match the body literals in other clauses. The predicate
-   `fold_recursive/2` can be used to replace body literals in a clause with an
-   equivalent recursive call:
-
-   ```prolog
-   ?- learn(list_last/2, _Ps), fold_recursive(_Ps, _Fs), maplist(print_clauses,['%Learned:','\n%Folded:'], [_Ps,_Fs]).
-   %Learned:
-   list_last(A,B):-tail(A,C),empty(C),head(A,B).
-   list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
-   list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
-   
-   %Folded:
-   list_last(A,B):-tail(A,C),empty(C),head(A,B).
-   list_last(A,B):-tail(A,C),list_last(C,B).
-   true.
-   ```
-
-   Note the new clause `list_last(A,B):-tail(A,C),list_last(C,B).` replacing the
-   second and third clause in the original program. The new, recursive
-   hypothesis is now a correct solution for lists of arbitrary length. 
-
-   The `list_last` example above was taken from _Inductive Logic Programming at
-   30_ (Cropper et al., Machine Learning 2021, to appear). See
-   `data/examples/recursive_folding.pl` for the complete example source code.
-
-8. Louise can invent new examples. In the listing below a number of examples
-   of `path/2` are invented. The background knowledge for this MIL problem
-   consists of 6 `edge/2` ground facts that determine the structure of a graph
-   and a few facts of `not_edge/2` that represent nodes not connected by edges.
-   `path(a,f)` is the single example given by the user. The target theory (the
-   program we wish the system to learn) for this problem is a recursive
-   definition of `path/2` that includes a "base case" for which no example is
-   given. Louise can invent examples of the base-case and so learn a correct
-   hypothesis that represents the full path from node 'a' to node 'f', without
-   crossing any non-edges.
-
-   ```prolog
-   % Try learning with the single given example:
-   ?- learn(path/2).
-   path(a,f).
-   true.
-
-   % List invented examples:
-   ?- examples_invention(path/2).
-   m(path,a,b).
-   m(path,a,c).
-   m(path,a,d).
-   m(path,a,e).
-   m(path,a,f).
-   m(path,b,c).
-   m(path,b,d).
-   m(path,b,e).
-   m(path,b,f).
-   m(path,c,d).
-   m(path,c,e).
-   m(path,c,f).
-   m(path,d,e).
-   m(path,d,f).
-   m(path,e,f).
-   true.
-
-   % Invent examples and try again:
-   ?- learn_with_examples_invention(path/2).
-   path(A,B):-edge(A,B).
-   path(A,B):-edge(A,C),path(C,B).
-   true.
-   ```
-   
-   See `data/examples/example_invention.pl` for the `path/2` example.
-
-9. Louise can learn new metarules from examples of a target predicate. In the
+6. Louise can learn new metarules from examples of a target predicate. In the
    following example, Louise learns a new metarule from examples of the
    predicate `s/2` (as in item 5, above):
 
@@ -336,7 +238,106 @@ Here are some of the things that Louise can do.
    See the section [Learning metarules with TOIL](#learning-metarules-with-toil)
    for more information on learning metarules with Louise.
 
-10. Louise can learn large programs efficiently. Below, note the output of
+7. Louise can unfold programs to eliminate invented predicates. In the query
+   listed below, Louise learns the same program as in the a^nb^n example in item
+   5 above, but this time the invented predicate `'$1'/2` is eliminated by
+   unfolding:
+
+   ```prolog
+   ?- learn(s/2).
+   s(A,B):-a(A,C),b(C,B).
+   s(A,B):-a(A,C),s(C,D),b(D,B).
+   true.
+   ```
+
+   Eliminating invented predicates can sometimes improve comprehensibility of
+   the learned program.
+
+8. Louise can fold over-specialised programs to introduce recursion. In the
+   following example, the learning problem is set up so as to force Louise to
+   learn an over-specialised program that finds the last element of a list of
+   length up to 3:
+
+   ```prolog
+   ?- learn(list_last/2).
+   list_last(A,B):-tail(A,C),empty(C),head(A,B).
+   list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
+   list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
+   true.
+   ```
+
+   We can observe that some clauses in the program above include sequences of
+   body literals that match the body literals in other clauses. The predicate
+   `fold_recursive/2` can be used to replace body literals in a clause with an
+   equivalent recursive call:
+
+   ```prolog
+   ?- learn(list_last/2, _Ps), fold_recursive(_Ps, _Fs), maplist(print_clauses,['%Learned:','\n%Folded:'], [_Ps,_Fs]).
+   %Learned:
+   list_last(A,B):-tail(A,C),empty(C),head(A,B).
+   list_last(A,B):-tail(A,C),tail(C,D),empty(D),head(C,B).
+   list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
+   
+   %Folded:
+   list_last(A,B):-tail(A,C),empty(C),head(A,B).
+   list_last(A,B):-tail(A,C),list_last(C,B).
+   true.
+   ```
+
+   Note the new clause `list_last(A,B):-tail(A,C),list_last(C,B).` replacing the
+   second and third clause in the original program. The new, recursive
+   hypothesis is now a correct solution for lists of arbitrary length. 
+
+   The `list_last` example above was taken from _Inductive Logic Programming at
+   30_ (Cropper et al., Machine Learning 2021, to appear). See
+   `data/examples/recursive_folding.pl` for the complete example source code.
+
+9. Louise can invent new examples. In the listing below a number of examples
+   of `path/2` are invented. The background knowledge for this MIL problem
+   consists of 6 `edge/2` ground facts that determine the structure of a graph
+   and a few facts of `not_edge/2` that represent nodes not connected by edges.
+   `path(a,f)` is the single example given by the user. The target theory (the
+   program we wish the system to learn) for this problem is a recursive
+   definition of `path/2` that includes a "base case" for which no example is
+   given. Louise can invent examples of the base-case and so learn a correct
+   hypothesis that represents the full path from node 'a' to node 'f', without
+   crossing any non-edges.
+
+   ```prolog
+   % Try learning with the single given example:
+   ?- learn(path/2).
+   path(a,f).
+   true.
+
+   % List invented examples:
+   ?- examples_invention(path/2).
+   m(path,a,b).
+   m(path,a,c).
+   m(path,a,d).
+   m(path,a,e).
+   m(path,a,f).
+   m(path,b,c).
+   m(path,b,d).
+   m(path,b,e).
+   m(path,b,f).
+   m(path,c,d).
+   m(path,c,e).
+   m(path,c,f).
+   m(path,d,e).
+   m(path,d,f).
+   m(path,e,f).
+   true.
+
+   % Invent examples and try again:
+   ?- learn_with_examples_invention(path/2).
+   path(A,B):-edge(A,B).
+   path(A,B):-edge(A,C),path(C,B).
+   true.
+   ```
+   
+   See `data/examples/example_invention.pl` for the `path/2` example.
+
+11. Louise can learn large programs efficiently. Below, note the output of
     `length/2`, counting the clauses in the learned program:
 
     ```Prolog
