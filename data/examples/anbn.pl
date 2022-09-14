@@ -6,7 +6,7 @@
 	       ,b/2
 	       ]).
 
-/** <module> Learn an a^nb^n CFG by predicate invention.
+/** <module> Learn an a^nb^n CFG with recursion and predicate invention.
 
 __Table of contents__
 
@@ -29,7 +29,7 @@ instructions document.
 text. No hyperlinks here, sorry!
 
 
-1. Introduction
+__1. Introduction__
 
 The example in this experiment file llustrates the use of predicate
 invention to learn a recursive theory; the use of unfolding to remove
@@ -70,7 +70,7 @@ and our background knowledge will be the DCG definitions of the
 pre-terminals a and b.
 
 
-2. Known good configuration.
+__2. Known good configuration.__
 
 The results listed below were obtained with the following configuration
 options defined in configuration.pl. Required options are marked with
@@ -133,9 +133,9 @@ configuration file and an experiment file in succession leads to ugly
 errors.
 
 
-3. MIL Problem elements.
+__3. MIL Problem elements.__
 
-Ensure also that the output of list_mil_problem/2 matches the following,
+Ensure also that the output of list_mil_problem/1 matches the following,
 to make sure the elements of the MIL problem are as expected by the
 instructions in this file:
 
@@ -168,7 +168,7 @@ true.
 ==
 
 
-4. Make a first learning attempt.
+__4. Make a first learning attempt.__
 
 ==
 ?- learn(s/2).
@@ -189,7 +189,7 @@ neither are training examples of it provided by the user. '$1'/2 is
 learned in the process of learning the target predicate s/2.
 
 
-5. Eyballing results.
+__5. Eyballing results.__
 
 The learned hypothesis is the Top Program for the MIL problem defined in
 this experiment file. The Top Program is the set of all clauses that
@@ -221,7 +221,7 @@ Sub-program 3 is an over-specialisation that only covers our single
 example, s([a,a,b,b],[]) (i.e. the string aabb).
 
 
-6. Unfolding to remove invented predicates.
+__6. Unfolding to remove invented predicates.__
 
 Louise can unfold a learned hypothesis to remove invented symbols.
 
@@ -333,7 +333,7 @@ learning (and before unfolding). There is no option to reduce the Top
 Program only before or only after unfolding!
 
 
-7. Weakenig reduction.
+__7. Weakenig reduction.__
 
 To inhibit reduction and reveal the unfolded clause that is
 equivalent to Sub-program 3 in the learned Top Program, set the
@@ -376,7 +376,7 @@ suffice to cover the n=2 example. Hence that clause is removed by
 program reduction.
 
 
-8. Use of constraints.
+__8. Use of constraints.__
 
 Metarule constraints can be used to shape the Top Program to your needs,
 for example to remove unwanted clauses from the learned program. This is
@@ -597,7 +597,7 @@ true.
 ==
 
 
-9. Discussion.
+__9. Discussion__
 
 __Recursion and Predicate Invention__
 

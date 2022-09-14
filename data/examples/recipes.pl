@@ -13,7 +13,7 @@
 
 :-use_module(configuration).
 
-/* <module> Learn how to make an omelette with predicate invention.
+/** <module> Learn how to make an omelette with predicate invention.
 
 __Table of Conents__
 
@@ -32,7 +32,7 @@ __Table of Conents__
 Search for the titles above to jump to their respective sections.
 
 
-1. Introduction
+__1. Introduction__
 
 The examples in this experiment file demonstrates the use of constraints
 to improve the learning time for a large program by removing recursive
@@ -48,7 +48,7 @@ learned from a single, positve example. I mean, how many examples do you
 really need to make an omelette? This is not deep learning.
 
 
-2. Known good configuration.
+__2. Known good configuration.__
 
 The results listed below were obtained with the following configuration
 options. Required options are marked with "*":
@@ -94,7 +94,7 @@ The option max_invented(2) tells Louise to attempt to define at least
 one invented predicate.
 
 
-3. MIL problem elements.
+__3. MIL problem elements.__
 
 Make sure that the output of list_mil_problem/1 matches the following:
 ==
@@ -134,7 +134,7 @@ true.
 ==
 
 
-4. Make a first learning attempt.
+__4. Make a first learning attempt.__
 
 Don't be surprised if this first learning attempt takes a long time. The
 hypothesis that can be learned from the elements of the learning problem
@@ -284,7 +284,7 @@ i7 processor clocked at 2.6 GHz and 16 GB of RAM. You don't need a
 supercomputer to repeat it!
 
 
-5. Eyballing the results.
+__5. Eyballing the results.__
 
 First, find some eydrops.
 
@@ -369,7 +369,7 @@ If we want to help Louise learn a smaller program, we have to use
 another trick: metarule constraints.
 
 
-6. Applying constraints.
+__6. Applying constraints.__
 
 Our learned program includes multiple left-recursive clauses:
 
@@ -745,8 +745,8 @@ invented predicates:
 '$2'(A,B):-'$1'(A,C),whisk_eggs(C,B).
 ==
 
-This looping is as unnecessary ars looping around recursion/2 itself.
-Let's remove it. Uncomment the following constraint:
+This looping is as unnecessary ars looping around recipe/2 itself. Let's
+remove it. Uncomment the following constraint:
 
 ==
 configuration:metarule_constraints(m(chain, _, Q, _), fail):-
@@ -837,7 +837,7 @@ In order to see this more clearly, we can unfold our program to remove
 invented predicates. This is described in the next section.
 
 
-7. Unfolding the reduced program
+__7. Unfolding the reduced program__
 
 Louise's unfolding facility is controlled by the configuration option
 unfold_invented/1. Setting the value of this option to "true" tells
@@ -915,7 +915,7 @@ literals of the resolvents constructed during the proof and "stitches"
 them all together to form a longer clause.
 
 
-8. Dynamically setting configuration options
+__8. Dynamically setting configuration options__
 
 We saw above the use of the auxiliary predicate
 set_configuration_option/2 to dynamically manipulate configuration
@@ -940,7 +940,7 @@ option to its original value is to edit the value of that option in the
 configuration file and then reload the configuration file with make/0.
 
 
-9. Conclusions
+__9. Conclusions__
 
 We have progressively sculpted an inductive proof by application of
 metarule constraints, until we reduced the monstrosity regurgitated

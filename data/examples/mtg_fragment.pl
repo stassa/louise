@@ -86,9 +86,108 @@
 		       ,zone_battlefield/2
 		       ]).
 
-%:-dynamic m/3.
-% configuration:metarule(diff_chain,P,Q,R):- m(P,X,Y), m(Q,X,Z),
-% m(R,Z,Y).
+/** <module> Learning a fragment of the Magic: the Gathering grammar.
+
+Background predicates defined in this experiment file are non- and
+pre-terminals of a grammar of a subset of the M:tG language. The
+start symbol of the grammar is ability//0 and it is used to collect
+examples for the learning problem.
+
+__1. Conriguration__
+
+Make sure your configuration matches the one listed below. Important
+options are marked with an asterisk (*):
+
+==
+?- list_config.
+* clause_limit(1)
+depth_limits(2,1)
+example_clauses(call)
+* experiment_file(data/examples/mtg_fragment.pl,mtg_fragment)
+fold_recursive(false)
+generalise_learned_metarules(false)
+learner(louise)
+* max_invented(0)
+metarule_formatting(quantified)
+metarule_learning_limits(none)
+minimal_program_size(2,inf)
+recursive_reduction(false)
+reduce_learned_metarules(false)
+* reduction(plotkins)
+* resolutions(5000)
+theorem_prover(resolution)
+unfold_invented(false)
+true.
+==
+
+
+__2. List the MIL problem__
+
+There are more than three thousand examples of ability//0 and 64
+background predicates. In such cases it's better to use
+list_problem_statistics/1 instead of list_mil_problem/1, to avoid
+cluttering your screen with thousands of lines:
+
+==
+?- list_problem_statistics(ability/2).
+Positive examples:    1356
+Negative examples:    0
+Background knowledge: 64 [destroy_verb/2,exile_verb/2,return_verb/2,target_permanent/2,target/2,target_artifact_type/2,target_creature_type/2,target_enchantment_type/2,target_land_type/2,target_basic_land_type/2,target_planeswalker_type/2,all_permanents_of_type/2,artifact_type/2,creature_type/2,enchantment_type/2,land_type/2,basic_land_type/2,planeswalker_type/2,all_of_artifact_type/2,all_of_creature_type/2,all_of_enchantment_type/2,all_of_land_type/2,all_of_basic_land_type/2,all_of_planeswalker_type/2,all/2,artifact_types/2,creature_types/2,enchantment_types/2,land_types/2,basic_land_types/2,planeswalker_types/2,a_permanent_type/2,permanent_type/2,permanent_types/2,target_from_battlefield_to_hand/2,target_from_graveyard_to_hand/2,target_from_graveyard_to_battlefield/2,from_battlefield_to_hand/2,from_graveyard_to_hand/2,from_graveyard_to_battlefield/2,all_from_battlefield_to_hand/2,all_from_graveyard_to_hand/2,all_from_graveyard_to_battlefield/2,permanents/2,all_of_type_from_battlefield_to_hand/2,all_of_type_from_graveyard_to_hand/2,all_of_type_from_graveyard_to_battlefield/2,to_owners_hand/2,to/2,its/2,owners_gen/2,zone_hand/2,to_owners_hands/2,their/2,owners_gen_plural/2,hands/2,from_graveyard/2,from/2,your/2,a/2,zone_graveyard/2,to_battlefield/2,the/2,zone_battlefield/2]
+Metarules:            1 [chain]
+true.
+==
+
+__3. Learning query__
+
+Make a learning attempt. The result should look like this:
+
+==
+?- time(learn(ability/2,_Ps)), length(_Ps, N), print_clauses(_Ps).
+% 2,179,513 inferences, 2.109 CPU in 2.562 seconds (82% CPU, 1033251 Lips)
+ability(A,B):-destroy_verb(A,C),all_of_artifact_type(C,B).
+ability(A,B):-destroy_verb(A,C),all_of_basic_land_type(C,B).
+ability(A,B):-destroy_verb(A,C),all_of_creature_type(C,B).
+ability(A,B):-destroy_verb(A,C),all_of_enchantment_type(C,B).
+ability(A,B):-destroy_verb(A,C),all_of_land_type(C,B).
+ability(A,B):-destroy_verb(A,C),all_of_planeswalker_type(C,B).
+ability(A,B):-destroy_verb(A,C),all_permanents_of_type(C,B).
+ability(A,B):-destroy_verb(A,C),target_artifact_type(C,B).
+ability(A,B):-destroy_verb(A,C),target_basic_land_type(C,B).
+ability(A,B):-destroy_verb(A,C),target_creature_type(C,B).
+ability(A,B):-destroy_verb(A,C),target_enchantment_type(C,B).
+ability(A,B):-destroy_verb(A,C),target_land_type(C,B).
+ability(A,B):-destroy_verb(A,C),target_permanent(C,B).
+ability(A,B):-destroy_verb(A,C),target_planeswalker_type(C,B).
+ability(A,B):-exile_verb(A,C),all_of_artifact_type(C,B).
+ability(A,B):-exile_verb(A,C),all_of_basic_land_type(C,B).
+ability(A,B):-exile_verb(A,C),all_of_creature_type(C,B).
+ability(A,B):-exile_verb(A,C),all_of_enchantment_type(C,B).
+ability(A,B):-exile_verb(A,C),all_of_land_type(C,B).
+ability(A,B):-exile_verb(A,C),all_of_planeswalker_type(C,B).
+ability(A,B):-exile_verb(A,C),all_permanents_of_type(C,B).
+ability(A,B):-exile_verb(A,C),target_artifact_type(C,B).
+ability(A,B):-exile_verb(A,C),target_basic_land_type(C,B).
+ability(A,B):-exile_verb(A,C),target_creature_type(C,B).
+ability(A,B):-exile_verb(A,C),target_enchantment_type(C,B).
+ability(A,B):-exile_verb(A,C),target_land_type(C,B).
+ability(A,B):-exile_verb(A,C),target_permanent(C,B).
+ability(A,B):-exile_verb(A,C),target_planeswalker_type(C,B).
+ability(A,B):-return_verb(A,C),all_from_battlefield_to_hand(C,B).
+ability(A,B):-return_verb(A,C),all_from_graveyard_to_battlefield(C,B).
+ability(A,B):-return_verb(A,C),all_from_graveyard_to_hand(C,B).
+ability(A,B):-return_verb(A,C),all_of_type_from_battlefield_to_hand(C,B).
+ability(A,B):-return_verb(A,C),all_of_type_from_graveyard_to_battlefield(C,B).
+ability(A,B):-return_verb(A,C),all_of_type_from_graveyard_to_hand(C,B).
+ability(A,B):-return_verb(A,C),from_battlefield_to_hand(C,B).
+ability(A,B):-return_verb(A,C),from_graveyard_to_battlefield(C,B).
+ability(A,B):-return_verb(A,C),from_graveyard_to_hand(C,B).
+ability(A,B):-return_verb(A,C),target_from_battlefield_to_hand(C,B).
+ability(A,B):-return_verb(A,C),target_from_graveyard_to_battlefield(C,B).
+ability(A,B):-return_verb(A,C),target_from_graveyard_to_hand(C,B).
+N = 40.
+==
+
+*/
 
 background_knowledge(ability/2, [destroy_verb/2
 				,exile_verb/2
@@ -869,7 +968,7 @@ land_type --> ['Plains'].
 land_type --> ['Power-Plant'].
 land_type --> ['Swamp'].
 land_type --> ['Tower'].
-land_type --> ['Urza’s'].
+land_type --> ['Urzaï¿½s'].
 
 % My plurals
 land_types --> ['Deserts'].
@@ -884,7 +983,7 @@ land_types --> ['Plains'].
 land_types --> ['Power-Plants'].
 land_types --> ['Swamps'].
 land_types --> ['Towers'].
-land_types --> ['Urza’s'].
+land_types --> ['Urzaï¿½s'].
 
 % See rule 205.3i
 basic_land_type --> ['Forest'].

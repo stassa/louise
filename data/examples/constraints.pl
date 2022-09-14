@@ -8,47 +8,67 @@
 
 /** <module> Experiment file demonstrating metarule constraints.
 
-This file defines two learning targets, right_rec/2 and left_rec/2. The
-target theory for both is path/2.
+__1. Introduction__
 
-Additionally, a metarule constraint is declared that excludes from the
-Top program for right_rec/2 left-recursive clauses:
+This example defines two learning targets, right_rec/2 and left_rec/2.
+Both are equivalent to path/2, listed below:
+
+==
+path(X,Y):-
+	edge(X,Y).
+path(X,Y):-
+	edge(X,Z)
+	,path(Z,Y).
+==
+
+A metarule constraint is declared that excludes from the Top program for
+right_rec/2 left-recursive clauses:
 
 ==
 configuration:metarule_constraints(M,fail):-
-	M =.. [m,_Id,right_rec|Ps]
-	,forall(member(P1,Ps)
-	       ,P1 == right_rec).
+	M =.. [m,_Id,right_rec,right_rec|_Ps].
 ==
 
 This constraint will match generalising metasubstitutions with any
-metarule Id and where the existentially quantified variables are all
-ground to right_rec, the predicate symbol of the right_rec/2 learning
-target. Such metasubstitutions, once applied to their corresponding
-metarules, would cause left-recursive clauses to be added to the Top
-program and the learned hypothesis. This is demonstrated in the
-following sections.
+metarule Id and where the first two existentially quantified variables
+are instantiated to right_rec, the predicate symbol of the right_rec/2
+learning target. Such metasubstitutions, once applied to their
+corresponding metarules, would cause left-recursive clauses to be added
+to the Top program and the learned hypothesis. This is demonstrated in
+the following sections.
 
-Running the experiment
-----------------------
 
-1. Ideal configuration options for this experiment file are as follows:
+__2. Known good configuration__
+
+Ideal configuration options for this experiment file are as follows.
+Important options are highlighted with an asterisk (*):
 
 ==
 ?- list_config.
-experiment_file(data/examples/constraints.pl,constraints)
-extend_metarules(false)
+* clause_limit(1)
+depth_limits(2,1)
+example_clauses(call)
+* experiment_file(data/examples/constraints.pl,constraints)
+fold_recursive(false)
+generalise_learned_metarules(false)
 learner(louise)
-max_invented(1)
-recursion_depth_limit(dynamic_learning,500)
+* max_invented(0)
+metarule_formatting(quantified)
+metarule_learning_limits(none)
+minimal_program_size(2,inf)
 recursive_reduction(false)
-reduction(plotkins)
-resolutions(5000)
+reduce_learned_metarules(false)
+* reduction(plotkins)
+* resolutions(5000)
 theorem_prover(resolution)
+unfold_invented(false)
 true.
 ==
 
-2. List learning results for the two learning targets with
+
+__2. Learning query__
+
+List learning results for the two learning targets with
 list_learning_results/0:
 
 ==
@@ -62,10 +82,10 @@ left_rec(A,B):-left_rec(A,C),left_rec(C,B).
 true.
 ==
 
-Declaring constraints
----------------------
+__ 3. Declaring constraints__
 
-Metarule constraints are clauses of metarule_constraints/2:
+Metarule constraints are declared as clauses of the predicate
+metarule_constraints/2:
 
 ==
 configuration:metarule_constraints(+Metasubstitution,+Goal).
@@ -75,7 +95,7 @@ This predicate is declared as multifile in the configuration module. For
 clauses of metarule_constraints/2 to be found during learning, they must
 be prefixed with the module qualifier _configuration_.
 
-During the generalisation step of Top program construction, when a
+During the "generalisse" step of Top program construction, when a
 metasubstitution is found it is passed to the first argument of each
 metarule_constraints/2 clause in the database and this clause is called.
 If this first call succeeds, the second argument of the
@@ -109,8 +129,7 @@ which case, again, constraints are not necessary. However, this is left
 up to the user to decide hence anti-left recursion constraints are not
 hard-coded in Top program construction.
 
-Using constraints
------------------
+__4. Using constraints__
 
 Note that, in the listing in the previous section, the second
 clause of the learned hypothesis for left_rec/2 is left-recursive
@@ -125,10 +144,8 @@ The reason the two hypotheses are different is because of the metarule
 constraint declared for right_rec/2:
 
 ==
-configuration:metarule_constraints(M,fail):- [1]
-	M =.. [m,_Id,right_rec|Ps]
-	,forall(member(P1,Ps)
-	       ,P1 == right_rec).
+configuration:metarule_constraints(M,fail):-
+	M =.. [m,_Id,right_rec,right_rec|_Ps].
 ==
 
 This constraint will match any metasubstitution where the symbol of the
@@ -187,7 +204,6 @@ m(right_rec,A,B):-m(edge,A,C),m(right_rec,C,B).
 m(right_rec,A,B):-m(right_rec,A,C),m(right_rec,C,B).
 Length:4
 true.
-
 ==
 
 The left-recursive clause
@@ -225,17 +241,14 @@ program: by reducing the number of clauses passed to the reduction
 algorithm it can reduce the cost of the reduction step of Louise's
 learning procedure.
 
-Alternative constraints
------------------------
+__5. Alternative constraints__
 
 Alternatively to the constraint in [1], we could replace the right_rec
 predicate symbol in the metarule constraint with a variable:
 
 ==
-configuration:metarule_constraints(M,fail):- [2]
-	M =.. [m,_Id,P|Ps]
-	,forall(member(P1,Ps)
-	       ,P1 == P).
+configuration:metarule_constraints(M,fail):-
+	M =.. [m,_Id,P,P|_Ps].
 ==
 
 In that case the constraint would also match left_rec/2
@@ -258,14 +271,14 @@ the following constraint will exclude left-recursive clauses from both
 hypotheses:
 
 ==
-configuration:metarule_constraints(m(_Id,P,P,P),fail). [3]
+configuration:metarule_constraints(m(_Id,P,P),fail). [3]
 ==
 
 While the following constraint will only exclude left-recursive clauses
 from the hypothesis for right_rec/2:
 
 ==
-configuration:metarule_constraints(m(tailrec,right_rec,right_rec,right_rec),fail). [4]
+configuration:metarule_constraints(m(tailrec,right_rec,right_rec),fail). [4]
 ==
 
 The difference is that the two simpler constraints in [3,4] above will
@@ -279,26 +292,25 @@ metasubstitutions with any number of existentially quantified variables.
 % Constraint excluding left-recursive clauses of right_rec/2 from the
 % Top program.
 configuration:metarule_constraints(M,fail):-
-	M =.. [m,_Id,right_rec|Ps]
-	,forall(member(P1,Ps)
-	       ,P1 == right_rec).
+	M =.. [m,_Id,right_rec,right_rec|_Ps].
 
 /* Also	try these alterantive constraints:
 
 % Constraint excluding left-recursive clauses of any target predicate
 % from the Top program.
-configuration:metarule_constraints(M,fail):-
-	M =.. [m,_Id,P|Ps]
-	,forall(member(P1,Ps)
-	       ,P1 == P).
+%
+%configuration:metarule_constraints(M,fail):-
+%	M =.. [m,_Id,P,P|_Ps].
 
 % Constraint excluding left-recursive clauses that are instances of a
-% metarule with any Id and having exactly three literals.
-configuration:metarule_constraints(m(_Id,P,P,P),fail).
+% metarule with any Id and having two existentially quantified
+% variables. This matches both Tailrec and Identity
+%
+%configuration:metarule_constraints(m(_Id,P,P),fail).
 
-% Constraint excluding left-recursive clauses of the tailrec metarule
-% where the target predicate symbol is right_rec.
-configuration:metarule_constraints(m(tailrec,right_rec,right_rec,right_rec),fail).
+% Constraint excluding left-recursive clauses of the Tailrec and
+% Identity metarules where the target predicate symbol is right_rec.
+%configuration:metarule_constraints(m(tailrec,right_rec,right_rec),fail).
 
 */
 

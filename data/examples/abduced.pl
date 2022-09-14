@@ -4,6 +4,69 @@
 		  ,negative_example/2
 		  ]).
 
+/** <module> Learning constants with the Abduce metarule.
+
+This is a very simple example of learning constants with the abduce
+metarule. Examples in c_5 are I think cribbed off Metagol.
+
+__Known good configuration__
+
+Make sure configuration options are set as follows. Important options
+are highlighted with an asterisk, "*":
+
+==
+?- list_config.
+* clause_limit(1)
+depth_limits(2,1)
+example_clauses(call)
+* experiment_file(data/examples/abduced.pl,abduced)
+fold_recursive(false)
+generalise_learned_metarules(false)
+learner(louise)
+* max_invented(0)
+metarule_formatting(quantified)
+metarule_learning_limits(none)
+minimal_program_size(2,inf)
+recursive_reduction(false)
+reduce_learned_metarules(false)
+* reduction(plotkins)
+* resolutions(5000)
+theorem_prover(resolution)
+unfold_invented(true)
+true.
+==
+
+__List learning results__
+
+Call list_learning_results/0 to learn all targets:
+
+==
+?- list_learning_results.
+c_1(1,1).
+
+c_2(1,1).
+c_2(1,2).
+
+c_3(1,A).
+c_3(2,A).
+
+c_4(A,1).
+c_4(A,2).
+
+c_5(1,2).
+c_5(1,3).
+c_5(1,4).
+c_5(1,1).
+c_5(2,2).
+c_5(4,4).
+
+true.
+==
+
+It's not supposed to be terribly exciting.
+
+*/
+
 background_knowledge(c_1/2,[]).
 background_knowledge(c_2/2,[]).
 background_knowledge(c_3/2,[]).

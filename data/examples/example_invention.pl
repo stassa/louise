@@ -8,6 +8,8 @@
 
 /** <module> Experiment file demonstrating examples invention.
 
+TODO: Update to latest version of Louise (Vanilla).
+
 Configuration options
 ---------------------
 
