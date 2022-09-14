@@ -168,9 +168,53 @@ instantiate a variable to a list, an auxiliary predicate like head/2
 must be used. The use of auxiliary predicates in place of functions is
 called flattening in ILP.
 
+
+4. Program reduction
+
+The experiment file source code below includes a directive to set the
+value of the configuration option reduction/2 to "none":
+
+==
+:- auxiliaries:set_configuration_option(reduction, [none]).
+==
+
+Without this directive, and with the default-ish reduction(plotkins)
+option, the output of learn/1 includes the single positive example:
+
+==
+?- learn(list_last/2), configuration:reduction(R).
+list_last([a,b,c,d,e,f,g,h,i],i).
+list_last(A,B):-tail(A,C),list_last(C,B).
+list_last(A,B):-tail(A,C),empty(C),head(A,B).
+R = plotkins.
+==
+
+This happens because the implementation of Plotkin's program
+reduction algorithm in Louise doesn't work well when examples include
+lists. With reduction(plotkins) any positive examples that the program
+reduction code can't prove are entailed by the learned program are
+output together with the clauses of the program. With reduction(none)
+no examples are output with the learned program. So we set
+reduction(none) to eliminate the "atomic residue" from the output:
+
+==
+?- learn(list_last/2), configuration:reduction(R).
+list_last(A,B):-tail(A,C),list_last(C,B).
+list_last(A,B):-tail(A,C),empty(C),head(A,B).
+R = none.
+==
+
+In some cases atomic residue can be eliminated by increasing the value
+of the configuration option resolutions/1 or by setting the
+configuration option recursive_reduction/1 to "true". These options
+control the "strength" of the reduction. But they don't really help with
+examples that include lists. A better implementation of program
+reduction is in the works.
+
 */
 
 :- auxiliaries:set_configuration_option(clause_limit, [2]).
+:- auxiliaries:set_configuration_option(reduction, [none]).
 
 configuration:midcon metarule 'P(x,y):- Q(x,z),R(z),S(x,y)'.
 
