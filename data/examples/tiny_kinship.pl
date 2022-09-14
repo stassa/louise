@@ -20,19 +20,103 @@
 
 /** <module> Experiment file for a small family domain.
 
-Includes examples for ancestor/2, father/2, grandfather/2 and male/2.
+This experiment file declares multiple learning targets, each
+representing one family relation. Most of those relations are defined in
+terms of each other. The whole family tree is based on the extensional
+definitions of father/2, mother/2 male/2 and female/2. It's a nuclear
+family.
+
+
+__Known good configuration__
+
+Make sure your configuration option are set as follows. Important
+options highlighted with an asterisk, "*":
+
+==
+?- list_config.
+* clause_limit(1)
+depth_limits(2,1)
+example_clauses(call)
+* experiment_file(data/examples/tiny_kinship.pl,tiny_kinship)
+fold_recursive(false)
+generalise_learned_metarules(false)
+learner(louise)
+* max_invented(0)
+metarule_formatting(quantified)
+metarule_learning_limits(none)
+minimal_program_size(2,inf)
+recursive_reduction(false)
+reduce_learned_metarules(false)
+* reduction(plotkins)
+* resolutions(5000)
+theorem_prover(resolution)
+unfold_invented(false)
+true.
+==
+
+__List learning results__
+
+Call list_learning_results/0 to show the results of learning all
+learning targets defined in this experiment file. It should look like
+this:
+
+==
+?- list_learning_results.
+ancestor(A,B):-parent(A,B).
+ancestor(A,B):-ancestor(A,C),ancestor(C,B).
+
+grandparent(A,B):-parent(A,C),parent(C,B).
+
+grandfather(A,B):-father(A,C),parent(C,B).
+grandfather(A,B):-husband(A,C),grandmother(C,B).
+
+grandmother(A,B):-mother(A,C),parent(C,B).
+
+parent(A,B):-father(A,B).
+parent(A,B):-mother(A,B).
+
+husband(A,B):-father(A,C),mother(B,C).
+
+wife(A,B):-mother(A,C),father(B,C).
+
+child(A,B):-daughter(A,B).
+child(A,B):-son(A,B).
+
+son(A,B):-male(A),child(A,B).
+
+daughter(A,B):-female(A),child(A,B).
+
+father(stathis,kostas).
+father(stefanos,dora).
+father(kostas,stassa).
+father(A,B):-male(A),parent(A,B).
+
+mother(alexandra,kostas).
+mother(paraskevi,dora).
+mother(dora,stassa).
+mother(A,B):-female(A),parent(A,B).
+
+male(A,A):-male(A).
+
+female(A,A):-female(A).
+
+true.
+==
+
 
 */
 
 % Background knowledge declarations
 background_knowledge(ancestor/2,[parent/2]).
 background_knowledge(grandparent/2,[parent/2]).
-%background_knowledge(grandfather/2,[father/2,mother/2,parent/2]).
 background_knowledge(grandfather/2,[father/2,parent/2,husband/2,grandmother/2]).
+% Alternative BK for grandfather/2
+%background_knowledge(grandfather/2,[father/2,mother/2,parent/2]).
 background_knowledge(grandmother/2,[mother/2,parent/2]).
 background_knowledge(parent/2,[father/2,mother/2]).
 background_knowledge(husband/2,[father/2,mother/2]).
 background_knowledge(wife/2,[father/2,mother/2]).
+% Alternative BK for child/2
 %background_knowledge(child/2,[father/2,mother/2,parent/2]).
 background_knowledge(child/2,[son/2,daughter/2]).
 background_knowledge(son/2,[child/2,male/1]).
@@ -50,6 +134,7 @@ metarules(grandmother/2,[chain]).
 metarules(parent/2,[identity]).
 metarules(husband/2,[switch]).
 metarules(wife/2,[switch]).
+% Goes with the alternative BK.
 %metarules(child/2,[inverse]).
 metarules(child/2,[identity]).
 metarules(son/2,[precon]).
@@ -154,13 +239,17 @@ wife(X,Y):-
 
 child(X,Y):-
 	parent(Y,X).
+
 /*
+% This alternative definition of child/2 causes learning child/2 with
+% son/2 and daughter/2 as background knowledge to go into an infinite
+% _right_ recursion! That's because it is mutually recursive with its
+% background predicates. Don't do this!
+
 child(X,Y):-
 	son(X,Y).
 child(X,Y):-
 	daughter(X,Y).
-%Causes learning child with son/2, daughter/2 and identity to go
-%infinite!
 */
 
 son(X,Y):-
