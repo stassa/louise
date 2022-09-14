@@ -2,7 +2,6 @@
 		  ,metarules/2
 		  ,positive_example/2
 		  ,negative_example/2
-		  %,recipe/2
 		  ,replace/4
 		  ,break_eggs/2
 		  ,whisk_eggs/2
