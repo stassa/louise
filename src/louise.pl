@@ -169,10 +169,14 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,examples_targets(Pos,Ss)
 	,bind_target(MS,Ss,MS_)
 	,flatten([Pos,BK],Ps)
-	,debug(top_program,'Constructing Top program...',[])
+	,debug(top_program,'Constructing Top program with TP operator...',[])
 	,generalise_tp(MS_,Ps,Is,Ts_Pos)
-	,applied_metarules(Ts_Pos,MS,Ts_Pos_)
-	,specialise_tp(Ts_Pos_,Is,Neg,Ts)
+	,debug_clauses(top_program,'Derived metasubstitutions:',[Ts_Pos])
+	,metasubs_with_metarules(Ts_Pos,MS,Ts_Pos_)
+	,debug_clauses(top_program,'Generalised Top program:',[Ts_Pos_])
+	,applied_metarules(Ts_Pos_,MS,Ts_Pos_a)
+	,specialise_tp(Ts_Pos_a,Is,Neg,Ts)
+	,debug_clauses(top_program,'Specialised Top program:',[Ts])
 	,!.
 top_program(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
@@ -602,6 +606,34 @@ metasub_metarule(Sub,MS,Sub_:-M):-
 
 
 
+%!	metasubs_with_metarules(+Metasubs,+Metarules,-Zipped) is det.
+%
+%	Associate metasubstitution atoms to corresponding metarules.
+%
+%	Metasubs is a list of (ground) metasubstitution atoms.
+%
+%	Metarules is a list of expanded metarules with metasubstitution
+%	atoms in their heads.
+%
+%	Zipped is a list of key-value-pairs Sub-M where each Sub is a
+%	metasubstitution in Metasubs and each M is an expanded metarule
+%	in Metarules, such that the metasubstitution atom at the head of
+%	M matches Sub.
+%
+%	In plain English what this predicate does is that it finds, for
+%	each metasubstitution in Metasub, its corresponding metarule, so
+%	that the metasubstitution can later be applied to the metarule
+%	to form a first-order clause.
+%
+metasubs_with_metarules(Subs,MS,Subs_):-
+	findall(Sub-M
+		,(member(Sub,Subs)
+		 ,metasub_metarule(Sub,MS,M)
+		 )
+		,Subs_).
+
+
+
 %!	bind_target(+Metarules,+Target,-Bound) is det.
 %
 %	Bind the Target\'s symbol to the heads of Metarules.
@@ -641,14 +673,7 @@ bind_target(MS,Ts,MS_):-
 %	construction of the Top program.
 %
 generalise_tp(MS,Ps,Is,Ts_Pos):-
-	lfp_query(MS,Ps,Is,Ts_Pos)
-	%,writeln('Top program - generalise:')
-	%,print_clauses(Ts_Pos)
-	%,nl
-	%,writeln('Top program - Interpretation')
-	%,print_clauses(Is)
-	%,nl
-	.
+	lfp_query(MS,Ps,Is,Ts_Pos).
 
 
 %!	specialise_tp(+Generalised,+Model,+Negatives,-Specialised) is
@@ -666,11 +691,7 @@ specialise_tp(Ts_Pos,Ps,Neg,Ts_Neg):-
 		 ,lfp_query([H:-B],Ps,As)
 		 ,ord_intersection(As, Neg, [])
 		 )
-		,Ts_Neg)
-	%,writeln('Top program - specialise:')
-	%,print_clauses(Ts_Neg)
-	%,nl
-	.
+		,Ts_Neg).
 
 
 %!	constraints(+Metasubstitution) is det.
