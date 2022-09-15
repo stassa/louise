@@ -1,18 +1,16 @@
 :-module(configuration, [clause_limit/1
-                        ,experiment_file/2
                         ,example_clauses/1
+                        ,experiment_file/2
                         ,fold_recursive/1
-                        ,depth_limits/2
                         ,generalise_learned_metarules/1
 			,learner/1
                         ,learning_predicate/1
 			,max_invented/1
-                        ,minimal_program_size/2
 			,metarule/2
 			,metarule_constraints/2
                         ,metarule_learning_limits/1
                         ,metarule_formatting/1
-                        ,order_constraints/5
+                        ,minimal_program_size/2
 			,recursive_reduction/1
                         ,reduce_learned_metarules/1
 			,reduction/1
@@ -32,10 +30,7 @@
 	   except([resolutions/1])).
 :-reexport(lib(evaluation/evaluation_configuration)).
 :-reexport(lib/sampling/sampling_configuration).
-:-reexport(subsystems(thelma/thelma_configuration)
-          ,except([depth_limits/2
-                  ,order_constraints/5
-                  ])).
+:-reexport(subsystems(thelma/thelma_configuration)).
 
 /** <module> Configuration options for Louise and associated libraries.
 
@@ -54,7 +49,7 @@ __Setting configuration options__
 
 Modules that require configuration options generally read them by
 addressing the configuration option directly through its module
-identifier, for example "configuration:depth_limits(X,Y)" etc.
+identifier, for example "configuration:clause_limit(K)" etc.
 
 When a configuration option in this file is changed, the file must be
 reloaded. The simplest way to do this is to call SWI-Prolog's make/0
@@ -104,14 +99,14 @@ will be implemented at some point. The dynamic database is evil.
 __Multifile options__
 
 A couple of configuration options defined in this module file,
-particularly metarule/2 and order_constraints/5 are declared multifile
-so that they can be included in experiment files to keep a permanent
-record of those important MIL problem elements. These options can also
-be set in the configuration, for example the user doesn't have to copy
-metarule/2 clauses in their experiment files everytime and can instead
-refer to the ones defined in this module file directly. See the various
-example experiment files under louise/data/examples for examples of
-setting those configuration options in an experiment file.
+particularly metarule/2 and metarule_constraints/2 are declared
+multifile so that they can be included in experiment files to keep a
+permanent record of those important MIL problem elements. These options
+can also be set in the configuration, for example the user doesn't have
+to copy metarule/2 clauses in their experiment files everytime and can
+instead refer to the ones defined in this module file directly. See the
+various example experiment files under louise/data/examples for examples
+of setting those configuration options in an experiment file.
 
 __Brief description of configurable options___
 
@@ -121,29 +116,24 @@ set_configuration_option/2) along with a quick description of their use.
 
 * :-debug(Subject): enable/disable logging for Subject.
 * clause_limit/1: number of clauses learned from each example.
-* experiment_file/2: path to the current experiment file.
 * example_clauses/1: how to treat examples with bodies.
+* experiment_file/2: path to the current experiment file.
 * fold_recursive/1: fold overspecial programs to introduce recursion?
-* depth_limits/2: iterative deepening search limits for Thelma.
 * generalise_learned_metarules/1: generalise TOIL-learned metarules?
 * learner/1: name of the current learning system (louise).
 * learning_predicate/1: current learning predicate.
 * max_invented/1: maximum number of invented predicates.
-* minimal_program_size/2: lower limit for learn_miminal/[1,2,5]
 * metarule/2: metarules known to the system.
 * metarule_constraints/2: metasubstitution constraints for Louise.
 * metarule_learning_limits/1: control over-generation in TOIL.
 * metarule_formatting/1: how to pretty-print metarules.
-* order_constraints/5: metarule order constraints for Thelma.
-* prove_recursive/1: more magick!
-* recursion_depth_limit/2: try to control uncontrolled recursion.
+* minimal_program_size/2: lower limit for learn_miminal/[1,2,5]
 * recursive_reduction/1: recursively apply Plotkin's reduction?
 * reduce_learned_metarules/1: apply Plotkin's reduction to TOIL output?
 * reduction/1: how to reduce the Top Program.
 * resolutions/1: depth of resolution in Plotkin's reduction.
 * symbol_range/2: used to pretty-print metarule variables.
 * tautology/1: what Louise considers a tautology.
-* test_constraints/1: when to test metasubstitution constraints.
 * theorem_prover/1: resolution or TP operator (doesn't work).
 * unfold_invented/1: unfold to remove invented predicates?
 
@@ -179,10 +169,8 @@ comment).
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
 :- dynamic clause_limit/1
-          ,depth_limits/2
           ,max_invented/1
           ,minimal_program_size/2
-          ,recursion_depth_limit/2
 	  ,recursive_reduction/1
 	  ,reduction/1
 	  ,resolutions/1
@@ -192,8 +180,7 @@ comment).
 % Allows experiment files to define their own, special metarules.
 % BUG: Actually, this doesn't work- module quantifiers, again.
 % Needs fixing.
-:-multifile metarule/2
-           ,order_constraints/5.
+:-multifile metarule/2.
 
 /* Debug levels
  * Note that some of the debug topics below emit identical messages.
@@ -348,21 +335,6 @@ comment).
 clause_limit(1).
 
 
-%!      depth_limits(?Clauses,?Invented) is semidet.
-%
-%       Depth limits for Thelma's hypothesis search.
-%
-%       Clauses is the maximum number of clauses in hypotheses
-%       considered in the Hypothesis Space search restricted by these
-%       depth limits. Invented is the maximum number of clauses of
-%       invented predicates in hypotheses.
-%
-%       If Invented is not at most 1 lower than Clauses, it will be
-%       treated as being one lower than Clauses.
-%
-depth_limits(2,1).
-
-
 %!      example_clauses(?What) is semidet.
 %
 %       What to do with example clauses.
@@ -391,6 +363,28 @@ depth_limits(2,1).
 %
 %example_clauses(bind).
 example_clauses(call).
+
+
+%!	experiment_file(?Path,?Module) is semidet.
+%
+%	The Path and Module name of an experiment file.
+%
+experiment_file('data/examples/hello_world.pl',hello_world).
+%experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
+%experiment_file('data/examples/anbn.pl',anbn).
+%experiment_file('data/examples/abduced.pl',abduced).
+%experiment_file('data/examples/user_metarules.pl',user_metarules).
+%experiment_file('data/examples/constraints.pl',constraints).
+%experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
+%experiment_file('data/examples/recipes.pl',recipes).
+%experiment_file('data/examples/example_invention.pl',path).
+%experiment_file('data/robots/robots.pl',robots).
+%experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
+%experiment_file('data/examples/multi_pred.pl',multi_pred).
+%experiment_file('data/examples/tiny_kinship_toil.pl',tiny_kinship_toil).
+%experiment_file('data/examples/yamamoto.pl',yamamoto).
+%experiment_file('data/examples/recursive_folding.pl',recursive_folding).
+%experiment_file('data/examples/findlast.pl',findlast).
 
 
 %!      fold_recursive(?Bool) is semidet.
@@ -429,28 +423,6 @@ fold_recursive(false).
 %
 %generalise_learned_metarules(true).
 generalise_learned_metarules(false).
-
-
-%!	experiment_file(?Path,?Module) is semidet.
-%
-%	The Path and Module name of an experiment file.
-%
-experiment_file('data/examples/hello_world.pl',hello_world).
-%experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
-%experiment_file('data/examples/anbn.pl',anbn).
-%experiment_file('data/examples/abduced.pl',abduced).
-%experiment_file('data/examples/user_metarules.pl',user_metarules).
-%experiment_file('data/examples/constraints.pl',constraints).
-%experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
-%experiment_file('data/examples/recipes.pl',recipes).
-%experiment_file('data/examples/example_invention.pl',path).
-%experiment_file('data/robots/robots.pl',robots).
-%experiment_file('data/coloured_graph/coloured_graph.pl',coloured_graph).
-%experiment_file('data/examples/multi_pred.pl',multi_pred).
-%experiment_file('data/examples/tiny_kinship_toil.pl',tiny_kinship_toil).
-%experiment_file('data/examples/yamamoto.pl',yamamoto).
-%experiment_file('data/examples/recursive_folding.pl',recursive_folding).
-%experiment_file('data/examples/findlast.pl',findlast).
 
 
 %!	learner(?Name) is semidet.
@@ -538,16 +510,6 @@ learner(louise).
 max_invented(0).
 
 
-%!      minimal_program_size(?Minimum,?Maximum) is semidet.
-%
-%       Minimum and Maximum cardinality of a minimal program.
-%
-%       Each of Minimum, Maximum should be an integer between 1 and
-%       positive infinity ('inf' in Prolog).
-%
-minimal_program_size(2,inf).
-
-
 %!	metarule(?Id,?P,?Q) is semidet.
 %!	metarule(?Id,?P,?Q,?R) is semidet.
 %
@@ -579,8 +541,11 @@ projection_12_abduce metarule 'P(X):- Q(X,X)'.
 precon_abduce metarule 'P(X,y):- Q(X), R(X,y)'.
 postcon_abduce metarule 'P(x,Y):- Q(x,Y), R(Y)'.
 
-% Meta-metarules. Use only with meta_learning.pl
+% Generalised second order metarules (Matrix metarules). Use only with
+% toil.pl
+%
 % WARNING Comment these out when learing with [all] metarules!
+%
 meta_dyadic metarule 'P(x,y):- Q(z,u), R(v,w)'.
 meta_monadic metarule 'P(x,y):- Q(z,u)'.
 meta_precon metarule 'P(x,y):- Q(z),R(u,v)'.
@@ -624,7 +589,6 @@ xy_zx_yz metarule 'P(x,y):- Q(z,x), R(y,z)'.
 xy_zx_zy metarule 'P(x,y):- Q(z,x), R(z,y)'. % swap
 xy_zy_xz metarule 'P(x,y):- Q(z,y), R(x,z)'.
 xy_zy_zx metarule 'P(x,y):- Q(z,y), R(z,x)'.
-
 */
 
 
@@ -632,16 +596,9 @@ xy_zy_zx metarule 'P(x,y):- Q(z,y), R(z,x)'.
 %
 %	A Goal to be called when Metasubstitution is matched.
 %
-%	@tbd This predicate is multifile so that it can be declared by
-%	experiment files, however the definitions below are pretty
-%       universally necessary to allow learning hypotheses with
-%       left-recursions and predicate invention. So in they goes into
-%       the configuration that they might be used by every experiment
-%       file. On the other hand, left-recursive hypotheses may be
-%       required for some problems so this definition is left commented
-%       out. This will not raise any errors because
-%       metarule_constraints/2 is declared dynamic so a definition is
-%       not necessary to exist in this module (or anywhere).
+%       This option is declared multifile that constraints may be
+%       declared individually by experiment files, as needed. A few
+%       examples are given below.
 %
 % Experiment files may or may not define metarule constraints to filter
 % the Top program for unwanted clause structures (e.g. I don't like
@@ -775,85 +732,14 @@ metarule_formatting(quantified).
 %metarule_formatting(expanded).
 
 
-%!      order_constraints(+Id,+Existential,+FO,+Lexicographic,+Interval)
-%       is semidet.
+%!      minimal_program_size(?Minimum,?Maximum) is semidet.
 %
-%	Metarule order constraints for Thelma.
+%       Minimum and Maximum cardinality of a minimal program.
 %
-%       Id is an atom, the id of a metarule for which these constraints
-%       are defined.
+%       Each of Minimum, Maximum should be an integer between 1 and
+%       positive infinity ('inf' in Prolog).
 %
-%       Existential is the list of existentially quantified variables in
-%       the identified metarule. This list must include both
-%       second-order and first-order existentially quantified variables.
-%
-%       FO is the list of first-order variables in the identified
-%       metarule. This list must include both universally and
-%       existentially quantified first-order variables.
-%
-%       Lexicographic is a list of lexicographic order constraints over
-%       the second-order varibles in Existential. Lexicographic order
-%       constraints are defined as pairs P>Q where P, Q are second-order
-%       variables included in the list Existentials. The meaning of P>Q
-%       is that any predicate symbol bound to P during learning is above
-%       any predicate symbol bound to Q, in the lexicographic order of
-%       predicate symbols.
-%
-%       Interval is a list of interval order constraints over the
-%       first-order variables in a metarule. Interval order constraints
-%       are defined as pairs X>Y, with the same meaning as for
-%       lexicographic order constraints, except here X and Y are
-%       first-order variables that bind to constants, rather than
-%       predicate symbols, during learning.
-%
-%       __Motivation__
-%
-%       Order constraints are used in the originally described version
-%       of Metagol to ensure termination when learning recursion. They
-%       impose a total ordering over the Herbrand base used to restrict
-%       the instantiations of variables in metarules.
-%
-%       Lexicographic order constraints ensure termination of the
-%       learning procedure when learning recursive hypotheses. Interval
-%       order constraints are necessary when hypotheses include
-%       mutually recursive predicates, most notably when an auxiliary
-%       predicate that is mutually recursive with the target predicate
-%       must be invented in order to learn the target.
-%
-%       Lexicographic and interval order constraints are more fully
-%       explained in the following reference:
-%       ==
-%       Meta-interpretive learning of higher-order dyadic datalog:
-%       predicate invention revisited
-%       Mach Learning (2015) 100:49-73
-%       Muggleton, et al.
-%       ==
-%
-%       @tbd Order constraints require a total ordering over the
-%       predicate symbols and constants in a learning problem. Such an
-%       ordering is derived automatically from the order in which
-%       background predicates' definitions and examples are declared in
-%       an experiment file. This is achieved by a call to
-%       order_constraints/3. See that predicate for more information,
-%       including the ability to manually defined a total ordering.
-%       Ouch.
-%
-%       @bug Currently, only lexicographic order constraints are
-%       implemented in Thelma. Defining interval order constraints won't
-%       have any effect at all unless this is resolved.
-%
-order_constraints(unit,_Ss,_Fs,[],[]).
-order_constraints(projection_21,[P,Q],_Fs,[P>Q],[]).
-order_constraints(projection_12,[P,Q],_Fs,[P>Q],[]).
-order_constraints(inverse,[P,Q],_Fs,[P>Q],[]).
-order_constraints(identity,[P,Q],_Fs,[P>Q],[]).
-order_constraints(chain,[P,Q,R],_Fs,[P>Q,P>R],[]).
-% One less constraint - for anbn.pl
-%order_constraints(chain,[P,Q,_R],_Fs,[P>Q],[]).
-order_constraints(tailrec,[P,Q],[X,Y,Z],[P>Q],[X>Z,Z>Y]).
-order_constraints(precon,[P,Q,R],_Fs,[P>Q,P>R],[]).
-order_constraints(postcon,[P,Q,R],_Fs,[P>Q,P>R],[]).
-order_constraints(switch,[P,Q,R],_Fs,[P>Q,P>R],[]).
+minimal_program_size(2,inf).
 
 
 %!	recursive_reduction(?Bool) is semidet.
@@ -894,6 +780,7 @@ reduce_learned_metarules(false).
 %	Select a Method for Top program reduction.
 %
 %	One of:
+%	* none: no reduction.
 %	* plotkins: discard logically redundant clauses by application
 %	of Plotkin's program reduction.
 %	* subhypothesis: select one hypothesis entailed by the Top
