@@ -17,7 +17,6 @@ are highlighted with an asterisk, "*":
 ==
 ?- list_config.
 * clause_limit(1)
-depth_limits(2,1)
 example_clauses(call)
 * experiment_file(data/examples/abduced.pl,abduced)
 fold_recursive(false)
@@ -32,7 +31,7 @@ reduce_learned_metarules(false)
 * reduction(plotkins)
 * resolutions(5000)
 theorem_prover(resolution)
-unfold_invented(true)
+unfold_invented(false)
 true.
 ==
 

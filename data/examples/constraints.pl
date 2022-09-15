@@ -21,7 +21,7 @@ path(X,Y):-
 	,path(Z,Y).
 ==
 
-A metarule constraint is declared that excludes from the Top program for
+A metarule constraint is declared that excludes from the Top Program for
 right_rec/2 left-recursive clauses:
 
 ==
@@ -34,7 +34,7 @@ metarule Id and where the first two existentially quantified variables
 are instantiated to right_rec, the predicate symbol of the right_rec/2
 learning target. Such metasubstitutions, once applied to their
 corresponding metarules, would cause left-recursive clauses to be added
-to the Top program and the learned hypothesis. This is demonstrated in
+to the Top Program and the learned hypothesis. This is demonstrated in
 the following sections.
 
 
@@ -46,7 +46,6 @@ Important options are highlighted with an asterisk (*):
 ==
 ?- list_config.
 * clause_limit(1)
-depth_limits(2,1)
 example_clauses(call)
 * experiment_file(data/examples/constraints.pl,constraints)
 fold_recursive(false)
@@ -82,6 +81,7 @@ left_rec(A,B):-left_rec(A,C),left_rec(C,B).
 true.
 ==
 
+
 __ 3. Declaring constraints__
 
 Metarule constraints are declared as clauses of the predicate
@@ -95,47 +95,36 @@ This predicate is declared as multifile in the configuration module. For
 clauses of metarule_constraints/2 to be found during learning, they must
 be prefixed with the module qualifier _configuration_.
 
-During the "generalisse" step of Top program construction, when a
+During the "generalise" step of Top Program construction, when a
 metasubstitution is found it is passed to the first argument of each
 metarule_constraints/2 clause in the database and this clause is called.
 If this first call succeeds, the second argument of the
 metarule_constraints/2 clause is passed to call/1. If this second call
-succeeds, the metasubstitution is included in the Top program;
-otherwise, it is excluded from the Top program.
+succeeds, the metasubstitution is included in the Top Program;
+otherwise, it is excluded from the Top Program.
 
-Metarule constraints can be used to exert fine control on the structure
-of the Top program. Clauses of metarule_constraints/2 can be unit or
-non-unit clauses and their second argument can be any Prolog goal. In
-this way, by combining the two arguments of metarule_constraints/2,
-constraints of arbitrary complexity can be implemented.
+Metarule constraints can be used to exert fine control on the
+instantations of existentially quantified variables in metarules, and,
+as a consequence, the structure of the Top Program. Clauses of
+metarule_constraints/2 can be unit or non-unit clauses and their second
+argument can be any Prolog goal. In this way, by combining the two
+arguments of metarule_constraints/2, constraints of arbitrary complexity
+can be implemented.
 
-That said the main motivation for metarule constraints is to exclude
-left-recursive clauses from the Top program, as shown in the examples in
-this experiment file. Left-recursive clauses pose problems when executed
-in Prolog but have an unfortunate tendency to crop up often in the
-hypotheses learned by Louise when the target theory is recursive.
-Excluding them by use of constraints is the simplest way to resolve such
-problems.
+A common use of metarule constraints is to exclude left-recursive
+clauses from the Top Program, as shown in the examples in this
+experiment file. Left-recursive clauses can cause problems when executed
+in Prolog but can be learned by Louise without trouble. Excluding them
+by use of constraints is the simplest way to resolve such problems.
 
-For problems where the Top program does not include left-recursive
-clauses the additional complexity of using constraints can be avoided
-and one can instead rely on the examples, background knowledge and
-metarules to control what is learend.
-
-Of course, sometimes left-recursive clauses are desired, or not a
-problem (for example when the learned hypothesis is meant to be
-interpreted in a bottom-up fashion, or using SLG resolution etc) in
-which case, again, constraints are not necessary. However, this is left
-up to the user to decide hence anti-left recursion constraints are not
-hard-coded in Top program construction.
 
 __4. Using constraints__
 
-Note that, in the listing in the previous section, the second
-clause of the learned hypothesis for left_rec/2 is left-recursive
-whereas the second clause in the hypothesis learned for right_rec/2 is
-recursive, but not left-recursive. This is despite the fact that the MIL
-problems for the two learning targets (i.e. the clauses of
+Note that, in the listing of the program learned in an earlier section,
+the second clause of the learned hypothesis for left_rec/2 is
+left-recursive whereas the second clause in the hypothesis learned for
+right_rec/2 is only tail-recursive. This is despite the fact that the
+MIL problems for the two learning targets (i.e. the clauses of
 background_knowledge/2, metarules/2, positive_example/2 and
 negative_example/2) are identical up to the symbols of their target
 predicates.
@@ -148,14 +137,15 @@ configuration:metarule_constraints(M,fail):-
 	M =.. [m,_Id,right_rec,right_rec|_Ps].
 ==
 
-This constraint will match any metasubstitution where the symbol of the
-target predicate is right_rec and where each existentially quantified
-variable is ground to right_rec. If the match succeeds, fail/0 will be
-passd to call/1 and the entire constraint will fail, causing the
-metasubstitution to be excluded from the Top program.
+This constraint will match any metasubstitution with two existentially
+quantified variables where the symbol of the target predicate is
+right_rec and where both existentially quantified variables are ground
+to right_rec. If the match succeeds, fail/0 will be passd to call/1 and
+the entire constraint will fail, causing the proof of the
+metasubstitution to fail and be excluded from the Top Program.
 
 If we were to remove this constraint, left-recursive clauses of
-right_rec/2 would be included in the Top program and so both hypotheses
+right_rec/2 would be included in the Top Program and so both hypotheses
 would be identical up to the predicate names of their learning targets:
 
 ==
@@ -172,22 +162,24 @@ true.
 The reason the left-recursive clause of right_rec/2 above would be
 included in the learned hypothesis once the constraint in [1] is
 removed, is that this clause is the most general clause of its
-arity in the Top program for right_rec/2. This clause is most-general in
+arity in the Top Program for right_rec/2. This clause is most-general in
 the sense that it entails all other clauses of the same arity in the
-Top program for right_rec/2. That causes all other clauses of the same
-arity to be discarded as redundant during Top program reduction (given
+Top Program for right_rec/2. That causes all other clauses of the same
+arity to be discarded as redundant during Top Program reduction (given
 resolution(plotkins) is set in the configuration).
 
-The Top program for right_rec/2 can be inspected using
+The Top Program for right_rec/2 can be inspected using
 list_top_program/2. With the second argument set to _true_ to apply the
 metasubstitutions to their corresponding metarules and with the
-constraint in [1] _removed_, the Top program for right_rec/2 is as
+constraint in [1] _removed_, the Top Program for right_rec/2 is as
 follows:
 
 ==
-% "true" applies the measubstitutions in the Top program to their
-% metarules, producing definite clauses.
-?- list_top_program(right_rec/2, true).
+% In list_top_program(right_rec/2,true,false), "true" applies the
+% measubstitutions in the Top Program to their metarules, producing
+% definite clauses. "false" avoids extending the metasubstitutions.
+
+?- list_top_program(right_rec/2,true,false).
 Generalisation:
 ---------------
 m(right_rec,A,B):-m(edge,A,B).
@@ -209,16 +201,16 @@ true.
 The left-recursive clause
 m(right_rec,A,B):-m(right_rec,A,C),m(right_rec,C,B) subsumes the
 right-recursive clause m(right_rec,A,B):-m(edge,A,C),m(right_rec,C,B).
-As a result, in the Top program reduction step the right-recursive
-clause is removed from the Top program as redundant by Plotkin's program
+As a result, in the Top Program reduction step the right-recursive
+clause is removed from the Top Program as redundant by Plotkin's program
 reduction algorithm.
 
 Conversely, leaving the constraint in [1] in the database (i.e. not
-removed as in the above example) the Top program for right_rec/2 is as
+removed as in the above example) the Top Program for right_rec/2 is as
 follows:
 
 ==
-?- list_top_program(right_rec/2, true).
+?- list_top_program(right_rec/2,true,false).
 Generalisation:
 ---------------
 m(right_rec,A,B):-m(edge,A,B).
@@ -240,6 +232,7 @@ The above observation highlights another effect of constraining the Top
 program: by reducing the number of clauses passed to the reduction
 algorithm it can reduce the cost of the reduction step of Louise's
 learning procedure.
+
 
 __5. Alternative constraints__
 
@@ -285,19 +278,18 @@ The difference is that the two simpler constraints in [3,4] above will
 only match metasubstitutions with exactly 3 existentially quantified
 variables, whereas the two more complex constraints in [1,2] will match
 metasubstitutions with any number of existentially quantified variables.
-
-
 */
 
+
 % Constraint excluding left-recursive clauses of right_rec/2 from the
-% Top program.
+% Top Program.
 configuration:metarule_constraints(M,fail):-
 	M =.. [m,_Id,right_rec,right_rec|_Ps].
 
 /* Also	try these alterantive constraints:
 
 % Constraint excluding left-recursive clauses of any target predicate
-% from the Top program.
+% from the Top Program.
 %
 %configuration:metarule_constraints(M,fail):-
 %	M =.. [m,_Id,P,P|_Ps].

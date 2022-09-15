@@ -24,7 +24,6 @@ options. Important options are highlighted with an asterisk ("*"):
 ==
 ?- list_config.
 * clause_limit(1)
-depth_limits(2,1)
 example_clauses(call)
 * experiment_file(data/examples/hello_world.pl,hello_world)
 fold_recursive(false)
@@ -32,12 +31,12 @@ generalise_learned_metarules(false)
 learner(louise)
 * max_invented(0)
 metarule_formatting(quantified)
-metarule_learning_limits(metasubstitutions(1))
+metarule_learning_limits(none)
 minimal_program_size(2,inf)
 recursive_reduction(false)
 reduce_learned_metarules(false)
 * reduction(plotkins)
-resolutions(5000)
+* resolutions(5000)
 theorem_prover(resolution)
 unfold_invented(false)
 true.

@@ -79,9 +79,8 @@ options defined in configuration.pl. Required options are marked with
 ==
 ?- list_config.
 * clause_limit(3)
-depth_limits(2,1)
 example_clauses(call)
-experiment_file(data/examples/anbn.pl,anbn)
+* experiment_file(data/examples/anbn.pl,anbn)
 * fold_recursive(false)
 generalise_learned_metarules(false)
 learner(louise)

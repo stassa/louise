@@ -2,6 +2,7 @@
                      ,metarules/2
                      ,positive_example/2
                      ,negative_example/2
+                     ,pred/2
                      ]).
 
 :-use_module(configuration).
@@ -30,35 +31,35 @@ Running the experiment
 ----------------------
 
 1. The learning queries in this file work as presented with the
-following configuration options:
+following configuration options. Important options are marked with an
+asterisk (*):
 
 ==
 ?- list_config.
+* clause_limit(1)
 example_clauses(call)
-experiment_file(data/examples/multi_pred.pl,multi_pred)
-generalise_learned_metarules(true)
-generalised_examples(fully)
-learned_metarules_printing(pretty)
+* experiment_file(data/examples/multi_pred.pl,multi_pred)
+fold_recursive(false)
+generalise_learned_metarules(false)
 learner(louise)
-max_invented(1)
+* max_invented(0)
+metarule_formatting(quantified)
 metarule_learning_limits(none)
 minimal_program_size(2,inf)
-recursion_depth_limit(dynamic_learning,none)
 recursive_reduction(false)
 reduce_learned_metarules(false)
-reduction(plotkins)
-resolutions(5000)
-symbol_range(predicate,[P,Q,R,S,T])
-symbol_range(variable,[X,Y,Z,U,V,W])
+* reduction(plotkins)
+* resolutions(5000)
 theorem_prover(resolution)
 unfold_invented(false)
 true.
 ==
 
+
 2. This experiment file defines the elements of the MIL problems for two
 learning targets, even/1 and odd/1. Louise can learn mutually recursive
 definitions of the two target predicates simultaneously i.e. it can
-perform multi-predicate learning.
+perform multi-predicate learning. This is shown below:
 
 ==
 ?- learn([even/1,odd/1]).
@@ -83,83 +84,11 @@ odd(s(s(s(0)))).
 true.
 ==
 
+This is because the definition of even/1 is not yet available as
+background knowledge for odd/1, and vice-versa.
 
-5. It is possible to learn odd/1 on its own by inventing even/1 and
-vice-versa, using dynamic learning:
 
-==
-?- learn_dynamic(even/1).
-even(0).
-'$1'(A):-pred(A,B),even(B).
-even(A):-pred(A,B),'$1'(B).
-true.
-
-?- learn_dynamic(odd/1).
-'$1'(A):-pred(A,B),odd(B).
-odd(A):-pred(A,B),'$1'(B).
-'$1'(0).
-true.
-==
-
-In fact, dynamic learning is necessary to learn even with
-multi-predicate learning, if sufficient examples are not needed.
-
-Suppose that instead of {even(0), odd(s(0)), even(s^2(0)), odd(s^3(0))}
-we give as examples {even(0), odd(s(0)), even(s^2(0)), odd(s^5(0))}, so
-that now there is no even predecessor of the only odd/1 example,
-s^5(0):
-
-==
-?- list_encapsulated_problem([even/1,odd/1]).
-Positive examples
------------------
-m(even,0).
-m(even,s(s(0))).
-m(odd,s(s(s(s(s(0)))))).
-
-Negative examples
------------------
-:-m(even,s(s(s(s(s(0)))))).
-:-m(odd,0).
-:-m(odd,s(s(0))).
-
-Background knowledge
---------------------
-m(pred,s(0),0).
-m(pred,s(A),s(B)):-m(pred,A,B).
-
-Metarules
----------
-m(postcon_unit,A,B,C):-m(A,D),m(B,D,E),m(C,E).
-m(abduce_unit,A,B):-m(A,B).
-true.
-==
-
-In that case, "static" multi-predicate learning fails to construct a
-hypothesis, because it is only "calling" the atomic examples of odd/1
-and even/1:
-
-==
-?- learn([even/1,odd/1]).
-even(0).
-even(s(s(0))).
-odd(s(s(s(s(s(0)))))).
-true.
-==
-
-Dynamic learning instead invents an intensional definition of odd/1 (as
-'$1'/1) and then re-uses it to define even/1:
-
-==
-?- learn_dynamic([even/1,odd/1]).
-even(0).
-'$1'(A):-pred(A,B),even(B).
-even(A):-pred(A,B),'$1'(B).
-odd(A):-pred(A,B),even(B).
-true.
-==
-
-6. abduce_unit metarule
+5. abduce_unit metarule
 
 The abduce_unit metarule, P(X), used below is not strictly necessary.
 Without it, Louise learns the same programs listed above. The difference
@@ -270,6 +199,9 @@ reduced by Plotkin's algorithm, since it is not entailed by the rest of
 the learned program.
 
 */
+
+:-auxiliaries:set_configuration_option(max_invented, [2]).
+:-auxiliaries:set_configuration_option(clause_limit, [3]).
 
 configuration:postcon_unit metarule 'P(x):- Q(x,y), R(y)'.
 configuration:abduce_unit metarule 'P(X)'.

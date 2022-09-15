@@ -101,7 +101,6 @@ options are marked with an asterisk (*):
 ==
 ?- list_config.
 * clause_limit(1)
-depth_limits(2,1)
 example_clauses(call)
 * experiment_file(data/examples/mtg_fragment.pl,mtg_fragment)
 fold_recursive(false)

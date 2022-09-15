@@ -48,7 +48,6 @@ with "*":
 ==
 ?- list_config.
 * clause_limit(2)
-depth_limits(2,1)
 example_clauses(call)
 * experiment_file(data/examples/findlast.pl,findlast)
 fold_recursive(false)
@@ -60,7 +59,7 @@ metarule_learning_limits(none)
 minimal_program_size(2,inf)
 recursive_reduction(false)
 reduce_learned_metarules(false)
-* reduction(plotkins)
+* reduction(none)
 * resolutions(5000)
 theorem_prover(resolution)
 unfold_invented(false)

@@ -38,7 +38,6 @@ ones are marked with an asterisk, "*":
 ==
 ?- list_config.
 * clause_limit(2)
-depth_limits(2,1)
 example_clauses(call)
 * experiment_file(data/examples/yamamoto.pl,yamamoto)
 fold_recursive(false)

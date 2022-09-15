@@ -35,7 +35,6 @@ options highlighted with an asterisk, "*":
 ==
 ?- list_config.
 * clause_limit(1)
-depth_limits(2,1)
 example_clauses(call)
 * experiment_file(data/examples/tiny_kinship.pl,tiny_kinship)
 fold_recursive(false)

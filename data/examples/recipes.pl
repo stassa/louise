@@ -56,9 +56,8 @@ options. Required options are marked with "*":
 ==
 ?- list_config.
 * clause_limit(4)
-depth_limits(2,1)
 example_clauses(call)
-experiment_file(data/examples/recipes.pl,recipes)
+* experiment_file(data/examples/recipes.pl,recipes)
 fold_recursive(false)
 generalise_learned_metarules(false)
 learner(louise)
@@ -969,13 +968,13 @@ to the chaos, and improve performance overall.
 */
 
 
-configuration:metarule_constraints(m(chain,P,P,_),fail).
-configuration:metarule_constraints(m(chain,P,_,P),fail).
-configuration:metarule_constraints(m(chain, _, _, recipe), fail).
-configuration:metarule_constraints(m(chain, _, recipe, _), fail).
-configuration:metarule_constraints(m(chain, _, Q, _), fail):-
-	   memberchk(Q, ['$1', '$2']).
-configuration:metarule_constraints(m(chain, recipe, _, '$2'), fail).
+%configuration:metarule_constraints(m(chain,P,P,_),fail).
+%configuration:metarule_constraints(m(chain,P,_,P),fail).
+%configuration:metarule_constraints(m(chain, _, _, recipe), fail).
+%configuration:metarule_constraints(m(chain, _, recipe, _), fail).
+%configuration:metarule_constraints(m(chain, _, Q, _), fail):-
+%	   memberchk(Q, ['$1', '$2']).
+%configuration:metarule_constraints(m(chain, recipe, _, '$2'), fail).
 
 % Can replace the last two constraints:
 %configuration:metarule_constraints(m(chain, _, Q, _), fail):-
@@ -983,8 +982,8 @@ configuration:metarule_constraints(m(chain, recipe, _, '$2'), fail).
 
 :- auxiliaries:set_configuration_option(clause_limit, [4]).
 :- auxiliaries:set_configuration_option(max_invented, [2]).
-:- auxiliaries:set_configuration_option(reduction, [none]).
-:- auxiliaries:set_configuration_option(unfold_invented, [true]).
+:- auxiliaries:set_configuration_option(reduction, [plotkins]).
+:- auxiliaries:set_configuration_option(unfold_invented, [false]).
 
 background_knowledge(recipe/2,[break_eggs/2
 			      ,whisk_eggs/2

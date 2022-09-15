@@ -14,66 +14,96 @@ Configuration options
 ---------------------
 
 The experiments described in this file were carried out with the
-following configuration options.
+following configuration options. Important options are marked with an
+asterisk (*):
 
 ==
 ?- list_config.
-depth_limits(2,1)
+* clause_limit(1)
 example_clauses(call)
-experiment_file(data/examples/example_invention.pl,path)
+* experiment_file(data/examples/example_invention.pl,path)
+fold_recursive(false)
 generalise_learned_metarules(false)
 learner(louise)
-learning_predicate(learn_with_examples_invention/2)
-max_invented(1)
+* learning_predicate(learn_with_examples_invention/2)
+* max_invented(0)
 metarule_formatting(quantified)
 metarule_learning_limits(none)
 minimal_program_size(2,inf)
-prove_recursive(fast)
-recursion_depth_limit(dynamic_learning,none)
-recursion_depth_limit(metasubstitution,none)
 recursive_reduction(false)
 reduce_learned_metarules(false)
-reduction(plotkins)
-resolutions(5000)
+* reduction(plotkins)
+* resolutions(5000)
 theorem_prover(resolution)
 unfold_invented(false)
 true.
 ==
 
-Ensure in particular that the configuration option prove_recursive/1 is
-set to "fast", otherwise examples invention can enter an infinite
-recursion (this is a bug).
 
-Examples invention
-------------------
+Learning problem
+----------------
 
-The MIL problem defined in the current experiment file can't be solved
-because the H22 _Chain_ and _Identity_ metarules are not sufficient to
-express a theory entailing the single example path(a,f) given the
-background definition of edge/2.
-
-The MIL problem defined in this experiment is as follows:
+Ensure the listing of the elements of the MIL problem looks like the
+lising below:
 
 ==
-% Single positive example of path/2:
+?- list_mil_problem(path/2).
+Positive examples
+-----------------
 path(a,f).
 
-% Background definition of edge/2
+Negative examples
+-----------------
+[]
+
+Background knowledge
+--------------------
+edge/2:
 edge(a,b).
 edge(b,c).
 edge(c,d).
 edge(d,e).
 edge(e,f).
 
-% Chain and Identity metarules (in Louise's internal representation)
-m(identity,P,Q):- m(P,X,Y), m(Q,X,Y).
-m(chain,P,Q,R):- m(P,X,Y), m(Q,X,Z), m(R,Z,Y).
+not_edge/2:
+not_edge(1,2).
+not_edge(1,3).
+not_edge(1,4).
+
+Metarules
+---------
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+
+Metasubstitution constraints
+----------------------------
+:- dynamic configuration:metarule_constraints/2.
+:- multifile configuration:metarule_constraints/2.
+
+configuration:metarule_constraints(M, fail) :-
+    path:(M=..[m, _Id, P, P|_Ps]).
+
+true.
 ==
 
-In particular, the H22 _Chain_, having only two body literals, cannot
-represent a path from a to f, which are separated by a distance of five
-edges. A first learning attempt therefore fails to learn a general
-hypothesis and simply returns the single example:
+
+Examples invention
+------------------
+
+The MIL problem defined in the current experiment file can't be solved
+with the configuration option clause_limit(1). That's because setting
+clause_limit(1) forces Louise's Top Program Construction algorithm (TPC)
+to construct only one instance of each metarule at a time and neither of
+the metarules _Chain_ and _Identity_ is sufficient to express a theory
+entailing the single example path(a,f) given the background definition
+of edge/2 in this experiment file.
+
+In particular, the _Chain_ metarule, having only two body literals,
+cannot represent a path (through the graph defined by edge/2 clauses in
+the BK) from vertex a to vertex f, because those vertices are separated
+by a distance of five edges and each literal of the _Chain_ metarule can
+only represent a single edge. A first learning attempt therefore fails
+to learn a general hypothesis and simply returns the single example:
 
 ==
 ?- learn(path/2).
@@ -84,55 +114,65 @@ true.
 With examples invention, atoms of path/2 represenging shorter paths
 between nodes are derived from the background definition of edge/2 and
 _Chain_ and _Identity_. These shorter paths are short enough that they
-can be represented by instances of the H22 _Chain_ and _Identity_.
+can be represented by instances of _Chain_ and _Identity_.
 
 Adding these invented examples to the set of positive examples allows
 Louise to learn a hypothesis general enough to entail not just all
-invented examples, but also the initial, path(a,f), example.
+invented examples, but also the initial, path(a,f), example, even with
+clause_limit(1).
 
-The following query and its output demonstrate how examples invention
-can be used to solve the MIL problem defined in this experiment file.
-Note that the debugging output of the query is listed with spaces added
-for improved readability and with sections numbered for later reference:
+The following query demonstrate how examples invention can be used to
+solve the MIL problem defined in this experiment file. Note that the
+debugging output of the query has been edited for improved readability
+and with sections numbered for later reference:
 
 ==
+?- debug(examples_invention).
+true.
+
 % Learning with invented positive examples.
 ?- learn_with_examples_invention(path/2, _Ps), print_clauses(_Ps).
 % Inventing examples
+% Partial examples
+% path(A,f)
+% path(a,A)
 
-% Generalised partial examples:          [1]
-% m(path,A,B):-m(edge,A,B).
-% m(path,A,B):-m(edge,A,C),m(edge,C,B).
+% Learning with partial examples...        [1]
+% Top Program for partial examples:
+% m(path,A,B):-m(edge,A,B)
+% m(path,A,B):-m(edge,A,C),m(edge,C,B)
+% m(path,A,B):-m(edge,A,C),m(path,C,B)
+% m(path,A,B):-m(not_edge,A,C),m(path,C,B)
 
-% Given and invented examples            [2]
-% m(path,a,b).
-% m(path,a,c).
-% m(path,a,f).
-% m(path,b,c).
-% m(path,b,d).
-% m(path,c,d).
-% m(path,c,e).
-% m(path,d,e).
-% m(path,d,f).
-% m(path,e,f).
+% Given and invented examples              [2]
+% path(a,b)
+% path(a,c)
+% path(a,d)
+% path(a,e)
+% path(a,f)
+% path(b,c)
+% path(b,d)
+% path(b,e)
+% path(b,f)
+% path(c,d)
+% path(c,e)
+% path(c,f)
+% path(d,e)
+% path(d,f)
+% path(e,f)
 
-% Encapsulating problem
-% Constructing Top program
+% Encapsulating problem                   [3]
+% Constructing Top program...
 % Reducing Top program
-
-% Excapsulating hypothesis               [3]
+% Excapsulating hypothesis
 path(A,B):-edge(A,B).
 path(A,B):-edge(A,C),path(C,B).
 true.
 ==
 
-Debugging of learn_with_examples_invention/2 is enabled with the query
-debug(examples_invention). This is already added as a directive to the
-configuration file so ensure it is uncommented in that file if you want
-to replicate the debug output listed below.
-
 In the following sections we further discuss the output of the above
 query to learn_with_examples_invention/2.
+
 
 Generalisation of partial examples
 ----------------------------------
@@ -142,18 +182,21 @@ learn_with_examples_invention/2, above, are generated by
 examples_invention/5 (the predicate that performs examples invention):
 
 ==
-% Generalised partial examples:          [1]
-% m(path,A,B):-m(edge,A,B).
-% m(path,A,B):-m(edge,A,C),m(edge,C,B).
+% Learning with partial examples...        [1]
+% Top Program for partial examples:
+% m(path,A,B):-m(edge,A,B)
+% m(path,A,B):-m(edge,A,C),m(edge,C,B)
+% m(path,A,B):-m(edge,A,C),m(path,C,B)
+% m(path,A,B):-m(not_edge,A,C),m(path,C,B)
 ==
 
-The two clauses listed in [1] are generalisations of the single positive
-example, path(a,f) derived from the H22 _Chain_ and _Identity_ and the
-background definition of edge/2.
+The clauses listed in [1] are generalisations of the single positive
+example, path(a,f) derived from the _Chain_ and _Identity_ metarules and
+the background definition of edge/2.
 
-These two clauses in [1] are obtained by Top program construction with
-the partially instantiated examples path(a,X) and path(Y,f) added to
-the given MIL problem (i.e. the positive and negative examples, BK and
+The clauses in [1] are obtained by Top program construction with the
+partially instantiated examples path(a,X) and path(Y,f) added to the
+given MIL problem (i.e. the positive and negative examples, BK and
 metarules specified in this experiment file). These partial examples are
 derived from the given example, path(a,f), by successively replacing
 each of its constants with a variable. Replacing the constants in the
@@ -175,6 +218,7 @@ reprsent paths encompassing path(a,f) as well as paths disjoint to
 path(a,f) (e.g. paths starting from node "a" and not crossing the path
 from "a" to "f" etc).
 
+
 Invented examples
 -----------------
 
@@ -185,29 +229,34 @@ derived from the generalisation of the partial examples described in the
 previous section:
 
 ==
-% Given and invented examples            [2]
-% m(path,a,b).
-% m(path,a,c).
-% m(path,b,c).
-% m(path,b,d).
-% m(path,c,d).
-% m(path,c,e).
-% m(path,d,e).
-% m(path,d,f).
-% m(path,e,f).
-% m(path,a,f). % Given example
+% Given and invented examples              [2]
+% path(a,b)
+% path(a,c)
+% path(a,d)
+% path(a,e)
+% path(a,f) % Given example
+% path(b,c)
+% path(b,d)
+% path(b,e)
+% path(b,f)
+% path(c,d)
+% path(c,e)
+% path(c,f)
+% path(d,e)
+% path(d,f)
+% path(e,f)
 ==
 
 The given example, path(a,f) is marked in the debug output block above.
 Remaining atoms in the debug output block are invented examples.
 
 The Least Herbrand Model of the two clauses in [1] is generated by
-bottom-up evaluation using lfp_query/4 (defined in lib(tp/tp)).
+bottom-up evaluation (performed by lfp_query/4, defined in lib(tp/tp)).
 
 The atoms of path/2 in the LHM of the two clauses in [1] are a set of
 paths connecting nodes that can be reached in at most two steps. That is
 the maximum number of steps in a path that can be represented by
-instances of the H22 _Chain_ and _Identity_ alone.
+instances of the _Chain_ and _Identity_	metarules alone.
 
 Note that, while the two clauses generalising partial examples, in [1],
 were derived from partial examples representing all paths from node "a"
@@ -215,6 +264,7 @@ or to node "f", the invented positive examples in [2] include paths
 staring or ending at nodes other than "a" and "f", e.g. path(b,c),
 path(d,e), etc. However, each of those sub-paths are paths "on the way"
 to node "f" from node "a".
+
 
 Lerning with invented examples
 ------------------------------
@@ -227,7 +277,7 @@ path(a,b), path(b,c), path(c,d), path(d,e), path(e,f)
 ==
 
 Each of these sub-paths is short enough to be represented by instances
-of the H22 _Chain_ and _Identity_ and the background knowledge
+of the _Chain_ and _Identity_ metarules and the background knowledge
 definitions of edge/2. All of those sub-paths taken together suffice to
 represent the full path from "a" to "f" using instances of _Chain_ and
 _Inverse_.
@@ -237,9 +287,13 @@ sufficient examples, background knowledge and metarules to learn a
 hypothesis that entails the positive example path(a,f), listed in [3]:
 
 ==
-% Excapsulating hypothesis               [3]
+% Encapsulating problem                   [3]
+% Constructing Top program...
+% Reducing Top program
+% Excapsulating hypothesis
 path(A,B):-edge(A,B).
 path(A,B):-edge(A,C),path(C,B).
+true.
 ==
 
 Note that the learned hypothesis does not include the two clauses in
@@ -247,10 +301,11 @@ Note that the learned hypothesis does not include the two clauses in
 the learned hypothesis is learned with only fully-instantiated examples,
 the given example, path(a,f) and the invented examples in [2].
 
-Consequently, the learned hypothesis is a hypothesis general enough that
-it entails all ground positive examples, invented, or given, but
-specific enough that it does not entail the over-general, partial
+The end result is that the learned hypothesis is a hypothesis general
+enough that it entails all ground positive examples, invented, or given,
+but specific enough that it does not entail the over-general, partial
 instantiations of path(a,f) listed in [2].
+
 
 Irrelevant background knowledge
 -------------------------------
@@ -272,16 +327,22 @@ The listing of invented examples in [2] make it clear that no false
 positives were invented in this case:
 
 ==
-% Invented positive examples:
-% m(path,a,b).
-% m(path,a,c).
-% m(path,b,c).
-% m(path,b,d).
-% m(path,c,d).
-% m(path,c,e).
-% m(path,d,e).
-% m(path,d,f).
-% m(path,e,f).
+% Given and invented examples              [2]
+% path(a,b)
+% path(a,c)
+% path(a,d)
+% path(a,e)
+% path(a,f) % Given example
+% path(b,c)
+% path(b,d)
+% path(b,e)
+% path(b,f)
+% path(c,d)
+% path(c,e)
+% path(c,f)
+% path(d,e)
+% path(d,f)
+% path(e,f)
 ==
 
 For instance, a false positive derived from not_edge/2 might include
@@ -305,173 +366,100 @@ Then the results of example invention would include false positives and
 the learned hypothesis would be over-general:
 
 ==
-?- learn_with_examples_invention(path/2, _Ps), print_clauses(_Ps).
+?- learn_with_examples_invention(path/2).
 % Inventing examples
+% Partial examples
+% path(A,f)
+% path(a,A)
+% Learning with partial examples...
 
-% Generalised partial examples:
-% m(path,A,B):-m(edge,A,B).
-% m(path,A,B):-m(not_edge,A,B).
-% m(path,A,B):-m(edge,A,C),m(edge,C,B).
+% Top Program for partial examples:
+% m(path,A,B):-m(edge,A,B)
+% m(path,A,B):-m(not_edge,A,B)
+% m(path,A,B):-m(edge,A,C),m(edge,C,B)
+% m(path,A,B):-m(edge,A,C),m(path,C,B)
+% m(path,A,B):-m(not_edge,A,C),m(path,C,B)
 
 % Given and invented examples
-% m(path,1,b).
-% m(path,a,3).
-% m(path,a,4).
-% m(path,a,b).
-% m(path,a,c).
-% m(path,a,f).
-% m(path,b,c).
-% m(path,b,d).
-% m(path,c,d).
-% m(path,c,e).
-% m(path,d,e).
-% m(path,d,f).
-% m(path,e,f).
+% path(1,b)
+% path(1,c)
+% path(1,d)
+% path(1,e)
+% path(1,f)
+% path(a,3)
+% path(a,4)
+% path(a,b)
+% path(a,c)
+% path(a,d)
+% path(a,e)
+% path(a,f)
+% path(b,c)
+% path(b,d)
+% path(b,e)
+% path(b,f)
+% path(c,d)
+% path(c,e)
+% path(c,f)
+% path(d,e)
+% path(d,f)
+% path(e,f)
 
 % Encapsulating problem
-% Constructing Top program
+% Constructing Top program...
 % Reducing Top program
-
 % Excapsulating hypothesis
 path(A,B):-edge(A,B).
 path(A,B):-not_edge(A,B).
 path(A,B):-edge(A,C),path(C,B).
+path(A,B):-not_edge(A,C),path(C,B).
 true.
 ==
-
-Let us assume that "not_edge" is sensibly named and represents some
-relation of nodes on the graph defined by edge/2 that is not, itself, an
-edge. For instance, it might be a reward associated with reaching a
-particular node on the graph, etc. Clearly, under this assumption,
-not_edge/2 cannot be used to define path/2!
 
 The need to select only relevant background knowledge is a limitation of
 examples invention. Some irrelevant backround predicates may result in
 false positives and over-generalising hypotheses.
 
-Irrelevant metarules
---------------------
 
-Similar to the effects of irrelevant background predicates, including
-irrelevant metarules to a MIL problem may result in example invention of
-false positives, and learning of over-generalising hypotheses. Below,
-the _Inverse_ and _Switch_ metarules were added to _Chain_ and
-_Identity_ before calling learn_with_invented_examples/2:
+Learning with looser clause limits
+----------------------------------
+
+A correct hypothesis of path/2 can be learned from the elements of the
+MIL problem, with clause_limit(2):
 
 ==
-?- learn_with_examples_invention(path/2, _Ps), print_clauses(_Ps).
-% Inventing examples
+?- list_config.
+clause_limit(2)
+% ... more options
 
-% Generalised partial examples:
-% m(path,A,B):-m(edge,A,B).
-% m(path,A,B):-m(edge,A,C),m(edge,C,B).
-% m(path,A,B):-m(edge,A,C),m(edge,B,C).
-% m(path,A,B):-m(edge,A,C),m(path,B,C).
-
-% Given and invented examples
-% m(path,a,a).
-% m(path,a,b).
-% m(path,a,c).
-% m(path,a,f).
-% m(path,b,a).
-% m(path,b,b).
-% m(path,b,c).
-% m(path,b,d).
-% m(path,c,b).
-% m(path,c,c).
-% m(path,c,d).
-% m(path,c,e).
-% m(path,d,c).
-% m(path,d,d).
-% m(path,d,e).
-% m(path,d,f).
-% m(path,e,a).
-% m(path,e,d).
-% m(path,e,e).
-% m(path,e,f).
-
-% Encapsulating problem
-% Constructing Top program
-% Reducing Top program
-
-% Excapsulating hypothesis
+?- learn(path/2).
 path(A,B):-edge(A,B).
-path(A,B):-edge(B,A).
 path(A,B):-edge(A,C),path(C,B).
-path(A,B):-edge(A,C),path(B,C).
 true.
 ==
 
-In this case no false positives are actually learned (all of the
-invented path/2 atoms are true positive examples of path/2 and still
-sub-paths of path(a,f), given that the graph defined by edge/2 is
-_undirected_) but the combination of those examples and the new
-metarules, _Switch_ and _Inverse_ result in a learned hypothesis that is
-overly general, representing paths "doubling back" on themselves and
-possibly failing to lead from "a" to "f" altogether.
-
-
-Examples invention and metarule extension
------------------------------------------
-
-Attempting to learn a hypothesis of path/2 from the MIL problem defined
-in this experiment file using dynamic learning for predicate invention
-returns a very specific hypothesis:
-
-==
-?- max_invented(I), learn_dynamic(path/2).
-'$1'(A,B):-edge(A,C),'$2'(C,B).
-'$2'(A,B):-edge(A,C),'$3'(C,B).
-'$3'(A,B):-edge(A,C),edge(C,B).
-path(A,B):-edge(A,C),'$1'(C,B).
-I = 4.
-==
-
-As demonstrated in the above experiments, examples invention can, in
-some cases, obtain better results than dynamic learning and predicate
-invention.
-
-The combination of examples invention and dynamic learning is not yet
-fully implemented, and examples invention is not fully integrated to the
-main learning predicates, learn/1, learn/2 and learn/5. More
-experimenting is needed to understand the interaction of examples
-invention and dynamic learning.
-
-For the time being it is not adviced to perform dynamic learning with
-invented examples.
+Examples invention is an alternative way to learn from a single example.
 
 */
 
-% Constraints excluding left-recursive hypotheses.
-% These also have the effect of excluding generalisations of partial
-% positive examples such as the following:
+% Constraint excluding left-recursive hypotheses.
+% Also has the effect of excluding generalisations of partial
+% positive examples such as the following from the Top Program learned
+% with invented examples:
 % path(A,B):-edge(A,C),edge(C,B).
 % path(A,B):-path(A,C),path(C,B).
 %
 configuration:metarule_constraints(M,fail):-
-	M =.. [m,_Id,P|Ps]
-	,forall(member(P1,Ps)
-	       ,P1 == P).
-
-configuration:metarule_constraints(M,fail):-
-	M =.. [m,_Id,P|Ps]
-	,left_recursive(P,Ps).
-
-left_recursive(T,[T|_Ps]):-
-	!.
-left_recursive(T,[T,T|_Ps]):-
-	!.
-left_recursive(T,[I,T|_Ps]):-
-	atomic_list_concat([T,A],'_',I)
-	,atom_number(A,_N).
+	M =.. [m,_Id,P,P|_Ps].
 
 % Tells list_learning_results/0 to use the right learning predicate.
 configuration:learning_predicate(learn_with_examples_invention/2).
 
+:-auxiliaries:set_configuration_option(clause_limit,[1]).
+
 background_knowledge(path/2, [edge/2,not_edge/2]).
 
 metarules(path/2,[chain,identity]).
-% Irrelevant metarules added
+% Alternative metarules. Try them out.
 %metarules(path/2,[chain,identity,inverse,switch]).
 
 positive_example(path/2,path(a,f)).
