@@ -925,28 +925,34 @@ tautology(H:-B):-
 %
 %	Algorithm is one of: [resolution, tp].
 %
-%	With option resolution, the Top program is constructed in a
+%	With option 'resolution', the Top program is constructed in a
 %	top-down manner, using SLD resolution.
 %
-%	With option tp, the Top program is constructed in a bottom-up
+%	With option 'tp', the Top program is constructed in a bottom-up
 %	manner, using a TP operator.
 %
-%	Option resolution is faster because it hands off to the Prolog
-%	interpreter. On the other hand, it can get lost in recursion,
-%	especially when a problem has left-recursions (although this
-%	doesn't quite seem to happen in practice).
+%	__Trade offs__
+%
+%       Option 'resolution' is generally faster when clause_limit(1) is
+%       set because it hands off to the Prolog interpreter. On the other
+%       hand the meta-interpretation can enter infinite right-recursion
+%       (left-recursion is avoided by tabling).
 %
 %	Option tp is slower because it's implemented in Prolog and it's
-%	not terribly optimised either. The trade-off is that it's
-%	guaranteed to terminate and runs in polynomial time, at least
-%	for definite programs (but then, there are no guarantees outside
-%	of definite programs).
+%       not terribly optimised either. 'tp' currently can't perform
+%       predicate invention. On the other hand, 'tp' guarantees
+%       termination and runs in polynomial time, at least for definite
+%       programs (but then, there are no guarantees outsid of definite
+%       programs). Finally, 'tp' only accepts datalog programs, so for
+%       example it will not work on problems where examples or BK have
+%       lists not hidden away by flattening.
 %
-%	More impotantly, option tp can be used to enable predicate
-%	invention, although this is not yet implemented.
-%
-%	Note also that the TP operator only works for datalog definite
-%	programs.
+%       While the current implementation of the TP Operator does not
+%       allow for predicate invention, bottom-up predicate invention is
+%       possible, as described in "Complete bottom-up predicate
+%       invention in MIL" by Hocquette and Muggleton, published
+%       in IJCAI-20. Implementing this in Louise is left for future
+%       work.
 %
 theorem_prover(resolution).
 %theorem_prover(tp).
