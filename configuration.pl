@@ -600,92 +600,69 @@ xy_zy_zx metarule 'P(x,y):- Q(z,y), R(z,x)'.
 %       declared individually by experiment files, as needed. A few
 %       examples are given below.
 %
-% Experiment files may or may not define metarule constraints to filter
-% the Top program for unwanted clause structures (e.g. I don't like
-% left-recursive clauses because they mess up evaluation).
 :- dynamic metarule_constraints/2.
 :- multifile metarule_constraints/2.
 /*
+% Simple constraint excluding left-recursive clauses that are instances of
+% a metarule with any Id and having two existentially quantified
+% variables. Matches e.g. Tailrec and Identity:
+%
+configuration:metarule_constraints(m(_Id,P,P),fail).
+*/
+/*
+% Simple constraint excluding left-recursive clauses that are instances of
+% a metarule with any Id and having three existentially quantified
+% variables. Matches e.g. Chain, Switch, Swap:
+%
+configuration:metarule_constraints(m(_Id,P,P,_),fail).
+*/
+/*
 % Anti-recursion constraint - excludes recursive clauses
 % Does not take into account invented or metarules with existentially
-% quantified secod-order variables.
-metarule_constraints(M,fail):-
+% quantified secod-order variables:
+%
+configuration:metarule_constraints(m(tailrec,_,_),fail).
+configuration:metarule_constraints(M,fail):-
 	M =.. [m,Id,P|Ps]
-	% Projection explicitly maps p/2 to p/1.
-	,Id \= projection
-	,forall(member(P1,Ps)
-	       ,P1 == P).
+        ,\+ memberchk(Id,[abduce
+			 ,unit
+			 ,projection_21
+			 ,projection_12])
+	,memberchk(P,Ps).
 */
-
 /*
 % McCarthyite constraint - excludes left-recursive metasubstitutions
-% Allows for invented predicates. Does not take into account existentially
-% quantified secod-order variables in metarules.
-metarule_constraints(M,fail):-
-	M =.. [m,Id,P|Ps]
-	,Id \= projection
-	,left_recursive(P,Ps).
-
-left_recursive(T,[T|_Ps]):-
-	!.
-left_recursive(T,[T,T|_Ps]):-
-	!.
-left_recursive_(T,[I,T|_Ps]):-
-	atom_chars(I,['$',A])
-	,atom_number(A,_N).
-*/
-
-/*
-% Lexicographic order constraint - imposes total ordering on the Herbrand base.
-% Allows for invented predicates and metarules with existentially
-% quantified first-order variables.
-% Remember to change #TARGET_PREDICATE/ARITY# with an actual symbol/arity.
+% Named after the other McCarthy. The senator, not the computer
+% scientist.
+%
 configuration:metarule_constraints(M,fail):-
-	debug_clauses(dynamic,'Testing constraint for metasub:',M)
-	,configuration:max_invented(I)
-	,M =.. [m,_Id|Ps]
-	,predicate_signature(#TARGET_PREDICATE/ARITY#, Ss)
-	,findall(P/A
-		,(member(P,Ps)
-		 ,(   memberchk(P/A,Ss)
-		  ;   atomic(P)
-		     ,invented_symbol(I,A,P)
-		  )
-		 )
-		,Ps_)
-	,\+ ordered_sublist(Ps_, Ss)
-	,debug(dynamic,'Constraint test passed',[]).
+	M =.. [m,Id,P,P|_Ps]
+        ,\+ memberchk(Id,[abduce
+                      ,unit
+                      ,projection_21
+                      ,projection_12]).
 
-
-%!	ordered_sublist(?Sublist,+Ordering) is det.
+*/
+/*
+% Lexicographic order constraint.
+% Imposes total ordering on the Herbrand base.
+% Calls src/subsystems/thelma/thelma_configuration:order_constraints/5.
+% Needs problem-specific ordering of the predicate signature.
 %
-%	A Sublist order according to a total Ordering of its elements.
-%
-ordered_sublist([X,Y],Os):-
-	above(X,Y,Os).
-ordered_sublist([X,Y|Ls],Os):-
-	above(X,Y,Os)
-	,ordered_sublist([Y|Ls],Os).
-
-
-%!	above(?Above,+Below,+Ordering) is det.
-%
-%	True when Above is above Below in a total Ordering.
-%
-above(S1,S2,Ss):-
-	previous(S1,S2,Ss).
-above(S1,S3,Ss):-
-	previous(S1,S2,Ss)
-	,above(S2,S3,Ss).
-above(S1,S2,[_|Ss]):-
-	above(S1,S2,Ss).
-
-
-%!	previous(?First,?Next,?List) is det.
-%
-%	True when First and Next are the first two elements of List.
-%
-previous(S1,S2,[S1,S2|_Ss]).
+configuration:metarule_constraints(M,B):-
+	debug(lex,'Testing constraint for metasub: ~w',M)
+        ,M =.. [m,Id|Ps]
+        %#REPLACE WITH PROBLEM-SPECIFIC ORDERING OF PREDICATE SIGNATURE#
+        ,PS = [s,a,b] % Example ordering for a^nb^n
+	,debug(lex,'Predicate signature: ~w',[PS])
+        ,thelma_configuration:order_constraints(Id,Ps,Fs,STs,FTs)
+	,debug(lex,'Order constraints: ~w-~w',[STs,FTs])
+        ,(   thelma:order_tests(PS,Fs,STs,FTs)
+	 ->  B = true
+	    ,debug(lex,'Passed constraint test!',[])
+	 ;   B = false
+	    ,debug(lex,'Failed constraint test!',[])
+	 ).
 */
 
 
