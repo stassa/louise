@@ -423,8 +423,7 @@ learn_meta(Ts,Ps):-
 %	Combines learning of new metarules, as in learn_metarules/[1,2,5],
 %	with a call to another learning predicate in Louise.
 %
-%	@tbd Currently only learn/5 and learn_dynamic/5 can be the
-%	learning predicate.
+%	@tbd Currently only learn/5 can be the learning predicate.
 %
 learn_meta([],_Neg,_BK,_MS,_Ts):-
 	throw('learn_meta/5: No positive examples found. Cannot train.').
@@ -472,10 +471,10 @@ learn_meta(Pos,Neg,BK,MS_G,Ps):-
 %	according to their existential or universal quantification to
 %	make them easier to read. Metarules printed to the top-level
 %	with option "prolog" can be passed to a top-program construction
-%	predicate like top_program/5 or top_program_dynamic/7 to learn a
-%	hypothesis. Use this option when you want to inspect the
-%	metarules learned with this predicate before passing them to a
-%	top-program construction predicate.
+%	predicate like top_program/5 to learn a hypothesis. Use this
+%	option when you want to inspect the metarules learned with this
+%	predicate before passing them to a top-program construction
+%	predicate.
 %
 learn_metarules(Ts):-
 	learn_metarules(Ts,MS)
