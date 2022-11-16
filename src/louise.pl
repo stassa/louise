@@ -4,6 +4,7 @@
 		 ,top_program/5
 		 ,generalise/3
 		 ,specialise/3
+		 ,prove/6
 		 ,constraints/1
 		 ,reduced_top_program/5
 		 ]).
@@ -145,7 +146,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,configuration:clause_limit(K)
 	,K > 1
 	,S = (write_problem(user,[BK],Refs)
-	     ,table(prove/5)
+	     ,table(prove/6)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise(Pos,MS,Ss_Gen)
@@ -158,7 +159,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
 	,C = (erase_program_clauses(Refs)
-	     ,untable(prove/5)
+	     ,untable(prove/6)
 	     )
 	,setup_call_cleanup(S,G,C)
 	% Fail if Top Program is empty.
@@ -215,10 +216,11 @@ generalise(Pos,MS,Ss_Pos):-
 generalise(Pos,MS,Ss_Pos):-
 % Hands proofs to the Prolog engine.
 % Runs faster and avoids manipulating the dynamic db.
-	findall(Subs
+	configuration:clause_limit(K)
+	,findall(Subs
 		,(member(Ep,Pos)
 		 ,debug_clauses(examples,'Positive example:',Ep)
-		 ,metasubstitutions(Ep,MS,Subs)
+		 ,metasubstitutions(Ep,K,MS,Subs)
 		 ,forall(member(Sub-_M,Subs)
 			,constraints(Sub)
 			)
@@ -270,7 +272,8 @@ specialise(Ss_Pos,Neg,Ss_Neg):-
 specialise(Ss_Pos,_MS,[],Ss_Pos):-
 	!.
 specialise(Ss_Pos,MS,Neg,Ss_Neg):-
-	findall(Subs
+	configuration:clause_limit(K)
+	,findall(Subs
 	       ,(member(Subs,Ss_Pos)
 		,findall(Sub
 			,member(Sub-_M,Subs)
@@ -278,7 +281,7 @@ specialise(Ss_Pos,MS,Neg,Ss_Neg):-
 		,debug_clauses(metasubstitutions,'Ground metasubstitutions:',[Subs_])
 		,\+((member(En,Neg)
 		    ,debug_clauses(examples,'Negative example:',En)
-		    ,once(metasubstitutions(En,MS,Subs_))
+		    ,once(metasubstitutions(En,K,MS,Subs_))
 		    ,debug_clauses(examples,'Proved negative example:',En)
 		    )
 		   )
@@ -357,20 +360,23 @@ bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
 	,!.
 
 
-%!	metasubstitutions(+Example,+Metarules,-Metasubstitutions) is
-%!	nondet.
+%!	metasubstitutions(+Example,+Limit,+Metarules,-Metasubstitutions)
+%!	is nondet.
 %
 %	Derive all possible Metasubstitutions entailing an Example.
 %
-metasubstitutions(:-En,MS,Subs):-
+%	Limit is the clause limit specified in the configuration option
+%	clause_limit/1.
+%
+metasubstitutions(:-En,K,MS,Subs):-
 	!
-        ,prove(En,MS,[],Subs,Subs)
+        ,prove(En,K,MS,[],Subs,Subs)
 	,debug(metasubstitutions,'Proved Example: ~w',[:-En])
 	,debug_clauses(metasubstitutions,'With Metasubs:',[Subs]).
-metasubstitutions(Ep,MS,Subs):-
+metasubstitutions(Ep,K,MS,Subs):-
 	signature(Ep,Ss)
 	,debug(signature,'Signature: ~w',[Ss])
-        ,prove(Ep,MS,Ss,[],Subs_)
+        ,prove(Ep,K,MS,Ss,[],Subs_)
 	,debug(metasubstitutions,'Proved Example: ~w',[Ep])
 	,Subs_ \= []
 	,sort(Subs_,Subs_s)
@@ -380,6 +386,7 @@ metasubstitutions(Ep,MS,Subs):-
 		 ,metasub_metarule(Sub,MS,M)
 		 )
 		,Subs).
+
 
 
 %!	signature(+Example,-Signature) is det.
@@ -394,26 +401,79 @@ signature(L,[T|Ss]):-
         ,L =.. [m,T|_].
 
 
-%!	prove(?Literal,+Metarules,+Acc,-Metasubs) is nondet.
+%!	prove(?Literals,+Limit,+Metarules,+Acc,-Metasubs) is nondet.
 %
 %	A vanilla MIL meta-interpreter for Top Program Construction.
 %
-prove(true,_MS,_Ss,Subs,Subs):-
+%	Literal is a set of encapsulated literals (as a "tree" of Prolog
+%	terms, in parentheses) currently being refuted.
+%
+%	Limit is the clause limit defined in the configuration option
+%	clause_limit/1. Limit restricts the number of distinct clauses
+%	in a refutation sequence. Notably this is _not_ the number of
+%	clauses _in a learned hypothesis_.
+%
+%	Metarules is a list of expanded metarules to be used in the
+%	proof by refutation of each Literals.
+%
+%	Acc is the accumulator of metasubstitutions.
+%
+%	Metasubs is a list of metasubstitution atoms derived during the
+%	proof. Metasubstitution atoms are of the form:
+%
+%	m(Id,Tgt,P1,...,Pn)
+%
+%	Where Id is the atomic identifier of a metarule in Metarules;
+%	Tgt is the predicate symbol (but not arity) of one target
+%	predicate, and each Pi is the symbol of a background predicate
+%	(which can also be the target predicate, or an invented
+%	predicate, as well as a predicate actually  defined in the BK).
+%
+%	When this predicate is first called, Literals should be a single
+%	encapsulated literal, one example of one target predicate. As
+%	the proof-by-refutation proceeds, that original goal of the
+%	proof is replaced by goals derived by resolution.
+%
+%	When the proof completes, if it completes successfully,
+%	Metasubs should be a list of metasubstitution atoms, each of
+%	which can be applied to its corresponding metarule (found via
+%	the metasubstitution atom's first, Id, argument) to produce a
+%	first-order clause. In that sense, the clauses of Metasubs are
+%	the set of clauses in one refutation sequence of the original
+%	example Literal.
+%
+%	The number of metasubstitution atoms in Metasubs can be at most
+%	equal to Limit.
+%
+%	Since Metasubstitutions is a list of atoms in a refutation
+%	sequence, this meta-interpreter is capable of inducing, for each
+%	single example, an entire proof-branch refuting that example. In
+%	other words, this is is a multi-clause learning inductive
+%	meta-interpreter, capable of learning entire programs from one
+%	example.
+%
+%	What is the motivation for multi-clause learning? Traditional
+%	ILP systems like Aleph or Progol learn a single "rule" from each
+%	positive example (and then remove examples "covered" by the
+%	rule). That works fine until an example is found that cannot be
+%	covered by a single rule. This is often the case with recursive
+%	programs and certainly the case with predicate invention. The
+%	ability to learn multiple clauses that resolve with each other
+%	to refute a goal-example allows Louise (and MIL systems in
+%	general) to learn recursive programs and to perform predicate
+%	invention without the restrictions of earlier systems.
+%
+prove(true,_K,_MS,_Ss,Subs,Subs):-
 	!
 	,debug(prove,'Metasubs so-far: ~w',[Subs]).
-prove((L,Ls),MS,Ss,Subs,Acc):-
-	debug(prove,'Proving literal (1): ~w',[L])
-        ,prove(L,MS,Ss,Subs,Subs_)
-        ,debug(prove,'Proved literal (2): ~w',[L])
-        ,debug(prove,'Proving literals (3): ~w',[Ls])
-        ,prove(Ls,MS,Ss,Subs_,Acc).
-prove((L),MS,Ss,Subs,Acc):-
+prove((L,Ls),K,MS,Ss,Subs,Acc):-
+	prove(L,K,MS,Ss,Subs,Subs_)
+        ,prove(Ls,K,MS,Ss,Subs_,Acc).
+prove((L),K,MS,Ss,Subs,Acc):-
         L \= (_,_)
 	,L \= true
-        ,debug(prove,'Proving literal (4): ~w',[L])
-        ,clause(L,MS,Ss,Subs,Subs_,Ls)
-	,debug(prove,'Proving literals (5): ~w',[Ls])
-        ,prove(Ls,MS,Ss,Subs_,Acc).
+        ,clause(L,K,MS,Ss,Subs,Subs_,Ls)
+        ,prove(Ls,K,MS,Ss,Subs_,Acc).
 /* % Uncomment for richer debugging and logging.
 prove(L,_MS,_Ss,Subs,_Acc):-
 	L \= true
@@ -423,8 +483,7 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 */
 
 
-
-%!	clause(?Literal,+MS,+Sig,+Subs,-Subs_New,-Body) is nondet.
+%!	clause(?Literal,+K,+MS,+Sig,+Subs,-Subs_New,-Body) is nondet.
 %
 %	MIL-specific clause/2 variant.
 %
@@ -437,6 +496,10 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 %
 %	Literal is a partially or fully instantiated literal to be
 %	proved.
+%
+%	K is an integer, the clause limit defined in the configuration
+%	option clause_limit/1. This limits the number of new
+%	metasubstitutions added to the metasubstitution store.
 %
 %	MS is the set of metarules for the current MIL Problem.
 %
@@ -452,31 +515,30 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 %	metasubstitution already in Subs, or a new one constructed by
 %	new_metasub/6.
 %
-clause(_L,_MS,_Ss,Subs,_Acc,_Ls):-
+clause(_L,_K,_MS,_Ss,Subs,_Acc,_Ls):-
 	\+ check_constraints(Subs)
 	,!
 	,fail.
-clause(L,_MS,_Ss,Subs,Subs,true):-
+clause(L,_K,_MS,_Ss,Subs,Subs,true):-
 	(   predicate_property(L,foreign)
 	;   built_in_or_library_predicate(L)
 	)
-	,debug(prove,'Proving built-in literal: ~w', [L])
+	,debug(prove_,'Proving built-in literal: ~w', [L])
         ,call(L)
-	,debug(prove,'Proved built-in clause: ~w', [L:-true]).
-clause(L,_MS,_Ss,Subs,Subs,Ls):-
+	,debug(prove_,'Proved built-in clause: ~w', [L:-true]).
+clause(L,_K,_MS,_Ss,Subs,Subs,Ls):-
 	\+ predicate_property(L,foreign)
 	,\+ built_in_or_library_predicate(L)
-	,debug(prove,'Proving literal with BK: ~w', [L])
+	,debug(prove_,'Proving literal with BK: ~w', [L])
         ,clause(L,Ls)
-	,debug(prove,'Trying BK clause: ~w', [L:-Ls]).
-clause(L,MS,_Ss,Subs,Subs,Ls):-
-        debug(prove,'Proving literal with known metasubs: ~w',[L])
+	,debug(prove_,'Trying BK clause: ~w', [L:-Ls]).
+clause(L,_K,MS,_Ss,Subs,Subs,Ls):-
+        debug(prove_,'Proving literal with known metasubs: ~w',[L])
         ,known_metasub(L,MS,Subs,Ls).
-clause(L,MS,Ss,Subs,Subs_,Ls):-
-	configuration:clause_limit(N)
-	,length(Subs,M)
-	,M < N
-        ,debug(prove,'Proving literal with new metasub: ~w',[L])
+clause(L,K,MS,Ss,Subs,Subs_,Ls):-
+	length(Subs,N)
+	,N < K
+        ,debug(prove_,'Proving literal with new metasub: ~w',[L])
         ,new_metasub(L,MS,Ss,Subs,Subs_,Ls).
 
 
