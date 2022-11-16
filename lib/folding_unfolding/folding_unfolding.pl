@@ -863,11 +863,12 @@ reduce_unordered(Ps,Us):-
 	,maplist(sort,Ls,Ls_s)
 	,maplist(numbervars,Ls_s)
 	,sort(Ls_s,Ls_u)
-	,findall((H:-B)
+	,findall(C
 		,(member(Ls_i,Ls_u)
 		 ,select(L,Ls_i,Bs)
 		 ,mil_problem:symbol(L,S)
 		 ,memberchk(S,Ts)
 		 ,once(list_tree([L|Bs],(H,B)))
+		 ,varnumbers((H:-B),C)
 		 )
 		,Us).
