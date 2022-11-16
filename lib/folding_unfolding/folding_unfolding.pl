@@ -1,7 +1,7 @@
 :-module(folding_unfolding, [fold_recursive/2
 			    ,unfold_invented/4
 			    ,pseudo_unfold_invented/3
-			    ,reduce_unfolded/2
+			    ,reduce_unordered/2
                             ]).
 
 :-use_module(src(auxiliaries)).
@@ -835,132 +835,39 @@ pseudo_unfold_literals(L,Ss,Is,Acc,Bind):-
 
 
 
-%!	reduce_unfolded(+Program,-Reduced) is det.
+%!	reduce_unordered(+Program,-Reduced) is det.
 %
-%	Reduce an unfolded Program.
+%	Reduce a Program by removing duplicate sets of literals.
 %
-%	Program is a set of clauses, currently as returned by
+%	Program is a list of clauses, currently as returned by
 %	unfold_invented/3.
 %
-%	Reduced is the set of unique clauses in Program. Clauses are
+%	Reduced is the list of unique clauses in Program. Clauses are
 %	considered identical if they are equal up to a) renaming of
 %	variables and b) ordering of literals.
 %
-%	This will need some explanation and it'd be nice to have a name
-%	that makes sense. It's "reduced_unfolded" for now because it's
-%	only meant to be used with unfolded programs. I think with a bit
-%	of work to understand and make sure it works correctly it could
-%	be used in the rest of the project, alongside Plotkin's
-%	reduction. In fact, I wonder if we're not essentially testing
-%	subsumption between clauses to some extent, with this.
+%	Seen another way, this predicate considers a logic program as a
+%	set of clauses and each clause as a set of literals, and forces
+%	the input Program to be consistent with that definition. Sets
+%	are unordered and have no duplicates, therefore all clauses that
+%	are equal, up to ordering of literals are considered duplicates
+%	by this predicate. Additionally, this predicate takes into
+%	account unification between clauses (but _not_ subsumption, as
+%	such) and removes all but one of a set of clauses that are equal
+%	up to renaming of variables.
 %
-reduce_unfolded(Ps,Us):-
-	maplist(clause_literals,Ps,Ls)
-	,maplist(sort,Ls,Ls_)
-	,findall(I-C
-		,nth1(I,Ls_,C)
-		,Ls_I)
-	,indexed_mergesort(Ls_I,Is)
-	,findall(Ci
-		,(member(I-_C,Is)
-		 ,nth1(I,Ps,Ci)
-		 ,\+ tautology(Ci)
+reduce_unordered(Ps,Us):-
+	copy_term(Ps,Ps_)
+	,examples_targets(Ps_,Ts)
+	,maplist(clause_literals,Ps_,Ls)
+	,maplist(sort,Ls,Ls_s)
+	,maplist(numbervars,Ls_s)
+	,sort(Ls_s,Ls_u)
+	,findall((H:-B)
+		,(member(Ls_i,Ls_u)
+		 ,select(L,Ls_i,Bs)
+		 ,mil_problem:symbol(L,S)
+		 ,memberchk(S,Ts)
+		 ,once(list_tree([L|Bs],(H,B)))
 		 )
 		,Us).
-
-
-%!	indexed_mergesort(+Indexed,-Sorted) is det.
-%
-%	Mergesort implementation for key-value pairs.
-%
-%	Indexed is a list of key-value-pairs, K-V, where K an integer
-%	key and V a value. Since this is only called from
-%	reduce_unfolded, it is expected that each V is a sorted list of
-%	literals of a clause in the initial program. We want to sort
-%	Indexed to remove elements with duplicate values. To do this we
-%	sort by comparing only the values, while ignoring the keys.
-%
-%	This is similar to what can be achieved by keysort/2, however we
-%	want to compare literals ignoring their variables, i.e. we
-%	test whether two literals are equal up to renaming of their
-%	variables. This is handled by merge_compare/3.
-%
-%	Mergesort adapted from:
-%
-%	http://kti.ms.mff.cuni.cz/~bartak/prolog/sorting.html
-%
-indexed_mergesort([],[]):-
-	!.
-indexed_mergesort([I-Xs],[I-Xs]):-
-	!.
-indexed_mergesort(Ls,Ss):-
-	Ls=[_,_|_]
-	,split(Ls,Ls_R,Ls_L)
-	,indexed_mergesort(Ls_R,Ss_1)
-	,indexed_mergesort(Ls_L,Ss_2)
-	,indexed_merge(Ss_1,Ss_2,Ss).
-
-
-%!	split(+List,-Right,-Left) is det.
-%
-%	Split a list in two halves.
-%
-%	Divide step of indexed_mergesort/2. List should be a list of
-%	key-value pairs, K-V, where K is an integer kay and V a list of
-%	literals. Right and Left are the two halves of List.
-%
-split(Ls,Ls_R,Ls_L):-
-	in_half(Ls,Ls,Ls_R,Ls_L).
-
-%!	split(+List,+Buff,-Right,-Left) is det.
-%
-%	Business end of split/3.
-%
-in_half([],Rs,[],Rs):-
-% for lists of even length
-	!.
-in_half([_],Rs,[],Rs):-
-% for lists of odd length
-	!.
-in_half([_,_|T],[X|Ls],[X|Ls_R],Rs):-
-	in_half(T,Ls,Ls_R,Rs).
-
-
-%!	indexed_merge(+List1,+List2,-Merged) is det.
-%
-%	Merge two lists of key-value pairs.
-%
-%	Merge step of indexed_mergesort/2. List1 and List2 should be
-%	lists of key-value pairs, K-V, where K is an integer key and V a
-%	list of literals.
-%
-indexed_merge([],Ls,Ls):-
-	!.
-indexed_merge(Ls,[],Ls):-
-	!.
-indexed_merge([I-X|T1],[_K-Y|T2],[I-X|T]):-
-% We could avoid comparison by comparing indices...
-	merge_compare(X,Y,=)
-	,!
-	,indexed_merge(T1,T2,T).
-indexed_merge([I-X|T1],[K-Y|T2],[I-X|T]):-
-	merge_compare(X,Y,=<)
-	,!
-	,indexed_merge(T1,[K-Y|T2],T).
-indexed_merge([I-X|T1],[K-Y|T2],[K-Y|T]):-
-	merge_compare(X,Y,>)
-	,indexed_merge([I-X|T1],T2,T).
-
-
-%!	merge_compare(+Term1,+Term2,-Delta) is det.
-%
-%	Compare two terms up to renaming of variables.
-%
-merge_compare(A,B,D):-
-	(   unifiable(A,B,_)
-	->  D = (=)
-	;   A @< B
-	->  D = (=<)
-	;   A @> B
-	->  D = >
-	).
