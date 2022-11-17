@@ -243,17 +243,17 @@ specialise(Ss_Pos,[],Ss_Pos):-
 	!.
 specialise(Ss_Pos,Neg,Ss_Neg):-
 	configuration:clause_limit(1)
-	,setof(H-M
-	     ,H^M^Ss_Pos^En^Neg^
-	      (member(H-M,Ss_Pos)
-	      ,\+((member(En,Neg)
-		  ,debug_clauses(examples,'Negative example:',En)
-		  ,debug_clauses(metasubstitution,'Ground metasubstitution atom:',H)
-		  ,metasubstitution(En,M,H)
-		  )
+	,findall(H-M
+		,(member(H-M,Ss_Pos)
+		 ,\+((member(En,Neg)
+		     ,debug_clauses(examples,'Negative example:',En)
+		     ,debug_clauses(metasubstitution,'Ground metasubstitution atom:',H)
+		     ,metasubstitution(En,M,H)
+		     )
+		    )
 		 )
-	      )
-	     ,Ss_Neg).
+		,Ss_Neg_)
+	,sort(Ss_Neg_,Ss_Neg).
 
 
 
