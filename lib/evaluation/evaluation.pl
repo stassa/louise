@@ -44,6 +44,11 @@
 %	as an integer. The testing partition is the complement of Sample
 %	with respect to the entire set of positive or negative examples.
 %
+%	Sample can be given as a compound S_Pos/S_Neg, where S_Pos is
+%	the size of the training partition of the positive examples and
+%	S_Neg the size of the training partition of the negative
+%	examples.
+%
 %	Metric is one of: [acc, err, fpr, fnr, tpr, tnr, pre, fsc],
 %	corresponding to the metrics calculated by evaluation/6.
 %
@@ -67,6 +72,11 @@ train_and_test(T,S,Ps,M,V):-
 %	as an integer. The testing partition is the complement of Sample
 %	with respect to the entire set of positive or negative examples.
 %
+%	Sample can be given as a compound S_Pos/S_Neg, where S_Pos is
+%	the size of the training partition of the positive examples and
+%	S_Neg the size of the training partition of the negative
+%	examples.
+%
 %	Problem is a list [Pos, Neg, BK, MS] whose elements are the
 %	elements of a MIL problem: example atoms, background knowledge
 %	symbols and arities and metarule names of the MIL problem.
@@ -82,8 +92,13 @@ train_and_test(T,S,Ps,M,V):-
 %
 train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
 	debug(evaluation, 'Partitioning data...', [])
-	,train_test_splits(S,Pos,Pos_Train,Pos_Test)
-	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
+	,(   S = S_Pos/S_Neg
+	 ->  true
+	 ;   S = S_Pos
+	    ,S = S_Neg
+	 )
+	,train_test_splits(S_Pos,Pos,Pos_Train,Pos_Test)
+	,train_test_splits(S_Neg,Neg,Neg_Train,Neg_Test)
 	,debug(evaluation, 'Learning program...', [])
 	,learning_query(Pos_Train,Neg_Train,BK,MS,Ps)
 	,debug(evaluation, 'Evaluating learned program...', [])
@@ -105,6 +120,9 @@ train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
 %	This version obtains the MIL problem (examples, BK and
 %	metarules) from the current experiment file.
 %
+%	@tbd Allow this predicate to accept samples in S_Pos/S_Neg
+%	format, as train_and_test/[5,6].
+%
 timed_train_and_test(T,S,L,Ps,M,V):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V).
@@ -120,6 +138,9 @@ timed_train_and_test(T,S,L,Ps,M,V):-
 %	seconds is imposed on learning. If learning does not complete
 %	(successfully or not) in Limit seconds, the empty hypothesis is
 %	ealuated as the result of learning.
+%
+%	@tbd Allow this predicate to accept samples in S_Pos/S_Neg
+%	format, as train_and_test/[5,6].
 %
 timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V):-
 	debug(evaluation, 'Partitioning data...', [])
