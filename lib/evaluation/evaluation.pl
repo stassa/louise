@@ -210,6 +210,14 @@ print_evaluation(T,Ps,Pos,Neg,BK):-
 %
 %	Raises error if Size is equal to 1.0 or 0.0.
 %
+train_test_splits(P,[],[],[]):-
+% There may be no negative examples.
+% But this better not be the positive examples.
+	(   P > 0
+	->  throw('The size of an empty partition must be equal to 0!')
+	;   true
+	)
+	,!.
 train_test_splits(P,_Es,_Train,_Test):-
 	float(P)
 	,P >= 1.0
