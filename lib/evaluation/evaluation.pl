@@ -91,14 +91,7 @@ train_and_test(T,S,Ps,M,V):-
 %	Sample.
 %
 train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
-	debug(evaluation, 'Partitioning data...', [])
-	,(   S = S_Pos/S_Neg
-	 ->  true
-	 ;   S = S_Pos
-	    ,S = S_Neg
-	 )
-	,train_test_splits(S_Pos,Pos,Pos_Train,Pos_Test)
-	,train_test_splits(S_Neg,Neg,Neg_Train,Neg_Test)
+	data_partitions(S,Pos,Neg,Pos_Train,Neg_Train,Pos_Test,Neg_Test)
 	,debug(evaluation, 'Learning program...', [])
 	,learning_query(Pos_Train,Neg_Train,BK,MS,Ps)
 	,debug(evaluation, 'Evaluating learned program...', [])
@@ -120,9 +113,6 @@ train_and_test(T,S,[Pos,Neg,BK,MS],Ps,M,V):-
 %	This version obtains the MIL problem (examples, BK and
 %	metarules) from the current experiment file.
 %
-%	@tbd Allow this predicate to accept samples in S_Pos/S_Neg
-%	format, as train_and_test/[5,6].
-%
 timed_train_and_test(T,S,L,Ps,M,V):-
 	experiment_data(T,Pos,Neg,BK,MS)
 	,timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V).
@@ -139,13 +129,9 @@ timed_train_and_test(T,S,L,Ps,M,V):-
 %	(successfully or not) in Limit seconds, the empty hypothesis is
 %	ealuated as the result of learning.
 %
-%	@tbd Allow this predicate to accept samples in S_Pos/S_Neg
-%	format, as train_and_test/[5,6].
-%
 timed_train_and_test(T,S,L,[Pos,Neg,BK,MS],Ps,M,V):-
 	debug(evaluation, 'Partitioning data...', [])
-	,train_test_splits(S,Pos,Pos_Train,Pos_Test)
-	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
+	,data_partitions(S,Pos,Neg,Pos_Train,Neg_Train,Pos_Test,Neg_Test)
 	,G = learning_query(Pos_Train,Neg_Train,BK,MS,Ps)
 	,C = call_with_time_limit(L,G)
 	,debug(evaluation, 'Learning program...', [])
@@ -182,8 +168,7 @@ print_evaluation(T,S,Ps):-
 %	Print evaluation metrics of a learned Program.
 %
 print_evaluation(T,S,Pos,Neg,BK,MS,Ps):-
-	train_test_splits(S,Pos,Pos_Train,Pos_Test)
-	,train_test_splits(S,Neg,Neg_Train,Neg_Test)
+	data_partitions(S,Pos,Neg,Pos_Train,Neg_Train,Pos_Test,Neg_Test)
 	,learning_query(Pos_Train,Neg_Train,BK,MS,Ps)
 	,print_evaluation(T,Ps,Pos_Test,Neg_Test,BK).
 
@@ -202,6 +187,39 @@ print_evaluation(T,Ps,Pos,Neg,BK):-
 	,format('Unit clauses:	  ~w~n',[U])
 	,nl
 	,print_confusion_matrix(Rs,Pos,Neg).
+
+
+
+%!	data_partitions(+Size,+Pos,+Neg,-Pos_Tr,-Neg_Tr,-Pos_Ts,-Neg_Ts)
+%!	is det.
+%
+%	Split data into training and testing partitions.
+%
+%	Helper to alow sampling Size to be given as a term S_Pos/S_Neg,
+%	without too much code duplication.
+%
+%	Size is the sampling size given as an integer, or a float, or a
+%	pair S_Pos/S_Neg, of integers or floats (or a mix thereof,
+%	currently).
+%
+%	Pos, Neg are the initial sets of positive and negative examples.
+%
+%	Pos_Tr, Neg_Tr are the training partitions of the positive and
+%	negative examples, respectively, sampled up to Size from Pos and
+%	Neg.
+%
+%	Pos_Ts and Neg_Ts are the testing partitions, containing the
+%	positive and negative examples, respectively, remaining after
+%	the selection of the positive partitions.
+%
+data_partitions(S,Pos,Neg,Pos_Train,Neg_Train,Pos_Test,Neg_Test):-
+	(   S = S_Pos/S_Neg
+	 ->  true
+	 ;   S = S_Pos
+	    ,S = S_Neg
+	 )
+	,train_test_splits(S_Pos,Pos,Pos_Train,Pos_Test)
+	,train_test_splits(S_Neg,Neg,Neg_Train,Neg_Test).
 
 
 %!	train_test_splits(+Size,+Examples,-Training,-Testing) is det.
