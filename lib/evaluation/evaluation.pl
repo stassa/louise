@@ -179,7 +179,6 @@ print_evaluation(T,S,Pos,Neg,BK,MS,Ps):-
 %
 print_evaluation(T,Ps,Pos,Neg,BK):-
 	program_results(T,Ps,BK,Rs)
-	,print_clauses(Ps)
 	,clause_count(Ps,N,D,U)
 	,nl
 	,format('Hypothesis size:  ~w~n',[N])
