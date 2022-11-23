@@ -5,6 +5,7 @@
                         ,generalise_learned_metarules/1
 			,learner/1
                         ,learning_predicate/1
+                        ,listing_limit/1
 			,max_invented/1
 			,metarule/2
 			,metarule_constraints/2
@@ -499,6 +500,18 @@ learner(louise).
 %learning_predicate(learn/1).
 %learning_predicate(learn_minimal/1).
 % etc.
+
+
+%!      listing_limit(?Limit) is semidet.
+%
+%       Limit the clauses printed when a MIL problem is listed.
+%
+%       Limit is a number, limiting the number of clauses of examples
+%       and BK that will be printed to the output when a MIL problem is
+%       listed. Affects list_mil_problem/1 and
+%       list_encapsulated_problem/1.
+%
+listing_limit(10).
 
 
 %!	max_invented(?Number) is semidet.
