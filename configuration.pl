@@ -5,6 +5,8 @@
                         ,generalise_learned_metarules/1
 			,learner/1
                         ,learning_predicate/1
+                        ,listing_limit/1
+                        ,max_error/2
 			,max_invented/1
 			,metarule/2
 			,metarule_constraints/2
@@ -169,6 +171,7 @@ comment).
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
 :- dynamic clause_limit/1
+          ,max_error/2
           ,max_invented/1
           ,minimal_program_size/2
 	  ,recursive_reduction/1
@@ -501,6 +504,18 @@ learner(louise).
 % etc.
 
 
+%!      listing_limit(?Limit) is semidet.
+%
+%       Limit the clauses printed when a MIL problem is listed.
+%
+%       Limit is a number, limiting the number of clauses of examples
+%       and BK that will be printed to the output when a MIL problem is
+%       listed. Affects list_mil_problem/1 and
+%       list_encapsulated_problem/1.
+%
+listing_limit(10).
+
+
 %!	max_invented(?Number) is semidet.
 %
 %	Maximum number of invented predicates.
@@ -508,6 +523,39 @@ learner(louise).
 %	Assumes clause_limit(K) where K > 1.
 %
 max_invented(0).
+
+
+%!      max_error(?Hypothesis,?Clause) is det.
+%
+%       Maximum error allowed for a Hypothesis and each Clause in it.
+%
+%       "Error" in this context means the number of negative examples
+%       entailed by a clause, or a Hypothesis, with respect to
+%       background knowledge. Errors of that type are more formally
+%       known as "inconsistencies" in ILP terminology.
+%
+%       Hypothesis takes precedence over Clause. What this means is that
+%       if Clause > Hypothesis, then the maximum number of negative
+%       examples a clause is allowed to entail, with respect to
+%       background knowledge, before it is discarded, is equal to
+%       Hypothesis, while the maximum number of negative examples
+%       entailed by a hypothesis remains equal to Hypothesis.
+%
+%       This option allows Louise to behave similar to Aleph, and
+%       similar systems, with the setting "error" set to something other
+%       than 0. Its purpose is to allow more natural results when
+%       learning from datasets designed for propositional learners.
+%
+%       @tbd This option affects specialise/3 but is currently taken
+%       into account only with clause_limit(K=1). If K > 1, this option
+%       has no effect. This makes sense because clause_limit(1) is
+%       sufficient for propositional-style learning problems, whereas
+%       clause_limit(K > 1) is for more relational-style problems where
+%       errors are much less tolerable and noise is not that common
+%       anyway. This may change in a future version if there is a need
+%       for it.
+%
+max_error(0,0).
 
 
 %!	metarule(?Id,?P,?Q) is semidet.

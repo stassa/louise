@@ -193,14 +193,32 @@ top_program(_Pos,_Neg,_BK,_MS,[]):-
 %	Generalises a set of Positive examples by finding each
 %	metasubstitution of a metarule that entails a positive example.
 %
-%	Generalised is a set of key-value pairs where the keys are
-%	ground metasubstitution atoms and the values are a copy with
-%	free variables of the encapsulated head and body literals of the
-%	metarule corresponding to the metasubsitution.
+%	Positive is a set of positive examples of a learning target.
+%
+%	Metarules is a set of expanded metarules.
+%
+%	The form of Generalised depends on the configuration option
+%	clause_limit/1.
+%
+%	If clause_limit(1) is set, Generalised is a set of key-value
+%	pairs where the keys are ground metasubstitution atoms and the
+%	values are a copy, with free variables, of the encapsulated head
+%	and body literals of the metarule corresponding to the
+%	metasubsitution.
+%
+%	If clause_limit(K) is set, and K > 1, Generalised is a list _of
+%	lists_ of key-value pairs of ground metasubstitution atoms and
+%	their corresponding metarules.
+%
+%	The key-value pairs of metarules returned by generalise/3 can be
+%	passed to applied_metarules/3 to apply the metasubstitutions to
+%	their metarules to obtain first-order clauses.
+%
+%	@tbd Give examples of the key-value-pairs of ground
+%	metasubstitutions and metarules returned by generalise/3.
 %
 generalise(Pos,MS,Ss_Pos):-
 % Hands proofs to the Prolog engine.
-% Runs faster and avoids manipulating the dynamic db.
 	configuration:clause_limit(1)
 	,!
 	,findall(Sub-M
@@ -214,8 +232,7 @@ generalise(Pos,MS,Ss_Pos):-
 	     ,Ps)
 	,sort(1,@<,Ps,Ss_Pos).
 generalise(Pos,MS,Ss_Pos):-
-% Hands proofs to the Prolog engine.
-% Runs faster and avoids manipulating the dynamic db.
+% Hands proofs to Vanilla inductive meta-interpreter.
 	configuration:clause_limit(K)
 	,findall(Subs
 		,(member(Ep,Pos)
@@ -239,22 +256,66 @@ generalise(Pos,MS,Ss_Pos):-
 %	examples against the Negative examples by discarding each
 %	metasubstitution that entails a negative example.
 %
+%	Generalised is a set of metasubstitutions that entail all
+%	positive examples with respect to BK, in the form returned by
+%	generalise/3.
+%
+%	Negatives is a set of negative examples.
+%
+%	Specialised is the set of metasubstitutions in Generalised that
+%	entail no negative examples, with respect to BK.
+%
+%	The configuration option max_error/2 can be set to allow
+%	Specialised to include clauses that entail one or more negative
+%	examples.
+%
 specialise(Ss_Pos,[],Ss_Pos):-
 	!.
 specialise(Ss_Pos,Neg,Ss_Neg):-
 	configuration:clause_limit(1)
+	,configuration:max_error(L_H,L_C)
+	,C_H = c(0)
+	,C_C = c(0)
 	,findall(H-M
 		,(member(H-M,Ss_Pos)
+		 ,nb_setarg(1,C_C,0)
+		 ,debug_clauses(metasubstitution,'Ground metasubstitution atom:',H)
 		 ,\+((member(En,Neg)
 		     ,debug_clauses(examples,'Negative example:',En)
-		     ,debug_clauses(metasubstitution,'Ground metasubstitution atom:',H)
 		     ,metasubstitution(En,M,H)
+		     ,(   error_exceeded(L_H,C_H,hypothesis)
+		      ;   error_exceeded(L_C,C_C,clause)
+		      )
+		     ,debug(errors,'Maximum Errors exceeded!',[])
 		     )
 		    )
 		 )
 		,Ss_Neg_)
 	,sort(Ss_Neg_,Ss_Neg).
 
+
+%!	error_exceeded(+Limit,+Errors) is det.
+%
+%	True when the count of Errors exceeds a Limit.
+%
+%	In the context of this predicate, an "error" is found when a
+%	metasubstitution entails a negative example, with respect to BK.
+%
+%	Limit is one of the two values of max_error/2, either the
+%	overall error allowed for the hypothesis as a whole, or the
+%	error of each single clause in the hypothesis.
+%
+%	Errors is a compound c(N) where N is the count of errors so-far
+%	for the kind of error associated with Limit (i.e. either errors
+%	of the hypothesis, or of one clause). N is destructively updated
+%	each time this predicate is reached.
+%
+error_exceeded(N,C,T):-
+	arg(1,C,I)
+	,succ(I,Ipp)
+	,nb_setarg(1,C,Ipp)
+	,debug(errors,'Max ~w errors: ~w Current errors: ~w',[T,N,Ipp])
+	,Ipp > N.
 
 
 %!	specialise(+Generalised,+Metarules,+Negatives,-Specialised) is

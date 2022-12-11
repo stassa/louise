@@ -915,19 +915,23 @@ print_or_debug(both,Str/Sub,C):-
 %	encapsulated MIL problem to be listed.
 %
 list_encapsulated_problem(T):-
-	experiment_data(T,Pos,Neg,BK,MS)
+	configuration:listing_limit(L)
+	,experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_clauses(Pos,Pos_)
 	,format_underlined('Positive examples')
-	,print_clauses(Pos_)
+	,print_limited(L,Pos_)
 	,nl
 	,encapsulated_clauses(Neg,Neg_)
 	,format_underlined('Negative examples')
-	,print_clauses(Neg_)
+	,print_limited(L,Neg_)
 	,nl
-	,encapsulated_bk(BK,T,BK_)
 	,format_underlined('Background knowledge')
-	,forall(member(P,BK_)
-	       ,print_clauses(P)
+	,forall(member(P,BK)
+	       ,(encapsulated_bk([P],T,Ps)
+		,format('~w:~n',[P])
+		,print_limited(L,Ps)
+		,nl
+		)
 	       )
 	,nl
 	,expanded_metarules(MS,MS_)
@@ -1055,17 +1059,18 @@ list_mil_problem_thelma(Ts):-
 %	Business end of list_mil_problem/1, list_mil_problem_thelma/1.
 %
 list_mil_problem(Pos,Neg,BK,MS):-
-	format_underlined('Positive examples')
-	,print_clauses(Pos)
+	configuration:listing_limit(L)
+	,format_underlined('Positive examples')
+	,print_limited(L,Pos)
 	,nl
 	,format_underlined('Negative examples')
-	,print_clauses(Neg)
+	,print_limited(L,Neg)
 	,nl
 	,format_underlined('Background knowledge')
 	,forall(member(P,BK)
 	       ,(program(P,experiment_file,Ps)
 		,format('~w:~n',[P])
-		,print_clauses(Ps)
+		,print_limited(L,Ps)
 		,format('~n',[])
 		)
 	       )
@@ -1093,6 +1098,28 @@ atom_underline(A,A_):-
 		,between(1,N,_)
 		,Ds)
 	,atomic_list_concat(Ds,A_).
+
+
+%!	print_limited(+Limit,+Clauses) is det.
+%
+%	Print a list of Clauses up to a Limit.
+%
+%	Helper for list_mil_problem/4 (and list_encapsulated_problem/4)
+%	to print clauses up to a limit, to avoid cluttering the screen
+%	with too much output, especially in the presence of large
+%	datasets with many examples and lots of extensional BK.
+%
+print_limited(L,Cs):-
+	length(Cs,N)
+	,G = member(C,Cs)
+	,forall(limit(L,G)
+	       ,print_clauses([C])
+	       )
+	,(   L < N
+	 ->  M is N - L
+	    ,format('% ... ~w more clauses.~n',[M])
+	 ;   true
+	 ).
 
 
 %!	print_constraints(+Metarules,+Constraints) is det.
