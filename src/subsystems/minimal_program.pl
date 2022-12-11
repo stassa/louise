@@ -100,15 +100,20 @@ minimal_program(_Pos,_Neg,_BK,_MS,_Ts):-
 	,throw('theorem_prover(tp) not working with minimal program learning').
 minimal_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
+	,configuration:max_error(L_H,L_C)
+	,C_H = c(0)
+	,C_C = c(0)
 	,S = write_problem(user,[BK,Pos],Refs)
-	,G = minimal_program_(Pos,Neg,MS,[],Ts)
+	,G = minimal_program_(Pos,Neg,MS,[L_H,L_C,C_H,C_C],[],Ts)
 	,C = erase_program_clauses(Refs)
 	,setup_call_cleanup(S,G,C).
 minimal_program(_Pos,_Neg,_BK,_MS,[]):-
 % If Top program construction fails return an empty program.
 	debug(minimal_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
-%!	minimal_program_(+Pos,+Neg,+Metarules,+Acc,-Program) is nondet.
+
+%!	minimal_program_(+Pos,+Neg,+Metarules,+Errors,+Acc,-Program) is
+%!	nondet.
 %
 %	Business end of minimal_program/5.
 %
@@ -150,7 +155,7 @@ minimal_program(_Pos,_Neg,_BK,_MS,[]):-
 %	hypotheses including sub-sets of the positive examples as
 %	"exceptions". More work needed.
 %
-minimal_program_([],_Neg,_MS,Acc,Cs):-
+minimal_program_([],_Neg,_MS,_Es,Acc,Cs):-
 % Sorting in descending order to move atomic residue to the top of the
 % program. Other clauses will generally not be sorted, e.g.
 % alphabetically- at least not unless they are fully ground. That's
@@ -162,23 +167,23 @@ minimal_program_([],_Neg,_MS,Acc,Cs):-
 	!
        ,minimal_program_constraints(Acc)
        ,sort(0,@>,Acc,Cs).
-minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
+minimal_program_([E|Pos],Neg,MS,[L_H,L_C,C_H,C_C],Acc,Bind):-
 	generalise_minimal(E,MS,M,Sub)
 	,constraints(Sub)
-	,specialise_minimal(Neg,M,Sub)
+	,specialise_minimal(Neg,M,[L_H,L_C,C_H,C_C],Sub)
 	,metarule_application(Sub,M,C)
 	,\+ tautology(C)
 	,reduced_examples(Pos,C,Pos_)
-	,minimal_program_(Pos_,Neg,MS,[C|Acc],Bind).
+	,minimal_program_(Pos_,Neg,MS,[L_H,L_C,C_H,C_C],[C|Acc],Bind).
 /*minimal_program_([_E|Pos],Neg,MS,Acc,Bind):-
 % Causes multiple backtrackings over the same clauses.
 % Probably backtracking over generalise_minimal/4 after
 % bouncing off minimal_program_constraints/1.
 	minimal_program_(Pos,Neg,MS,Acc,Bind).
 */
-minimal_program_([E|Pos],Neg,MS,Acc,Bind):-
+minimal_program_([E|Pos],Neg,MS,[L_H,L_C,C_H,C_C],Acc,Bind):-
 % If E cannot be generalised, add it to the program as an "exception".
-	minimal_program_(Pos,Neg,MS,[E|Acc],Bind).
+	minimal_program_(Pos,Neg,MS,[L_H,L_C,C_H,C_C],[E|Acc],Bind).
 
 
 %!	generalise_minimal(+Example,+Metarules,-Metarule,-Metasubstitution)
@@ -207,7 +212,8 @@ generalise_minimal(Ep,MS,M,Sub):-
 	,metasubstitution(Ep,M_,Sub).
 
 
-%!	specialise_minimal(+Neg,+Metarule,+Metasubstitution) is nondet.
+%!	specialise_minimal(+Neg,+Metarule,+Errors,+Metasubstitution) is
+%!	nondet.
 %
 %	Specialisation step of minimal Top program construction.
 %
@@ -219,10 +225,15 @@ generalise_minimal(Ep,MS,M,Sub):-
 %	@tbd Is Metarule really necessary to be passed here? I'm not
 %	sure.
 %
-specialise_minimal(Neg,M,Sub):-
-	copy_term(M,M_)
+specialise_minimal(Neg,M,[L_H,L_C,C_H,C_C],Sub):-
+	nb_setarg(1,C_C,0)
+	,copy_term(M,M_)
 	,\+((member(:-En,Neg)
 	    ,metasubstitution(En,M_,Sub)
+	    ,(   louise:error_exceeded(L_H,C_H,hypothesis)
+	     ;   louise:error_exceeded(L_C,C_C,clause)
+	     )
+	    ,debug(errors,'Maximum Errors exceeded!',[])
 	    )).
 
 
