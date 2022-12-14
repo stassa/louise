@@ -8,6 +8,8 @@
                    ,peano/2
                    ]).
 
+:-use_module(configuration).
+
 /** <module> Learning the Ackermann function with Top Program Construction.
 
 This example shows how to learn the Ackermann function, or rather its
