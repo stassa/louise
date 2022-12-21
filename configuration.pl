@@ -39,99 +39,30 @@
 Predicates in this module represent configuration options for Louise,
 its auxiliaries, sub-systems and libraries.
 
-__Editable options__
+Brief description of configurable options
+-----------------------------------------
 
-In general, only configuration options defined as definite clauses
-should be changed by the user. Directives (definite goals of the form
-':-Goal') setup the environment required by Louise and its sub-systems
-and should be left well enough alone. The only exception to this rule is
-the :-debug(Subject) options that enable and disable logging.
-
-__Setting configuration options__
-
-Modules that require configuration options generally read them by
-addressing the configuration option directly through its module
-identifier, for example "configuration:clause_limit(K)" etc.
-
-When a configuration option in this file is changed, the file must be
-reloaded. The simplest way to do this is to call SWI-Prolog's make/0
-predicate. Like this:
-
-==
-?- make.
-% c:/users/.../louise/configuration compiled into configuration 0.03 sec, 0 clauses
-true.
-==
-
-__Known errors__
-
-Sometimes, editing an experiment file, then editing this configuration
-file and then reloading the project with make/0 can cause SWI-Prolog to
-throw up a bunch of permission errors. In that case, the safest bet is
-to kill the SWI-Prolog session and start a new one. Sorry, not much I
-can do about that.
-
-__Foreign configuration options__
-
-This configuration file re-exports a number of configuration modules
-from the various libraries under louise/lib. Thse can be seen in the
-reexport/1 and reexport/2 directives at the start of this file (above
-the module structured comment). Those "foreign" configuration options
-must be set by editing their corresponding module files (in the lib/
-subdirectory where that library resides). However, some foreign
-configuration options that are very frequently used are excepted from
-re-exporting and are instead defined here, to avoid having to edit
-multiple configuration files all the time. You can see those options by
-eyballing the reexport/2 directives (they're the ones in the "except"
-term).
-
-__Dynamic options__
-
-Some configuration options defined in this file are declard dynamic.
-These can in general be set without editing the configuration file, with
-a call to set_configuration_option/2. Unfortunately, that predicate can
-often leave behind garbage in the form of duplicate options (with
-different values). Often this manifests as nondeterminism in normally
-deterministic learning predicates (such as learn/1). In that case, the
-user may have to inspect the current values of configuration options
-loaded in memory with list_config/0 and then retract/1 duplicate options
-by hand. This is a, well, sort of temporary, solution and a better one
-will be implemented at some point. The dynamic database is evil.
-
-__Multifile options__
-
-A couple of configuration options defined in this module file,
-particularly metarule/2 and metarule_constraints/2 are declared
-multifile so that they can be included in experiment files to keep a
-permanent record of those important MIL problem elements. These options
-can also be set in the configuration, for example the user doesn't have
-to copy metarule/2 clauses in their experiment files everytime and can
-instead refer to the ones defined in this module file directly. See the
-various example experiment files under louise/data/examples for examples
-of setting those configuration options in an experiment file.
-
-__Brief description of configurable options___
-
-The following is a quick list of configuration options that the user can
-and should edit in place in this file (or set by
-set_configuration_option/2) along with a quick description of their use.
+The following is a quick list of configuration options, along with a
+quick description of their use.
 
 * :-debug(Subject): enable/disable logging for Subject.
-* clause_limit/1: number of clauses learned from each example.
+* clause_limit/1: maximum number of clauses learned from one example.
 * example_clauses/1: how to treat examples with bodies.
 * experiment_file/2: path to the current experiment file.
-* fold_recursive/1: fold overspecial programs to introduce recursion?
-* generalise_learned_metarules/1: generalise TOIL-learned metarules?
+* fold_recursive/1: fold overspecial programs to introduce recursion.
+* generalise_learned_metarules/1: generalise TOIL-learned metarules.
 * learner/1: name of the current learning system (louise).
 * learning_predicate/1: current learning predicate.
+* listing_limit/1: maximum lines printed when listing a MIL problem.
+* max_error/2: how many negative examples a hypothesis can "cover".
 * max_invented/1: maximum number of invented predicates.
 * metarule/2: metarules known to the system.
 * metarule_constraints/2: metasubstitution constraints for Louise.
 * metarule_learning_limits/1: control over-generation in TOIL.
 * metarule_formatting/1: how to pretty-print metarules.
 * minimal_program_size/2: lower limit for learn_miminal/[1,2,5]
-* recursive_reduction/1: recursively apply Plotkin's reduction?
-* reduce_learned_metarules/1: apply Plotkin's reduction to TOIL output?
+* recursive_reduction/1: recursively apply Plotkin's reduction.
+* reduce_learned_metarules/1: apply Plotkin's reduction to TOIL output.
 * reduction/1: how to reduce the Top Program.
 * resolutions/1: depth of resolution in Plotkin's reduction.
 * symbol_range/2: used to pretty-print metarule variables.
@@ -139,7 +70,8 @@ set_configuration_option/2) along with a quick description of their use.
 * theorem_prover/1: resolution or TP operator (doesn't work).
 * unfold_invented/1: unfold to remove invented predicates?
 
-__Navigating the configuration file__
+Navigating the configuration file
+---------------------------------
 
 The quickest way to navigate to a configuration option is as follows.
 
@@ -165,6 +97,104 @@ that you jump straight to the definition of the option, or at least the
 start of its structured comment (or precede the search with the
 start-of-line character, e.g. "/^reduction(" to avoid the structured
 comment).
+
+Editable options
+----------------
+
+In general, only configuration options defined as definite clauses
+should be changed by the user. Directives (Horn goals of the form
+':-Goal') setup the environment required by Louise and its sub-systems
+and should be left well enough alone. The only exception to this rule is
+the :-debug(Subject) options that enable and disable logging.
+
+Setting configuration options
+-----------------------------
+
+When a configuration option in this file is changed, the file must be
+reloaded. The simplest way to do this is to call SWI-Prolog's make/0
+predicate. Like this:
+
+==
+?- make.
+% c:/users/.../louise/configuration compiled into configuration 0.03 sec, 0 clauses
+true.
+==
+
+Note that make/0 only rebuilds the Prolog project. It is _not_ the same
+as the unix program "make".
+
+Known errors
+------------
+
+Sometimes, editing an experiment file, then editing this configuration
+file and then reloading the project with make/0 can cause SWI-Prolog to
+throw up a bunch of permission errors. In that case, the safest bet is
+to kill the SWI-Prolog session and start a new one. Sorry, not much I
+can do about that.
+
+Accessing configuration options
+-------------------------------
+
+Modules that require configuration options generally query them by
+addressing the configuration option directly through its module
+identifier, for example "configuration:clause_limit(K)" etc.
+
+Foreign configuration options
+-----------------------------
+
+This configuration file re-exports a number of configuration modules
+from the various libraries under louise/lib. Thse can be seen in the
+reexport/1 and reexport/2 directives at the start of this file (above
+the module structured comment). Those "foreign" configuration options
+must be set by editing their corresponding module files (in the lib/
+subdirectory where that library resides).
+
+However, some foreign configuration options that are very frequently
+used are excepted from re-exporting and are instead re-defined here, to
+avoid having to edit multiple configuration files all the time. You can
+see those options by eyballing the reexport/2 directives: they're the
+ones in the "except" term as resolutions/1 in the example below:
+
+==
+:-reexport(lib(program_reduction/reduction_configuration),
+	   except([resolutions/1])).
+==
+
+Dynamic options
+---------------
+
+Some configuration options defined in this file are declard dynamic.
+These can in general be set without editing the configuration file, with
+a call to set_configuration_option/2, as shown in the example below:
+
+==
+:- auxiliaries:set_configuration_option(max_invented, [3]).
+==
+
+Unfortunately, set_configuration_option/2 can often leave behind garbage
+in the form of duplicate options (i.e. multiple clauses of the same
+option predicate, each with different values). Often this manifests as
+nondeterminism in normally deterministic learning predicates (such as
+learn/1).
+
+In that case, the user may have to inspect the current values of
+configuration options loaded in memory with list_config/0 and then
+retract/1 duplicate options by hand. This is a, well, sort of temporary,
+solution and a better one will be implemented at some point. The dynamic
+database is evil.
+
+Multifile options
+-----------------
+
+A couple of configuration options defined in this module file,
+particularly metarule/2 and metarule_constraints/2 are declared
+multifile so that they can be included in experiment files to keep a
+permanent record of those important MIL problem elements. These options
+can also be set in the configuration, for example the user doesn't have
+to copy metarule/2 clauses in their experiment files everytime and can
+instead refer to the ones defined in this module file directly. See the
+various example experiment files under louise/data/examples for examples
+of setting those configuration options in an experiment file.
 
 */
 
@@ -330,10 +360,10 @@ comment).
 %       on a "vanilla" Prolog meta-interpreter, hence it's named
 %       "Vanilla".
 %
-%       Vanilla is enabled only when K in clause_limit(K) is more than
-%       1. If clause_limit(1) is set, the proof is handed off to Prolog.
-%       See the source code in louise.pl and comments in learn/5 and
-%       friends for more details.
+%       Vanilla is enabled only when K in clause_limit(K) is set to
+%       a vlaue higher than 1. If clause_limit(1) is set, the proof is
+%       handed off to Prolog. See the source code in louise.pl and
+%       comments in learn/5 and friends for more details.
 %
 clause_limit(1).
 
