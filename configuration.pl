@@ -235,135 +235,72 @@ of setting those configuration options in an experiment file.
 %:-debug(evaluation).
 
 
-%!      clause_limit(+Clauses) is semidet.
+%!      clause_limit(?Limit) is semidet.
 %
-%       How many Clauses to learn from each single positive example.
+%       Limit the number of clauses learned from one example at a time.
 %
-%       __Choosing a sensible clause limit__
+%       Limit should be a positive integer, or the atom 'inf'
+%       representing positive infinity if a limit is not required.
 %
-%       Louise learns by inductively proving a set of clauses that
-%       deductively prove a positive example. Multiple such sets can be
-%       learned on backtracking from each example. This option limits
-%       the number of clauses learned from each example at a time.
+%       __What is this clause limit__
 %
-%       * clause_limit(1).
+%       Informally, Limit is the maximum number of clauses that will be
+%       learned from each positive example "in one step" of learning.
 %
-%       Choose this setting if you don't need recursion or predicate
-%       invention.
+%       Louise learns by an SLD-refutation proof of positive examples
+%       with first-order background knowledge and second-order
+%       metarules. Accordingly, a more formal definition of Limit is
+%       that it is the maximum cardinality of the set of clauses in one
+%       refutation sequence of any one positive example.
 %
-%       If clause_limit(1) is set, Louise can only learn a single clause
-%       from each positive example at a time. Multiple clauses can be
-%       learned on backtracking, but none is allowed to resolve with
-%       other clauses (or itself) learned during the inductive proof.
+%       Note that the same clause can appear multiple times in a single
+%       refutation sequence. This is the case, e.g., when a clause is
+%       "called" recursively.
 %
-%       What this means in practice is that with clause_limit(1) Louise
-%       will learn hypotheses without recursion, or with recursion
-%       limited to resolution with the positive examples (Louise adds
-%       the positive examples to the Background Knowledge exactly to
-%       allow this limited form of recursion to be learned).
+%       Limit is _not_ the maximum number of clauses in _hypotheses_.
+%       Louise learns a hypothesis for a set of examples by "stitching
+%       together" all "sub-hypotheses" learned from each example. It's
+%       the size of these sub-hypotheses that is restricted by Limit.
 %
-%       * clause_limit(K) where K > 1
+%       Limit is also _not_ a limit on the resolution steps, or
+%       recursion depth, of an SLD-refutation of an example.
 %
-%       Choose this setting if you need recursion or predicate
-%       invention.
+%       Louise does not impose any limitation on the size of hypotheses,
+%       or the depth of resolution and recursion.
 %
-%       If clause_limit(K) is set and K is more than one, Louise can
-%       learn up to K clauses from each positive example at a time, and
-%       those clauses are allowed to resolve with each other during the
-%       inductive proof.
+%       __Choosing an appropriate clause limit__
 %
-%       What this means in practice is that with clause_limits(K) where
-%       K is more than 1, Louise can learn hypotheses with multiple
-%       clauses "calling" each other. These may be either recursive
-%       clauses or clauses with invented predicate symbols in their head
-%       or body.
+%       In general, with a clause limit of "1", Louise can only learn a
+%       limited form of recursion where recursive clauses can only be
+%       learned if they resolve with a positive example.
 %
-%       * Predicate invention
+%       With a clause limit of "1" Louise cannot do predicate invention.
+%       Invented predicates' clauses must resolve with at least one
+%       clause of a target predicate in the learned program, so a clause
+%       limit of 2 or more is necessary.
+%
+%       * clause_limit(1) Set this option if you don't need recursion
+%       and predicate invention. Louise can still learn some recursive
+%       clauses this way.
+%
+%       * clause_limit(K) (where K > 1). Set this option if you want
+%       Louise to learn recursion or perform predicate invention.
 %
 %       Note that if predicate invention is required, the option
 %       max_invented/1 must also be set separately to an appropriate
 %       value (representing the number of predicate symbols that Louise
 %       will try to define).
 %
-%       __Motivation__
+%       Be advised that for most problems, if clause_limit/1 is set to a
+%       number higher than 1, you also will need to provide appropriate
+%       constraints to avoid Louise trying to prove all possible
+%       recursive theories, and likely blowing up your RAM in the
+%       process.
 %
-%       Briefly, the purpose of this configuration option is to limit
-%       the number of times a metarule can be resolved with. There is
-%       currently no known way to limit this number, so imposing a
-%       manual limit, by means of this configuration option, is a
-%       half-measure that will have to do until a principled solution is
-%       found.
+%       __Usage__
 %
-%       More analytically, Louise's Top Program Construction algorithm
-%       learns by proving an example by SLD-Refutation against the
-%       Background Knowledge (BK). In Meta-Interpetive Learning, the BK
-%       is a higher-order logic program that includes not only
-%       first-order definite clauses, but also second-order definite
-%       clauses, the metarules. This resolution proof is carried out by
-%       a Prolog meta-interpreter modified to resolve first-order goals
-%       and definite clauses with each other and with second-order
-%       metarules.
-%
-%       Metarules are definite clauses with variables in the place of
-%       predicate symbols (that's what makes them second-order) so
-%       resolution between two metarules with literals of the same arity
-%       is always possible (a special case of this is resolution of a
-%       metarule with itself). One effect of this is that performing
-%       SLD-resolution with metarules can "go infinite".
-%
-%       ==
-%       % A Metarule can always resolve with itself
-%       % For example, in the Identity metarule below, P(X,Y) unifies
-%       % with Q(X,Y), yielding a new goal, :-Q(X,Y) that unifies with
-%       % P(X,Y) yielding a new goal :-Q(X,Y) ... and so on forever.
-%
-%       P(X,Y):- Q(X,Y).
-%       ==
-%
-%       In Louise's modified, inductive Prolog meta-interpreter when a
-%       branch of the SLD refutation proof fails, the meta-interpreter's
-%       execution backtrakcs to try another proof branch, which always
-%       succeeds as long as there is an appropriate metarule. In other
-%       words, at the point where a normal first-order SLD-Refutation
-%       proof would simply fail and return its result, the Top Program
-%       Construction meta-interpreter merrily carries on, not knowing
-%       that there is no end in sight, like a superintelligence asked to
-%       calculate all the decimal digits of Pi (why a superintelligence
-%       would not know that Pi has infinite decimal digits is a mystery
-%       that only the spirit of Marvin Minsky can explain).
-%
-%       There are a bunch of heuristics that can avoid this unstoppable
-%       resolution, but there is, as of yet, no know principled manner.
-%       The solution adopted by louise through this configuration option
-%       imposes a hard limit on the number of times resolution is
-%       allowed to succeed, which in turn limits the number of clauses
-%       that can be derived by proof of a single positive example.
-%
-%       Another way to see this is that clause_limit/1 limits the depth
-%       of a resolution proof branch. Since each node in a proof branch
-%       is one clause, the result of clause_limit(K) is that no more
-%       than K clauses can be induced from a single example at a time.
-%
-%       This in turn limits the number of instances of the metarules
-%       allowed to resolve with each other during the proof. Learning
-%       recursion and predicate invention cannot be learned unless
-%       clauses are derived that resolve with each other, thus settting
-%       clause_limit(1) stops both (although a limited form of recursion
-%       can still be learned with clause_limit(1) by resolution with the
-%       positive examples).
-%
-%       __Vanilla TPC meta-interpreter__
-%
-%       This configuration option is called by the predicate prove/5,
-%       Louise's implementation of a Meta-Interpretive Learning
-%       inductive meta-interpreter. Louise's meta-interpreter is based
-%       on a "vanilla" Prolog meta-interpreter, hence it's named
-%       "Vanilla".
-%
-%       Vanilla is enabled only when K in clause_limit(K) is set to
-%       a vlaue higher than 1. If clause_limit(1) is set, the proof is
-%       handed off to Prolog. See the source code in louise.pl and
-%       comments in learn/5 and friends for more details.
+%       This configuration option is used by prove/6, Louise's inductive
+%       Prolog meta-interpreter.
 %
 clause_limit(1).
 
