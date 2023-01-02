@@ -48,7 +48,7 @@ logic program that includes both first- and second-order clauses, the latter
 called _metarules_. MIL systems like Louise learn by specialising their
 metarules by SLD-resolution. Examples and background knowledge, including
 metarules, are provided by the user, but Louise can learn its own background
-knowledge, indlucing metarules.
+knowledge, including metarules.
 
 Louise is based on a new MIL algorithm, called _Top Program Construction_ (TPC),
 that runs in polynomial time. TPC avoids an expensive search of the program
