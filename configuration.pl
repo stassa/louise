@@ -545,6 +545,10 @@ learner(louise).
 %       listed. Affects list_mil_problem/1 and
 %       list_encapsulated_problem/1.
 %
+%       Limit should be a positive integer. It can also be the atom
+%       'inf' representing positive infinity. If Limit is 'inf', then no
+%       limit is imposed on the printed information.
+%
 listing_limit(10).
 
 
