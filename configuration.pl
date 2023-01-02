@@ -357,6 +357,7 @@ experiment_file('data/examples/hello_world.pl',hello_world).
 %experiment_file('data/examples/findlast.pl',findlast).
 %experiment_file('data/examples/ackermann.pl',ackermann).
 %experiment_file('data/examples/list_processing.pl',list_processing).
+%experiment_file('data/examples/even_odd.pl',even_odd).
 
 
 %!      fold_recursive(?Bool) is semidet.
