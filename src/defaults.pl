@@ -24,7 +24,7 @@ dynamic configuration options to the values specified in this file.
 %
 %       The default value is: [1]
 %
-default_clause_limit([1]).
+default_clause_limit([0]).
 
 
 %!      default_depth_limits(?Clauses,?Invented) is semidet.

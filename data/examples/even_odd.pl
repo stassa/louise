@@ -27,7 +27,7 @@ fold_recursive(false)
 generalise_learned_metarules(false)
 learner(louise)
 listing_limit(10)
-max_error(0,0)
+* max_error(0,0)
 * max_invented(1)
 metarule_formatting(quantified)
 metarule_learning_limits(none)
@@ -35,7 +35,7 @@ minimal_program_size(2,inf)
 recursive_reduction(false)
 reduce_learned_metarules(false)
 * reduction(plotkins)
-resolutions(5000)
+* resolutions(5000)
 theorem_prover(resolution)
 unfold_invented(false)
 true.
@@ -79,7 +79,8 @@ true.
 3. Make a learning query:
 
 ==
-?- learn(even/1).even(A):-zero(A).
+?- learn(even/1).
+even(A):-zero(A).
 '$1'(A):-prev(A,B),even(B).
 even(A):-prev(A,B),'$1'(B).
 true.

@@ -19,13 +19,15 @@ asterisk (*):
 
 ==
 ?- list_config.
-* clause_limit(1)
+* clause_limit(0)
 example_clauses(call)
 * experiment_file(data/examples/example_invention.pl,path)
 fold_recursive(false)
 generalise_learned_metarules(false)
 learner(louise)
 * learning_predicate(learn_with_examples_invention/2)
+listing_limit(10)
+* max_error(0,0)
 * max_invented(0)
 metarule_formatting(quantified)
 metarule_learning_limits(none)
@@ -453,8 +455,6 @@ configuration:metarule_constraints(M,fail):-
 
 % Tells list_learning_results/0 to use the right learning predicate.
 configuration:learning_predicate(learn_with_examples_invention/2).
-
-:-auxiliaries:set_configuration_option(clause_limit,[1]).
 
 background_knowledge(path/2, [edge/2,not_edge/2]).
 

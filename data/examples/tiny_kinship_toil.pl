@@ -24,24 +24,28 @@ This is a variant of tiny_kinship.pl where we learn family relationships
 (how quaint) by learning the necessary metarules (wait, wat?) with
 Louise's subsystem TOIL.
 
-1. Known good configuration:
+1. Known good configuration (salient options marked with an asterisk,
+"*"):
+
 ==
 ?- list_config.
-depth_limits(2,1)
+* clause_limit(0)
 example_clauses(call)
-experiment_file(data/examples/tiny_kinship_meta.pl,tiny_kinship_meta)
-generalise_learned_metarules(false)
-learned_metarules_printing(pretty)
+* experiment_file(data/examples/tiny_kinship_toil.pl,tiny_kinship_toil)
+fold_recursive(false)
+* generalise_learned_metarules(false)
 learner(louise)
-learning_predicate(learn_metarules/1)
-max_invented(1)
-metarule_learning_limits(none)
+* learning_predicate(learn_meta/1)
+listing_limit(10)
+* max_error(0,0)
+* max_invented(0)
+* metarule_formatting(quantified)
+* metarule_learning_limits(none)
 minimal_program_size(2,inf)
-recursion_depth_limit(dynamic_learning,none)
 recursive_reduction(false)
-reduce_learned_metarules(false)
-reduction(plotkins)
-resolutions(5000)
+* reduce_learned_metarules(false)
+* reduction(plotkins)
+* resolutions(5000)
 theorem_prover(resolution)
 unfold_invented(false)
 true.
@@ -51,8 +55,8 @@ Notice in particular the metarule-learning specific configuration
 options:
 ==
 generalise_learned_metarules(false)
-learned_metarules_printing(pretty)
-learning_predicate(learn_metarules/1)
+learning_predicate(learn_meta/1)
+metarule_formatting(quantified)
 metarule_learning_limits(none)
 reduce_learned_metarules(false)
 ==

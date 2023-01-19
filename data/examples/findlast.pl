@@ -33,8 +33,8 @@ Moreover, because MIL systems learn by SLD-resolution, given inductively
 sufficient background knowledge and metarules, a MIL system can always
 learn a set of clauses that entail a single example. An informal
 explanation of this ability is that resolution does not need more than a
-single query goal (a single, negative literal) to complete a proof. In
-MIL, query goals are given as positive or negative examples, so a single
+single goal atom (a single, negative literal) to complete a proof. In
+MIL, goals are given as positive or negative examples, so a single
 example is always enough to complete a proof. Whether the proof is
 recursive or not makes no difference.
 
@@ -53,6 +53,8 @@ example_clauses(call)
 fold_recursive(false)
 generalise_learned_metarules(false)
 learner(louise)
+listing_limit(10)
+* max_error(0,0)
 * max_invented(0)
 metarule_formatting(quantified)
 metarule_learning_limits(none)
