@@ -49,9 +49,9 @@ default_max_error([0,0]).
 %
 %	Default value for max_invented/1 option.
 %
-%	The default value is "1".
+%	The default value is "0".
 %
-default_max_invented(1).
+default_max_invented(0).
 
 
 %!      default_minimal_program_size(?Default) is semidet.
