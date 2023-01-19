@@ -1,5 +1,6 @@
 :-module(defaults, [default_clause_limit/1
                    ,default_depth_limits/1
+                   ,default_max_error/1
                    ,default_max_invented/1
                    ,default_minimal_program_size/1
 		   ,default_recursive_reduction/1
@@ -21,34 +22,43 @@ dynamic configuration options to the values specified in this file.
 %
 %       Default values for clause_limit/1 option.
 %
-%       The default value is [1]
+%       The default value is: [1]
 %
-default_clause_limit([1]).
+default_clause_limit([0]).
 
 
 %!      default_depth_limits(?Clauses,?Invented) is semidet.
 %
 %       Default values for depth_limits/2 option.
 %
-%       The default value is [2,1]
+%       The default value is: [2,1]
 %
 default_depth_limits([2,1]).
+
+
+%!	default_max_error(?Default) is semidet.
+%
+%	Default value for max_error/2 option.
+%
+%	The default value is: [0,0].
+%
+default_max_error([0,0]).
 
 
 %!	default_max_invented(?Default) is semidet.
 %
 %	Default value for max_invented/1 option.
 %
-%	The default value is "1".
+%	The default value is: 0.
 %
-default_max_invented(1).
+default_max_invented(0).
 
 
 %!      default_minimal_program_size(?Default) is semidet.
 %
 %       Default value for minimal_program_size/2.
 %
-%       The default value is [2,inf].
+%       The default value is: [2,inf].
 %
 default_minimal_program_size([2,inf]).
 
@@ -57,7 +67,7 @@ default_minimal_program_size([2,inf]).
 %
 %	Default value for recursive_reduction/1 option.
 %
-%	The default value is "false".
+%	The default value is: false.
 %
 default_recursive_reduction(false).
 
@@ -66,7 +76,7 @@ default_recursive_reduction(false).
 %
 %	Default value for reduction/1 option.
 %
-%	The default value is "plotkins".
+%	The default value is: plotkins.
 %
 default_reduction(plotkins).
 
@@ -75,7 +85,7 @@ default_reduction(plotkins).
 %
 %	Default value for resolutions/1 option.
 %
-%	The default value is "5000".
+%	The default value is: 5000.
 %
 default_resolutions(5000).
 
@@ -84,7 +94,7 @@ default_resolutions(5000).
 %
 %	Default value for theorem_prover/1 option.
 %
-%	The default value is "resolution".
+%	The default value is: resolution.
 %
 default_theorem_prover(resolution).
 
@@ -93,6 +103,6 @@ default_theorem_prover(resolution).
 %
 %       Default value for unfold_invented/1 option.
 %
-%       The default value is "false".
+%       The default value is: false.
 %
 default_unfold_invented(false).

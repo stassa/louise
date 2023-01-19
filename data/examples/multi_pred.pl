@@ -36,12 +36,14 @@ asterisk (*):
 
 ==
 ?- list_config.
-* clause_limit(1)
+* clause_limit(0)
 example_clauses(call)
 * experiment_file(data/examples/multi_pred.pl,multi_pred)
 fold_recursive(false)
 generalise_learned_metarules(false)
 learner(louise)
+listing_limit(10)
+* max_error(0,0)
 * max_invented(0)
 metarule_formatting(quantified)
 metarule_learning_limits(none)
@@ -56,10 +58,45 @@ true.
 ==
 
 
-2. This experiment file defines the elements of the MIL problems for two
-learning targets, even/1 and odd/1. Louise can learn mutually recursive
-definitions of the two target predicates simultaneously i.e. it can
-perform multi-predicate learning. This is shown below:
+2. List the elements of the MIL problem.
+
+This experiment file defines the elements of the MIL problems for two
+learning targets, even/1 and odd/1. If we list the elements of the MIL
+problem with list_mil_problem/1, we'll see that examples include atoms
+of both target predicates:
+
+==
+?- list_mil_problem([even/1,odd/1]).
+Positive examples
+-----------------
+even(0).
+even(s(s(0))).
+odd(s(0)).
+odd(s(s(s(0)))).
+
+Negative examples
+-----------------
+:-even(s(0)).
+:-even(s(s(s(0)))).
+:-odd(0).
+:-odd(s(s(0))).
+
+Background knowledge
+--------------------
+pred/2:
+pred(s(0),0).
+pred(s(A),s(B)):-pred(A,B).
+
+Metarules
+---------
+(Postcon-unit) ∃.P,Q,R ∀.x,y: P(x)← Q(x,y),R(y)
+(Abduce-unit) ∃.P,X: P(X)←
+==
+
+
+3. Louise can learn mutually recursive definitions of the two target
+predicates simultaneously i.e. it can perform multi-predicate learning.
+This is shown below:
 
 ==
 ?- learn([even/1,odd/1]).
@@ -200,9 +237,6 @@ the learned program.
 
 */
 
-:-auxiliaries:set_configuration_option(max_invented, [2]).
-:-auxiliaries:set_configuration_option(clause_limit, [3]).
-
 configuration:postcon_unit metarule 'P(x):- Q(x,y), R(y)'.
 configuration:abduce_unit metarule 'P(X)'.
 
@@ -216,17 +250,13 @@ metarules(odd/1,[postcon_unit,abduce_unit]).
 
 positive_example(even/1,even(X)):-
         member(X,[0,s(s(0))]).
-        %member(X,[s(s(0))]).
 positive_example(odd/1,odd(X)):-
         member(X,[s(0),s(s(s(0)))]).
-        %member(X,[s(s(s(s(s(0)))))]).
 
 negative_example(even/1,even(X)):-
         member(X,[s(0),s(s(s(0)))]).
-        %member(X,[s(s(s(s(s(0)))))]).
 negative_example(odd/1,odd(X)):-
         member(X,[0,s(s(0))]).
-        %member(X,[s(s(0))]).
 
 
 %!      pred(?N,?M) is nondet.

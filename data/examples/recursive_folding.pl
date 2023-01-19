@@ -14,12 +14,14 @@
 1. Known good configuration:
 ==
 ?- list_config.
-* clause_limit(1)
+* clause_limit(0)
 example_clauses(call)
 * experiment_file(data/examples/recursive_folding.pl,recursive_folding)
 * fold_recursive(false)
 generalise_learned_metarules(false)
 learner(louise)
+listing_limit(10)
+* max_error(0,0)
 * max_invented(0)
 metarule_formatting(quantified)
 metarule_learning_limits(none)

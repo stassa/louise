@@ -125,7 +125,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 % Uses the Prolog engine and avoids using the dynamic db too much.
 	configuration:theorem_prover(resolution)
 	% Adds positive examples to BK to learn limited recursion.
-	,configuration:clause_limit(1)
+	,configuration:clause_limit(0)
 	,S = write_problem(user,[Pos,BK],Refs)
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise(Pos,MS,Ss_Gen)
@@ -144,7 +144,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 % Uses the Prolog engine and avoids using the dynamic db too much.
 	configuration:theorem_prover(resolution)
 	,configuration:clause_limit(K)
-	,K > 1
+	,K > 0
 	,S = (write_problem(user,[BK],Refs)
 	     ,table(prove/6)
 	     )
@@ -200,13 +200,13 @@ top_program(_Pos,_Neg,_BK,_MS,[]):-
 %	The form of Generalised depends on the configuration option
 %	clause_limit/1.
 %
-%	If clause_limit(1) is set, Generalised is a set of key-value
+%	If clause_limit(0) is set, Generalised is a set of key-value
 %	pairs where the keys are ground metasubstitution atoms and the
 %	values are a copy, with free variables, of the encapsulated head
 %	and body literals of the metarule corresponding to the
 %	metasubsitution.
 %
-%	If clause_limit(K) is set, and K > 1, Generalised is a list _of
+%	If clause_limit(K) is set, and K > 0, Generalised is a list _of
 %	lists_ of key-value pairs of ground metasubstitution atoms and
 %	their corresponding metarules.
 %
@@ -219,7 +219,7 @@ top_program(_Pos,_Neg,_BK,_MS,[]):-
 %
 generalise(Pos,MS,Ss_Pos):-
 % Hands proofs to the Prolog engine.
-	configuration:clause_limit(1)
+	configuration:clause_limit(0)
 	,!
 	,findall(Sub-M
 	     ,(member(M,MS)
@@ -272,7 +272,7 @@ generalise(Pos,MS,Ss_Pos):-
 specialise(Ss_Pos,[],Ss_Pos):-
 	!.
 specialise(Ss_Pos,Neg,Ss_Neg):-
-	configuration:clause_limit(1)
+	configuration:clause_limit(0)
 	,configuration:max_error(L_H,L_C)
 	,C_H = c(0)
 	,C_C = c(0)
@@ -334,6 +334,7 @@ specialise(Ss_Pos,_MS,[],Ss_Pos):-
 	!.
 specialise(Ss_Pos,MS,Neg,Ss_Neg):-
 	configuration:clause_limit(K)
+	,K > 0
 	,findall(Subs
 	       ,(member(Subs,Ss_Pos)
 		,findall(Sub

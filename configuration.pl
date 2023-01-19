@@ -237,15 +237,16 @@ of setting those configuration options in an experiment file.
 
 %!      clause_limit(?Limit) is semidet.
 %
-%       Limit the number of clauses learned from one example at a time.
+%       Limit the number of resolving clauses learned from each example.
 %
-%       Limit should be a positive integer, or the atom 'inf'
+%       Limit should be a natural number, including 0, or the atom 'inf'
 %       representing positive infinity if a limit is not required.
 %
 %       __What is this clause limit__
 %
-%       Informally, Limit is the maximum number of clauses that will be
-%       learned from each positive example "in one step" of learning.
+%       Informally, Limit is the maximum number of clauses resolving
+%       with each other that will be learned from each positive example
+%       "in one step" of learning.
 %
 %       Louise learns by an SLD-refutation proof of positive examples
 %       with first-order background knowledge and second-order
@@ -253,9 +254,17 @@ of setting those configuration options in an experiment file.
 %       that it is the maximum cardinality of the set of clauses in one
 %       refutation sequence of any one positive example.
 %
+%       A single clause is always assumed as the first clause in a
+%       refutation sequence, therefore clause_limit(0) is a valid option
+%       that means a single clause is learned that does not resolve with
+%       any clauses in a hypothesis (including itself).
+%
 %       Note that the same clause can appear multiple times in a single
 %       refutation sequence. This is the case, e.g., when a clause is
-%       "called" recursively.
+%       "called" recursively. This includes a single, self-resolving
+%       clause.
+%
+%       __What the clause limit is not__
 %
 %       Limit is _not_ the maximum number of clauses in _hypotheses_.
 %       Louise learns a hypothesis for a set of examples by "stitching
@@ -270,39 +279,54 @@ of setting those configuration options in an experiment file.
 %
 %       __Choosing an appropriate clause limit__
 %
-%       In general, with a clause limit of "1", Louise can only learn a
-%       limited form of recursion where recursive clauses can only be
-%       learned if they resolve with a positive example.
+%       In general, you should set clause_limit/1 to one of the
+%       following settings:
 %
-%       With a clause limit of "1" Louise cannot do predicate invention.
-%       Invented predicates' clauses must resolve with at least one
-%       clause of a target predicate in the learned program, so a clause
-%       limit of 2 or more is necessary.
-%
-%       * clause_limit(1) Set this option if you don't need recursion
+%       * clause_limit(0): Set this option if you don't need recursion
 %       and predicate invention. Louise can still learn some recursive
 %       clauses this way.
 %
-%       * clause_limit(K) (where K > 1). Set this option if you want
-%       Louise to learn recursion or perform predicate invention.
+%       * clause_limit(1): Set this option if your target theory is a
+%       single, recursive clause resolving with itself any number of
+%       times.
+%
+%       * clause_limit(K): (where K > 1). Set this option if you want
+%       Louise to learn arbitrary recursion.
+%
+%       With a clause limit of "0", Louise can still learn a limited
+%       form of recursion where recursive clauses can only be learned if
+%       they resolve with a positive example.
+%
+%       With a clause limit of "0" or "1" Louise cannot do predicate
+%       invention. Invented predicates' clauses must resolve with at
+%       least one clause of a target predicate in the learned program,
+%       so a clause limit of 2 or more is necessary: that's one clause
+%       for the target predicate, one for the invented predicate.
 %
 %       Note that if predicate invention is required, the option
 %       max_invented/1 must also be set separately to an appropriate
 %       value (representing the number of predicate symbols that Louise
 %       will try to define).
 %
-%       Be advised that for most problems, if clause_limit/1 is set to a
-%       number higher than 1, you also will need to provide appropriate
-%       constraints to avoid Louise trying to prove all possible
-%       recursive theories, and likely blowing up your RAM in the
-%       process.
+%       Be advised that _for many problems_, if clause_limit/1 is set to
+%       a number higher than 1, you will also need to provide
+%       appropriate constraints to avoid Louise trying to prove all
+%       possible recursive theories, and likely blowing up your RAM in
+%       the process.
 %
 %       __Usage__
 %
 %       This configuration option is used by prove/6, Louise's inductive
 %       Prolog meta-interpreter.
 %
-clause_limit(1).
+%       __Examples__
+%
+%       See the example files hello_world.pl, yamamoto.pl, recipes.pl
+%       and ackermann.pl in data/examples for examples demonstrating the
+%       use of different settings of clause_limit/1 to learn recursion
+%       and predicate invention.
+%
+clause_limit(0).
 
 
 %!      example_clauses(?What) is semidet.
