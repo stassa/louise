@@ -1,5 +1,6 @@
 :-module(defaults, [default_clause_limit/1
                    ,default_depth_limits/1
+                   ,default_max_error/1
                    ,default_max_invented/1
                    ,default_minimal_program_size/1
 		   ,default_recursive_reduction/1
@@ -33,6 +34,15 @@ default_clause_limit([1]).
 %       The default value is [2,1]
 %
 default_depth_limits([2,1]).
+
+
+%!	default_max_error(?Default) is semidet.
+%
+%	Default value for max_error/2 option.
+%
+%	The default value is [0,0].
+%
+default_max_error([0,0]).
 
 
 %!	default_max_invented(?Default) is semidet.
