@@ -14,6 +14,7 @@
 :-use_module(src(mil_problem)).
 :-use_module(lib(tp/tp)).
 :-use_module(src(subhypothesis_selection)).
+:-use_module(lib(lifting/lifting)).
 
 /** <module> Meta-Interpretive Learning by Top program construction and reduction.
 
@@ -25,7 +26,7 @@
 %
 learn(Ts):-
 	learn(Ts,Ps)
-	,print_clauses(Ps).
+	,print_metarules(Ps).
 
 
 
@@ -65,24 +66,114 @@ learn(Pos,Neg,BK,MS,Ps):-
 	configuration:unfold_invented(U)
 	,configuration:fold_recursive(F)
 	,debug(learn,'Encapsulating problem...',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,encapsulated_problem(Pos,Neg,BK,[],[Pos_,Neg_,BK_,_])
+	,parsed_generalised_metarules(MS,MS_)
 	,debug(learn,'Constructing Top program...',[])
 	,top_program(Pos_,Neg_,BK_,MS_,Ms)
 	,debug(learn,'Reducing Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
-	,examples_targets(Pos,Ss)
-	,debug(learn,'Excapsulating hypothesis...',[])
-	,excapsulated_clauses(Ss,Rs,Ps_1)
 	,(   U ==  true
 	 ->  debug(learn,'Unfolding invented...',[])
-	    ,unfold_invented(Ps_1,Pos,BK,Ps_2)
-	 ;   Ps_2 = Ps_1
+	    ,unfold_invented(Rs,Pos,BK,Ps_2)
+	 ;   Ps_2 = Rs
 	 )
 	,(   F == true
 	 ->  debug(learn,'Folding to introduce recursion...',[])
 	    ,fold_recursive(Ps_2,Ps)
 	 ;   Ps = Ps_2
 	 ).
+
+
+%!	parsed_generalised_metarules(+Ids,-Metarules) is det.
+%
+%	Parse a list of metarules to all-existentially quantified.
+%
+%	Ids is a list of names of generalised metarules.
+%
+%	Metarules is a list of encapsulated metarules, as returned by
+%	expanded_metarules/2, but with all the variables in each literal
+%	of a metarule kept in the encapsulated metasubstitution atom of
+%	the encapsulated metarule. The purpose of this conversion is to
+%	make it easier to keep the substitutions of the universally
+%	quantified variables in a metarule. Remember that in prove/7, in
+%	louise.pl, we only keep the existentially quantified variables
+%	in metarules.
+%
+%	The following is an example of parsing generalised metarules.
+%	For clarity, metarules are shown both in expanded, and
+%	quantified format:
+%
+%	==
+%	?- metarule_formatting(F).
+%	F = expanded.
+%
+%	?- print_metarules([meta_dyadic])
+%	,toil_2:parsed_generalised_metarules([meta_dyadic], _MS)
+%	,print_metarules(_MS).
+%
+%	m(meta_dyadic,P,Q,R):-m(P,X,Y),m(Q,Z,U),m(R,V,W)
+%	m(meta_dyadic,P,Q,R,X,Y,Z,U,V,W):-m(P,X,Y),m(Q,Z,U),m(R,V,W)
+%	true.
+%
+%	?- metarule_formatting(F).
+%	F = quantified.
+%
+%	?- print_metarules([meta_dyadic])
+%	,toil_2:parsed_generalised_metarules([meta_dyadic], _MS)
+%	,print_metarules(_MS).
+%
+%	(Meta-dyadic) ∃.P,Q,R ∀.x,y,z,u,v,w: P(x,y)← Q(z,u),R(v,w)
+%	(Meta-dyadic) ∃.P,Q,R,X,Y,Z,U,V,W: P(X,Y)← Q(Z,U),R(V,W)
+%	true.
+%	==
+%
+%	In the example, note that the variables x,y,z,u,v,w which are
+%	universally quantified in the meta_dyadic metarule before
+%	parsing with parsed_generalised_metarules/2, are replaced with
+%	existentially quantified ones after parsing. During learning,
+%	substitutions of these variables are kept in the encapsulated
+%	metasubstitution atom shown in the expanded metarule format,
+%	i.e. the atom: m(meta_dyadic,P,Q,R,X,Y,Z,U,V,W).
+%
+parsed_generalised_metarules(Ids,MS):-
+	findall(M
+	       ,(member(Id,Ids)
+		,parsed_generalised_metarule(Id,M)
+		)
+	       ,MS).
+
+parsed_generalised_metarule(Id,M):-
+	(   \+ configuration:metarule(Id, _)
+	->  throw('Unknown metarule ID':Id)
+	;   configuration:metarule(Id, M_)
+	)
+	,parsed_generalised_metarule(Id,M_,M).
+
+%!	parsed_generalised_metarule(+Id,+Metarule,-Parsed) is det.
+%
+%	Business end of parsed_generalised_metarules/2.
+%
+parsed_generalised_metarule(Id,M,M1):-
+	atom_chars(M,Cs)
+	,metarules_parser:remove_whitespace(Cs,Cs_)
+	,once(phrase(metarules_parser:clause_(Ls),Cs_))
+	,metarules_parser:existential_vars(Ls,Es)
+	,metarules_parser:args_vars(Es,Es_)
+	,universal_vars(Ls,Us)
+	,metarules_parser:args_vars(Us,Us_)
+	,append(Es_,Us_,Vs)
+	,A =.. [m,Id|Vs]
+	,metarules_parser:literals_clause(Ls, M_)
+	,varnumbers(A:-M_, M1).
+
+
+%!	universal_vars(+Literals,-Universal) is det.
+%
+%	Collect universally quantified variables in a Literal.
+%
+universal_vars(Ls,Us):-
+	flatten(Ls,Ls_)
+	,metarules_parser:args_of_case(Ls_,lower,Us).
 
 
 
@@ -145,7 +236,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,configuration:clause_limit(K)
 	,K > 0
-	,S = (write_problem(user,[BK],Refs)
+	,S = (write_problem(user,[Pos,BK],Refs)
 	     ,table(prove/6)
 	     ,table(clause/7)
 	     )
@@ -156,7 +247,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
 	     ,flatten(Ss_Spec,Ss_Spec_f)
 	     ,sort(1,@<,Ss_Spec_f,Ss_Spec_s)
-	     ,applied_metarules(Ss_Spec_s,MS,Ts)
+	     ,transformed_metarules(Ss_Spec_s,MS,Ts)
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
 	,C = (erase_program_clauses(Refs)
@@ -730,6 +821,72 @@ metasub_metarule(Sub,MS,Sub_:-M):-
 	,length(As_,N)
 	,Sub_ =.. [m,Id|As_]
 	,free_member(Sub_:-M,MS).
+
+
+%!	transformed_metarules(+Subs,+Metarules,-Transformed) is det.
+%
+%	Transform a list of ground metasubstitutions to new metarules.
+%
+%	Subs is a list of ground metasubstitutions as returned by Top
+%	Program Construction, ulimately specialise/3. Each metarule in
+%	Subs is of the form: Sub-Metarule, where Sub is an encapsulated
+%	metasubstitution atom and Metarule is the tree of encapsulated
+%	head and body literals of the metarule. Sub is the
+%	metasubstitution atom resulting from parsing a metarule in
+%	Metarules (at the start of learning) with parsed_metarules/3, so
+%	it includes all the variables in the metarule's encapsulated
+%	literals as existentially quantified variables (technically).
+%	The purpose of the existential quantification is to keep the
+%	substitutions of all the variables so as to preserve the wiring
+%	of fully-ground clauses when variabilising ground Subs to new
+%	metarules. This will one day make perfect sense, I promise.
+%
+%	Metarules is the list of input metarules. These should be
+%	generalised second-order and third-order metarules, but could
+%	also be specialised second-order.
+%
+%	Transformed is a list of new specialised second-order metarules
+%	produced by generalising the ground metasubstitutions in Subs so
+%	that predicate symbols are replaced with existentially
+%	quantified second-order variables and ground first-order terms
+%	are replaced with universally quantified first-order variables.
+%
+transformed_metarules(Subs,_MS,Ts):-
+	C = c(1)
+	,findall(M_
+	       ,(member(Sub,Subs)
+		,apply_metasub(Sub,_S1:-M)
+		,Sub = SubAt-_Ls
+		,SubAt =.. [m,Id|_]
+		,expanded_metarules([Id],[S2:-M])
+		,arg(1,C,I)
+		,atomic_list_concat([Id,I],'_',Id_)
+		,succ(I,J)
+		,nb_setarg(1,C,J)
+		,S2 =.. [m,Id|As]
+		,S2_ =.. [m,Id_|As]
+		,lifted_program([(S2_:-M)],[Id_],[M_])
+		)
+	       ,Ts).
+
+
+%!	apply_metasub(+Sub,-Applied) is det.
+%
+%	Apply a metasubstitution atom to its corresponding metarule.
+%
+%	Variant of applied_metasubstitution that returns the
+%	metasubstitution atom in Sub together with the encapsulated
+%	literals of the metarule.
+%
+%	Sub is a key-value pair Sub_g-Metarule where Sub_g is a
+%	ground metasubstitution atom and Metarule is an expanded
+%	metarule of the form Sub_f:-(H,B) with all variables free.
+%	This predicate simply binds the two metasubstitution atoms and
+%	returns the whole Sub_g-Metarule pair.
+%
+apply_metasub(Sub-(Sub:-(H,B)), Sub:-(H,B)):-
+	!.
+apply_metasub(Sub-(Sub:-(L)), Sub:-L).
 
 
 
