@@ -246,8 +246,10 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,specialise(Ss_Gen,MS,Neg,Ss_Spec)
 	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
 	     ,flatten(Ss_Spec,Ss_Spec_f)
-	     ,sort(1,@<,Ss_Spec_f,Ss_Spec_s)
-	     ,transformed_metarules(Ss_Spec_s,MS,Ts)
+	     ,transformed_metarules(Ss_Spec_f,MS,Ts_)
+	     ,sorted_metarules(Ts_,Ts_s)
+	     ,filter_filter(Ts_s,Ts_f)
+	     ,renamed_metarules(Ts_f,Ts)
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
 	,C = (erase_program_clauses(Refs)
@@ -963,14 +965,12 @@ metasub_metarule(Sub,MS,Sub_:-M):-
 %	are replaced with universally quantified first-order variables.
 %
 transformed_metarules(Subs,_MS,Ts):-
-	C = c(1)
-	,findall(M_
+	findall(M_
 	       ,(member(Sub,Subs)
 		,apply_metasub(Sub,S1:-M)
 		,S1 =.. [m,Id|_]
 		,expanded_metarules([Id],[S2:-M])
-		,renamed_metasub(C,S2,Id,S2_,Id_)
-		,lifted_program([(S2_:-M)],[Id_],[M_])
+		,lifted_program([(S2:-M)],[Id],[M_])
 		)
 	       ,Ts).
 
@@ -994,16 +994,83 @@ apply_metasub(Sub-(Sub:-(H,B)), Sub:-(H,B)):-
 apply_metasub(Sub-(Sub:-(L)), Sub:-L).
 
 
-%!	renamed_metasub(+Counter,+Sub,+Id,-Renamed_Sub,-New_Id) is det.
+
+%!	sorted_metarules(+Metarules,-Sorted) is det.
+%
+%	Sort a list of Metarules.
+%
+%	Do you know how complicate this can get?
+%
+%	Metarules is a lsit of expanded metarules of the form Sub-Ls,
+%	where Sub is an encapsulated metasubstitution atom and Ls are
+%	the encapsulated head and body literals of the metarule.
+%
+%	Sorted... wait, I'll let you guess that one.
+%
+sorted_metarules(MS,MS_s):-
+	setof(M
+	     ,MS^(member(M,MS)
+		 ,numbervars(M)
+		 )
+	     ,Ss)
+	,maplist(varnumbers,Ss,MS_s).
+
+
+
+%!	filter_filter(+Metarules,-Filtered) is det.
+%
+%	Ad-hoc tautology filtering for Metarules.
+%
+filter_filter(MS,Fs):-
+	findall(Sub:-M
+	       ,(member(Sub:-M,MS)
+		,literals_clause(M,C)
+		,\+ tautology(C)
+		)
+	       ,Fs).
+
+literals_clause((H,B),H:-B):-
+	!.
+literals_clause((L),L).
+
+
+
+%!	renamed_metarules(+Metarules,-Renamed) is det.
+%
+%	Rename a list of Metarules.
+%
+%	Metarules are expanded metarules of the form Sub-Ls, where
+%	Sub is an encapsulated metasubstitution atom and Ls are the
+%	encapsulated head and body literals of the metarule.
+%
+%	Renamed is the list of metarules in Metarules with each
+%	metasubstitution atom's id replaced with a new atom, with the
+%	same name and a number equal to the index of the metarule in
+%	Metaruels. This ensures only that metarules are named apart but
+%	metarules with the same name (e.g. meta_dyadic) will not have a
+%	consistent numbering. That is, Renamed may include metarules
+%	with new ids such as meta_dyadic_1 and meta_monadic_2, just
+%	because one was after the other.
+%
+renamed_metarules(Subs,Rs):-
+	C = c(1)
+	,findall(Sub_:-Ls
+	       ,(member(Sub:-Ls,Subs)
+		,renamed_metasub(C,Sub,Sub_)
+		)
+	       ,Rs).
+
+
+%!	renamed_metasub(+Counter,+Sub,-Renamed_Sub) is det.
 %
 %	Rename a metasubstitution.
 %
-renamed_metasub(C,Sub,Id,Sub_,Id_):-
+renamed_metasub(C,Sub,Sub_):-
 	arg(1,C,I)
+	,Sub =.. [m,Id|As]
 	,atomic_list_concat([Id,I],'_',Id_)
 	,succ(I,J)
 	,nb_setarg(1,C,J)
-	,Sub =.. [m,Id|As]
 	,Sub_ =.. [m,Id_|As].
 
 
