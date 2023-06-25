@@ -618,8 +618,9 @@ signature(L,[T|Ss]):-
 %	general) to learn recursive programs and to perform predicate
 %	invention without the restrictions of earlier systems.
 %
-prove(true,_K,_MS,_Ss,Subs,Subs):-
+prove(true,_K,MS,_Ss,Subs,Subs):-
 	!
+	,connected_metasubs(Subs,MS)
 	,debug(prove,'Metasubs so-far: ~w',[Subs]).
 prove((L,Ls),K,MS,Ss,Subs,Acc):-
 	prove(L,K,MS,Ss,Subs,Subs_)
@@ -636,6 +637,116 @@ prove(L,_K,_MS,_Ss,Subs,_Acc):-
 	,debug(prove,'Metasubs so-far: ~w',[Subs])
 	,fail.
 %*/
+
+
+%!	connected_metasubs(+Metasubs,+Metarules) is det.
+%
+%	True if all ground Metasubs are fully-connected.
+%
+%	Implements a connectedness check heuristic: if a
+%	metasubstitution is fully-ground and one or more of its
+%	first-order terms appear exactly once, then transforming the
+%	metasubstitution to a metarule will leave it with free
+%	variables, i.e not fully-connected.
+%
+connected_metasubs(Subs,MS):-
+	forall(member(Sub,Subs)
+	      ,connected_metasub(Sub,MS)
+	      ).
+
+%!	connected_metasub(+Metasub,+Metarules) is det.
+%
+%	True if Metasub is fully connected or not ground.
+%
+connected_metasub(Sub,_MS):-
+	\+ ground(Sub)
+	,!.
+connected_metasub(Sub,MS):-
+	Sub =.. [m,Id|_]
+	% Fresh copy of original metarule:
+	,expanded_metarules([Id],[Sub_:-M])
+	% Es: Existentially quantified vars in original metarule
+	,Sub_ =.. [m,Id|Es]
+	,term_variables(M,Vs)
+	% Expand the input metasub
+	,metasub_metarule(Sub,MS,Sub_g:-M)
+	% Apply it - now M is all ground and so are Vs
+	,apply_metasub(Sub-(Sub_g:-M),_)
+	,counts(Vs,Cs)
+	,forall(member(C-I,Cs)
+	       ,\+ singleton(C-I,Es)
+	       ).
+
+
+%!	singleton(+Element,+Symbols) is det.
+%
+%	True when Element has a count of 1 and is not in Symbols.
+%
+%	Element is a key-value pair C-I, where C is a symbol or term in
+%	a ground metasub, and I is the number of occurrences of C in
+%	that metasub, as returned by counts/2.
+%
+%	Symbols is a list of the predicate symbols in the same metasub.
+%
+%	If the count-value in Element is 1 and Element is not a member
+%	of the list of Symbols in the ground metasubstitution, then it's
+%	a singleton: a first-order term that, once the metasubstitution
+%	is transformed into a metarule, will become a free variable,
+%	rendering the metarule not fully-connected.
+%
+singleton(_C-I,_Es):-
+	I > 1
+	,fail
+	,!.
+singleton(C-1,Es):-
+	\+ memberchk(C,Es).
+
+
+%!      counts(+Terms,-Counts) is det.
+%
+%       Count the occurrences of a list of Terms.
+%
+counts(Ts,Cs_):-
+        sort(0,@=<,Ts,Ts_)
+        ,counts_(Ts_,[],Cs_).
+
+%!      counts(+Terms,?Counts,+Acc,-Updated) is det.
+%
+%       Business end of counts/2.
+%
+%	@tbd Stupid use of selectchk/3. Terms is sorted by counts/3. We
+%	can forego the selectchk.
+%
+counts_([],Cs,Cs).
+counts_([T1|Ts],Acc,Bind):-
+% Variable - skip (and avoid binding).
+        var(T1)
+        ,!
+        ,counts_(Ts,Acc,Bind).
+counts_([T1|Ts],[],Bind):-
+% Empty counts- initialise.
+        ground(T1)
+        ,!
+        ,counts_(Ts,[T1-1],Bind).
+counts_([T|Ts],[T-C|Cs],Bind):-
+% Increment count of T.
+        ground(T)
+        ,!
+        ,succ(C,C_)
+        ,counts_(Ts,[T-C_|Cs],Bind).
+counts_([Ti|Ts],[Tk-C|Cs],Bind):-
+% Find current count of T and update.
+        ground(Ti)
+        ,Ti \== Tk
+        ,selectchk(Ti-Ci,Cs,Cs_)
+        ,!
+        ,succ(Ci,Ci_)
+        ,counts_(Ts,[Ti-Ci_,Tk-C|Cs_],Bind).
+counts_([Ti|Ts],[Tk-C|Cs],Bind):-
+% Start a count for new term.
+        ground(Ti)
+        ,Ti \== Tk
+        ,counts_(Ts,[Ti-1,Tk-C|Cs],Bind).
 
 
 %!	clause(?Literal,+K,+MS,+Sig,+Subs,-Subs_New,-Body) is nondet.
