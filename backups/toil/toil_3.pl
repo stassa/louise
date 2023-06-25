@@ -855,16 +855,10 @@ transformed_metarules(Subs,_MS,Ts):-
 	C = c(1)
 	,findall(M_
 	       ,(member(Sub,Subs)
-		,apply_metasub(Sub,_S1:-M)
-		,Sub = SubAt-_Ls
-		,SubAt =.. [m,Id|_]
+		,apply_metasub(Sub,S1:-M)
+		,S1 =.. [m,Id|_]
 		,expanded_metarules([Id],[S2:-M])
-		,arg(1,C,I)
-		,atomic_list_concat([Id,I],'_',Id_)
-		,succ(I,J)
-		,nb_setarg(1,C,J)
-		,S2 =.. [m,Id|As]
-		,S2_ =.. [m,Id_|As]
+		,renamed_metasub(C,S2,Id,S2_,Id_)
 		,lifted_program([(S2_:-M)],[Id_],[M_])
 		)
 	       ,Ts).
@@ -887,6 +881,19 @@ transformed_metarules(Subs,_MS,Ts):-
 apply_metasub(Sub-(Sub:-(H,B)), Sub:-(H,B)):-
 	!.
 apply_metasub(Sub-(Sub:-(L)), Sub:-L).
+
+
+%!	renamed_metasub(+Counter,+Sub,+Id,-Renamed_Sub,-New_Id) is det.
+%
+%	Rename a metasubstitution.
+%
+renamed_metasub(C,Sub,Id,Sub_,Id_):-
+	arg(1,C,I)
+	,atomic_list_concat([Id,I],'_',Id_)
+	,succ(I,J)
+	,nb_setarg(1,C,J)
+	,Sub =.. [m,Id|As]
+	,Sub_ =.. [m,Id_|As].
 
 
 
