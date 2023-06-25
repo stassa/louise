@@ -1,4 +1,4 @@
-:-module(toil_2, [learn_metarules/1
+:-module(toil_2, [%learn_metarules/1
 	         %,learn_metarules/2
 	         %,learn_metarules/5
 		 %,top_program/5
@@ -20,6 +20,11 @@ Currently a WIP. The goal is to allow TOIL to learn arbitrary recursion
 and perform predicate invention, like Louise, but in the second-order.
 
 */
+
+:-set_prolog_flag(occurs_check, true).
+:-current_prolog_flag(occurs_check, V)
+ ,format('Occurs check: ~w~n',[V]).
+
 
 %!	learn_metarules(+Targets) is det.
 %
@@ -282,6 +287,7 @@ generalise_meta(Pos,MS,Ss_Pos):-
 %
 %	@tbd Needs more second-order explanation.
 %
+%/*
 specialise_meta(Ss_Pos,_MS,[],Ss_Pos):-
 	!.
 specialise_meta(Ss_Pos,MS,Neg,Ss_Neg):-
@@ -302,6 +308,16 @@ specialise_meta(Ss_Pos,MS,Neg,Ss_Neg):-
 		   )
 		)
 	       ,Ss_Neg).
+%*/
+/*
+specialise_meta(Ss_Pos,MS,_Neg,Ss_Neg):-
+	findall(Subs_t
+	       ,(member(Subs_g,Ss_Pos)
+		,debug_clauses(specialise_meta,'Input metasubs:',[Subs_g])
+		,transform_metasubs(Subs_g,MS,Subs_t)
+		)
+	       ,Ss_Neg).
+*/
 
 
 
@@ -384,6 +400,89 @@ prove_generalised(L,_K,Cs,_MS,_Ss,Subs,_Acc):-
 	,fail.
 
 
+/*
+force_ground(L,_Cs):-
+	ground(L)
+	,!.
+force_ground(L,[Cs|_]):-
+	arg(I,L,A)
+	% Avoid predicate symbol
+	,I > 1
+	,member(A,Cs).
+*/
+/*
+force_ground(L,_Cs):-
+	ground(L)
+	,!.
+force_ground(L,[Cs|_]):-
+	arg(I,L,A)
+	% Avoid predicate symbol
+	,I > 1
+	,member(C,Cs)
+	,\+ memberchk(C,A)
+	,\+ memberchk(A,C)
+	,A = C.
+*/
+/*
+force_ground(L,_Cs):-
+	ground(L)
+	,!.
+force_ground(L,[Cs|_]):-
+	arg(I,L,A)
+	% Avoid predicate symbol
+	,I > 1
+	,member(C,Cs)
+	,unify_with_occurs_check(C,A).
+*/
+/*
+force_ground(L,_Cs):-
+	ground(L)
+	,!.
+force_ground(L,[Cs|_]):-
+	arg(I,L,A)
+	% Avoid predicate symbol
+	,I > 1
+	,free_member(C,Cs)
+%	,nonvar(C)
+	,unify_with_occurs_check(C,A).
+*/
+/*
+force_ground(L,_Cs):-
+	ground(L)
+	,!.
+force_ground(L,[Cs|_]):-
+	arg(I,L,A)
+	% Avoid predicate symbol
+	,I > 1
+	,member(A,Cs).
+*/
+/*
+force_ground(L,_Cs):-
+	ground(L)
+	,!.
+force_ground(L,[Cs|_]):-
+	arg(I,L,A)
+	% Avoid predicate symbol
+	,I > 1
+	,debug(force_ground,'Forcing term ~w in literal ~w:',[A,L])
+	,member(A,Cs)
+	,debug(force_ground,'Forced term to ~w:',[A]).
+*/
+force_ground(L,_Cs):-
+	ground(L)
+	,!.
+force_ground(L,[Cs|_]):-
+	arg(I,L,A)
+	% Avoid predicate symbol
+	,I > 1
+	,debug(force_ground,'Forcing term ~w in literal ~w:',[A,L])
+	,member(C,Cs)
+	,unify_with_occurs_check(C,A)
+	,debug(force_ground,'Forced term to ~w:',[A]).
+
+
+
+
 %!	connected_subs(+Buffer,+Subs) is det.
 %
 %	True when each ground metasub in Subs is fully-connected.
@@ -443,7 +542,6 @@ connected_literals(Cs,Sub):-
 	,forall(member(_C-N,Ns)
 	       ,N > 1)
 	,debug(connected_literals,'Buffer is fully-connected',[]).
-
 
 
 %!      counts(+Terms,?Counts,-Updated) is det.
@@ -545,6 +643,7 @@ clause(L,_K,Cs,_MS,_Ss,Subs,Cs,Subs,true):-
 	,debug(prove_BI,'Proving built-in literal: ~w', [L])
         ,call(L)
 	,debug(prove_BI,'Proved built-in clause: ~w', [L:-true]).
+/*
 clause(L,_K,Cs,_MS,_Ss,Subs,Cs,Subs,Ls):-
 	debug(which_clause,'Clause BK',[]),
 	\+ predicate_property(L,foreign)
@@ -552,6 +651,17 @@ clause(L,_K,Cs,_MS,_Ss,Subs,Cs,Subs,Ls):-
 	,debug(prove_BK,'Proving literal with BK: ~w', [L])
 	,debug(prove_BK,'Metasubs: ~w', [Subs])
         ,clause(L,Ls)
+	,debug(prove_BK,'Trying BK clause: ~w', [L:-Ls])
+	,debug(prove_BK,'Updated metasubs: ~w', [Subs]).
+*/
+clause(L,_K,Cs,_MS,_Ss,Subs,Cs,Subs,Ls):-
+	debug(which_clause,'Clause BK',[]),
+	\+ predicate_property(L,foreign)
+	,\+ built_in_or_library_predicate(L)
+	,debug(prove_BK,'Proving literal with BK: ~w', [L])
+	,debug(prove_BK,'Metasubs: ~w', [Subs])
+        ,clause(L,Ls)
+	,force_ground(L,Cs)
 	,debug(prove_BK,'Trying BK clause: ~w', [L:-Ls])
 	,debug(prove_BK,'Updated metasubs: ~w', [Subs]).
 clause(L,_K,Cs,MS,_Ss,Subs,Cs,Subs,Ls):-
@@ -573,7 +683,6 @@ clause(L,K,Cs,MS,Ss,Subs,[Fs|Cs],Subs_,Ls):-
         ,debug(buffer,'Updated substitution buffer: ~w',[Fs]).
 
 
-
 %!	first_order(+Head,+Body,-First_Order) is det.
 %
 %	Collect first-order terms in a clause.
@@ -592,13 +701,18 @@ first_order(L,Ls,Fs):-
 first_order_((L),Acc,Fs):-
 	L \= (_,_)
 	,L =.. [_Enc,_S|Ts]
-	,append(Ts,Acc,Acc_)
+	% Shh, relax, it's OK.
+	,reverse(Ts,Ts_)
+	,once(append(Ts_,Acc,Acc_))
 	,reverse(Acc_,Fs)
 	,!.
 first_order_((L,Ls),Acc,Bind):-
 	L =.. [_Enc,_S|Ts]
-	,append(Ts,Acc,Acc_)
+	% No, really. These are small lists. It's OK.
+	,reverse(Ts,Ts_)
+	,once(append(Ts_,Acc,Acc_))
 	,first_order_(Ls,Acc_,Bind).
+
 
 
 %!	check_constraints(+Metasubs) is det.
