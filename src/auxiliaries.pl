@@ -1232,12 +1232,12 @@ list_top_program(T):-
 %	list_top_program(Target,true,true).
 %
 list_top_program(T,U,E):-
-	configuration:clause_limit(1)
+	configuration:clause_limit(0)
 	,!
-	,experiment_data(T,Pos,Neg,BK,MS)
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,experiment_data(T,Pos,Neg,BK,MS,Cs)
+	,encapsulated_problem(Pos,Neg,BK,MS,Cs,[Pos_,Neg_,BK_,MS_,Cs_])
 	,write_problem(user,[Pos_,BK_],Refs)
-	,generalise(Pos_,MS_,Ss_Pos_)
+	,generalise(Pos_,MS_,Cs_,Ss_Pos_)
 	,write_and_count(T,'Generalisation:',MS,Ss_Pos_,U,E)
 	,specialise(Ss_Pos_,Neg_,Ss_Neg)
 	,nl
@@ -1245,13 +1245,13 @@ list_top_program(T,U,E):-
 	,write_and_count(T,'Specialisation:',MS,Ss_Neg,U,E).
 list_top_program(T,U,E):-
 	configuration:clause_limit(K)
-	,K > 1
-	,experiment_data(T,Pos,Neg,BK,MS)
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,K > 0
+	,experiment_data(T,Pos,Neg,BK,MS,Cs)
+	,encapsulated_problem(Pos,Neg,BK,MS,Cs,[Pos_,Neg_,BK_,MS_,Cs_])
 	,S = (write_problem(user,[BK_],Refs)
 	     ,table(louise:prove/5)
 	     )
-	,G = (generalise(Pos_,MS_,Ss_Pos_)
+	,G = (generalise(Pos_,MS_,Cs_,Ss_Pos_)
 	     ,flatten(Ss_Pos_,Ss_Pos_f)
 	     ,sort(1,@<,Ss_Pos_f,Ss_Pos_s)
 	     ,write_and_count(T,'Generalisation:',MS,Ss_Pos_s,U,E)
@@ -1265,6 +1265,7 @@ list_top_program(T,U,E):-
 	     ,untable(louise:prove/5)
 	     )
 	,setup_call_cleanup(S,G,C).
+
 
 
 
