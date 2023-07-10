@@ -57,7 +57,7 @@ quick description of their use.
 * max_error/2: how many negative examples a hypothesis can "cover".
 * max_invented/1: maximum number of invented predicates.
 * metarule/2: metarules known to the system.
-* metarule_constraints/2: metasubstitution constraints for Louise.
+* metarule_constraints/2: metarule constraints for Louise.
 * metarule_learning_limits/1: control over-generation in TOIL.
 * metarule_formatting/1: how to pretty-print metarules.
 * minimal_program_size/2: lower limit for learn_miminal/[1,2,5]
@@ -638,78 +638,20 @@ xy_zy_zx metarule 'P(x,y):- Q(z,y), R(z,x)'.
 */
 
 
-%!	metarule_constraints(+Metasubstitution,+Goal) is nondet.
+%!	metarule_constraints(+Target,+Metarules) is nondet.
 %
-%	A Goal to be called when Metasubstitution is matched.
+%	A set of Metarules given as constraints for a learning Target.
+%
+%	Target is the symbol and arity of a learning target.
+%
+%       Metarules is a list of constants, the ids of metarules to be
+%       used as constraints. Any metarule can be used as a constraint.
 %
 %       This option is declared multifile that constraints may be
-%       declared individually by experiment files, as needed. A few
-%       examples are given below.
+%       declared individually by experiment files, as needed.
 %
 :- dynamic metarule_constraints/2.
 :- multifile metarule_constraints/2.
-/*
-% Simple constraint excluding left-recursive clauses that are instances of
-% a metarule with any Id and having two existentially quantified
-% variables. Matches e.g. Tailrec and Identity:
-%
-configuration:metarule_constraints(m(_Id,P,P),fail).
-*/
-/*
-% Simple constraint excluding left-recursive clauses that are instances of
-% a metarule with any Id and having three existentially quantified
-% variables. Matches e.g. Chain, Switch, Swap:
-%
-configuration:metarule_constraints(m(_Id,P,P,_),fail).
-*/
-/*
-% Anti-recursion constraint - excludes recursive clauses
-% Does not take into account invented or metarules with existentially
-% quantified secod-order variables:
-%
-configuration:metarule_constraints(m(tailrec,_,_),fail).
-configuration:metarule_constraints(M,fail):-
-	M =.. [m,Id,P|Ps]
-        ,\+ memberchk(Id,[abduce
-			 ,unit
-			 ,projection_21
-			 ,projection_12])
-	,memberchk(P,Ps).
-*/
-/*
-% McCarthyite constraint - excludes left-recursive metasubstitutions
-% Named after the other McCarthy. The senator, not the computer
-% scientist.
-%
-configuration:metarule_constraints(M,fail):-
-	M =.. [m,Id,P,P|_Ps]
-        ,\+ memberchk(Id,[abduce
-                      ,unit
-                      ,projection_21
-                      ,projection_12]).
-
-*/
-/*
-% Lexicographic order constraint.
-% Imposes total ordering on the Herbrand base.
-% Calls src/subsystems/thelma/thelma_configuration:order_constraints/5.
-% Needs problem-specific ordering of the predicate signature.
-%
-configuration:metarule_constraints(M,B):-
-	debug(lex,'Testing constraint for metasub: ~w',M)
-        ,M =.. [m,Id|Ps]
-        %#REPLACE WITH PROBLEM-SPECIFIC ORDERING OF PREDICATE SIGNATURE#
-        ,PS = [s,a,b] % Example ordering for a^nb^n
-	,debug(lex,'Predicate signature: ~w',[PS])
-        ,thelma_configuration:order_constraints(Id,Ps,Fs,STs,FTs)
-	,debug(lex,'Order constraints: ~w-~w',[STs,FTs])
-        ,(   thelma:order_tests(PS,Fs,STs,FTs)
-	 ->  B = true
-	    ,debug(lex,'Passed constraint test!',[])
-	 ;   B = false
-	    ,debug(lex,'Failed constraint test!',[])
-	 ).
-*/
 
 
 %!      metarule_learning_limits(?Limits) is semidet.

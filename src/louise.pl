@@ -1,11 +1,13 @@
 :-module(louise, [learn/1
 		 ,learn/2
 		 ,learn/5
+		 ,learn/6
 		 ,top_program/5
-		 ,generalise/3
+		 ,top_program/6
+		 ,generalise/4
 		 ,specialise/3
-		 ,prove/6
-		 ,constraints/1
+		 ,prove/7
+		 ,constraints/2
 		 ,reduced_top_program/5
 		 ]).
 
@@ -39,8 +41,11 @@ learn(Ts,_Ps):-
 	;   fail
 	).
 learn(Ts,Ps):-
-	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS)
-	,learn(Pos,Neg,BK,MS,Ps).
+	auxiliaries:experiment_data(Ts,Pos,Neg,BK,MS,Cs)
+	% TODO: re-establish TP safety.
+	%tp_safe_experiment_data(Ts,Pos,Neg,BK,MS)
+	,learn(Pos,Neg,BK,MS,Cs,Ps).
+
 
 
 
@@ -65,9 +70,9 @@ learn(Pos,Neg,BK,MS,Ps):-
 	configuration:unfold_invented(U)
 	,configuration:fold_recursive(F)
 	,debug(learn,'Encapsulating problem...',[])
-	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
+	,encapsulated_problem(Pos,Neg,BK,MS,[],[Pos_,Neg_,BK_,MS_,[]])
 	,debug(learn,'Constructing Top program...',[])
-	,top_program(Pos_,Neg_,BK_,MS_,Ms)
+	,top_program(Pos_,Neg_,BK_,MS_,[],Ms)
 	,debug(learn,'Reducing Top program...',[])
 	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
 	,examples_targets(Pos,Ss)
@@ -86,7 +91,49 @@ learn(Pos,Neg,BK,MS,Ps):-
 
 
 
-%!	top_program(+Pos,+Neg,+BK,+Metarules,-Top) is det.
+%!	learn(+Pos,+Neg,+BK,+Metarules,+Constraints,-Program) is det.
+%
+%	As learn/5 but also applies metarule Constraints.
+%
+learn(Pos,Neg,BK,MS,Cs,Ps):-
+	configuration:unfold_invented(U)
+	,configuration:fold_recursive(F)
+	,debug(learn,'Encapsulating problem...',[])
+	,encapsulated_problem(Pos,Neg,BK,MS,Cs,[Pos_,Neg_,BK_,MS_,Cs_])
+	,debug(learn,'Constructing Top program...',[])
+	,top_program(Pos_,Neg_,BK_,MS_,Cs_,Ms)
+	,debug(learn,'Reducing Top program...',[])
+	,reduced_top_program(Pos_,BK_,MS_,Ms,Rs)
+	,examples_targets(Pos,Ss)
+	,debug(learn,'Excapsulating hypothesis...',[])
+	,excapsulated_clauses(Ss,Rs,Ps_1)
+	,(   U ==  true
+	 ->  debug(learn,'Unfolding invented...',[])
+	    ,unfold_invented(Ps_1,Pos,BK,Ps_2)
+	 ;   Ps_2 = Ps_1
+	 )
+	,(   F == true
+	 ->  debug(learn,'Folding to introduce recursion...',[])
+	    ,fold_recursive(Ps_2,Ps)
+	 ;   Ps = Ps_2
+	 ).
+
+
+
+%!	top_program(+Pos,+Neg,+BK,+MS,-Top) is det.
+%
+%	As top_program/6 but with an empty list of constraints.
+%
+%	Thin shell around the new version of top_program/6 to quell
+%	errors from predicates trying to call the original, 5-arity
+%	version of top_program.
+%
+top_program(Pos,Neg,BK,MS,Ts):-
+	top_program(Pos,Neg,BK,MS,[],Ts).
+
+
+
+%!	top_program(+Pos,+Neg,+BK,+Metarules,+Constraints,-Top) is det.
 %
 %	Construct the Top program for a MIL problem.
 %
@@ -110,7 +157,7 @@ learn(Pos,Neg,BK,MS,Ps):-
 %	work in progress and may not fully eliminate too-general
 %	metasubstitutions.
 %
-top_program(Pos,Neg,BK,MS,_Ts):-
+top_program(Pos,Neg,BK,MS,_Cs,_Ts):-
 	(   var(Pos)
 	->  throw('top_program/5: unbound positive examples list!')
 	;   var(Neg)
@@ -121,14 +168,14 @@ top_program(Pos,Neg,BK,MS,_Ts):-
 	->  throw('top_program/5: unbound metarule IDs list!')
 	;   fail
 	).
-top_program(Pos,Neg,BK,MS,Ts):-
+top_program(Pos,Neg,BK,MS,Cs,Ts):-
 % Uses the Prolog engine and avoids using the dynamic db too much.
 	configuration:theorem_prover(resolution)
 	% Adds positive examples to BK to learn limited recursion.
 	,configuration:clause_limit(0)
 	,S = write_problem(user,[Pos,BK],Refs)
 	,G = (debug(top_program,'Constructing Top program...',[])
-	     ,generalise(Pos,MS,Ss_Gen)
+	     ,generalise(Pos,MS,Cs,Ss_Gen)
 	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
 	     ,specialise(Ss_Gen,Neg,Ss_Spec)
 	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
@@ -140,16 +187,16 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	% Fail if Top Program is empty.
 	,Ts \= []
 	,!.
-top_program(Pos,Neg,BK,MS,Ts):-
+top_program(Pos,Neg,BK,MS,Cs,Ts):-
 % Uses the Prolog engine and avoids using the dynamic db too much.
 	configuration:theorem_prover(resolution)
 	,configuration:clause_limit(K)
 	,K > 0
 	,S = (write_problem(user,[BK],Refs)
-	     ,table(prove/6)
+	     ,table(prove/7)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
-	     ,generalise(Pos,MS,Ss_Gen)
+	     ,generalise(Pos,MS,Cs,Ss_Gen)
 	     ,debug_clauses(top_program,'Generalised Top program',Ss_Gen)
 	     ,specialise(Ss_Gen,MS,Neg,Ss_Spec)
 	     ,debug_clauses(top_program,'Specialised Top program',Ss_Spec)
@@ -159,13 +206,13 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
 	,C = (erase_program_clauses(Refs)
-	     ,untable(prove/6)
+	     ,untable(prove/7)
 	     )
 	,setup_call_cleanup(S,G,C)
 	% Fail if Top Program is empty.
 	,Ts \= []
 	,!.
-top_program(Pos,Neg,BK,MS,Ts):-
+top_program(Pos,Neg,BK,MS,_Cs,Ts):-
 	configuration:theorem_prover(tp)
 	,examples_targets(Pos,Ss)
 	,bind_target(MS,Ss,MS_)
@@ -179,14 +226,15 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,specialise_tp(Ts_Pos_a,Is,Neg,Ts)
 	,debug_clauses(top_program,'Specialised Top program:',[Ts])
 	,!.
-top_program(_Pos,_Neg,_BK,_MS,[]):-
+top_program(_Pos,_Neg,_BK,_MS,_Cs,[]):-
 % If Top program construction fails return an empty program.
 % This is meant to send a clear message that learning failed.
 	debug(top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
 
 
-%!	generalise(+Positive,+Metarules,-Generalised) is det.
+%!	generalise(+Positive,+Metarules,+Constraints,-Generalised) is
+%!	det.
 %
 %	Generalisation step of Top program construction.
 %
@@ -196,6 +244,10 @@ top_program(_Pos,_Neg,_BK,_MS,[]):-
 %	Positive is a set of positive examples of a learning target.
 %
 %	Metarules is a set of expanded metarules.
+%
+%	Constraints is a set of expanded metarules used as constraints.
+%	Clauses that are specialisations of the metarules in Constraints
+%	are excluded from learned hypotheses.
 %
 %	The form of Generalised depends on the configuration option
 %	clause_limit/1.
@@ -217,7 +269,7 @@ top_program(_Pos,_Neg,_BK,_MS,[]):-
 %	@tbd Give examples of the key-value-pairs of ground
 %	metasubstitutions and metarules returned by generalise/3.
 %
-generalise(Pos,MS,Ss_Pos):-
+generalise(Pos,MS,Cs,Ss_Pos):-
 % Hands proofs to the Prolog engine.
 	configuration:clause_limit(0)
 	,!
@@ -227,24 +279,25 @@ generalise(Pos,MS,Ss_Pos):-
 	      ,debug_clauses(examples,'Positive example:',Ep)
 	      ,debug_msg_metarules(metasubstitution,'Instantiating metarule:',M)
 	      ,metasubstitution(Ep,M,Sub)
-	      ,constraints(Sub)
+	      ,constraints(Sub-M,Cs)
 	      )
 	     ,Ps)
 	,sort(1,@<,Ps,Ss_Pos).
-generalise(Pos,MS,Ss_Pos):-
+generalise(Pos,MS,Cs,Ss_Pos):-
 % Hands proofs to Vanilla inductive meta-interpreter.
 	configuration:clause_limit(K)
 	,findall(Subs
 		,(member(Ep,Pos)
 		 ,debug_clauses(examples,'Positive example:',Ep)
-		 ,metasubstitutions(Ep,K,MS,Subs)
-		 ,forall(member(Sub-_M,Subs)
-			,constraints(Sub)
+		 ,metasubstitutions(Ep,K,MS,Cs,Subs)
+		 ,forall(member(Sub-M,Subs)
+			,constraints(Sub-M,Cs)
 			)
 		 ,debug_clauses(metasubstitutions,'Passed metasub constraints:',[Subs])
 		 )
 		,Ss_Pos_)
 	,predsort(unifiable_compare,Ss_Pos_,Ss_Pos).
+
 
 
 
@@ -343,7 +396,7 @@ specialise(Ss_Pos,MS,Neg,Ss_Neg):-
 		,debug_clauses(metasubstitutions,'Ground metasubstitutions:',[Subs_])
 		,\+((member(En,Neg)
 		    ,debug_clauses(examples,'Negative example:',En)
-		    ,once(metasubstitutions(En,K,MS,Subs_))
+		    ,once(metasubstitutions(En,K,MS,[],Subs_))
 		    ,debug_clauses(examples,'Proved negative example:',En)
 		    )
 		   )
@@ -422,7 +475,7 @@ bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
 	,!.
 
 
-%!	metasubstitutions(+Example,+Limit,+Metarules,-Metasubstitutions)
+%!	metasubstitutions(+Example,+Limit,+Metarules,+Constraints,-Metasubstitutions)
 %!	is nondet.
 %
 %	Derive all possible Metasubstitutions entailing an Example.
@@ -430,15 +483,15 @@ bind_head_literal(:-(L,Ls),M,(S:-(H,L,Ls))):-
 %	Limit is the clause limit specified in the configuration option
 %	clause_limit/1.
 %
-metasubstitutions(:-En,K,MS,Subs):-
+metasubstitutions(:-En,K,MS,[],Subs):-
 	!
-        ,prove(En,K,MS,[],Subs,Subs)
+        ,prove(En,K,MS,[],[],Subs,Subs)
 	,debug(metasubstitutions,'Proved Example: ~w',[:-En])
 	,debug_clauses(metasubstitutions,'With Metasubs:',[Subs]).
-metasubstitutions(Ep,K,MS,Subs):-
+metasubstitutions(Ep,K,MS,Cs,Subs):-
 	signature(Ep,Ss)
 	,debug(signature,'Signature: ~w',[Ss])
-        ,prove(Ep,K,MS,Ss,[],Subs_)
+        ,prove(Ep,K,MS,Cs,Ss,[],Subs_)
 	,debug(metasubstitutions,'Proved Example: ~w',[Ep])
 	,Subs_ \= []
 	,sort(Subs_,Subs_s)
@@ -463,7 +516,8 @@ signature(L,[T|Ss]):-
         ,L =.. [m,T|_].
 
 
-%!	prove(?Literals,+Limit,+Metarules,+Acc,-Metasubs) is nondet.
+%!	prove(?Literals,+Limit,+Metarules,+Constraints,+Acc,-Metasubs)
+%!	is nondet.
 %
 %	A vanilla MIL meta-interpreter for Top Program Construction.
 %
@@ -477,6 +531,15 @@ signature(L,[T|Ss]):-
 %
 %	Metarules is a list of expanded metarules to be used in the
 %	proof by refutation of each Literals.
+%
+%	Metarules is a list of expanded metarules to be used as
+%	"negative" metarules, a.k.a. metarule constraints, or constraint
+%	metarules.
+%
+%	Constraints is a list of expanded metarules used as "negative"
+%	metarules, a.k.a. metarule constraints, or constraint metarules.
+%	Proof branches including clauses that are specialisations of the
+%	metarules in Constraints are pruned from the proof tree.
 %
 %	Acc is the accumulator of metasubstitutions.
 %
@@ -525,17 +588,17 @@ signature(L,[T|Ss]):-
 %	general) to learn recursive programs and to perform predicate
 %	invention without the restrictions of earlier systems.
 %
-prove(true,_K,_MS,_Ss,Subs,Subs):-
+prove(true,_K,_MS,_Cs,_Ss,Subs,Subs):-
 	!
 	,debug(prove,'Metasubs so-far: ~w',[Subs]).
-prove((L,Ls),K,MS,Ss,Subs,Acc):-
-	prove(L,K,MS,Ss,Subs,Subs_)
-        ,prove(Ls,K,MS,Ss,Subs_,Acc).
-prove((L),K,MS,Ss,Subs,Acc):-
+prove((L,Ls),K,MS,Cs,Ss,Subs,Acc):-
+	prove(L,K,MS,Cs,Ss,Subs,Subs_)
+        ,prove(Ls,K,MS,Cs,Ss,Subs_,Acc).
+prove((L),K,MS,Cs,Ss,Subs,Acc):-
         L \= (_,_)
 	,L \= true
-        ,clause(L,K,MS,Ss,Subs,Subs_,Ls)
-        ,prove(Ls,K,MS,Ss,Subs_,Acc).
+        ,clause(L,K,MS,Cs,Ss,Subs,Subs_,Ls)
+        ,prove(Ls,K,MS,Cs,Ss,Subs_,Acc).
 /* % Uncomment for richer debugging and logging.
 prove(L,_MS,_Ss,Subs,_Acc):-
 	L \= true
@@ -545,7 +608,9 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 */
 
 
-%!	clause(?Literal,+K,+MS,+Sig,+Subs,-Subs_New,-Body) is nondet.
+
+%!	clause(?Literal,+K,+MS,+Const,+Sig,+Subs,-Subs_New,-Body) is
+%!	nondet.
 %
 %	MIL-specific clause/2 variant.
 %
@@ -565,6 +630,8 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 %
 %	MS is the set of metarules for the current MIL Problem.
 %
+%	Const is the set of metarule constrains for the MIL Problem.
+%
 %	Sigs is the predicate signature, a list of _atoms_ (not yet
 %	predicate identifiers).
 %
@@ -577,34 +644,35 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 %	metasubstitution already in Subs, or a new one constructed by
 %	new_metasub/6.
 %
-clause(_L,_K,_MS,_Ss,Subs,_Acc,_Ls):-
-	\+ check_constraints(Subs)
+clause(_L,_K,MS,Cs,_Ss,Subs,_Acc,_Ls):-
+	\+ check_constraints(Subs,MS,Cs)
 	,!
 	,fail.
-clause(L,_K,_MS,_Ss,Subs,Subs,true):-
+clause(L,_K,_MS,_Cs,_Ss,Subs,Subs,true):-
 	(   predicate_property(L,foreign)
 	;   built_in_or_library_predicate(L)
 	)
 	,debug(prove_,'Proving built-in literal: ~w', [L])
         ,call(L)
 	,debug(prove_,'Proved built-in clause: ~w', [L:-true]).
-clause(L,_K,_MS,_Ss,Subs,Subs,Ls):-
+clause(L,_K,_MS,_Cs,_Ss,Subs,Subs,Ls):-
 	\+ predicate_property(L,foreign)
 	,\+ built_in_or_library_predicate(L)
 	,debug(prove_,'Proving literal with BK: ~w', [L])
         ,clause(L,Ls)
 	,debug(prove_,'Trying BK clause: ~w', [L:-Ls]).
-clause(L,_K,MS,_Ss,Subs,Subs,Ls):-
+clause(L,_K,MS,_Cs,_Ss,Subs,Subs,Ls):-
         debug(prove_,'Proving literal with known metasubs: ~w',[L])
         ,known_metasub(L,MS,Subs,Ls).
-clause(L,K,MS,Ss,Subs,Subs_,Ls):-
+clause(L,K,MS,_Cs,Ss,Subs,Subs_,Ls):-
 	length(Subs,N)
 	,N < K
         ,debug(prove_,'Proving literal with new metasub: ~w',[L])
         ,new_metasub(L,MS,Ss,Subs,Subs_,Ls).
 
 
-%!	check_constraints(+Metasubs) is det.
+
+%!	check_constraints(+Metasubs,+Metarules,+Constraints) is det.
 %
 %	True if all ground metasubstitutions obey constraints.
 %
@@ -613,13 +681,29 @@ clause(L,K,MS,Ss,Subs,Subs_,Ls):-
 %	checks that it does not violate any constraints declared in a
 %	metarule_constraints/2 clause.
 %
-check_constraints(Subs):-
+%	Metarules is the list of expanded Metarules for the current MIL
+%	Problem.
+%
+%	Constraints is the list of metarules used as Constraints for
+%	the current MIL Problem.
+%
+%	Any Metasub in Metasubs that, expanded and applied to its
+%	corresponding metarule in Metarules, is found to be a
+%	specialisation of a metarule in Constraints, causes the call to
+%	check_constraints/2 to fail. Specialisation is checked with
+%	subsumes_term/2, where the first argument is a metarule in
+%	Constraints and the second the currently-tested metasub in
+%	Metasubs.
+%
+check_constraints(Subs,MS,Cs):-
 	forall(member(Sub,Subs)
 	      ,(   ground(Sub)
-	       ->  constraints(Sub)
+	       ->  free_member(Sub:-M,MS)
+	          ,constraints(Sub-(Sub:-M),Cs)
 	       ;   \+ ground(Sub)
 	       )
 	      ).
+
 
 
 %!	known_metasub(?Literal,+Subs,-Body) is nondet.
@@ -818,123 +902,54 @@ specialise_tp(Ts_Pos,Ps,Neg,Ts_Neg):-
 		,Ts_Neg).
 
 
-%!	constraints(+Metasubstitution) is det.
+
+%!	constraints(+Metasubstitution,+Constraints) is det.
 %
-%	Apply a set of constraints to a generalising Metasubstitution.
+%	Apply a set of metarule Constraints to a Metasubstitution.
 %
-%	Metasubstitution is a generalising metasubstitution considered
-%	for addition to the Top program. A generalising metasubstitution
-%	is one found during the generalisation step of Top program
-%	construction.
+%	Metasubstitution is a term of the form Sub-M wher Sub is a
+%	ground and encapsulated metasubstitution atom and M is an
+%	instance of the same metarule as the one in Sub, but with all
+%	variables free. M itself is of the form S:-(H,B) where S is a
+%	metasubstitution atom with the same metarule Id and arity as
+%	Sub, wbut with all variables free, and (H,B) are the
+%	encapsulated Head and Body literals of the metarule M.
 %
-%	constraints/1 tests Metasubstitution against a set of
-%	user-defined constraints. If each applicable constraint is true,
-%	then constraints/1 succeeds and Metasubstitution is included in
-%	the Top program. Otherwise constraints/1 fails and
-%	Metasubstitution is excluded from the Top program.
+%	Constraints is a set of expanded metarules, acting as "negative"
+%	metarules, or constraints. Similar to Metasubstitution, each
+%	metarule in Constraints is of the form S:-(H,B), with all
+%	variables free.
 %
-%	Note that only metasubstitutions found to generalise an example
-%	are tested for constraints, i.e. metasubstitutions that can not
-%	be proven against the MIL problem will be excluded without
-%	constraints being tested.
+%	constraints/2 first applies the ground metasubstitution atom
+%	Sub, in Sub-M, to the non-ground metasubstitution atom, S, in M
+%	= S:-(H,B). This binds the existentially quantified variables in
+%	S, H and B to the ones in Sub.
 %
-%	User-defined constraints
-%	------------------------
+%	constraints/2 then proceeds to test whether any metarule in
+%	Constraints subsumes Metasubstitution, or, in other words,
+%	whether Metasubstitution is a specialisation of one of the
+%	metarules in Constraints. If so, then constraints/2 _fails_.
 %
-%	User-defined constraints are declared in experiment files as
-%	clauses of configuration:metarule_constraints/2:
+%	constraints/2 is called during meta-interpretation with prove/7
+%	to exclude branches of the proof-tree that include a clause that
+%	is a specialisation of a metarule in Constraints.
 %
-%	==
-%	configuration:metarule_constraints(?Metasub,+Goal) is semidet.
-%	==
+%	Note that subsumption is checked by a call to subsumes_term/2,
+%	which means that only clauses that are strictly subsumed, i.e.
+%	_less_ general than a metarule in Constraints are pruned.
+%	Clauses that are as general as any clause in Constraints are not
+%	pruned.
 %
-%	A metarule_constraints/2 clause can be any Prolog clause. To
-%	clarify, it can be a unit clause (a "fact"), or a non-unit
-%	clause (a "rule").
+%	Any metarule can be used as a metarule constraint. See
+%	data/examples/constraints.pl for an example of using constraint
+%	metarules to prune branches of a proof.
 %
-%	The first argument of metarule_constraints/2 should match the
-%	metasubstitution atom of an encapsulated metarule (the functor
-%	must be "m" not "metarule"). If a generalising metasubstitution
-%	matches this first argument, the matching metarule_constraint/2
-%	clause is called. If this first call succeeds, the Prolog goal
-%	in the second argument is called to perform the constraint test.
-%
-%	The second argument of metarule_constraints/2 is an arbitrary
-%	Prolog goal. When the first argument of metarule_constraints/2
-%	matches a generalising metasubstitution and the initial call
-%	to metarule_constraint/2 succeds, the second argument is passed
-%	to call/1. If this second call fails, the constraint test fails
-%	and the metasubstitution matching the first argument is removed
-%	from the generalised Top program. If this second calls succeeds,
-%	the cosntraint test passes and the metasubstitution is added to
-%	the generalised Top program.
-%
-%	Example
-%	-------
-%
-%	The following metarule constraint will match a metasubstitution
-%	with any metarule Id and with three existentially quantified
-%	variables all ground to the same term. When the match succeeds,
-%	and given that the constraint is a unit clause (i.e. always
-%	true), the second argument of the constraint, fail/0 will be
-%	called causing the constraint to fail and the metasubstitution
-%	to be discarded:
-%
-%	==
-%	configuration:metarule_constraints(m(_ID,P,P,P),fail).
-%	==
-%
-%	The metarule constraint listed above can be used to exclude
-%	left-recursive clauses from the Top program, but only for
-%	metarules with exactly two body literals. A more general
-%	constraint that will apply to a metarule with an arbitrary
-%	number of body literals is as follows:
-%
-%	==
-%	configuration:metarule_constraints(M,fail):-
-%	M =.. [m,_Id,P|Ps]
-%	,forall(member(P1,Ps)
-%	       ,P1 == P).
-%	==
-%
-%	Alternatively, the symbol of a target predicate can be specified
-%	so that only metasubstitutions of that predicate are excluded
-%	(if they would result in left-recursive clauses):
-%
-%	==
-%	configuration:metarule_constraints(M,fail):-
-%	M =.. [m,_Id,ancestor|Ps]
-%	,forall(member(P1,Ps)
-%	       ,P1 == ancestor).
-%	==
-%
-%	Or the metarule Id can be ground to test only metasubstitutions
-%	of a specific metarule, and so on.
-%
-%
-%	Metarule constraints and predicate invention
-%	--------------------------------------------
-%
-%	In the above examples, note the use of ==/2 instead of =/2 to
-%	perform the comparison between existentially quantified
-%	variables. This is to allow for variables remaining unbound on
-%	generalisation during metarule extension by unfolding in the
-%	proces of predicate invention.
-%
-%	@see data(examples/constraints) for examples of using metarule
-%	constraints, in particular for the purpose of excluding
-%	metasubstitutions resulting in left-recursive clauses from the
-%	Top progam.
-%
-constraints(_Sub):-
-	predicate_property(metarule_constraints(_,_), number_of_clauses(0))
-	,!.
-constraints(Sub):-
-	predicate_property(metarule_constraints(_,_), number_of_clauses(N))
-	,N > 0
-	,copy_term(Sub,Sub_)
-	,forall(configuration:metarule_constraints(Sub_, C)
-	       ,user:call(C)
+constraints(_Sub,[]):-
+	!.
+constraints(Sub-M,Cs):-
+	copy_term(Sub-M,Sub-(Sub:-M_))
+	,forall(free_member(_S2:-C,Cs)
+	       ,\+ subsumes_term(C,M_)
 	       ).
 
 

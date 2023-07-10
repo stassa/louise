@@ -3,6 +3,7 @@
 		      ,metarule_expansion/2
 		      ,encapsulated/1
 		      ,encapsulated_problem/5
+		      ,encapsulated_problem/6
 		      ,encapsulated_bk/3
 		      ,examples_targets/2
 		      ,encapsulated_clauses/2
@@ -190,10 +191,19 @@ encapsulated(Ts):-
 
 
 
-%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,-Ps)
+%!      encapsulated(+Pos,+Neg,+BK,+MS,-Ps) is det.
+%
+%       As encapsulated_problem/5 with an empty list of constraints.
+%
+encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
+        encapsulated_problem(Pos,Neg,BK,MS,[],[Pos_,Neg_,BK_,MS_,[]]).
+
+
+
+%!	encapsulated_problem(+Pos,+Neg,+BK,+MS,+Cs,-Ps)
 %!	is det.
 %
-%	Encapsualte a MIL problem.
+%	Encapsulate a MIL problem.
 %
 %	Pos and Neg are lists of example atoms; Pos are positive
 %	examples and Neg are negative examples, of the form :-E, where E
@@ -201,8 +211,8 @@ encapsulated(Ts):-
 %
 %	BK is a list of predicate symbols and arities of BK predicates.
 %
-%	Metarules is a list of constants, the names of metarules in the
-%	problem.
+%	MS and Cs is a list of constants, the names of metarules, and
+%	metarule constraints, respectively, given for the problem.
 %
 %	Ps is a list [Pos_, Neg_, BK_, MS_] where elements are the
 %	encapsulations of the positive and negative examples, BK
@@ -210,12 +220,14 @@ encapsulated(Ts):-
 %
 %	@tbd Encapsulated forms need documentation.
 %
-encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
+encapsulated_problem(Pos,Neg,BK,MS,Cs,[Pos_,Neg_,BK_,MS_,Cs_]):-
 	examples_targets(Pos, Ss)
 	,encapsulated_bk(BK,Ss,BK_)
 	,expanded_metarules(MS,MS_)
 	,encapsulated_clauses(Pos,Pos_)
-	,encapsulated_clauses(Neg,Neg_).
+	,encapsulated_clauses(Neg,Neg_)
+	,expanded_metarules(Cs,Cs_).
+
 
 
 %!	encapsulated_bk(+Background,+Symbols,-Encapsulated) is det.

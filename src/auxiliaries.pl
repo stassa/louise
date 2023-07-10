@@ -45,7 +45,7 @@
 		      ,eraseall_program_clauses/1
 		       % Experiment file auxiliaries
 		      ,cleanup_experiment/0
-		      ,experiment_data/5
+		      ,experiment_data/6
 		      ,initialise_experiment/0
 	              ,learning_target/1
 		      ,learning_targets/1
@@ -164,7 +164,7 @@ Table of Contents
 
 6. Experiment file auxiliaries [sec_expr]
    * cleanup_experiment/0
-   * experiment_data/5
+   * experiment_data/6
    * initialise_experiment/0
    * learning_target/1
    * learning_targets/1
@@ -2349,21 +2349,21 @@ cleanup_experiment:-
 
 
 
-%!	experiment_data(+Targets,-Positive,-Negative,-BK,-Metarules) is
-%!	det.
+%!	experiment_data(+Targets,-Positive,-Negative,-BK,-Metarules,-Constraints)
+%!	is det.
 %
 %	Collect experiment file data for one or more learning Targets.
 %
 %	Targets is either a single predicate indicator, or a list of
 %	predicate indicators of the predicates to be learned.
 %
-%	experiment_data/5 expects an experiment file to be loaded into
+%	experiment_data/6 expects an experiment file to be loaded into
 %	memory and will fail without warning otherwise.
 %	initialise_experiment/0 should be called before it, and
 %	cleanup_experiment/0 after it if cleanup is required between
 %	experiments.
 %
-experiment_data(Ts,_,_,_,_):-
+experiment_data(Ts,_,_,_,_,_):-
 % A list of learning targets must be ground.
 	is_list(Ts)
 	,learning_targets(Ls)
@@ -2374,24 +2374,26 @@ experiment_data(Ts,_,_,_,_):-
 		)
 	       )
 	,fail.
-experiment_data(T,_,_,_,_):-
+experiment_data(T,_,_,_,_,_):-
 % A single learning target's predicate indicator must be ground.
 	\+ is_list(T)
 	,learning_targets(Ts)
 	,\+ memberchk(T,Ts)
 	,throw('Unknown learning target':T).
-experiment_data(T,Pos,Neg,BK,MS):-
+experiment_data(T,Pos,Neg,BK,MS,Cs):-
 	signed_examples(positive,experiment_file,T,Pos_)
 	,signed_examples(negative,experiment_file,T,Neg_)
 	,maplist(list_to_set,[Pos_,Neg_],[Pos,Neg])
 	,bk_or_metarules(background_knowledge,experiment_file,T,BK)
 	,bk_or_metarules(metarules,experiment_file,T,MS_)
+	,bk_or_metarules(metarule_constraints,configuration,T,Cs)
 	,(   (MS_ == [all]
 	     ;	 memberchk(all,MS_)
 	     )
 	 ->  configuration_metarules(MS)
 	 ;   MS = MS_
 	 ).
+
 
 
 %!	signed_examples(+Sign,+Module,+Targets,-Examples) is det.
@@ -2452,22 +2454,38 @@ signed_example(positive,E,E).
 signed_example(negative,E,:-E).
 
 
-%!	bk_or_metarules(+Bias,+Module,+Targets,-Delarations) is det.
+%!	bk_or_metarules(+Bias,+Module,+Targets,-Declarations) is det.
 %
-%	Retrieve the BK or metarule Declarations for a MIL problem.
+%	Retrieve BK, Metarules or Constraints for a MIL problem.
 %
-%	Bias is one of [background_knowledge,metarules]. Module is the
-%	module name of the current experiment file. Targets is either a
-%	list of learning targets or a single target, each as an F/A
-%	predicate indicator.
+%	Bias is one of [background_knowledge, metarules,
+%	metarule_constraints].
+%
+%	Module is the module name of the current experiment file.
+%
+%	Targets is either a list of learning targets or a single target,
+%	each as an F/A predicate indicator.
 %
 %	If Bias is "background_knowledge", Declarations is a list of the
 %	F/A predicate indicators of predicates declared as background
 %	knowledge for each learning target in Targets.
 %
-%	If Bias is "metarules", Declarations is a list of atomic
-%	metarule identifiers.
+%	If Bias is "metarules" or "metarule_constraints", Declarations
+%	is a list of atomic metarule identifiers.
 %
+%	Metarule constraints are optional. If Bias is
+%	"metarule_constraints" and none are declared in the current
+%	experiment file, Declarations is [].
+%
+bk_or_metarules(metarule_constraints,_M,_T,[]):-
+	predicate_property(metarule_constraints(_,_), number_of_clauses(0))
+	,!.
+bk_or_metarules(metarule_constraints,_M,T,[]):-
+	predicate_property(metarule_constraints(_,_), number_of_clauses(N))
+	,N > 0
+	,configuration:metarule_constraints(T_,_)
+	,T_ \== T
+	,!.
 bk_or_metarules(B,M,Ts,Bs):-
 % Ts is a list of learning targets.
 	is_list(Ts)
