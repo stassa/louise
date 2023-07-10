@@ -45,6 +45,7 @@
 		      ,eraseall_program_clauses/1
 		       % Experiment file auxiliaries
 		      ,cleanup_experiment/0
+		      ,experiment_data/5
 		      ,experiment_data/6
 		      ,initialise_experiment/0
 	              ,learning_target/1
@@ -164,6 +165,7 @@ Table of Contents
 
 6. Experiment file auxiliaries [sec_expr]
    * cleanup_experiment/0
+   * experiment_data/5
    * experiment_data/6
    * initialise_experiment/0
    * learning_target/1
@@ -2347,6 +2349,20 @@ cleanup_experiment:-
 	      )
 	% Remove tabling for all tabled predicates
 	,abolish_all_tables.
+
+
+
+%!	experiment_data(+Targets,-Positive,-Negative,-BK,-Metarules) is
+%!	det.
+%
+%	Same as experiment_data/5 but does not collect constraints.
+%
+%	Deprecation stub to avoid some errors caused by the addition of
+%	a new argument, to hold metarule constraints, to
+%	experiment_data/now-6.
+%
+experiment_data(T,Pos,Neg,BK,MS):-
+	experiment_data(T,Pos,Neg,BK,MS,_).
 
 
 
