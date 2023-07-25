@@ -375,8 +375,8 @@ a good subset.
 %configuration:meta_dyadic_1 metarule 'P(x,y):- Q(z,u), R(v,w)'.
 
 % Tells list_learning_results/0 to use the right learning predicate.
-%configuration:learning_predicate(learn_metarules/1).
-configuration:learning_predicate(learn_meta/1).
+configuration:learning_predicate(learn_metarules/1).
+%configuration:learning_predicate(learn_meta/1).
 
 % Background knowledge declarations
 background_knowledge(ancestor/2,[parent/2]).
