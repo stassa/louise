@@ -1,4 +1,5 @@
 :-module(defaults, [default_clause_limit/1
+                   ,default_invented_symbol_prefix/1
                    ,default_depth_limits/1
                    ,default_max_error/1
                    ,default_max_invented/1
@@ -27,11 +28,22 @@ dynamic configuration options to the values specified in this file.
 default_clause_limit([0]).
 
 
+%!      default_invented_symbol_prefix(?Prefix) is semidet.
+%
+%       Default value for invented_symbol_prefix/1 option.
+%
+%       The default value is: ['$']
+%
+default_invented_symbol_prefix(['$']).
+
+
 %!      default_depth_limits(?Clauses,?Invented) is semidet.
 %
 %       Default values for depth_limits/2 option.
 %
 %       The default value is: [2,1]
+%
+%       @tbd: Is this still used?
 %
 default_depth_limits([2,1]).
 

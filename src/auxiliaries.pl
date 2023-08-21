@@ -589,12 +589,13 @@ generalised_examples(Es,Gs):-
 %	symbol and A is Arity.
 %
 %	Use this predicate to generate invented symbols of a given
-%	Arity or verify that a Prolog term is an invented symbol of tha
+%	Arity or verify that a Prolog term is an invented symbol of that
 %	Arity.
 %
 invented_symbol(I,A,S/A):-
-	between(1,I,K)
-	,atom_concat('$',K,S).
+	configuration:invented_symbol_prefix(F)
+	,between(1,I,K)
+	,atomic_list_concat([F,K],'',S).
 
 
 
@@ -609,8 +610,9 @@ invented_symbol(I,A,S/A):-
 %	a Prolog term is an invented symbol.
 %
 invented_symbol(I,S):-
-	between(1,I,K)
-	,atom_concat('$',K,S).
+	configuration:invented_symbol_prefix(F)
+	,between(1,I,K)
+	,atomic_list_concat([F,K],'',S).
 
 
 

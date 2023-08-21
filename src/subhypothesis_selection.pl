@@ -108,31 +108,36 @@ subhypothesis_dynamic(Pos,BK,Hs,Ss):-
 %	term where N is a positive integer.
 %
 clauses_invented(Hs,Cs,Is):-
-	clauses_invented(Hs,[],Cs,[],Is).
+	configuration:invented_symbol_prefix(F)
+	,clauses_invented(Hs,F,[],Cs,[],Is).
 
-clauses_invented([],Acc_Cs,Cs,Acc_Is,Is):-
+clauses_invented([],_F,Acc_Cs,Cs,Acc_Is,Is):-
 	!
 	,maplist(reverse,[Acc_Cs,Acc_Is],[Cs,Is]).
-clauses_invented([H:-B|Hs],Acc_Cs,Bind_Cs,Acc_Is,Bind_Is):-
-	invented_literal(H)
+clauses_invented([H:-B|Hs],F,Acc_Cs,Bind_Cs,Acc_Is,Bind_Is):-
+	invented_literal(H,F)
 	,!
-	,clauses_invented(Hs,Acc_Cs,Bind_Cs,[H:-B|Acc_Is],Bind_Is).
-clauses_invented([C|Hs],Acc_Cs,Bind_Cs,Acc_Is,Bind_Is):-
-	clauses_invented(Hs,[C|Acc_Cs],Bind_Cs,Acc_Is,Bind_Is).
+	,clauses_invented(Hs,F,Acc_Cs,Bind_Cs,[H:-B|Acc_Is],Bind_Is).
+clauses_invented([C|Hs],F,Acc_Cs,Bind_Cs,Acc_Is,Bind_Is):-
+	clauses_invented(Hs,F,[C|Acc_Cs],Bind_Cs,Acc_Is,Bind_Is).
 
 
-%!	invented_literal(+Literal) is det.
+
+%!	invented_literal(+Literal,+Prefix) is det.
 %
 %	True when Literal has an invented predicate symbol.
 %
-invented_literal(L):-
+%	Prefix is the prefix prepended to invented symbols' ordinal
+%	number, as set in configuration option invented_symbol_prefix/1.
+%
+invented_literal(L,F):-
 	L =.. [m,S|_As]
 	,!
-	,atom_chars(S,['$',I])
+	,atom_chars(S,[F,I])
 	,atom_number(I,_N).
-invented_literal(L):-
+invented_literal(L,F):-
 	functor(L,S,_A)
-	,atom_chars(S,['$',I])
+	,atom_chars(S,[F,I])
 	,atom_number(I,_N).
 
 
