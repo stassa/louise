@@ -612,8 +612,10 @@ target_or_invention(Ts,F/A):-
         memberchk(F/A,Ts)
 	,!.
 target_or_invention(_,S/_):-
-	atom_chars(S,['$'|As])
-	,number_chars(_N,As).
+	configuration:invented_symbol_prefix(F)
+	,atom_concat(F,K,S)
+	,atom_number(K,_N).
+
 
 /* Earlier format but might use again
 target_or_invention(T,S):-

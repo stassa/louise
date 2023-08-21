@@ -3,6 +3,7 @@
                         ,experiment_file/2
                         ,fold_recursive/1
                         ,generalise_learned_metarules/1
+                        ,invented_symbol_prefix/1
 			,learner/1
                         ,learning_predicate/1
                         ,listing_limit/1
@@ -201,6 +202,7 @@ of setting those configuration options in an experiment file.
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
 :- dynamic clause_limit/1
+          ,invented_symbol_prefix/1
           ,max_error/2
           ,max_invented/1
           ,minimal_program_size/2
@@ -420,6 +422,23 @@ fold_recursive(false).
 %
 %generalise_learned_metarules(true).
 generalise_learned_metarules(false).
+
+
+%!      invented_symbol_prefix(?Prefix) is semidet.
+%
+%       Prefix used to form invnented predicates' symbols.
+%
+%       Invented predicate symbols are created automatically by
+%       prepending Prefix to a number between 1, and the value of the
+%       configuration option max_invented/1.
+%
+%       The default-ish Prefix for this concatenation is the dollar
+%       symbol, '$'. This character is also defined as a prefix operator
+%       with precedence 1 and this can cause trouble in conjunction with
+%       the tokenisation in SWI-Prolog. This configuration option allows
+%       the user to set their own invented predicate symbol.
+%
+invented_symbol_prefix('$').
 
 
 %!	learner(?Name) is semidet.
