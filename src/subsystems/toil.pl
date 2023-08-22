@@ -11,7 +11,7 @@
 :-use_module(subsystems(minimal_program)).
 :-use_module(lib(lifting/lifting)).
 :-use_module(src(mil_problem)).
-:-use_module(src(louise)).
+:-use_module(src(vanilla)).
 :-use_module(lib(sampling/sampling)).
 
 /** <module> Third Order Inductive Learner.
@@ -818,7 +818,7 @@ meta_grounding(Ep,Neg,M,Ss,Sub,M_n):-
 metasubstitution(:-E,M,_Ss,Sub):-
 % Sub is a ground metasubstitution atom, m(Id,P1,...,Pn)
 	!
-	,louise:bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,vanilla:bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	% Metarule without a body.
 	% TODO: Make sure not needed anymore after next clause added.
@@ -831,14 +831,14 @@ metasubstitution(E,M,_Ss,(Sub:-E)):-
 % body and in fact this will make it fiddly to handle specialisations of
 % this metarule further down the line.
 	\+ integer(M)
-	,louise:bind_head_literal(E,M,(Sub:-(E,true)))
+	,vanilla:bind_head_literal(E,M,(Sub:-(E,true)))
 	,!
 	,debug_clauses(metasubstitution,'Abduce metasubstitution:',[Sub:-(E,true)]).
 metasubstitution(E,M,_Ss,(Sub:-(E,Ls))):-
 % M is an encapsulated metarule and Sub is yet free.
 	\+ integer(M)
 	,!
-	,louise:bind_head_literal(E,M,(Sub:-(E,Ls)))
+	,vanilla:bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,debug_clauses(metasubstitution,'Trying metasubstitution:',Ls)
 	,once(list_tree(Ls_,Ls))
 	,prove_body_literals(E,Ls_,Ls_)

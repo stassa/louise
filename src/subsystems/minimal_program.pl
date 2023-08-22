@@ -5,7 +5,7 @@
 			  ]).
 
 :-use_module(project_root(configuration)).
-:-use_module(src(louise)).
+:-use_module(src(vanilla)).
 :-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).
 
@@ -256,22 +256,6 @@ specialise_minimal(Neg,M,[L_H,L_C,C_H,C_C],Sub):-
 metasubstitution(E,M,Sub):-
 	bind_head_literal(E,M,(Sub:-(E,Ls)))
 	,user:call(Ls).
-
-
-%!	bind_head_literal(+Example,+Metarule,-Head) is det.
-%
-%	Bind an Example to the encapsulated Head literal of a Metarule.
-%
-%	Abstracts the complex patterns of binding examples to the heads
-%	of metarules with and without body literals.
-%
-%	Copied from Louise module.
-%
-bind_head_literal(E,M,(H:-(E,Ls))):-
-	M = (H:-(E,Ls))
-	,!.
-bind_head_literal(E,M,(H:-(E,true))):-
-	M = (H:-E).
 
 
 %!	metarule_application(+Metasubstitution,+Metarule,-Clause) is det.
