@@ -1,8 +1,8 @@
-:-module(minimal_program, [learn_minimal/1
-			  ,learn_minimal/2
-			  ,learn_minimal/5
-			  ,reduced_examples/3
-			  ]).
+:-module(greedy, [learn_greedy/1
+		 ,learn_greedy/2
+		 ,learn_greedy/5
+		 ,reduced_examples/3
+		 ]).
 
 :-use_module(project_root(configuration)).
 :-use_module(src(vanilla)).
@@ -36,31 +36,31 @@ shorter hypotheses are found before longer ones.
 
 */
 
-%!	learn_minimal(+Targets) is nondet.
+%!	learn_greedy(+Targets) is nondet.
 %
 %	Learn a minimal definition of one or more learning Targets.
 %
-learn_minimal(Ts):-
-	learn_minimal(Ts,Ps)
+learn_greedy(Ts):-
+	learn_greedy(Ts,Ps)
 	,print_clauses(Ps).
 
 
 
-%!	learn_minimal(+Targets,+Program) is det.
+%!	learn_greedy(+Targets,+Program) is det.
 %
 %	Learn a minimal definition of one or more learning Targets.
 %
 %	The elements of the MIL problem are taken from the current
 %	experiment file, via tp_safe_experiment_data/5.
 %
-learn_minimal(Ts,_Ps):-
+learn_greedy(Ts,_Ps):-
 	(   \+ ground(Ts)
-	->  throw('learn_minimal/2: non-ground target symbol!')
+	->  throw('learn_greedy/2: non-ground target symbol!')
 	;   fail
 	).
-learn_minimal(Ts,Ps):-
+learn_greedy(Ts,Ps):-
 	tp_safe_experiment_data(Ts,Pos,Neg,BK,MS)
-	,learn_minimal(Pos,Neg,BK,MS,Ps).
+	,learn_greedy(Pos,Neg,BK,MS,Ps).
 
 
 
@@ -68,20 +68,20 @@ learn_minimal(Ts,Ps):-
 %
 %	Learn a minimal Progam from the elements of a MIL problem.
 %
-learn_minimal([],_Neg,_BK,_MS,_Ts):-
-	throw('learn_minimal/5: No positive examples found. Cannot train.').
-learn_minimal(Pos,Neg,BK,MS,_Ts):-
+learn_greedy([],_Neg,_BK,_MS,_Ts):-
+	throw('learn_greedy/5: No positive examples found. Cannot train.').
+learn_greedy(Pos,Neg,BK,MS,_Ts):-
 	(   var(Pos)
-	->  throw('learn_minimal/5: unbound positive examples list!')
+	->  throw('learn_greedy/5: unbound positive examples list!')
 	;   var(Neg)
-	->  throw('learn_minimal/5: unbound negative examples list!')
+	->  throw('learn_greedy/5: unbound negative examples list!')
 	;   var(BK)
-	->  throw('learn_minimal/5: unbound background symbols list!')
+	->  throw('learn_greedy/5: unbound background symbols list!')
 	;   var(MS)
-	->  throw('learn_minimal/5: unbound metarule IDs list!')
+	->  throw('learn_greedy/5: unbound metarule IDs list!')
 	;   fail
 	).
-learn_minimal(Pos,Neg,BK,MS,Ps):-
+learn_greedy(Pos,Neg,BK,MS,Ps):-
 	debug(minimal_program,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,debug(minimal_program,'Constructing minimal program...',[])
