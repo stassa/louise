@@ -25,7 +25,7 @@ user:file_search_path(scripts, data(scripts)).
 :-use_module(subsystems(metagen)).
 :-use_module(subsystems(metarule_extraction)).
 :-use_module(subsystems(toil)).
-:-use_module(subsystems(minimal_program)).
+:-use_module(subsystems(greedy)).
 :-use_module(subsystems(thelma/thelma)).
 :-use_module(lib(evaluation/evaluation)).
 :-use_module(lib(folding_unfolding/folding_unfolding)).
@@ -36,24 +36,20 @@ edit_files:-
 % the project loads, below.
 	configuration:experiment_file(P,_)
 	,edit(project_root(load_project))
-	%,edit(project_root(load_headless))
 	,edit(project_root(configuration))
-	%,edit(src(mil_problem))
 	,edit(src(louise))
+	,edit(src(vanilla))
+	%,edit(src(mil_problem))
 	,edit(src(auxiliaries))
-	%,edit(src(metarules_parser))
-	%,edit(src(subhypothesis_selection))
 	%,edit(subsystems(examples_invention))
-	%,edit(subsystems(incremental_refinement))
-%	,edit(subsystems(thelma/thelma))
-	%,edit(subsystems(thelma/thelma_auxiliaries))
-	%,edit(subsystems(thelma/thelma_configuration))
 	%,edit(subsystems(metagen))
+	%,edit(subsystems(metarule_extraction))
 	%,edit(subsystems(toil))
-	%,edit(subsystems(minimal_program))
+	%,edit(subsystems(thelma/thelma))
+	%,edit(subsystems(greedy))
 	%,edit(lib(evaluation/evaluation))
-%	,edit(lib(folding_unfolding/folding_unfolding))
-	%,edit(lib(program_reduction/program_reduction))
+	%,edit(lib(folding_unfolding/folding_unfolding))
+	%,edit(lib(sampling/sampling))
 	,edit(P)
 	.
 :-edit_files.
@@ -75,5 +71,9 @@ edit_files:-
 %:-set_prolog_flag(table_space, 4_294_967_296).
 %:-set_prolog_flag(table_space, 8_589_934_592).
 %:-set_prolog_flag(table_space, 17_179_869_184).
+%:-set_prolog_flag(table_space, 34_359_738_368). % 32 GB
+%:-set_prolog_flag(table_space, 49_392_123_904). % 46 GB
+%:-set_prolog_flag(table_space, 51_539_607_552). % 48 GB
+%:-set_prolog_flag(table_space, 53_687_091_200). % 50 GB
 :-current_prolog_flag(table_space, V)
  ,format('Table space ~D~n',[V]).
