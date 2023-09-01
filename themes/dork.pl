@@ -131,10 +131,10 @@ prolog_colour:style(Class, Style) :-
 %     1. Run ``?- make`` in Prolog
 %     2. In the editor, use ``M-x reload_styles``
 
-style(goal(built_in,_),          [colour(cyan)]).
-style(goal(imported(_),_),       [colour(cyan)]).
-style(goal(autoload(_),_),       [colour(dark_cyan)]).
-style(goal(global,_),            [colour(dark_cyan)]).
+style(goal(built_in,_),          [colour(pink)]).
+style(goal(imported(_),_),       [colour(pale_green)]).
+style(goal(autoload(_),_),       [colour(light_blue)]).
+style(goal(global,_),            [colour(dark_cyan),bold(true)]).
 style(goal(undefined,_),         [colour(orange)]).
 style(goal(thread_local(_),_),   [colour(magenta), underline(true)]).
 style(goal(dynamic(_),_),        [colour(magenta)]).
@@ -143,9 +143,9 @@ style(goal(expanded,_),          [colour(cyan), underline(true)]).
 style(goal(extern(_),_),         [colour(cyan), underline(true)]).
 style(goal(extern(_,private),_), [colour(red)]).
 style(goal(extern(_,public),_),  [colour(cyan)]).
-style(goal(recursion,_),         [underline(true)]).
+style(goal(recursion,_),         [colour(pale_green),underline(true)]).
 style(goal(meta,_),              [colour(orangered), bold(true)]).
-style(goal(foreign(_),_),        [colour(darkturquoise)]).
+style(goal(foreign(_),_),        [colour(darkturquoise),bold(true)]).
 style(goal(local(_),_),          []).
 style(goal(constraint(_),_),     [colour(darkcyan)]).
 style(goal(not_callable,_),      [background(orange)]).
@@ -170,7 +170,7 @@ style(head(iso,_),               [background(orange), bold(true)]).
 style(head(def_iso,_),           [colour(cyan), bold(true)]).
 style(head(def_swi,_),           [colour(cyan), bold(true)]).
 % Modified - all other head literals (other than the ones above).
-style(head(_,_),                 [colour(cyan), bold(true)]).
+style(head(_,_),                 [colour(pale_green)]).
 
 % Left alone - colour for module references, e.g. configuration:bla
 style(module(_),                 [colour(light_slate_blue)]).
@@ -185,10 +185,10 @@ style(method(_),                 [bold(true)]).
 style(var,                       [colour(orange)]).
 style(singleton,                 [colour(orange),bold(true)]).
 style(unbound,                   [colour(red), bold(true)]).
-style(quoted_atom,               [colour(pale_green)]).
-style(string,                    [colour(pale_green)]).
-style(codes,                     [colour(pale_green)]).
-style(chars,                     [colour(pale_green)]).
+style(quoted_atom,               [colour(turquoise)]).
+style(string,                    [colour(turquoise)]).
+style(codes,                     [colour(turquoise)]).
+style(chars,                     [colour(turquoise)]).
 style(nofile,                    [colour(red)]).
 style(file(_),                   [colour(cyan), underline(true)]).
 style(file_no_depend(_),         [colour(cyan), underline(true),
