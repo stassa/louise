@@ -144,13 +144,14 @@ style(goal(extern(_),_),         [colour(cyan), underline(true)]).
 style(goal(extern(_,private),_), [colour(red)]).
 style(goal(extern(_,public),_),  [colour(cyan)]).
 style(goal(recursion,_),         [underline(true)]).
-style(goal(meta,_),              [colour(red4)]).
+style(goal(meta,_),              [colour(orangered), bold(true)]).
 style(goal(foreign(_),_),        [colour(darkturquoise)]).
 style(goal(local(_),_),          []).
 style(goal(constraint(_),_),     [colour(darkcyan)]).
 style(goal(not_callable,_),      [background(orange)]).
 
-style(option_name,               [colour('#3434ba')]).
+% Modified - predicate options, recognised and not.
+style(option_name,               [colour(darkcyan), bold(true)]).
 style(no_option_name,            [colour(orange)]).
 
 % Modified - predicates defined in module and exported.
@@ -181,8 +182,8 @@ style(directive,                 [background(grey20)]).
 style(method(_),                 [bold(true)]).
 
 % Modified - variable and singleton styles
-style(var,                       [colour(orangered)]).
-style(singleton,                 [bold(true), colour(orangered2)]).
+style(var,                       [colour(orange)]).
+style(singleton,                 [colour(orange),bold(true)]).
 style(unbound,                   [colour(red), bold(true)]).
 style(quoted_atom,               [colour(pale_green)]).
 style(string,                    [colour(pale_green)]).
@@ -225,7 +226,7 @@ style(dict_function(_),          [colour(pale_green)]).
 style(dict_return_op,            [colour(cyan)]).
 
 style(hook,                      [colour(cyan), underline(true)]).
-style(dcg_right_hand_ctx,        [background('#d4ffe3')]).
+style(dcg_right_hand_ctx,        [colour(cyan), bold(true)]).
 
 style(error,                     [background(orange)]).
 style(type_error(_),             [background(orange)]).
