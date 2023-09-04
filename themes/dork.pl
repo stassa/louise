@@ -135,7 +135,7 @@ style(goal(built_in,_),          [colour(pink)]).
 style(goal(imported(_),_),       [colour(pale_green)]).
 style(goal(autoload(_),_),       [colour(light_blue)]).
 style(goal(global,_),            [colour(dark_cyan),bold(true)]).
-style(goal(undefined,_),         [colour(orange)]).
+style(goal(undefined,_),         [colour(red),bold(true)]).
 style(goal(thread_local(_),_),   [colour(magenta), underline(true)]).
 style(goal(dynamic(_),_),        [colour(magenta)]).
 style(goal(multifile(_),_),      [colour(pale_green)]).
@@ -160,7 +160,7 @@ style(head(public(_),_),         [colour('#016300'), bold(true)]).
 style(head(extern(_),_),         [colour(cyan), bold(true)]).
 style(head(dynamic,_),           [colour(magenta), bold(true)]).
 style(head(multifile,_),         [colour(pale_green), bold(true)]).
-style(head(unreferenced,_),      [colour(red), bold(true)]).
+style(head(unreferenced,_),      [colour(yellow)]).
 style(head(hook,_),              [colour(cyan), underline(true)]).
 style(head(meta,_),              []).
 style(head(constraint(_),_),     [colour(darkcyan), bold(true)]).
