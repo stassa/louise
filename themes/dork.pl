@@ -236,6 +236,8 @@ style(instantiation_error,       [background(orange)]).
 style(table_option(_),           [bold(true)]).
 style(table_mode(_),             [bold(true)]).
 
+style(function,                  [colour(dark_turquoise),bold(true)]).
+style(no_function,               [colour(red),bold(true)]).
 
 		 /*******************************
 		 *         GUI DEFAULTS		*
@@ -276,6 +278,12 @@ pce_style(editor,
             isearch_style(style(background := green, colour := black)),
             isearch_other_style(style(background := pale_turquoise,
                                       colour := black))
+          ]).
+
+pce_style(emacs_prolog_mode,
+          [ varmark_style(style(background := grey30,
+                                colour := yellow,
+                                underline := true))
           ]).
 
 % Graphical debugger
