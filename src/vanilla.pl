@@ -9,15 +9,14 @@
 
 */
 
-:-table(prove/6).
 
-%!	prove(?Literals,+Limit,+Metarules,+Sig,+Acc,-Metasubs) is
+%!	prove(+Literals,+Limit,+Metarules,+Sig,+Acc,-Metasubs) is
 %!	nondet.
 %
 %	A vanilla MIL meta-interpreter for Top Program Construction.
 %
-%	Literal is a set of encapsulated literals (as a "tree" of Prolog
-%	terms, in parentheses) currently being refuted.
+%	Literals is a set of encapsulated literals (as a "tree" of
+%	Prolog terms, in parentheses) currently being refuted.
 %
 %	Limit is the clause limit defined in the configuration option
 %	clause_limit/1. Limit restricts the number of distinct clauses
@@ -81,19 +80,48 @@
 %	general) to learn recursive programs and to perform predicate
 %	invention without the restrictions of earlier systems.
 %
-prove(true,_K,_MS,_Ss,Subs,Subs):-
+%	@tbd This is the interface to the business-end meta-interpreter,
+%	prove_/6 (note the underscore). Consider removing the
+%	accumulator from this predicate. Conversely, remember that the
+%	prove_/6 meta-interpreter _can_ be called with a non-empty
+%	accumulator, to repair a program.
+%
+prove(Ls,K,MS,Ss,Subs,Acc):-
+	configuration:untable_meta_interpreter(true)
+	,!
+	,S = (untable(prove_/6)
+	     ,table(prove_/6)
+	     )
+	,G = prove_(Ls,K,MS,Ss,Subs,Acc)
+	,C = untable(prove_/6)
+	,setup_call_cleanup(S,G,C).
+prove(Ls,K,MS,Ss,Subs,Acc):-
+	configuration:untable_meta_interpreter(false)
+	,table(prove_/6)
+	,prove_(Ls,K,MS,Ss,Subs,Acc).
+
+
+
+%!	prove_(?Literals,+Limit,+Metarules,+Sig,+Acc,-Metasubs) is
+%!	nondet.
+%
+%	A vanilla MIL meta-interpreter for Top Program Construction.
+%
+%	Actual meta-interpreter fronted by prove/6.
+%
+prove_(true,_K,_MS,_Ss,Subs,Subs):-
 	!
 	,debug(prove,'Metasubs so-far: ~w',[Subs]).
-prove((L,Ls),K,MS,Ss,Subs,Acc):-
-	prove(L,K,MS,Ss,Subs,Subs_)
-        ,prove(Ls,K,MS,Ss,Subs_,Acc).
-prove((L),K,MS,Ss,Subs,Acc):-
+prove_((L,Ls),K,MS,Ss,Subs,Acc):-
+	prove_(L,K,MS,Ss,Subs,Subs_)
+        ,prove_(Ls,K,MS,Ss,Subs_,Acc).
+prove_((L),K,MS,Ss,Subs,Acc):-
         L \= (_,_)
 	,L \= true
         ,clause(L,K,MS,Ss,Subs,Subs_,Ls)
-        ,prove(Ls,K,MS,Ss,Subs_,Acc).
+        ,prove_(Ls,K,MS,Ss,Subs_,Acc).
 /* % Uncomment for richer debugging and logging.
-prove(L,_MS,_Ss,Subs,_Acc):-
+prove_(L,_MS,_Ss,Subs,_Acc):-
 	L \= true
         ,debug(prove,'Failed to prove literals: ~w',[L])
 	,debug(prove,'Metasubs so-far: ~w',[Subs])

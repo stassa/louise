@@ -22,6 +22,7 @@
                         ,tautology/1
 			,theorem_prover/1
                         ,unfold_invented/1
+                        ,untable_meta_interpreter/1
 			,op(100,xfx,metarule)
 			]).
 
@@ -1011,6 +1012,31 @@ theorem_prover(resolution).
 %
 unfold_invented(false).
 %unfold_invented(true).
+
+
+%!      untable_meta_interpreter(?Bool) is semidet.
+%
+%       Whether to untable Vanilla between learning queries.
+%
+%       Note: Experimental.
+%
+%       The Vanilla meta-interpreter in vanilla.pl is tabled to avoid
+%       infinite left-recursions during learning. If the tables are not
+%       undone after a learning query is completed, the time to complete
+%       the same query can be significantly reduced, but it's sometimes
+%       hard to tell whether results change after changes to training
+%       data, or not. This may have to do with encapsulation that turns
+%       all literals with the same arity to literals of the same
+%       encapsulated predicate.
+%
+%       In any case, deactivate this option (set it to "false") only if
+%       strange behaviour is encountered. Otherwise, leave it to its
+%       default-ish of "true".
+%
+%       @tbd Check that this option is really needed and it wouldn't
+%       just be simpler to always untable the meta-interpreter.
+%
+untable_meta_interpreter(false).
 
 
 % Loads the current experiment file in the Swi-Prolog IDE when the
