@@ -1,4 +1,5 @@
-:-module(vanilla, [prove/6
+:-module(vanilla, [refresh_tables/1
+		  ,prove/6
 		  ,bind_head_literal/3
 		  ,check_constraints/1
 		  ,free_member/2
@@ -9,8 +10,75 @@
 
 */
 
+:-table(prove/6).
 
-%!	prove(+Literals,+Limit,+Metarules,+Sig,+Acc,-Metasubs) is
+
+%!	refresh_tables(+Action) is det.
+%
+%	Table or untable prove/6.
+%
+%	The Vanilla meta-interpreter implemented in prove/6 is tabled to
+%	avoid infinite left-recursions during learning. This can
+%	significantly reudce the timing of execution of a learning query
+%	with the same experiment data.
+%
+%	However, if an experiment file is changed after a learning
+%	query completes, it's possible that some of the changes do not
+%	cause the memoization tables to be updated. For example, this is
+%	the case when changing the refers to background predicates and
+%	metarules in the second arguments of background_knowledge/2 and
+%	metarules/2.
+%
+%	To try and ensure that learning proceeds from the latest version
+%	of the MIL problem defined in an experiment file, this predicate
+%	should be called by any learning predicate to clean up the
+%	tables before a learning attempt.
+%
+%	As an example of its use, this predicate is called by
+%	top_program/5 in louise.pl, as a "setup" step before executing
+%	the goals for the generalisation and specialisation steps of
+%	TPC:
+%	==
+%	top_program(Pos,Neg,BK,MS,Ts):-
+%	% Uses the Prolog engine and avoids using the dynamic db too much.
+%		configuration:theorem_prover(resolution)
+%		,configuration:clause_limit(K)
+%		,K > 0
+%		,S = (write_problem(user,[BK],Refs)
+%		     ,refresh_tables(table)
+%		     )
+%
+%		% ... TPC code calling prove/6
+%
+%		,C = (erase_program_clauses(Refs)
+%		     ,refresh_tables(untable)
+%		     )
+%		,setup_call_cleanup(S,G,C)
+%	==
+%
+%	Note taht there is some slowdown when this predicate is called
+%	between learning queries with different clause_limit/1 settings.
+%	This may be because adding and removing tabling with table/1 and
+%	untable/1, as done in this predicate, leaves behind some
+%	garbage. The SWI-Prolog documentationr states that table/1 and
+%	untable/1 are meant to be used at the top-level and that
+%	abolish_table_subgoals/1 should be used instead to cleanup
+%	tables programmatically. However, that predicate seems to cause
+%	even more slowdown than table/1 and untable/1, so we're going
+%	with the latter.
+%
+refresh_tables(table):-
+	table(prove/6).
+refresh_tables(untable):-
+	configuration:untable_meta_interpreter(false)
+	,!.
+refresh_tables(untable):-
+	configuration:untable_meta_interpreter(true)
+	,untable(prove/6).
+
+
+
+%!	prove(?Literals,+Limit,+Metarules,+Sig,+Acc,-Metasubs) is
 %!	nondet.
 %
 %	A vanilla MIL meta-interpreter for Top Program Construction.
@@ -79,49 +147,19 @@
 %	to refute a goal-example allows Louise (and MIL systems in
 %	general) to learn recursive programs and to perform predicate
 %	invention without the restrictions of earlier systems.
-%
-%	@tbd This is the interface to the business-end meta-interpreter,
-%	prove_/6 (note the underscore). Consider removing the
-%	accumulator from this predicate. Conversely, remember that the
-%	prove_/6 meta-interpreter _can_ be called with a non-empty
-%	accumulator, to repair a program.
-%
-prove(Ls,K,MS,Ss,Subs,Acc):-
-	configuration:untable_meta_interpreter(true)
-	,!
-	,S = (untable(prove_/6)
-	     ,table(prove_/6)
-	     )
-	,G = prove_(Ls,K,MS,Ss,Subs,Acc)
-	,C = untable(prove_/6)
-	,setup_call_cleanup(S,G,C).
-prove(Ls,K,MS,Ss,Subs,Acc):-
-	configuration:untable_meta_interpreter(false)
-	,table(prove_/6)
-	,prove_(Ls,K,MS,Ss,Subs,Acc).
-
-
-
-%!	prove_(?Literals,+Limit,+Metarules,+Sig,+Acc,-Metasubs) is
-%!	nondet.
-%
-%	A vanilla MIL meta-interpreter for Top Program Construction.
-%
-%	Actual meta-interpreter fronted by prove/6.
-%
-prove_(true,_K,_MS,_Ss,Subs,Subs):-
+prove(true,_K,_MS,_Ss,Subs,Subs):-
 	!
 	,debug(prove,'Metasubs so-far: ~w',[Subs]).
-prove_((L,Ls),K,MS,Ss,Subs,Acc):-
-	prove_(L,K,MS,Ss,Subs,Subs_)
-        ,prove_(Ls,K,MS,Ss,Subs_,Acc).
-prove_((L),K,MS,Ss,Subs,Acc):-
+prove((L,Ls),K,MS,Ss,Subs,Acc):-
+	prove(L,K,MS,Ss,Subs,Subs_)
+        ,prove(Ls,K,MS,Ss,Subs_,Acc).
+prove((L),K,MS,Ss,Subs,Acc):-
         L \= (_,_)
 	,L \= true
         ,clause(L,K,MS,Ss,Subs,Subs_,Ls)
-        ,prove_(Ls,K,MS,Ss,Subs_,Acc).
+        ,prove(Ls,K,MS,Ss,Subs_,Acc).
 /* % Uncomment for richer debugging and logging.
-prove_(L,_MS,_Ss,Subs,_Acc):-
+prove(L,_MS,_Ss,Subs,_Acc):-
 	L \= true
         ,debug(prove,'Failed to prove literals: ~w',[L])
 	,debug(prove,'Metasubs so-far: ~w',[Subs])

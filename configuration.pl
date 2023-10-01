@@ -1036,7 +1036,7 @@ unfold_invented(false).
 %       @tbd Check that this option is really needed and it wouldn't
 %       just be simpler to always untable the meta-interpreter.
 %
-untable_meta_interpreter(false).
+untable_meta_interpreter(true).
 
 
 % Loads the current experiment file in the Swi-Prolog IDE when the

@@ -147,6 +147,8 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	,configuration:clause_limit(K)
 	,K > 0
 	,S = (write_problem(user,[BK],Refs)
+	     ,refresh_tables(untable)
+	     ,refresh_tables(table)
 	     )
 	,G = (debug(top_program,'Constructing Top program...',[])
 	     ,generalise(Pos,MS,Ss_Gen)
@@ -159,6 +161,7 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	     ,debug_clauses(top_program,'Applied metarules',Ts)
 	     )
 	,C = (erase_program_clauses(Refs)
+	     ,refresh_tables(untable)
 	     )
 	,setup_call_cleanup(S,G,C)
 	% Fail if Top Program is empty.
