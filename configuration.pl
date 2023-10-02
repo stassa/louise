@@ -13,7 +13,6 @@
 			,metarule_constraints/2
                         ,metarule_learning_limits/1
                         ,metarule_formatting/1
-                        ,minimal_program_size/2
 			,recursive_reduction/1
                         ,reduce_learned_metarules/1
 			,reduction/1
@@ -514,7 +513,7 @@ learner(louise).
 :-dynamic learning_predicate/1.
 :-multifile learning_predicate/1.
 %learning_predicate(learn/1).
-%learning_predicate(learn_minimal/1).
+%learning_predicate(learn_greedy/1).
 % etc.
 
 
@@ -781,6 +780,8 @@ metarule_formatting(quantified).
 %
 %       Each of Minimum, Maximum should be an integer between 1 and
 %       positive infinity ('inf' in Prolog).
+%
+%       @tbd Currently unused.
 %
 minimal_program_size(2,inf).
 

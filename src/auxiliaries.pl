@@ -992,7 +992,7 @@ list_learning_results(P/N):-
 	\+ memberchk(P,[learn
 		       ,learn_meta
 		       ,learn_metarules
-		       ,learn_minimal
+		       ,learn_greedy
 		       ,learn_with_examples_invention
 		       ,thelma
 		       ])

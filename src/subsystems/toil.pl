@@ -8,7 +8,6 @@
 
 :-use_module(project_root(configuration)).
 :-use_module(src(auxiliaries)).
-:-use_module(subsystems(greedy)).
 :-use_module(lib(lifting/lifting)).
 :-use_module(src(mil_problem)).
 :-use_module(src(vanilla)).
@@ -644,6 +643,32 @@ specialised_metarule(N,Pos,Neg,M,Sig,Acc,MS_):-
 encapsulated_metarule(_Sub:-(H,B),H:-B):-
 	!.
 encapsulated_metarule(_Sub:-L,L).
+
+
+%!	reduced_examples(+Positives,+Clause,-Free) is det.
+%
+%	Collect positive examples not entailed by a Clause.
+%
+%	Positives is the list of all free Positive examples. Clause is a
+%	clause in the minimal program. Free is the list of examples in
+%	Positives that are not entailed by Clause.
+%
+reduced_examples(Pos,C,Pos_):-
+	free_examples(Pos,C,[],Pos_).
+
+%!	free_examples(+Pos,Clause,+Acc,-Free) is det.
+%
+%	Business end of reduced_examples/3.
+%
+free_examples([],_C,Fs,Fs):-
+	!.
+free_examples([E|Pos],C,Acc,Bind):-
+	copy_term(C,E:-B)
+	,call(B)
+	,!
+	,free_examples(Pos,C,Acc,Bind).
+free_examples([E|Pos],C,Acc,Bind):-
+	free_examples(Pos,C,[E|Acc],Bind).
 
 
 %!	renamed_metarule(+Counter,+Metarule,-Renamed) is det.

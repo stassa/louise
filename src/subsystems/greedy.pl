@@ -1,7 +1,6 @@
 :-module(greedy, [learn_greedy/1
 		 ,learn_greedy/2
 		 ,learn_greedy/5
-		 ,reduced_examples/3
 		 ]).
 
 :-use_module(project_root(configuration)).
@@ -9,36 +8,81 @@
 :-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).
 
-/** <module> Simultaneous construction and reduction of the Top program.
+/** <module> New version of greedy Top Program Construction.
 
-This is the general idea:
+This module defines learning predicates for "greedy" Top Program
+Construction (TPC) that combines ordinary TPC with an example coverage
+algorithm.
 
-a) Take a positive example
-b) Generalise it (construct a clause that entails it)
-c) Specialise it (drop it if it entails any negative examples)
-d) Find the positive examples the new clause entails
-e) Remove them from the set of positives
-f) Continue with a new positive example
+The greedy version of TPC implemnted in this module proceeds as follows:
 
-This is essentially a coverage test peformed on each new clause of the
-Top program. The purpose however is to avoid deriving multiple clauses
-that entail the same examples, rather than testing whether a clause
-belongs to a correct hypothesis - the latter task is handled by the
-genealisation and specialisation steps, as in ordinary Top program
-construction.
+a) Set the hypothesis H to empy, []
+b) Take the next positive example Ep from Pos
+c) Learn: construct a hypothesis Hi from Ep, by TPC.
+d) Update: Set H to H Union Hi
+e) Reduce: discard each positive example entailed by H.
+f) Repeat: start over from (a)
+g) Return H when Pos = [].
 
-The learning predicates in this module will backtrack over all clauses
-generalising a positive example thereby generating multiple correct
-hypotheses. Although there is no guarantee of minimality (despite the
-optimistic naming of the learning predicates) and no attempt to order
-the returned hypotheses by size, it should generally be the case that
-shorter hypotheses are found before longer ones.
+Unlike the standard TPC, greedy TPC is non-deterministic and returns
+hypotheses that are sub-sets of the Top Program, rather than a unique
+set of clauses. On backtracking, each sub-set of the Top Program is
+returned such that each returned program is a correct hypothesis (that
+entails all the positive and none of the negative examples) but without
+guaranteeing uniqueness.
+
+Examples of use:
+==
+% Hypothesis learned from data/examples/anbn.pl with orindary TPC:
+
+?- _T = s/2, time(learn(_T,_Ps)), print_clauses(_Ps), length(_Ps,N).
+% 407,728 inferences, 0.062 CPU in 0.071 seconds (88% CPU, 6523648 Lips)
+'$1'(A,B):-a(A,C),a(C,B).
+'$1'(A,B):-a(A,C),s(C,B).
+'$1'(A,B):-b(A,C),b(C,B).
+'$1'(A,B):-s(A,C),b(C,B).
+s(A,B):-'$1'(A,C),'$1'(C,B).
+s(A,B):-'$1'(A,C),b(C,B).
+s(A,B):-a(A,C),'$1'(C,B).
+s(A,B):-a(A,C),b(C,B).
+N = 8.
+
+% Sub-hypotheses learned from the same experiment file by greedy-TPC:
+
+?- _T = s/2, time(learn_greedy(_T,_Ps)), print_clauses(_Ps), length(_Ps,N).
+% 235,886 inferences, 0.016 CPU in 0.028 seconds (55% CPU, 15096704 Lips)
+'$1'(A,B):-s(A,C),b(C,B).
+s(A,B):-a(A,C),'$1'(C,B).
+s(A,B):-a(A,C),b(C,B).
+N = 3 ;
+% 10,066 inferences, 0.000 CPU in 0.002 seconds (0% CPU, Infinite Lips)
+'$1'(A,B):-a(A,C),s(C,B).
+s(A,B):-'$1'(A,C),b(C,B).
+s(A,B):-a(A,C),b(C,B).
+N = 3 ;
+% 78,098 inferences, 0.016 CPU in 0.011 seconds (138% CPU, 4998272 Lips)
+'$1'(A,B):-a(A,C),a(C,B).
+'$1'(A,B):-b(A,C),b(C,B).
+s(A,B):-'$1'(A,C),'$1'(C,B).
+N = 3 ;
+% 11,910 inferences, 0.000 CPU in 0.015 seconds (0% CPU, Infinite Lips)
+[]
+N = 0.
+==
 
 */
 
 %!	learn_greedy(+Targets) is nondet.
 %
-%	Learn a minimal definition of one or more learning Targets.
+%	Learn sbusets of a Top Program greedily from a list of Targets.
+%
+%	Greedy Top Program Construction version of learn/1.
+%
+%	Targets is a list of predicate indicators, Symbol/Arity, of a
+%	set of target predicates. Each target in Targets must have at
+%	least one example defined in the current experiment file.
+%
+%	The learned Top Program is printed to the top-level. More
 %
 learn_greedy(Ts):-
 	learn_greedy(Ts,Ps)
@@ -48,10 +92,16 @@ learn_greedy(Ts):-
 
 %!	learn_greedy(+Targets,+Program) is det.
 %
-%	Learn a minimal definition of one or more learning Targets.
+%	Learn subsets of a Top Program greedily from a list of Targets.
+%
+%	Greedy Top Program Construction version of learn/2.
 %
 %	The elements of the MIL problem are taken from the current
 %	experiment file, via tp_safe_experiment_data/5.
+%
+%	Targets is a list of predicate indicators, Symbol/Arity, of a
+%	set of target predicates. Each target in Targets must have at
+%	least one example defined in the current experiment file.
 %
 learn_greedy(Ts,_Ps):-
 	(   \+ ground(Ts)
@@ -64,9 +114,46 @@ learn_greedy(Ts,Ps):-
 
 
 
-%!	learn(+Pos,+Neg,+BK,+Metarules,-Progam) is det.
+%!	learn_greedy(+Pos,+Neg,+BK,+Metarules,-Progam) is det.
 %
-%	Learn a minimal Progam from the elements of a MIL problem.
+%	Learn subsets of a Top Progam from elements of a MIL problem.
+%
+%	Pos is a list of ground unit clauses, the positive examples.
+%
+%	Neg is a list of ground Horn goals, the negative examples.
+%
+%	BK is a list of predicate indicators, Symbol/Arity, of the
+%	predicates defined in a background knowledge theory that must be
+%	accessible to this predicate.
+%
+%	Metarules is a list of atomic identifiers of metarules to be
+%	used in learning.
+%
+%	Program is a list of clauses, a sub-set of the Top Program
+%	derivable from the given elements of the MIL problem. On
+%	backtracking, each sub-set of the Top Progra is returned, such
+%	that each sub-set is a correct hypothesis and each sub-set of
+%	the Top Program that is a correct hypothesis is returned
+%	eventually.
+%
+%	This predicate learns subsets of the Top Program greedily, by
+%	the procedure outlined at the start of this module. In
+%	particular, subsets of the Top Program are constructed
+%	individually, without first constructing the entire Top Program.
+%
+%	The trade-off is that the greedy version of Top Program
+%	Construction implemented in this predicate is faster, since it
+%	doesn't need to process each positive example (at least not
+%	until the worst case); but the order in which sub-sets of the
+%	Top Program are constructed, and returned, depends on the
+%	ordering of examples and the background knowledge and metarules,
+%	and the thus may be over-specific by overfitting to the first
+%	few examples processed.
+%
+%	Note also that, unlike learn/1, this predicate does not call
+%	Plotkin's program reduction to eliminate redundant clauses from
+%	the output. Such redundant clauses are eliminated automatically
+%	by the greedy learning procedure.
 %
 learn_greedy([],_Neg,_BK,_MS,_Ts):-
 	throw('learn_greedy/5: No positive examples found. Cannot train.').
@@ -82,230 +169,278 @@ learn_greedy(Pos,Neg,BK,MS,_Ts):-
 	;   fail
 	).
 learn_greedy(Pos,Neg,BK,MS,Ps):-
-	debug(minimal_program,'Encapsulating problem',[])
+	configuration:unfold_invented(U)
+	,configuration:fold_recursive(F)
+	,debug(learn,'Encapsulating problem',[])
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
-	,debug(minimal_program,'Constructing minimal program...',[])
-	,minimal_program(Pos_,Neg_,BK_,MS_,Ms)
+	,debug(learn,'Constructing Top Program greedily...',[])
+	,greedy_top_program(Pos_,Neg_,BK_,MS_,Ms)
 	,examples_targets(Pos,Ss)
-	,debug(minimal_program,'Excapsulating hypothesis',[])
-	,excapsulated_clauses(Ss,Ms,Ps).
+	,debug(learn,'Excapsulating hypothesis',[])
+	,excapsulated_clauses(Ss,Ms,Ps_1)
+	,(   U ==  true
+	 ->  debug(learn,'Unfolding invented...',[])
+	    ,unfold_invented(Ps_1,Pos,BK,Ps_2)
+	 ;   Ps_2 = Ps_1
+	 )
+	,(   F == true
+	 ->  debug(learn,'Folding to introduce recursion...',[])
+	    ,fold_recursive(Ps_2,Ps)
+	 ;   Ps = Ps_2
+	 ).
 
 
-%!	minimal_program(+Pos,+Neg,+BK,+MS,-Program) is nondet.
+%!	greedy_top_program(+Pos,+Neg,+BK,+MS,-Program) is nondet.
 %
-%	Construct a minimal Program from the elements of a MIL problem.
+%       Construct a Top Program greedily from elements of a MIL problem.
 %
-minimal_program(_Pos,_Neg,_BK,_MS,_Ts):-
+greedy_top_program(_Pos,_Neg,_BK,_MS,_Ts):-
 	configuration:theorem_prover(tp)
-	,throw('theorem_prover(tp) not working with minimal program learning').
-minimal_program(Pos,Neg,BK,MS,Ts):-
+	,throw('theorem_prover(tp) cannot yet be used with greedy TPC.').
+greedy_top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
-	,configuration:max_error(L_H,L_C)
-	,C_H = c(0)
-	,C_C = c(0)
-	,S = write_problem(user,[BK,Pos],Refs)
-	,G = minimal_program_(Pos,Neg,MS,[L_H,L_C,C_H,C_C],[],Ts)
-	,C = erase_program_clauses(Refs)
-	,setup_call_cleanup(S,G,C).
-minimal_program(_Pos,_Neg,_BK,_MS,[]):-
-% If Top program construction fails return an empty program.
-	debug(minimal_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
-
-
-%!	minimal_program_(+Pos,+Neg,+Metarules,+Errors,+Acc,-Program) is
-%!	nondet.
-%
-%	Business end of minimal_program/5.
-%
-%       minimal_program_/5 performs the following steps in sequence:
-%
-%       a) Take the next positive example, e+ in Pos
-%       b) Generalise e+ to a metasubstitution, S
-%	c) Test S against constraints
-%	d) If S passes the test, specialise S against the negative
-%	examples; else, repeat from (b)
-%	e) If S entails any negative examples, repeat from (b)
-%	f) Else, apply S to its corresponding metarule, yielding a
-%	definite clause, C (encapsulated)
-%	g) Remove from Pos those examples entailed by C
-%	h) Add C to the minimal program
-%	i) If e+ cannot be generalised, continue with a new positive
-%	example, e+' in Pos
-%	j) Return when there are no more positive examples left.
-%
-%	Step (g), the reduction of the positive examples is performed by
-%	reduced_examples/3. That predicate removes from the list Pos,
-%	all those (positive example) atoms entailed by the latest
-%	derived clause C. Learning continues with the examples remaining
-%	in Pos after this reduction step.
-%
-%	The end result is a set of clauses that entail each positive
-%	example and none of the positive examples, such that no two
-%	clauses in the set entail the same positive examples. In this
-%	sense, the returned program is irredundant, or even minimal.
-%
-%	@bug If generalising a positive example fails, the example atom
-%	is added to the Program as an "exception" (or "atomic residue").
-%	However, because generalisation proceeds nondeterministicaly
-%	until an example cannot be generalised any more, failure to
-%	generalis an example will happen exactly once for _every_
-%	positive example. Which means that, even given a set of examples
-%	for which there _does_ exist a minimal program entailing each
-%	example in the set, this predicate will eventually generate all
-%	hypotheses including sub-sets of the positive examples as
-%	"exceptions". More work needed.
-%
-minimal_program_([],_Neg,_MS,_Es,Acc,Cs):-
-% Sorting in descending order to move atomic residue to the top of the
-% program. Other clauses will generally not be sorted, e.g.
-% alphabetically- at least not unless they are fully ground. That's
-% because the standard order of terms orders variables according to
-% their age (i.e. the order in which they were initialised in Prolog's
-% memory). For this reason, we're grounding or otherwise jumping through
-% hoops to sort, non-ground Prolog terms elsewhere in the project. See
-% for example program_results/4 in lib/evaluation/evaluation.pl etc.
-	!
-       ,minimal_program_constraints(Acc)
-       ,sort(0,@>,Acc,Cs).
-minimal_program_([E|Pos],Neg,MS,[L_H,L_C,C_H,C_C],Acc,Bind):-
-	generalise_minimal(E,MS,M,Sub)
-	,constraints(Sub)
-	,specialise_minimal(Neg,M,[L_H,L_C,C_H,C_C],Sub)
-	,metarule_application(Sub,M,C)
-	,\+ tautology(C)
-	,reduced_examples(Pos,C,Pos_)
-	,minimal_program_(Pos_,Neg,MS,[L_H,L_C,C_H,C_C],[C|Acc],Bind).
-/*minimal_program_([_E|Pos],Neg,MS,Acc,Bind):-
-% Causes multiple backtrackings over the same clauses.
-% Probably backtracking over generalise_minimal/4 after
-% bouncing off minimal_program_constraints/1.
-	minimal_program_(Pos,Neg,MS,Acc,Bind).
-*/
-minimal_program_([E|Pos],Neg,MS,[L_H,L_C,C_H,C_C],Acc,Bind):-
-% If E cannot be generalised, add it to the program as an "exception".
-	minimal_program_(Pos,Neg,MS,[L_H,L_C,C_H,C_C],[E|Acc],Bind).
-
-
-%!	generalise_minimal(+Example,+Metarules,-Metarule,-Metasubstitution)
-%!	is nondet.
-%
-%	Generalisation step of minimal Top program construction.
-%
-%	Example is a single positive example atom. Metarules is the list
-%	of encapsulated and expanded metarules in the current MIL
-%	problem.
-%
-%	Metarule is the metarule used to perform a metasubstitution. We
-%	output this so it can be passed to specialise_minimal/3 which
-%	simplifies testing the constructed Metasubstitution.
-%
-%	Metasubstitution is a metasubstitution of Metarule that entails
-%	Example.
-%
-%	genearlise_minimal/4 will generate all metasubstitutions
-%	entailing Example on backtracking.
-%
-generalise_minimal(Ep,MS,M,Sub):-
-	copy_term(MS,MS_)
-	,member(M,MS_)
-	,copy_term(M,M_)
-	,metasubstitution(Ep,M_,Sub).
-
-
-%!	specialise_minimal(+Neg,+Metarule,+Errors,+Metasubstitution) is
-%!	nondet.
-%
-%	Specialisation step of minimal Top program construction.
-%
-%	This is the same as the specialisation step in Louise: it tests
-%	a Metasubstitution derived in the genearlisation step against
-%	the negative examples and fails if there is any negative example
-%	that is entailed by Metasubstitution.
-%
-%	@tbd Is Metarule really necessary to be passed here? I'm not
-%	sure.
-%
-specialise_minimal(Neg,M,[L_H,L_C,C_H,C_C],Sub):-
-	nb_setarg(1,C_C,0)
-	,copy_term(M,M_)
-	,\+((member(:-En,Neg)
-	    ,metasubstitution(En,M_,Sub)
-	    ,(   louise:error_exceeded(L_H,C_H,hypothesis)
-	     ;   louise:error_exceeded(L_C,C_C,clause)
+        ,configuration:clause_limit(K)
+	,(   K > 0
+	 ->  Ps = [BK]
+	 ;   Ps = [Pos,BK]
+	 )
+	,S = (write_problem(user,Ps,Refs)
+	     ,refresh_tables(untable)
+	     ,refresh_tables(table)
 	     )
-	    ,debug(errors,'Maximum Errors exceeded!',[])
-	    )).
+	,G = (greedy_top_program(Pos,Neg,MS,K,[],Es,[],Subs)
+	     ,applied_metarules(Subs,MS,Ts_)
+	     ,append(Es,Ts_,Ts)
+	     )
+	,C = (erase_program_clauses(Refs)
+	     ,refresh_tables(untable)
+	     )
+	,setup_call_cleanup(S,G,C)
+	,Ts \= [].
+greedy_top_program(_Pos,_Neg,_BK,_MS,[]):-
+% If Top program construction fails return an empty program.
+	debug(greedy_top_program,'INSUFFICIENT DATA FOR MEANINGFUL ANSWER',[]).
 
-
-%!	metasubstitution(+Example,+Metarule,?Metasubstitution) is
+%!	greedy_top_program(+Ps,+Ns,+Bs,+Ms,+K,+Res,+Acc,-Subs) is
 %!	nondet.
 %
-%	Derive a Metasubstitution of Metarule entailing an Example.
+%	Business end of greedy_top_program/5.
 %
-%	Example is either a positive example or a negative example. A
-%	positive example is a ground definite unit clause, while a
-%	negative example is a ground definite goal (i.e. a clause of the
-%	form :-Example).
+%	Ps, Ns Bs, Ms are the positive and negative examples, the
+%	background knowledge and the metarules, respectively.
 %
-%	Metasubstitution may also be bound on entry, in which case this
-%	predicate verifies the entailment of Example by
-%	Metasubstitution.
+%	K is the value of the configuration option clause_limit/1,
+%	passed in as an argument to avoid unnecessarily querying the
+%	option all the time through various loops.
 %
-%	Copied from Louise module.
+%	Res is the atomic residue left behind after learning: a set of
+%	positive examples not covered by the returned hypothesis.
 %
-metasubstitution(E,M,Sub):-
-	bind_head_literal(E,M,(Sub:-(E,Ls)))
-	,user:call(Ls).
+%	Acc is an accumulator of metasubstitutions and Subs is the list
+%	of metasubstitutions returned: a list of Sub-Metarule pairs,
+%	where each Sub is a ground metasubstitution atom and each
+%	Metarule is an expanded metarule.
+%
+%	@bug This doesn't correctly collect uncovered examples.
+%
+greedy_top_program([],_Neg,_MS,_K,Es,Es,Subs,Subs):-
+	debug(top_program,'Finished greedy learning.',[])
+	,!.
+greedy_top_program([Ep|Pos],Neg,MS,K,Acc_Es,Bind_Es,Acc_Ts,Bind_Ts):-
+% Kind of a red cut. Stops backtracking over reduced_examples/5
+% so we don't re-process sub-sets of examples already seen.
+        !
+	,debug(top_program,'Generalising example ~w...',[Ep])
+	,generalise_greedy(Acc_Ts,Ep,K,MS,Acc_Ts_)
+	,debug_clauses(top_program,'Hypothesis so-far:',Acc_Ts_)
+	,debug(top_program,'Specialising learned hypothesis...',[])
+        ,specialise_greedy(Acc_Ts_,Neg,K,MS,Acc_Ts_s)
+	,debug_clauses(top_program,'Specialised hypothesis:',Acc_Ts_s)
+	,length(Acc_Ts_s,M)
+	,debug(top_program,'Cardinality of hypothesis so-far: ~w',[M])
+	,debug(top_program,'Reducing examples...',[])
+        ,reduced_examples(Pos,MS,K,Acc_Ts_s,Pos_)
+	,length(Pos_,N)
+	,debug(top_program,'Positive examples remaining: ~w',[N])
+	,greedy_top_program(Pos_,Neg,MS,K,Acc_Es,Bind_Es,Acc_Ts_s,Bind_Ts).
+greedy_top_program([Ep|Pos],Neg,MS,K,Acc_Es,Bind_Es,Acc_Ts,Bind_Ts):-
+% Couldn't generalise _Ep (or not any more). Drop it.
+	debug(top_program,'Could not further generalise example ~w...',[Ep])
+	,greedy_top_program(Pos,Neg,MS,K,[Ep|Acc_Es],Bind_Es,Acc_Ts,Bind_Ts).
 
 
-%!	metarule_application(+Metasubstitution,+Metarule,-Clause) is det.
-%
-%	Apply a Metasubstitution to its corresponding Metarule.
-%
-%	Copied from dynamic_learning module.
-%
-metarule_application(Sub,Sub:-(H,B),H:-B).
 
-
-%!	reduced_examples(+Positives,+Clause,-Free) is det.
+%!	generalise_greedy(+Acc,+Example,+K,+MS,-Acc_New) is det.
 %
-%	Collect positive examples not entailed by a Clause.
+%	Generalise step of greedy Top Program Construction.
 %
-%	Positives is the list of all free Positive examples. Clause is a
-%	clause in the minimal program. Free is the list of examples in
-%	Positives that are not entailed by Clause.
+%	Clauses are selected according to K, the value of the
+%	configuration option clause_limit/1.
 %
-reduced_examples(Pos,C,Pos_):-
-	free_examples(Pos,C,[],Pos_).
-
-%!	free_examples(+Pos,Clause,+Acc,-Free) is det.
-%
-%	Business end of reduced_examples/3.
-%
-free_examples([],_C,Fs,Fs):-
-	!.
-free_examples([E|Pos],C,Acc,Bind):-
-	copy_term(C,E:-B)
-	,call(B)
+generalise_greedy(Acc,Ep,K,MS,Acc_s):-
+	K == 0
 	,!
-	,free_examples(Pos,C,Acc,Bind).
-free_examples([E|Pos],C,Acc,Bind):-
-	free_examples(Pos,C,[E|Acc],Bind).
+	,member(M,MS)
+	,louise:metasubstitution(Ep,M,Sub)
+	,constraints(Sub)
+	,applied_metarules([Sub-M],MS,[C])
+	,\+ tautology(C)
+	,sort(1,@<,[Sub-M|Acc],Acc_s).
+generalise_greedy(Acc,Ep,K,MS,Subs_s):-
+	K > 0
+	,louise:metasubstitutions(Ep,K,MS,Subs)
+	,forall(member(Sub-M,Subs)
+	       ,(check_constraints([Sub])
+		,applied_metarules([Sub-M],MS,[C])
+		,\+ tautology(C)
+		)
+	       )
+	,append(Subs,Acc,Subs_g)
+	,sort(1,@<,Subs_g,Subs_s).
 
 
-%!	minimal_program_constraints(+Program) is det.
+%!	specialise_greedy(+Generalised,+Neg,+K,+MS,-Specialised) is det.
 %
-%	True when Program does not violate minimal program constraints.
+%	Specialise step for greedy Top Program Construction.
 %
-%	Cureently checked constraints:
+%	Clauses are selected according to K, the value of the
+%	configuration option clause_limit/1.
 %
-%	a) Program must be a set of clauses of length n where k =< n
-%	=< j, and k, j are the minimum and maximum cardinality of
-%	minimum programs, specified in the configuration option
-%	minimal_program_size/1.
+specialise_greedy(Subs,Neg,K,_MS,Subs_s):-
+	K == 0
+	,!
+	,specialise(Subs,Neg,Subs_s)
+	,debug(specialise_greedy,'Specialised by negative example(s)',[]).
+specialise_greedy(Subs,Neg,K,MS,Subs_s):-
+% specialise/4 expects a list-of-lists as the first argument!
+% We shall oblige to avoid bracketfucking.
+        K > 0
+        ,specialise([Subs],MS,Neg,Subs_s).
+
+
+%!	specialise_greedy(+Generalised,+MS,+Neg,-Specialised) is det.
 %
-minimal_program_constraints(Ps):-
-	configuration:minimal_program_size(Min,Max)
-       ,length(Ps,N)
-       ,Min =< N
-       ,N =< Max.
+%	Specialise step for clause_limit(K) where K > 0.
+%
+%	Copy of louise:specialise/4, slightly modified to return a list
+%	of metasubstitutions rather than a list of lists of
+%	metasubstitutions, to make it easier to use this predicate in a
+%	greedy Top Program Construction loop.
+%
+specialise(Ss_Pos,_MS,[],Ss_Pos):-
+	!.
+specialise(Ss_Pos,MS,Neg,Ss_Neg):-
+	configuration:clause_limit(K)
+	,K > 0
+	,findall(Sub
+	       ,(member(Subs,Ss_Pos)
+		,findall(Sub
+			,member(Sub-_M,Subs)
+			,Subs_)
+		,debug_clauses(metasubstitutions,'Ground metasubstitutions:',[Subs_])
+		,\+((member(En,Neg)
+		    ,debug_clauses(examples,'Negative example:',En)
+		    ,once(louise:metasubstitutions(En,K,MS,Subs_))
+		    ,debug_clauses(examples,'Proved negative example:',En)
+		    )
+		   )
+		,member(Sub,Subs)
+		)
+	       ,Ss_Neg).
+
+
+%!	reduced_examples(+Pos,+MS,+K,+Subs,-Reduced) is det.
+%
+%	Eliminate positive examples entailed by a program.
+%
+%	Pos and MS are the positive examples and metarules for the
+%	current MIL problem.
+%
+%	K is the value of the configuration option clause_limit/1.
+%
+%	Subs is the list of metasubstitutions derived so-far from
+%	positive examples, and specialised by negative examples. Subs is
+%	in the form returned by specialise_greedy/5, a list of
+%	Sub-Metarule pairs.
+%
+%	Reduced is the set of examples in Pos, minus each example in
+%	Pos that is entailed by the metasubstitutions in Subs (or
+%	rather the clauses into which they are expanded).
+%
+reduced_examples(Pos,MS,K,Subs,Pos_r):-
+	length(Pos,N)
+	,debug(reduced_examples,'Reducing ~w positive example(s)...',[N])
+	,reduced_examples(Pos,MS,K,Subs,[],Pos_r)
+	,length(Pos_r,M)
+	,debug(reduced_examples,'Positive examples remaining: ~w',[M]).
+
+%!	reduced_examples(+Pos,+MS,+K,+Subs,+Acc,-Reduced) is det.
+%
+%	Business end of reduced_examples/5.
+%
+%	Acc is the accumulator of remaining examples in Pos that cannot
+%	be eliminated by resolution with Subs.
+%
+%	Note that this predicate proves an example is entailed by Subs
+%	(with respect to the background knowledge in the Prolog
+%	database) by first unifying the example to the head of a
+%	clause expanded from a metasubstitution in Subs and then
+%	refuting the body literals of that clause (using the Vanilla
+%	meta-interpreter). This is to avoid examples being proved by
+%	dint of being included in the background knowledge-base, as
+%	happens when clause_limit/1 is set to 0.
+%
+reduced_examples([],_MS,_K,_Subs,Acc,Pos_):-
+	reverse(Acc,Pos_)
+	,!.
+reduced_examples([Ep|Pos],MS,K,Subs,Acc,Bind):-
+	debug_clauses(reduced_examples,'Testing example:',[Ep])
+	,example_body(Ep,K,Subs,MS,Bs)
+	,debug_clauses(reduced_examples,'Refuting body goals:',[Bs])
+	,(   K == 0
+	 ->  K_ = 1
+	 ;   K_ = K
+	 )
+	,prove(Bs,K_,MS,[],Subs,Subs)
+	,debug(reduced_examples,'Succeeded!',[])
+	,!
+	,reduced_examples(Pos,MS,0,Subs,Acc,Bind).
+reduced_examples([Ep|Pos],MS,K,Subs,Acc,Bind):-
+	debug(reduced_examples,'Failed!',[])
+	,reduced_examples(Pos,MS,K,Subs,[Ep|Acc],Bind).
+
+
+%!	example_body(+Example,+K,+Subs,+MS,-Body) is nondet.
+%
+%	Match an example to the head of a clause and return its Body.
+%
+%	Clauses are selected according to the value of K.
+%
+%	If K = 0, the first metasubstitution in Subs is selected to be
+%	expanded into a clause, the head of which is matched to the
+%	given Example.
+%
+%	If K = 1, each metasubstitution in Subs is tried in turn until
+%	one is found that is proved by Vanilla, in reduced_examples/6.
+%
+example_body(Ep,0,[Sub-M|_Subs],MS,Bs):-
+% Sub is the latest-derived metasubstitution
+	applied_metarules([Sub-M],MS,[C])
+	,clause_head_body(C,Ep,Bs).
+example_body(Ep,K,Subs,MS,Bs):-
+	K > 0
+	,member(Sub-M,Subs)
+	,applied_metarules([Sub-M],MS,[C])
+	,clause_head_body(C,Ep,Bs).
+
+
+%!	clause_head_body(+Clause,-Head,-Body) is det.
+%
+%	Split a Clause into its Head and Body.
+%
+clause_head_body(Ep:-Bs,Ep,Bs):-
+% Clause with head and body.
+	!.
+clause_head_body(C,_Ep,true):-
+% Clause with no body. Quelle horreure!
+	functor(C,m,_A).
