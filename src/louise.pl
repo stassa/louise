@@ -146,7 +146,11 @@ top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
 	,configuration:clause_limit(K)
 	,K > 0
-	,S = (write_problem(user,[BK],Refs)
+	,(   K == 1
+	 ->  Bs = [Pos,BK]
+	 ;   Bs = [BK]
+	 )
+	,S = (write_problem(user,Bs,Refs)
 	     ,refresh_tables(untable)
 	     ,refresh_tables(table)
 	     )
