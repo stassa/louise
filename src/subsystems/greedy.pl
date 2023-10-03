@@ -200,7 +200,7 @@ greedy_top_program(_Pos,_Neg,_BK,_MS,_Ts):-
 greedy_top_program(Pos,Neg,BK,MS,Ts):-
 	configuration:theorem_prover(resolution)
         ,configuration:clause_limit(K)
-	,(   K > 0
+	,(   K > 1
 	 ->  Ps = [BK]
 	 ;   Ps = [Pos,BK]
 	 )
@@ -295,8 +295,8 @@ generalise_greedy(Acc,Ep,K,MS,Subs_s):-
 		,\+ tautology(C)
 		)
 	       )
-	,append(Subs,Acc,Subs_g)
-	,sort(1,@<,Subs_g,Subs_s).
+	,flatten([Subs|Acc],Subs_f)
+	,sort(1,@<,Subs_f,Subs_s).
 
 
 %!	specialise_greedy(+Generalised,+Neg,+K,+MS,-Specialised) is det.
@@ -309,13 +309,12 @@ generalise_greedy(Acc,Ep,K,MS,Subs_s):-
 specialise_greedy(Subs,Neg,K,_MS,Subs_s):-
 	K == 0
 	,!
-	,specialise(Subs,Neg,Subs_s)
-	,debug(specialise_greedy,'Specialised by negative example(s)',[]).
+	,specialise(Subs,Neg,Subs_s).
 specialise_greedy(Subs,Neg,K,MS,Subs_s):-
 % specialise/4 expects a list-of-lists as the first argument!
 % We shall oblige to avoid bracketfucking.
         K > 0
-        ,specialise([Subs],MS,Neg,Subs_s).
+	,specialise([Subs],MS,Neg,Subs_s).
 
 
 %!	specialise_greedy(+Generalised,+MS,+Neg,-Specialised) is det.
@@ -339,14 +338,15 @@ specialise(Ss_Pos,MS,Neg,Ss_Neg):-
 			,Subs_)
 		,debug_clauses(metasubstitutions,'Ground metasubstitutions:',[Subs_])
 		,\+((member(En,Neg)
-		    ,debug_clauses(examples,'Negative example:',En)
+		    ,debug_clauses(specialise,'Negative example:',En)
 		    ,once(louise:metasubstitutions(En,K,MS,Subs_))
-		    ,debug_clauses(examples,'Proved negative example:',En)
+		    ,debug_clauses(specialise,'Proved negative example:',En)
 		    )
 		   )
 		,member(Sub,Subs)
 		)
 	       ,Ss_Neg).
+
 
 
 %!	reduced_examples(+Pos,+MS,+K,+Subs,-Reduced) is det.
