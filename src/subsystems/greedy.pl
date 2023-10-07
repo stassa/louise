@@ -326,7 +326,7 @@ specialise_greedy(Subs,Neg,K,MS,Subs_s):-
 %	metasubstitutions, to make it easier to use this predicate in a
 %	greedy Top Program Construction loop.
 %
-specialise(Ss_Pos,_MS,[],Ss_Pos):-
+specialise([Ss_Pos],_MS,[],Ss_Pos):-
 	!.
 specialise(Ss_Pos,MS,Neg,Ss_Neg):-
 	configuration:clause_limit(K)
