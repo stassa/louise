@@ -176,7 +176,7 @@ learn_and_render_plan(T,S):-
 render_plan(Ps,E,BK):-
 % Copy term to ignore variable bindings when printing.
 	copy_term(Ps, Ps_)
-	,closure(BK,user,Cs)
+	,closure(BK,experiment_file,Cs)
 	,flatten([Ps_,Cs], Ts)
 	,output('Navigation Task:~n',[])
 	,render_problem(E)
