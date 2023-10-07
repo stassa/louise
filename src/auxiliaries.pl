@@ -211,23 +211,45 @@ Table of Contents
 %	record of their configuration options, problem statisticts,
 %	experiment Goal and result.
 %
+%	Example query:
+%	==
+%	?- _T = ancestor/2
+%	, _F = 'logs/protocol_testing.log'
+%	, _G = learn(_T), protocol_experiment(_T,_F,_G).
+%	==
+%
+%	The query above will execute the goal learn/1 while keeping a
+%	copy of the output to the SWI-Prolog terminal to the file
+%	logs/protocol_testing.log. The path is relative to the root
+%	director of louise's installation. If no path is given, the file
+%	is created in the root directory of louise's installation
+%	instead.
+%
 protocol_experiment(T,N,G):-
-	protocol(N)
-	,writeln('Current configuration:')
-	,list_config
-	,nl
-	,writeln('Problem statistics:')
-	,list_problem_statistics(T)
-	,nl
-	,copy_term(G,G_)
-	,numbervars(G_)
-	,writeln('Goal:')
-	,print(G_)
-	,nl
-	,nl
-	,writeln('Results:')
-	,user:call(G)
-	,noprotocol.
+	S = protocol(N)
+	,C = (writeln('Current configuration:')
+	     ,list_config
+	     ,nl
+	     ,writeln('Problem statistics:')
+	     ,list_problem_statistics(T)
+	     ,nl
+	     ,writeln('MIL Problem elements:')
+	     ,list_mil_problem(T)
+	     ,nl
+	     ,writeln('MIL Problem elements (encapsulated):')
+	     ,list_encapsulated_problem(T)
+	     ,nl
+	     ,copy_term(G,G_)
+	     ,numbervars(G_)
+	     ,writeln('Goal:')
+	     ,print(G_)
+	     ,nl
+	     ,nl
+	     ,writeln('Results:')
+	     ,user:call(G)
+	     )
+	,L = noprotocol
+	,setup_call_cleanup(S,C,L).
 
 
 
