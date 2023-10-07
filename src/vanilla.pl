@@ -149,14 +149,19 @@ refresh_tables(untable):-
 %	invention without the restrictions of earlier systems.
 prove(true,_K,_MS,_Ss,Subs,Subs):-
 	!
-	,debug(prove,'Metasubs so-far: ~w',[Subs]).
+        ,debug(prove_steps,'Reached proof leaf.',[])
+	,debug(prove_metasubs,'Metasubs so-far: ~w',[Subs]).
 prove((L,Ls),K,MS,Ss,Subs,Acc):-
-	prove(L,K,MS,Ss,Subs,Subs_)
-        ,prove(Ls,K,MS,Ss,Subs_,Acc).
+	debug(prove_steps,'Splitting proof at literals ~w -- ~w',[L,Ls])
+	,prove(L,K,MS,Ss,Subs,Subs_)
+	,prove(Ls,K,MS,Ss,Subs_,Acc).
 prove((L),K,MS,Ss,Subs,Acc):-
         L \= (_,_)
 	,L \= true
-        ,clause(L,K,MS,Ss,Subs,Subs_,Ls)
+        ,debug(prove_steps,'Proving literal: ~w.',[L])
+	,clause(L,K,MS,Ss,Subs,Subs_,Ls)
+	,debug(prove_metasubs,'New Metasubs: ~w',[Subs_])
+        ,debug(prove_steps,'Proving body literals of clause: ~w',[L:-Ls])
         ,prove(Ls,K,MS,Ss,Subs_,Acc).
 /* % Uncomment for richer debugging and logging.
 prove(L,_MS,_Ss,Subs,_Acc):-
@@ -207,22 +212,22 @@ clause(L,_K,_MS,_Ss,Subs,Subs,true):-
 	(   predicate_property(L,foreign)
 	;   built_in_or_library_predicate(L)
 	)
-	,debug(prove_,'Proving built-in literal: ~w', [L])
+	,debug(fetch,'Proving built-in literal: ~w', [L])
         ,call(L)
-	,debug(prove_,'Proved built-in clause: ~w', [L:-true]).
+	,debug(fetch,'Proved built-in clause: ~w', [L:-true]).
 clause(L,_K,_MS,_Ss,Subs,Subs,Ls):-
 	\+ predicate_property(L,foreign)
 	,\+ built_in_or_library_predicate(L)
-	,debug(prove_,'Proving literal with BK: ~w', [L])
+	,debug(fetch,'Proving literal with BK: ~w', [L])
         ,clause(L,Ls)
-	,debug(prove_,'Trying BK clause: ~w', [L:-Ls]).
+	,debug(fetch,'Trying BK clause: ~w', [L:-Ls]).
 clause(L,_K,MS,_Ss,Subs,Subs,Ls):-
-        debug(prove_,'Proving literal with known metasubs: ~w',[L])
+        debug(fetch,'Proving literal with known metasubs: ~w',[L])
         ,known_metasub(L,MS,Subs,Ls).
 clause(L,K,MS,Ss,Subs,Subs_,Ls):-
 	length(Subs,N)
 	,N < K
-        ,debug(prove_,'Proving literal with new metasub: ~w',[L])
+        ,debug(fetch,'Proving literal with new metasub: ~w',[L])
         ,new_metasub(L,MS,Ss,Subs,Subs_,Ls).
 
 
@@ -251,7 +256,7 @@ check_constraints(Subs):-
 known_metasub(L,MS,Subs,Ls):-
 	member(Sub,Subs)
         ,applied_metasub(MS,Sub,L,Ls)
-	,debug(prove,'Trying known metasub: ~w',[Sub]).
+	,debug(fetch,'Trying known metasub: ~w',[Sub]).
 
 
 %!	applied_metasub(+Metarules,?Metasubstitution,?Head,-Body)
@@ -297,7 +302,7 @@ free_member(X,[_|Ys],Z):-
 new_metasub(L,MS,Ss,Subs,[Sub|Subs],Ls):-
         member(M,MS)
         ,applied_metasub(Sub,M,Ss,L,Ls)
-	,debug(prove,'Added new metasub: ~w',[Sub]).
+	,debug(fetch,'Added new metasub: ~w',[Sub]).
 
 
 %!	applied(?Metasubstitution,+Metarule,+Sig,?Head,-Body) is
