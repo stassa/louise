@@ -553,7 +553,6 @@ program_signature(K,F/A,BK,Ps,Cs):-
 invented_symbols(K,_F/A,Ss):-
 	findall(S_/A
 	       ,(between(1,K,I)
-		%,atomic_list_concat([F,I],'_',S_)
 		,atom_concat('$',I,S_)
 		)
 	       ,Ss).
@@ -601,7 +600,8 @@ clauses_metasubs(Cs,MS,Os,Ms):-
 %	interval inclusion order.
 %
 prove(_K,[],_BK,_MS,_PS,Ss,Ss):-
-	!.
+	debug(prove,'No more atoms to prove!',[])
+	,!.
 prove(K,[A|As],BK,MS,Os,Acc,Bind):-
         debug(prove,'Proving atom (BK): ~w', [A])
         ,background_predicate(BK,A)
@@ -754,7 +754,10 @@ metasubstitution(MS,[S|Args],PS-Cs,sub(Id,[S/A|Ss]),Bs):-
 	,next_metarule(MS,[Id,[S/A|Ss],Fs,[[S|Args]|Bs]])
 	,second_order_bindings(PS,Fs,Ss)
 	,configuration:order_constraints(Id,[S/A|Ss],Fs,STs,FTs)
-	,order_tests(PS,Cs,STs,FTs).
+	,debug(order_constraints,'Testing constraints on ~w: ~w ~w',[Id,STs,FTs])
+	,once(order_tests(PS,Cs,STs,FTs))
+	,debug(order_constraints,'Succeeded!',[]).
+
 
 
 %!	next_metarule(+Metarules,-Metarule) is nondet.
