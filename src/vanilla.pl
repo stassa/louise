@@ -6,6 +6,8 @@
 		  ,constraints/1
                   ]).
 
+:-use_module(project_root(configuration)).
+
 /** <module> Vanilla inductive Prolog meta-interpreter.
 
 */
@@ -17,22 +19,31 @@
 %
 %	Table or untable prove/6.
 %
-%	The Vanilla meta-interpreter implemented in prove/6 is tabled to
-%	avoid infinite left-recursions during learning. This can
-%	significantly reudce the timing of execution of a learning query
-%	with the same experiment data.
+%	The Vanilla meta-interpreter implemented in prove/6 uses
+%	tabling, a.k.a. SLG-Resolution to avoid infinite left-recursions
+%	during learning. This allows Vanilla to learn programs with
+%	arbitrary recursive structure, left-recursive, or not.
 %
-%	However, if an experiment file is changed after a learning
+%	At the same time, tabling executes replaces SLD-Resolution's
+%	Depth-First Search of an SLD-tree with a Breadth-First Search
+%	(BFS). BFS has exponential _space_ complexity so this can make
+%	some programs impossible to learn without large amounts of
+%	memory.
+%
+%	Additionally, if an experiment file is changed after a learning
 %	query completes, it's possible that some of the changes do not
 %	cause the memoization tables to be updated. For example, this is
 %	the case when changing the refers to background predicates and
 %	metarules in the second arguments of background_knowledge/2 and
 %	metarules/2.
 %
-%	To try and ensure that learning proceeds from the latest version
-%	of the MIL problem defined in an experiment file, this predicate
-%	should be called by any learning predicate to clean up the
-%	tables before a learning attempt.
+%	This predicate gives the user the option to table or untable
+%	prove/6 depending on their recursion needs.
+%
+%	Moreover, to try and ensure that learning proceeds from the
+%	latest version of the MIL problem defined in an experiment file,
+%	this predicate should be called by any learning predicate to
+%	clean up the tables before a learning attempt.
 %
 %	As an example of its use, this predicate is called by
 %	top_program/5 in louise.pl, as a "setup" step before executing
@@ -45,6 +56,7 @@
 %		,configuration:clause_limit(K)
 %		,K > 0
 %		,S = (write_problem(user,[BK],Refs)
+%		     ,refresh_tables(untable)
 %		     ,refresh_tables(table)
 %		     )
 %
@@ -56,7 +68,15 @@
 %		,setup_call_cleanup(S,G,C)
 %	==
 %
-%	Note taht there is some slowdown when this predicate is called
+%	To give the user control over tabling and untabling of prove/6,
+%	without having to call this predicate at the top-level, the
+%	following configuration options can be set:
+%	==
+%	table_meta_interpreter/1
+%	untable_meta_interpreter/1
+%	==
+%
+%	Note that there is some slowdown when this predicate is called
 %	between learning queries with different clause_limit/1 settings.
 %	This may be because adding and removing tabling with table/1 and
 %	untable/1, as done in this predicate, leaves behind some
@@ -68,7 +88,12 @@
 %	with the latter.
 %
 refresh_tables(table):-
-	table(prove/6).
+	configuration:table_meta_interpreter(true)
+	,!
+	,table(prove/6).
+refresh_tables(table):-
+	configuration:table_meta_interpreter(false)
+	,!.
 refresh_tables(untable):-
 	configuration:untable_meta_interpreter(false)
 	,!.

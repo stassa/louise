@@ -18,6 +18,7 @@
 			,reduction/1
 			,resolutions/1
 			,symbol_range/2
+                        ,table_meta_interpreter/1
                         ,tautology/1
 			,theorem_prover/1
                         ,unfold_invented/1
@@ -894,6 +895,22 @@ symbol_range(variable, ['X','Y','Z','U','V','W']).
 %symbol_range(variable, ['Smith','Brown','Carpenter','Miller','Green']).
 
 
+%!      table_meta_interpreter(?Bool) is semidet.
+%
+%       Whether to table the Vanilla meta-interpreter, or not.
+%
+%       Checked by refresh_tables/1 to decide whether to table or
+%       untable the prove/6 Vanilla meta-interpreter, or not.
+%
+%       This option and untable_meta_interpreter/1 are made available so
+%       that the user doesn't have to edit the source code of learning
+%       predicates to control tabling and untabling behaviour.
+%
+%       See refresh_tables/1 for more context.
+%
+table_meta_interpreter(true).
+
+
 %!      tautology(+Clause) is det.
 %
 %       True when Clause is a tautology.
@@ -1019,23 +1036,15 @@ unfold_invented(false).
 %
 %       Whether to untable Vanilla between learning queries.
 %
-%       Note: Experimental.
+%       This predicate is checked by refresh_tables/1 to decide whether
+%       to table or untable the prove/6 Vanilla meta-interpreter, or
+%       not.
 %
-%       The Vanilla meta-interpreter in vanilla.pl is tabled to avoid
-%       infinite left-recursions during learning. If the tables are not
-%       undone after a learning query is completed, the time to complete
-%       the same query can be significantly reduced, but it's sometimes
-%       hard to tell whether results change after changes to training
-%       data, or not. This may have to do with encapsulation that turns
-%       all literals with the same arity to literals of the same
-%       encapsulated predicate.
+%       This option and table_meta_interpreter/1 are made available so
+%       that the user doesn't have to edit the source code of learning
+%       predicates to control tabling and untabling behaviour.
 %
-%       In any case, deactivate this option (set it to "false") only if
-%       strange behaviour is encountered. Otherwise, leave it to its
-%       default-ish of "true".
-%
-%       @tbd Check that this option is really needed and it wouldn't
-%       just be simpler to always untable the meta-interpreter.
+%       See refresh_tables/1 for more context.
 %
 untable_meta_interpreter(true).
 
