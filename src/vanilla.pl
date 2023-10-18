@@ -12,7 +12,7 @@
 
 */
 
-:-table(prove/6).
+:-table(prove/7).
 
 
 %!	refresh_tables(+Action) is det.
@@ -90,16 +90,20 @@
 refresh_tables(table):-
 	configuration:table_meta_interpreter(true)
 	,!
-	,table(prove/6).
+	,table(prove/7)
+	,debug(tabling,'Tabled prove/7',[]).
 refresh_tables(table):-
 	configuration:table_meta_interpreter(false)
-	,!.
+	,!
+	,debug(tabling,'Not tabling prove/7',[]).
 refresh_tables(untable):-
 	configuration:untable_meta_interpreter(false)
-	,!.
+	,!
+	,debug(tabling,'Not un-tabling prove/7',[]).
 refresh_tables(untable):-
 	configuration:untable_meta_interpreter(true)
-	,untable(prove/6).
+	,untable(prove/7)
+	,debug(tabling,'Un-tabled prove/7',[]).
 
 
 
@@ -172,24 +176,99 @@ refresh_tables(untable):-
 %	to refute a goal-example allows Louise (and MIL systems in
 %	general) to learn recursive programs and to perform predicate
 %	invention without the restrictions of earlier systems.
-prove(true,_K,_MS,_Ss,Subs,Subs):-
+prove(Ls,K,MS,Ss,Subs,Subs_):-
+	process_options(Os)
+	,debug(fetching,'Fetching options ~w',[Os])
+	,prove(Ls,K,MS,Ss,Os,Subs,Subs_).
+
+
+
+%!	process_options(-Options) is det.
+%
+%	Generate a list of clause-fetching Options for clause/8.
+%
+%	Options is a list of clause-fetching options, as described in
+%	the configuration option fetch_clauses/1. Options is a list of
+%	the form [BK,Builtins,Hypothesis,Metarules], the elements of
+%	which determine the sets of clauses from which clauses are
+%	selected to be resolved with goals, in prove/7. See
+%	fetch_clauses/1 for more information.
+%
+process_options(Os):-
+	configuration:fetch_clauses(all)
+	,!
+	,sort([bk, builtins, hypothesis, metarules],Os).
+process_options(Os):-
+	configuration:fetch_clauses(Ss)
+	,maplist(sort,[Ss,[bk, builtins, hypothesis, metarules]],[Ss_s,Ds])
+	,process_fetch_options(Ss_s,Ds,[],Os).
+
+
+%!	process_fetch_options(+Options,+Defaults,+Acc,-Processed) is
+%!	det.
+%
+%	Determine which Options, from a list of Defaults, will be used.
+%
+%	Options is a list of clause fetching options each of which is a
+%	term in: [bk, builtins, hypothesis, metarules].
+%
+%	Defauls is a list of all those options, in that order (i.e.
+%	exactly the list [bk, builtins, hypothesis, metarules]).
+%
+%	Processed is the list of Defaults, where each option that does
+%	not appear in Options is replaced with the same term, with the
+%	atom "not_" prepended. Thus, the list Processed will contain the
+%	terms in Defaults, or one of the terms in: [not_bk,
+%	not_builtins, not_hypothesis, not_metarules], each replacing the
+%	corresponding option, if that option was not found in Options.
+%
+process_fetch_options([O|Ws],[O|Ds],Acc,Bind):-
+	!
+	,process_fetch_options(Ws,Ds,[O|Acc],Bind).
+process_fetch_options(Ws,[O|Ds],Acc,Bind):-
+	atomic_concat(not_,O,Not_O)
+	,!
+	,process_fetch_options(Ws,Ds,[Not_O|Acc],Bind).
+process_fetch_options([],_,Acc,Os):-
+	reverse(Acc,Os).
+
+
+
+%!	prove(?Literals,+Limit,+Metarules,+Sig,+Options,+Acc,-Metasubs)
+%!	is nondet.
+%
+%	Business end of prove/6.
+%
+%	This is the actual implementation of the Meta-Interpretive
+%	Learning meta-interpreter described in prove/6, whereas prove/6
+%	is an interface used to set clause-fetching options according
+%	to the configuration settings.
+%
+%	Literals, Limit, Metarules, Sig, Acc and Metasubs are as in
+%	prove/6.
+%
+%	Options is a list of clause-fetching options as described in the
+%	configuration option fetch_clauses/1, and used to control the
+%	behaviour of clause/8.
+%
+prove(true,_K,_MS,_Ss,_Os,Subs,Subs):-
 	!
         ,debug(prove_steps,'Reached proof leaf.',[])
 	,debug(prove_metasubs,'Metasubs so-far: ~w',[Subs]).
-prove((L,Ls),K,MS,Ss,Subs,Acc):-
+prove((L,Ls),K,MS,Ss,Os,Subs,Acc):-
 	debug(prove_steps,'Splitting proof at literals ~w -- ~w',[L,Ls])
-	,prove(L,K,MS,Ss,Subs,Subs_)
-	,prove(Ls,K,MS,Ss,Subs_,Acc).
-prove((L),K,MS,Ss,Subs,Acc):-
+	,prove(L,K,MS,Ss,Os,Subs,Subs_)
+	,prove(Ls,K,MS,Ss,Os,Subs_,Acc).
+prove((L),K,MS,Ss,Os,Subs,Acc):-
         L \= (_,_)
 	,L \= true
         ,debug(prove_steps,'Proving literal: ~w.',[L])
-	,clause(L,K,MS,Ss,Subs,Subs_,Ls)
+	,clause(Os,L,K,MS,Ss,Subs,Subs_,Ls)
 	,debug(prove_metasubs,'New Metasubs: ~w',[Subs_])
         ,debug(prove_steps,'Proving body literals of clause: ~w',[L:-Ls])
-        ,prove(Ls,K,MS,Ss,Subs_,Acc).
+        ,prove(Ls,K,MS,Ss,Os,Subs_,Acc).
 /* % Uncomment for richer debugging and logging.
-prove(L,_MS,_Ss,Subs,_Acc):-
+prove(L,_K,_MS,_Ss,_Os,Subs,_Acc):-
 	L \= true
         ,debug(prove,'Failed to prove literals: ~w',[L])
 	,debug(prove,'Metasubs so-far: ~w',[Subs])
@@ -197,7 +276,9 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 */
 
 
-%!	clause(?Literal,+K,+MS,+Sig,+Subs,-Subs_New,-Body) is nondet.
+
+%!	clause(+Options,?Literal,+K,+MS,+Sig,+Subs,-Subs_New,-Body) is
+%!	nondet.
 %
 %	MIL-specific clause/2 variant.
 %
@@ -206,7 +287,14 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 %	program database, the metasubstitution store Subs is searched
 %	for a known metasubstitution whose encapsulated head literal
 %	unifies with Literal. If that fails, a new metasubstitution is
-%	contsructed and added to the store.
+%	constructed and added to the store.
+%
+%	Options is a list of clause-fetching options, as described in
+%	the configuration option fetch_clauses/1. Options is a list of
+%	the form [BK,Builtins,Hypothesis,Metarules], the elements of
+%	which determine the sets of clauses from which clauses are
+%	selected to be resolved with goals, in prove/7. See
+%	fetch_clauses/1 for more information.
 %
 %	Literal is a partially or fully instantiated literal to be
 %	proved.
@@ -229,27 +317,27 @@ prove(L,_MS,_Ss,Subs,_Acc):-
 %	metasubstitution already in Subs, or a new one constructed by
 %	new_metasub/6.
 %
-clause(_L,_K,_MS,_Ss,Subs,_Acc,_Ls):-
+clause(_Os,_L,_K,_MS,_Ss,Subs,_Acc,_Ls):-
 	\+ check_constraints(Subs)
 	,!
 	,fail.
-clause(L,_K,_MS,_Ss,Subs,Subs,true):-
+clause([_BK,builtins,_Hypothesis,_Metarules],L,_K,_MS,_Ss,Subs,Subs,true):-
 	(   predicate_property(L,foreign)
-	;   built_in_or_library_predicate(L)
+	;    built_in_or_library_predicate(L)
 	)
 	,debug(fetch,'Proving built-in literal: ~w', [L])
         ,call(L)
 	,debug(fetch,'Proved built-in clause: ~w', [L:-true]).
-clause(L,_K,_MS,_Ss,Subs,Subs,Ls):-
+clause([bk,_Builtins,_Hypothesis,_Metarules],L,_K,_MS,_Ss,Subs,Subs,Ls):-
 	\+ predicate_property(L,foreign)
 	,\+ built_in_or_library_predicate(L)
 	,debug(fetch,'Proving literal with BK: ~w', [L])
         ,clause(L,Ls)
 	,debug(fetch,'Trying BK clause: ~w', [L:-Ls]).
-clause(L,_K,MS,_Ss,Subs,Subs,Ls):-
+clause([_BK,_Builtins,hypothesis,_Metarules],L,_K,MS,_Ss,Subs,Subs,Ls):-
         debug(fetch,'Proving literal with known metasubs: ~w',[L])
         ,known_metasub(L,MS,Subs,Ls).
-clause(L,K,MS,Ss,Subs,Subs_,Ls):-
+clause([_BK,_Builtins,_Hypothesis,metarules],L,K,MS,Ss,Subs,Subs_,Ls):-
 	length(Subs,N)
 	,N < K
         ,debug(fetch,'Proving literal with new metasub: ~w',[L])

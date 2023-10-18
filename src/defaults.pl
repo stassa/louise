@@ -1,4 +1,5 @@
 :-module(defaults, [default_clause_limit/1
+                   ,default_fetch_clauses/1
                    ,default_invented_symbol_prefix/1
                    ,default_depth_limits/1
                    ,default_max_error/1
@@ -7,8 +8,10 @@
 		   ,default_recursive_reduction/1
 		   ,default_reduction/1
 		   ,default_resolutions/1
+                   ,default_table_meta_interpreter/1
 		   ,default_theorem_prover/1
                    ,default_unfold_invented/1
+                   ,default_untable_meta_interpreter/1
 		   ]).
 
 /** <module> Default values for dynamic configuration options.
@@ -26,6 +29,15 @@ dynamic configuration options to the values specified in this file.
 %       The default value is: [1]
 %
 default_clause_limit([0]).
+
+
+%!      default_fetch_clauses(?Whence) is semidet.
+%
+%       Default values for fetch_clauses/1 option.
+%
+%       The default value is: [all]
+%
+default_fetch_clauses([all]).
 
 
 %!      default_invented_symbol_prefix(?Prefix) is semidet.
@@ -102,6 +114,15 @@ default_reduction(plotkins).
 default_resolutions(5000).
 
 
+%!	default_table_meta_interpreter(?Default) is semidet.
+%
+%	Default value for table_meta_interpreter/1 option.
+%
+%	The default value is: true.
+%
+default_table_meta_interpreter(true).
+
+
 %!	default_theorem_prover(?Default) is semidet.
 %
 %	Default value for theorem_prover/1 option.
@@ -118,3 +139,12 @@ default_theorem_prover(resolution).
 %       The default value is: false.
 %
 default_unfold_invented(false).
+
+
+%!      default_untable_meta_interpreter(?Default) is semidet.
+%
+%       Default value for untable_meta_interpreter/1 option.
+%
+%       The default value is: true.
+%
+default_untable_meta_interpreter(true).

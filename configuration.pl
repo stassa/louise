@@ -1,6 +1,7 @@
 :-module(configuration, [clause_limit/1
                         ,example_clauses/1
                         ,experiment_file/2
+                        ,fetch_clauses/1
                         ,fold_recursive/1
                         ,generalise_learned_metarules/1
                         ,invented_symbol_prefix/1
@@ -203,6 +204,7 @@ of setting those configuration options in an experiment file.
 % Dynamic configuration options can be manipulated
 % by means of set_configuration_option/2 in module auxiliaries.
 :- dynamic clause_limit/1
+          ,fetch_clauses/1
           ,invented_symbol_prefix/1
           ,max_error/2
           ,max_invented/1
@@ -210,8 +212,10 @@ of setting those configuration options in an experiment file.
 	  ,recursive_reduction/1
 	  ,reduction/1
 	  ,resolutions/1
+          ,table_meta_interpreter/1
 	  ,theorem_prover/1
-          ,unfold_invented/1.
+          ,unfold_invented/1
+          ,untable_meta_interpreter/1.
 
 % Allows experiment files to define their own, special metarules.
 % BUG: Actually, this doesn't work- module quantifiers, again.
@@ -385,6 +389,52 @@ experiment_file('data/examples/hello_world.pl',hello_world).
 %experiment_file('data/examples/ackermann.pl',ackermann).
 %experiment_file('data/examples/list_processing.pl',list_processing).
 %experiment_file('data/examples/even_odd.pl',even_odd).
+
+
+%!      fetch_clauses(?Whence) is semidet.
+%
+%       Where to fetch clauses from during meta-interpretation.
+%
+%       Clauses are "fetched" during meta-interpretation by the
+%       predicate clause/7. A different clause of this predicate fetches
+%       clauses from different sources and this option is used to
+%       control which sources will be allowed in a learning attempt.
+%
+%       Whence can be any subset of: [builtins,bk,hypothesis,metarules].
+%       These are interpreted as follows:
+%
+%       * builtins: clauses will be fetched from built-in and library
+%       predicates loaded into memory. This option should be needed most
+%       of the time when built-ins and library predicates are used in
+%       background knowledge definitions.
+%
+%       * bk: clauses will be fetched from the set of clauses of the
+%       definitions of predicates listed in the second argument of
+%       background_knowledge/2 in the current experiment file.
+%
+%       * hypothesis: clauses will be fetched from the set of clauses
+%       added to a hypothesis so-far. These clauses are stored in the
+%       metasubstitution accumulator in prove/6 as metasubstitution
+%       atoms and must be expanded to be used in a proof (this is
+%       handled internally by prove/6). Enabling this setting allows
+%       arbitrary recursion between clauses in the learned hypothesis
+%       and all other sources where clauses are fetched from.
+%
+%       * metarules: clauses will be fetched from the list of metarules
+%       given to prove/6. Enabling this setting allows construction of
+%       new clauses by the Vanilla meta-interpreter by resolution with
+%       metarules. This setting should probably never be removed
+%       because without it clause construction is not possible. This
+%       includes clauses of invented predicates.
+%
+fetch_clauses(all).
+%fetch_clauses([builtins,bk,hypothesis,metarules]).
+%fetch_clauses([bk,hypothesis,metarules]).
+%fetch_clauses([builtins,hypothesis,metarules]).
+%fetch_clauses([builtins,bk,metarules]).
+%fetch_clauses([builtins,bk,hypothesis]).
+%fetch_clauses([hypothesis]).
+%fetch_clauses([metarules]).
 
 
 %!      fold_recursive(?Bool) is semidet.

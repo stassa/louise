@@ -421,6 +421,12 @@ reset_defaults:-
 %	more defaults.
 %
 set_multi_configuration_option(N, [V]):-
+% Check this is actually a multi-setting option rather
+% than an option with a list-type setting.
+	memberchk(N,[fetch_clauses])
+	,!
+	,set_configuration_option(N,V).
+set_multi_configuration_option(N, [V]):-
 	is_list(V)
 	,!
 	,set_configuration_option(N,V).
@@ -486,8 +492,29 @@ set_configuration_option(N, V):-
 	,set_configuration_option(N,[V]).
 set_configuration_option(N, [V]):-
 	is_list(V)
+	,N \== fetch_clauses
 	,!
 	,set_configuration_option(N,V).
+set_configuration_option(fetch_clauses, V):-
+	!
+	 % V is the atom 'all'
+	,(   V = all
+	 ->  Vs = [all]
+	 % V is the atom 'all' in a list
+	 ;   V = [all]
+	 ->  Vs = [all]
+	 % V is the atom 'all' in a list in a list
+	 % Perpetrated by set_multi_configuration_option/2
+	 ;   V = [[all]]
+	 ->  Vs = [all]
+	 ;   V = [Vs_]
+	    ,is_list(Vs_)
+	 ->  Vs = [Vs_]
+	 )
+	,functor(T,fetch_clauses,1)
+	,T_ =.. [fetch_clauses|Vs]
+	,retractall(configuration:T)
+	,assert(configuration:T_).
 set_configuration_option(N, Vs):-
 	length(Vs, A)
 	,functor(T,N,A)
