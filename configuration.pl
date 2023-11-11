@@ -1,4 +1,5 @@
 :-module(configuration, [clause_limit/1
+                        ,encapsulation_predicate/1
                         ,example_clauses/1
                         ,experiment_file/2
                         ,fetch_clauses/1
@@ -334,6 +335,17 @@ of setting those configuration options in an experiment file.
 %       and predicate invention.
 %
 clause_limit(0).
+
+
+%!      encapsulation_predicate(+Symbol) is semidet.
+%
+%       The Symbol used in encapsulation predicates.
+%
+%       Symbol is an atom used as the symbol of encapsulated literals in
+%       clauses of examples, background knowledge, metarules and
+%       invented predicates, alike.
+%
+encapsulation_predicate(m).
 
 
 %!      example_clauses(?What) is semidet.

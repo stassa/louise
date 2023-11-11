@@ -8,6 +8,12 @@
 
 /** <module> Predicates for subhypothesis selection.
 
+NOTE: predicates in this module have not been maintained, or tested
+carefully, for a while and might break or raise strange new errors. To
+separate a Top Program to sub-programs, prefer the greedy learning
+version of TPC in subsystems/greedy.pl.
+
+
 Predicates in this module are used to reduce the Top program by
 selecting one or more of its subsets of clauses as _subhypotheses_.
 
@@ -71,7 +77,9 @@ subhypothesis_dynamic(Pos,BK,Hs,Ss):-
 	,encapsulated_problem(Pos,[],BK,[],[Pos_e,[],BK_e,[]])
 	,clauses_invented(Hs,Cs,Is)
 	,sort(Cs,Cs_)
-	,maplist(encapsulated_clauses,[Cs_,Is],[Cs_e,Is_e])
+	,maplist(program_symbols,[Cs_,Is],[Cs_Ss,Is_Ss])
+	,encapsulated_clauses(Cs_,Cs_Ss,Cs_e)
+	,encapsulated_clauses(Is,Is_Ss,Is_e)
 	,flatten([Pos_e,BK_e,Cs_e,Is_e],Ps_e)
 	,subhypothesis_safe(Pos_e,Ps_e,Cs_e,Ss_e)
 	,examples_targets(Pos,Ts)
@@ -172,7 +180,8 @@ subhypothesis(Pos,BK,Hs,Ss):-
 	BK = [_F/_A|_]
 	,encapsulated_problem(Pos,[],BK,[],[Pos_e,[],BK_e,[]])
 	,sort(Hs,Hs_)
-	,encapsulated_clauses(Hs_, Hs_e)
+	,program_symbols(Hs_,Sys)
+	,encapsulated_clauses(Hs_, Sys, Hs_e)
 	,flatten([Pos_e,BK_e],Ps_e)
 	,subhypothesis_safe(Pos_e,Ps_e,Hs_e,Ss_e)
 	,examples_targets(Pos,Ts)

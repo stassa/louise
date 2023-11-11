@@ -5,7 +5,7 @@
 		      ,encapsulated_problem/5
 		      ,encapsulated_bk/3
 		      ,examples_targets/2
-		      ,encapsulated_clauses/2
+		      ,encapsulated_clauses/3
 		      ,applied_metarules/3
 		      ,excapsulated_clauses/3
 		      ,target_or_invention/2
@@ -19,6 +19,7 @@
 /** <module> Predicates to transform a MIL problem.
 
 */
+
 
 %!	metarule_parts(?Metarule,?Id,?Sub,?Head,?Body) is nondet.
 %
@@ -211,11 +212,12 @@ encapsulated(Ts):-
 %	@tbd Encapsulated forms need documentation.
 %
 encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
-	examples_targets(Pos, Ss)
+	examples_targets(Pos,Ss)
 	,encapsulated_bk(BK,Ss,BK_)
 	,expanded_metarules(MS,MS_)
-	,encapsulated_clauses(Pos,Pos_)
-	,encapsulated_clauses(Neg,Neg_).
+	,encapsulated_clauses(Pos,Ss,Pos_)
+	% Shouldn't negative examples have their own Ss?
+	,encapsulated_clauses(Neg,Ss,Neg_).
 
 
 %!	encapsulated_bk(+Background,+Symbols,-Encapsulated) is det.
@@ -224,10 +226,13 @@ encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_]):-
 %
 %	Symbols is the set of predicate symbols of target predicates
 %	(including invented predicates), used to ensure clauses of
-%	target predicates in the closure of BK predicates are
-%	encapsulated as target predicates, with functor m, and not as BK
-%	auxiliaries with functor p.
+%	target predicates in the closure of BK predicates are also
+%	encapsulated.
 %
+encapsulated_bk(BK,Ss,Es):-
+	\+ is_list(Ss)
+	,!
+	,encapsulated_bk(BK,[Ss],Es).
 encapsulated_bk([],_Ss,[]):-
 	!.
 encapsulated_bk(BK,_Ss,BK):-
@@ -241,114 +246,14 @@ encapsulated_bk(BK,Ts,Es):-
 	 ->  true
 	 ;   throw('Missing BK definition of predicate in':BK)
 	 )
+	,append(BK,Ts,Ss)
 	,findall(Cs_
 	       ,(member(Cs, Ps)
-		,encapsulated_clauses(Cs,Cs_)
+		,encapsulated_clauses(Cs,Ss,Cs_)
 		)
 	       ,Es_)
-	,flatten(Es_, Fs)
-	,predicate_signature(Ts,Ss)
-	,hide_bk_closure(Fs,Ss,Es).
+	,flatten(Es_, Es).
 
-
-
-%!	hide_bk_closure(+Closure,+Signature,-Hidden) is det.
-%
-%	Hide programs in the BK's Closure from the learning process.
-%
-%	Encapsulating the clauses of predicates in the BK and predicates
-%	in the closure of predicates in the BK using the same
-%	encapsulation predicate makes it impossible to separate the
-%	symbols in the BK, that should be used in the clauses of a
-%	hypothesis, from the symbols in the BK's closure, that should
-%	not.
-%
-%	The solution implemented in this predicate is to encapsulate the
-%	clauses of predicates in the BK and the predicates in its
-%	closure using different encapsulation predicates in a
-%	post-processing step, i.e. after everything has already been
-%	encapsulated using the BK encapsulation predicate.
-%
-%	Specifically, the BK encapsulation symbol is 'm' and the
-%	BK-closure encapsulation symbol is 'p'.
-%
-%	The result of "hiding" the BK's closure in this way can be seen
-%	with list_encapsulated_problem/1.
-%
-%	@tbd Now that there are two encapsulation predicates,
-%	hard-coding them throughout the code, as is currently done, is
-%	just begging for bugs. The two encapsulation predicates should
-%	be formally defined as such, i.e. with a predicate
-%	encapsulation_predicate(Purpose, Symbol) or some such, and
-%	obtained from this predicate wherever needed.
-%
-%	@tbd Encapsulating non-BK predicates in a post-processing step
-%	once they've all been encapsulated using the BK encapsulation
-%	predicate already is ... not optimal. It will take a bit of work
-%	maybe to add a couple of arguments to encapsulated_clause/2 etc
-%	to select the encapsulation predicate during the initial
-%	encapsulation step- but that's the best way to do it.
-%
-hide_bk_closure(Cs,PS,Cs_):-
-	hide_bk_closure(Cs,PS,[],Cs_).
-
-%!	hide_bk_closure(+Closure,+Signature,+Acc,-Hidden) is det.
-%
-%	Business end of hide_bk_closure/3.
-%
-hide_bk_closure([],_PS,Acc,Cs):-
-	!
-       ,reverse(Acc,Cs).
-hide_bk_closure([C|Cs],PS,Acc,Bind):-
-	hide_clause(C,PS,C_)
-	,hide_bk_closure(Cs,PS,[C_|Acc],Bind).
-
-
-%!	hide_clause(+Clause,+Signature,-Hidden) is det.
-%
-%	Hide non-BK literals in a Clause.
-%
-%	Clause is an encapsulated clause of a BK predicate.
-%
-%	The encapsulation predicate of literals in Clause whose symbol
-%	is not in Signature is changed to the encapsulation predicate of
-%	the BK closure, rather than the BK encapsulation predicate.
-%
-hide_clause(C,PS,C_):-
-	clause_literals(C,Ls)
-	,hide_literals(Ls,PS,[],Ls_)
-	,once(list_tree(Ls_,T))
-	,(   T = (H,B)
-	 ->  C_ = (H:-B)
-	 % T is an atom
-	 ;   T \== (_,_)
-	 ->  C_ = T
-	 ).
-
-
-%!	hide_literals(+Literals,+Signature,+Acc,-Hidden) is det.
-%
-%	Hide non-BK Literals
-%
-%	Literals is a list of encapsulated literals in a clause
-%	processed by hide_clause/3.
-%
-%	Each literal in Literals is "hidden" from the learning process
-%	by replacing its encapsulation predicate with the closure
-%	encapsulation predicate.
-%
-hide_literals([],_PS,Acc,Ls):-
-	reverse(Acc,Ls)
-	,!.
-hide_literals([L|Ls],PS,Acc,Bind):-
-	L =.. [m,F|As]
-	,length(As,A)
-	,\+ memberchk(F/A,PS)
-	,!
-	,L_ =.. [p,F|As]
-	,hide_literals(Ls,PS,[L_|Acc],Bind).
-hide_literals([L|Ls],PS,Acc,Bind):-
-	hide_literals(Ls,PS,[L|Acc],Bind).
 
 
 
@@ -400,103 +305,96 @@ symbol(H,F/A):-
 
 
 
-%!	encapsulated_clauses(+Clauses, -Encapsulated) is det.
+%!	encapsulated_clauses(+Clauses,+Symbols,-Encapsulated) is det.
 %
 %	Encapsulate a list of Clauses.
 %
-encapsulated_clauses(Cs,Cs):-
+%       Symbols is a list of predicate symbols and arities of literals
+%       to be encapsulated. Literals with symbols and arities not in
+%       Symbols will not be encapsulated.
+%
+encapsulated_clauses(Cs,_Ss,Cs):-
 % Already encapsulated.
 	encapsulated(Cs)
 	,!.
-encapsulated_clauses(Cs,Cs_):-
-	encapsulated_clauses(Cs, [], Cs_).
+encapsulated_clauses(Cs,Ss,Cs_):-
+	encapsulated_clauses(Cs,Ss,[],Cs_).
 
 %!	encapsulated_clauses(+Clauses,+Acc,-Encapsulated) is det.
 %
 %	Business end of encapsulated_clauses/2.
 %
-encapsulated_clauses([],Acc,Cs):-
+encapsulated_clauses([],_Ss,Acc,Cs):-
 	reverse(Acc, Cs)
 	,!.
-encapsulated_clauses([C|Cs], Acc, Bind):-
-	encapsulated_clause(C,C_)
-	,encapsulated_clauses(Cs,[C_|Acc],Bind).
+encapsulated_clauses([C|Cs],Ss,Acc,Bind):-
+	encapsulated_clause(C,Ss,C_)
+	,encapsulated_clauses(Cs,Ss,[C_|Acc],Bind).
 
 
-%!	encapsulated_clause(+Clause, -Encapsulated) is det.
+%!	encapsulated_clause(+Clause,+Symbols,-Encapsulated) is det.
 %
 %	Encapsulate a Clause.
 %
-encapsulated_clause(C, C_):-
-	encapsulated_clause(C, [], C_).
+encapsulated_clause(:-C,Ss,:-C_):-
+% Negated clause: a negative example.
+	encapsulated_clause(C,Ss,[],C_)
+        ,!.
+encapsulated_clause(C,Ss,C_):-
+	encapsulated_clause(C,Ss,[],C_).
 
-%!	encapsulated_clause(+Clause, +Acc, -Encapsulated) is det.
+%!	encapsulated_clause(+Clause,+Symbols,+Acc,-Encapsulated) is det.
 %
 %	Business end of encapsulated_clause/2.
 %
-encapsulated_clause(:-(H:-Bs),Acc,:-C_):-
-% Negated definite clause; a negative example.
+encapsulated_clause(H:-Bs,Ss,Acc,H_:-Bs_):-
+% Clause with a body; H is the head literal.
 	!
-	,encapsulated_clause(H:-Bs,Acc,C_).
-encapsulated_clause(:-((L,Ls)),Acc,:-C_):-
-% Definite goal; L is the first literal.
+        ,encapsulated_literal(H,Ss,H_)
+	,encapsulated_clause(Bs,Ss,Acc,Bs_).
+encapsulated_clause((L,Ls),Ss,Acc,C_):-
+% L is the next in a set of literals.
 	!
-	,L =.. [F|As]
-	,L_ =.. [m|[F|As]]
-	,encapsulated_clause(Ls,[L_|Acc],C_).
-encapsulated_clause(:-(L),[],:-L_):-
-% Definite goal: L is the single literal.
+        ,encapsulated_literal(L,Ss,L_)
+	,encapsulated_clause(Ls,Ss,[L_|Acc],C_).
+encapsulated_clause(L,Ss,[],L_):-
+% Last literal: the accumulator is empty; probably a single atom.
 	!
-	,L =.. [F|As]
-	,L_ =.. [m|[F|As]].
-encapsulated_clause(H:-B,[],H:-B):-
-% Definite clause; H is the head of a built-in predicate.
-	built_in_or_library_predicate(H)
-	,!.
-encapsulated_clause((L,Ls),Acc,C_):-
-% Definite clause; L is a body literal that is an atom of a built-in
-% predicate.
-	built_in_or_library_predicate(L)
-	,!
-	,encapsulated_clause(Ls,[L|Acc],C_).
-encapsulated_clause(L,Acc,H:-Bs):-
-% Definite clause; L is a literal that is an atom of a built-in
-% predicate.
-%TODO: why H:-Bs? We might have a definite goal in Acc.
-	L \= (_,_)
-	,built_in_or_library_predicate(L)
-	,reverse([L|Acc], Ls)
-	,once(list_tree(Ls,(H,Bs)))
-	,!.
-encapsulated_clause(L,[],L):-
-% Definite clause; L is an atom of a built-in predicate.
-% The accumulator is empty
-	L \= (_,_)
-	,built_in_or_library_predicate(L)
-	,!.
-encapsulated_clause(H:-Bs,Acc,H_:-Bs_):-
-% Definite clause; H is the head literal.
-	!
-	,H =.. [F|As]
-	,H_ =.. [m|[F|As]]
-	,encapsulated_clause(Bs,Acc,Bs_).
-encapsulated_clause((L,Ls),Acc,C_):-
-% Definite clause; L is the next body literal.
-	!
-	,L =.. [F|As]
-	,L_ =.. [m|[F|As]]
-	,encapsulated_clause(Ls,[L_|Acc],C_).
-encapsulated_clause(L,[],L_):-
-% Unit clause: the accumulator is empty.
-	!
-	,L =.. [F|As]
-	,L_ =.. [m|[F|As]].
-encapsulated_clause(L,Acc,Ls_):-
-% Definite clause; L is the last body literal.
-	L =.. [F|As]
-	,L_ =.. [m|[F|As]]
+        ,encapsulated_literal(L,Ss,L_).
+encapsulated_clause(L,Ss,Acc,Ls_):-
+% Last literal: the accumulator is not empty.
+        encapsulated_literal(L,Ss,L_)
 	,reverse([L_|Acc], Ls)
 	,once(list_tree(Ls,Ls_)).
+
+
+%!	encapsulated_literal(+Literal,+Symbols,-Encapsulated) is det.
+%
+%	Encapsulate one literal.
+%
+encapsulated_literal(L,Ss,L):-
+        \+ encapsulable(L,Ss)
+        ,!.
+encapsulated_literal(L,_Ss,L_):-
+        configuration:encapsulation_predicate(S)
+        ,L =.. [F|As]
+        ,L_ =.. [S|[F|As]].
+
+
+%!	encapsulable(+Literal,+Symbols) is det.
+%
+%	True when Literal must be encapsulated.
+%
+%	Literal must be encapsulated when its predicate symbol is in the
+%	list of Symbols to be encapsulated.
+%
+encapsulable(L,_Ss):-
+        built_in_or_library_predicate(L)
+        ,!
+        ,fail.
+encapsulable(L,Ss):-
+        functor(L,F,A)
+        ,memberchk(F/A,Ss).
 
 
 

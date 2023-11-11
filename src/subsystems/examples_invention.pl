@@ -106,7 +106,7 @@ learn_with_partial_examples(Pos,Neg,BK,MS,Ps):-
 	,top_program(Es_e,Neg_,BK_,MS_,Ps_)
 	,subtract(Ps_,Es_e,Ps_s)
 	,examples_targets(Pos,Ss)
-	,encapsulated_clauses(Pos,Pos_e)
+	,encapsulated_clauses(Pos,Ss,Pos_e)
 	,remove_null(Ps_s,Pos_e,BK_,Ss,Ps_n)
 	,reduced_top_program(Pos_e,BK_,MS_,Ps_n,Rs)
 	,excapsulated_clauses(Ss,Rs,Ps).
@@ -314,9 +314,9 @@ examples_invention(Pos,Neg,BK,MS,Es):-
 	,debug(examples_invention,'Learning with partial examples...',[])
 	,top_program(Es_e,Neg_,BK_,MS_,Ts)
 	,debug_clauses(examples_invention,'Top Program for partial examples:',Ts)
-	,encapsulated_clauses(Pos,Pos_e)
-	,least_herbrand_model(Pos_e,Neg_,BK_,Ts,Ls)
 	,examples_targets(Pos,Ss)
+	,encapsulated_clauses(Pos,Ss,Pos_e)
+	,least_herbrand_model(Pos_e,Neg_,BK_,Ts,Ls)
 	,excapsulated_clauses(Ss,Ls,Es).
 
 
@@ -392,7 +392,7 @@ least_herbrand_model(Pos,Neg,BK,Ts,LHM):-
 		 ,functor(E,T,A)
 		 )
 		,Fs)
-	,encapsulated_clauses(Fs,Fs_)
+	,encapsulated_clauses(Fs,Ss,Fs_)
 	,setof(E_
 	      ,As^Fs_^(member(E_,Fs_)
 		      ,member(E_,As)

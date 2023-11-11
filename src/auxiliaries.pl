@@ -965,20 +965,19 @@ print_or_debug(both,Str/Sub,C):-
 %	Target is the symbol and arity of the target predicate in the
 %	encapsulated MIL problem to be listed.
 %
-list_encapsulated_problem(T):-
+list_encapsulated_problem(Ts):-
 	configuration:listing_limit(L)
-	,experiment_data(T,Pos,Neg,BK,MS)
-	,encapsulated_clauses(Pos,Pos_)
+	,experiment_data(Ts,Pos,Neg,BK,MS)
+	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,_BK_,MS_])
 	,format_underlined('Positive examples')
 	,print_limited(L,Pos_)
 	,nl
-	,encapsulated_clauses(Neg,Neg_)
 	,format_underlined('Negative examples')
 	,print_limited(L,Neg_)
 	,nl
 	,format_underlined('Background knowledge')
 	,forall(member(P,BK)
-	       ,(encapsulated_bk([P],T,Ps)
+	       ,(encapsulated_bk([P],Ts,Ps)
 		,format('~w:~n',[P])
 		,print_limited(L,Ps)
 		,nl

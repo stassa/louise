@@ -186,7 +186,8 @@ symbols_metarules(Ss,M,MS):-
 program_metarules(Ps, MS):-
 	(   encapsulated(Ps)
 	->  Es = Ps
-	;   encapsulated_clauses(Ps, Es)
+	;   program_symbols(Ps,Ss)
+	   ,encapsulated_clauses(Ps, Ss, Es)
 	)
 	,lifted_program(Es,Ls)
 	,setof(A:-(H,B)
