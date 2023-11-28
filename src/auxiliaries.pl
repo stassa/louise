@@ -1,6 +1,7 @@
 :-module(auxiliaries, [% Experiment auxiliaries
 	               protocol_experiment/3
 		       % Configuration auxiliareis
+		      ,list_options/1
 		      ,debug_config/1
 		      ,list_config/0
 		      ,print_config/3
@@ -117,6 +118,7 @@ Table of Contents
    * protocol_experiment/3
 
 2. Configuration auxiliaries [sec_config]
+   * list_options/1
    * debug_config/1
    * list_config/0
    * print_config/3
@@ -259,6 +261,34 @@ protocol_experiment(T,N,G):-
 % Configuration auxiliaries
 % ================================================================================
 % Predicates for inspecting and manipulating configuration options.
+
+
+
+%!	list_options(+Options) is det.
+%
+%	List a set of configuration Options.
+%
+%	Options is a list of predicate indicators, Symbol/Arity, of
+%	configuration options defined in configuration.pl.
+%
+%	This predicate prints to the top-level the configuration options
+%	given in Options.
+%
+%	This predicate can be used in place of list_config/0 to list the
+%	values of only a desired subset of configuration options.
+%
+list_options(Os):-
+	\+ is_list(Os)
+	,!
+	,list_options([Os]).
+list_options(Os):-
+        forall(member(S/A,Os)
+              ,(functor(O,S,A)
+               ,configuration:O
+               ,format('~w~n',[O])
+               )
+              ).
+
 
 
 %!	debug_config(+Subject) is det.
