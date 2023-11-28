@@ -51,10 +51,12 @@ quick description of their use.
 
 * :-debug(Subject): enable/disable logging for Subject.
 * clause_limit/1: maximum number of clauses learned from one example.
+* encapsulation_predicate/1: predicate symbol used in encapsulation.
 * example_clauses/1: how to treat examples with bodies.
 * experiment_file/2: path to the current experiment file.
 * fold_recursive/1: fold overspecial programs to introduce recursion.
 * generalise_learned_metarules/1: generalise TOIL-learned metarules.
+* invented_symbol_prefix/1: used to compose invented predicate symbols.
 * learner/1: name of the current learning system (louise).
 * learning_predicate/1: current learning predicate.
 * listing_limit/1: maximum lines printed when listing a MIL problem.
@@ -64,11 +66,13 @@ quick description of their use.
 * metarule_constraints/2: metasubstitution constraints for Louise.
 * metarule_learning_limits/1: control over-generation in TOIL.
 * metarule_formatting/1: how to pretty-print metarules.
-* minimal_program_size/2: lower limit for learn_miminal/[1,2,5]
+* minimal_program_size/2: lower limit for greedy learning; not used.
 * recursive_reduction/1: recursively apply Plotkin's reduction.
 * reduce_learned_metarules/1: apply Plotkin's reduction to TOIL output.
 * reduction/1: how to reduce the Top Program.
 * resolutions/1: depth of resolution in Plotkin's reduction.
+* table_meta_interpreter/1: whether to use tabling in learning.
+* untable_meta_interpreter/1: clear tables between learning attempts.
 * symbol_range/2: used to pretty-print metarule variables.
 * tautology/1: what Louise considers a tautology.
 * theorem_prover/1: resolution or TP operator (doesn't work).
@@ -382,8 +386,8 @@ example_clauses(call).
 %
 %	The Path and Module name of an experiment file.
 %
-experiment_file('data/examples/hello_world.pl',hello_world).
-%experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
+%experiment_file('data/examples/hello_world.pl',hello_world).
+experiment_file('data/examples/tiny_kinship.pl',tiny_kinship).
 %experiment_file('data/examples/anbn.pl',anbn).
 %experiment_file('data/examples/abduced.pl',abduced).
 %experiment_file('data/examples/user_metarules.pl',user_metarules).
