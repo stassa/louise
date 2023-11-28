@@ -7,7 +7,7 @@ Getting help with Louise
 Louise's author can be reached by email at ep2216@ic.ac.uk. Please use this
 email to ask for any help you might need with using Louise.
 
-Louise is brand new and, should you choose to use it, you will most probably
+Louise is still new and, should you choose to use it, you will most probably
 encounter errors and bugs. The author has no way to know of what bugs and errors
 you encounter unless you report them. Please use the author's email to contact
 the author regarding bugs and errors. Alternatively, you are welcome to open a
@@ -50,10 +50,13 @@ metarules by SLD-resolution. Examples and background knowledge, including
 metarules, are provided by the user, but Louise can learn its own background
 knowledge, including metarules.
 
-Louise is based on a new MIL algorithm, called _Top Program Construction_ (TPC),
-that runs in polynomial time. TPC avoids an expensive search of the program
-search space and instead learns by construcing a unique object that is a correct
-hypothesis, consistent with the training examples.
+Louise is based on a MIL meta-interpreter based on a Prolog "vanilla"
+meta-interpreter. Accordingly, the MIL meta-interpreter in Louise is called
+Vanilla. Vanilla can be used to implement MIL algorithms like the original MIL
+algorithm in Metagol, and Louise's signature MIL algorithm, called _Top Program
+Construction_ (TPC), that runs in polynomial time. TPC avoids an expensive
+search of the program search space and instead learns by construcing a unique
+object that is a correct hypothesis, consistent with the training examples.
 
 In this manual we show simple examples where Louise is trained on small, "toy"
 problems, designed to demonstrate its use. Louise is still new and actively
@@ -1147,22 +1150,28 @@ the predicate `list_config/0`. We show an example below:
 
 ```prolog
 ?- list_config.
-depth_limits(2,1)
+clause_limit(0)
+encapsulation_predicate(m)
 example_clauses(call)
 experiment_file(data/examples/tiny_kinship.pl,tiny_kinship)
+fetch_clauses(all)
+fold_recursive(false)
 generalise_learned_metarules(false)
+invented_symbol_prefix($)
 learner(louise)
-max_invented(1)
+listing_limit(10)
+max_error(0,0)
+max_invented(0)
 metarule_formatting(quantified)
 metarule_learning_limits(none)
-minimal_program_size(2,inf)
-recursion_depth_limit(dynamic_learning,none)
 recursive_reduction(false)
 reduce_learned_metarules(false)
 reduction(plotkins)
 resolutions(5000)
+table_meta_interpreter(true)
 theorem_prover(resolution)
 unfold_invented(false)
+untable_meta_interpreter(true)
 true.
 ```
 
@@ -1176,22 +1185,28 @@ the last argument `all`:
 
 ```prolog
 ?- print_config(print,user_output,all).
-configuration:depth_limits(2,1)
+configuration:clause_limit(0)
+configuration:encapsulation_predicate(m)
 configuration:example_clauses(call)
 configuration:experiment_file(data/examples/tiny_kinship.pl,tiny_kinship)
+configuration:fetch_clauses(all)
+configuration:fold_recursive(false)
 configuration:generalise_learned_metarules(false)
+configuration:invented_symbol_prefix($)
 configuration:learner(louise)
-configuration:max_invented(1)
+configuration:listing_limit(10)
+configuration:max_error(0,0)
+configuration:max_invented(0)
 configuration:metarule_formatting(quantified)
 configuration:metarule_learning_limits(none)
-configuration:minimal_program_size(2,inf)
-configuration:recursion_depth_limit(dynamic_learning,none)
 configuration:recursive_reduction(false)
 configuration:reduce_learned_metarules(false)
 configuration:reduction(plotkins)
 configuration:resolutions(5000)
+configuration:table_meta_interpreter(true)
 configuration:theorem_prover(resolution)
 configuration:unfold_invented(false)
+configuration:untable_meta_interpreter(true)
 evaluation_configuration:decimal_places(2)
 evaluation_configuration:evaluate_atomic_residue(include)
 evaluation_configuration:success_set_generation(sld)
@@ -1205,12 +1220,32 @@ reduction_configuration:recursion_depth(10)
 reduction_configuration:time_limit(2)
 sampling_configuration:k_random_sampling(randset)
 thelma_cofiguration:default_ordering(lower)
+thelma_cofiguration:depth_limits(2,1)
 thelma_cofiguration:metarule_functor($metarule)
 true.
 ```
 
 The configuration options listed by `print_or_debug/3` are preceded by the
 module identifier of the module in which they are defined.
+
+Louise has many configuration options. When only a few of those need to be
+inspected, the predicate `list_options/1` can be used instead of `list_config/0`
+and `print_config/3`. `list_options/1` takes as argument a list of configuration
+options, as predicate indicators (a predicate symbol and arity) and prints out
+only those options' values:
+
+```prolog
+?- _Options = [experiment_file/2, clause_limit/1, fetch_clauses/1, max_invented/1, max_error/2, reduction/1, resolutions/1], nl, list_options(_Options).
+
+experiment_file(data/examples/tiny_kinship.pl,tiny_kinship)
+clause_limit(0)
+fetch_clauses(all)
+max_invented(0)
+max_error(0,0)
+reduction(plotkins)
+resolutions(5000)
+true.
+```
 
 ### Inspecting the elements of a MIL Problem
 
@@ -1262,11 +1297,11 @@ what learning target.
 
 At the start of any learning attempt the elements of a MIL problem are
 transformed by Louise to an internal representation by _encapsulation_.
-Encapsulation "wraps" the predicate symbol and arguments of each literal in a
-clause to a new predicate, so that, for example, the atom `p(x,y)` becomes
-`m(p,x,y)` and the clause `p(x,y):- q(x,y)` becomes `m(p,x,y):- m(q,x,y)`.
-Encapsulation facilitates resolution between metarules, that are second-order,
-and the first-order background knowledge and examples. Encapsulation also makes
+Encapsulation "wraps" the predicate symbol and arguments of literals in a clause
+into a new predicate, so that, for example, the atom `p(x,y)` becomes `m(p,x,y)`
+and the clause `p(x,y):- q(x,y)` becomes `m(p,x,y):- m(q,x,y)`.  Encapsulation
+facilitates resolution between metarules, that are second-order, and the
+first-order background knowledge and examples. Encapsulation also makes
 resolution between metarules and other clauses decidable by "lowering" them to
 the first-order (even unification is undecidable in second order logic).
 
@@ -1292,14 +1327,21 @@ Negative examples
 
 Background knowledge
 --------------------
+mother/2:
 m(mother,alexandra,kostas).
 m(mother,paraskevi,dora).
 m(mother,dora,stassa).
-m(parent,A,B):-p(father,A,B).
-m(parent,A,B):-m(mother,A,B).
-p(father,stathis,kostas).
-p(father,stefanos,dora).
-p(father,kostas,stassa).
+
+parent/2:
+m(parent,A,B):-father(A,B).
+m(parent,A,B):-mother(A,B).
+father(stathis,kostas).
+father(stefanos,dora).
+father(kostas,stassa).
+mother(alexandra,kostas).
+mother(paraskevi,dora).
+mother(dora,stassa).
+
 
 Metarules
 ---------
@@ -1307,15 +1349,28 @@ m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
 true.
 ```
 
-Note that some of the clauses in the `Background knowledge` section are
-encapsulated as clauses of the predicate `m` and some as clauses of the
-predicate `p`. The `m` clauses encapsulate the definitions of predicates
-declared as background knowledge of a learning target, while the `p` clauses
-encapsulate the predicates in the closure of the predicates declared as
-background knowledge. In the case of the `grandmother/1` target, `mother/2` and
-`parent/2` are declared as background knowledge and so they are encapsulated as
-clauses of `m/3`, but `father/2` is in the closure of `parent/2`, therefore it
-is encapsulated in clauses of `p/3`.
+Note that only the of clauses in the `Background knowledge` section are
+encapsulated, while their bodies are left alone. More precisely, the only
+literals that are encapsulated are the literals of the predicates defined as
+background knowledge for a learning target, in `background_knowledge/2`. That is
+because those literals will be unified with the literals of metarules during
+resolution. Literals of other predicates do not directly participate in
+resolution with metarules and so do not need to be encapsulated. This also makes
+it easier to use arbitrary Prolog predicates in the body of background
+predicates, whereas the heads of background predicates' clauses must be strictly
+_datalog_ (i.e. they cannot include functions, or what Prolog calls "compound
+terms").
+
+In the example above, the heads of the clauses of `mother/2` and `parent/2` are
+encapsulated because they are declared as background knowledge for the learning
+target, `grandmother/2`. `mother/2` is defined extensionally, as a set of ground
+atoms and so it does not have a body to encapsulate.
+
+Note that there is a second set of `mother/2` clauses that are _not_
+encapsulated. These are found in the closure of `parent/2` along with the
+extensional definition of `father/2`. During learning, clauses that are not
+encapsulated will not be unified, and so resolved, with metarules' literals, but
+instead will be interpreted only to complete the learning proof.
 
 ### Listing MIL problem statistics
 
