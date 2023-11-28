@@ -95,29 +95,18 @@ examples for the learning problem.
 
 __1. Conriguration__
 
-Make sure your configuration matches the one listed below. Important
-options are marked with an asterisk (*):
+Make sure your configuration includes the options listed below:
 
 ==
-?- list_config.
-* clause_limit(0)
-example_clauses(call)
-* experiment_file(data/examples/mtg_fragment.pl,mtg_fragment)
-fold_recursive(false)
-generalise_learned_metarules(false)
-learner(louise)
-listing_limit(10)
-* max_error(0,0)
-* max_invented(0)
-metarule_formatting(quantified)
-metarule_learning_limits(none)
-minimal_program_size(2,inf)
-recursive_reduction(false)
-reduce_learned_metarules(false)
-* reduction(plotkins)
-* resolutions(5000)
-theorem_prover(resolution)
-unfold_invented(false)
+?- _Options = [experiment_file/2, clause_limit/1, fetch_clauses/1, max_invented/1, max_error/2, reduction/1, resolutions/1], nl, list_options(_Options).
+
+experiment_file(data/examples/mtg_fragment.pl,mtg_fragment)
+clause_limit(0)
+fetch_clauses(all)
+max_invented(0)
+max_error(0,0)
+reduction(plotkins)
+resolutions(5000)
 true.
 ==
 

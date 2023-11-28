@@ -13,7 +13,7 @@
 
 This experiment was proposed by Andrew Cropper.
 
-1. Introduction
+__Introduction__
 
 The example in this experiment file demonstrates one-shot learning of a
 recursive theory. The learning target is a program that finds the last
@@ -39,32 +39,21 @@ example is always enough to complete a proof. Whether the proof is
 recursive or not makes no difference.
 
 
-1. Known good configuration.
+__1. Known good configuration.__
 
 The results listed further in this documentation section were obtained
-with the following configuration options. Notable options are marked
-with "*":
+with the following configuration options:
 
 ==
-?- list_config.
-* clause_limit(2)
-example_clauses(call)
-* experiment_file(data/examples/findlast.pl,findlast)
-fold_recursive(false)
-generalise_learned_metarules(false)
-learner(louise)
-listing_limit(10)
-* max_error(0,0)
-* max_invented(0)
-metarule_formatting(quantified)
-metarule_learning_limits(none)
-minimal_program_size(2,inf)
-recursive_reduction(false)
-reduce_learned_metarules(false)
-* reduction(none)
-* resolutions(5000)
-theorem_prover(resolution)
-unfold_invented(false)
+?- _Options = [experiment_file/2, clause_limit/1, fetch_clauses/1, max_invented/1, max_error/2, reduction/1, resolutions/1], nl, list_options(_Options).
+
+experiment_file(data/examples/findlast.pl,findlast)
+clause_limit(2)
+fetch_clauses(all)
+max_invented(0)
+max_error(0,0)
+reduction(none)
+resolutions(5000)
 true.
 ==
 
@@ -93,7 +82,7 @@ file, after this comment section:
 ==
 
 
-2. MIL problem elements.
+__2. MIL problem elements__
 
 The output of the experiments listed further in this documentation
 section was generated with the following MIL problem elements:
@@ -131,7 +120,7 @@ As with configuration, if the output you see looks different make sure
 you have the correct MIL problem elements.
 
 
-3. Learning query.
+__3. Learning query__
 
 Tell Louise to learn a hypothesis from the elements of the MIL problem
 with a call to learn/1, as shown below:
@@ -170,7 +159,7 @@ must be used. The use of auxiliary predicates in place of functions is
 called flattening in ILP.
 
 
-4. Program reduction
+__4. Program reduction__
 
 The experiment file source code below includes a directive to set the
 value of the configuration option reduction/2 to "none":

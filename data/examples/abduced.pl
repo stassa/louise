@@ -9,34 +9,6 @@
 This is a very simple example of learning constants with the abduce
 metarule. Examples in c_5 are I think cribbed off Metagol.
 
-__Known good configuration__
-
-Make sure configuration options are set as follows. Important options
-are highlighted with an asterisk, "*":
-
-==
-?- list_config.
-* clause_limit(0)
-example_clauses(call)
-* experiment_file(data/examples/abduced.pl,abduced)
-fold_recursive(false)
-generalise_learned_metarules(false)
-learner(louise)
-listing_limit(10)
-* max_error(0,0)
-* max_invented(0)
-metarule_formatting(quantified)
-metarule_learning_limits(none)
-minimal_program_size(2,inf)
-recursive_reduction(false)
-reduce_learned_metarules(false)
-* reduction(plotkins)
-* resolutions(5000)
-theorem_prover(resolution)
-unfold_invented(false)
-true.
-==
-
 __List learning results__
 
 Call list_learning_results/0 to learn all targets:

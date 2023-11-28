@@ -10,11 +10,12 @@
 
 A simple example demonstrating how to define your own metarules.
 
-__Declare new metarules__
+__1. Declare new metarules__
 
 New metarules are defined in the configuration module. The predicate
 metarule/2 is multifile so metarules can also be declared in experiment
-file modules.
+file modules instead. This helps to keep track of the definitions of
+metarules used in an experiment.
 
 metarule/2 is declared as an operator in the configuration module.
 Hence, we must load the configuration module to avoid existence
@@ -37,10 +38,10 @@ configuration:special_chain metarule 'P(x,y):- Q(x,z), R(z,y)'.
 That's it. Your metarule is now defined. You can use it to learn.
 
 
-__List the elements of the learning problem__
+__2. List the elements of the learning problem__
 
-Belwo we've added a couple of simple exampels and background definitions
-to learn a simple hypothesis:
+Below we've added a couple of simple exampels and background
+definitions to learn a simple hypothesis:
 
 ==
 ?- list_mil_problem(p/2).
@@ -72,7 +73,7 @@ the bottom of the listing of the elements of the MIL problem, as you
 see above.
 
 
-__Make a learning attempt__
+__3. Make a learning attempt__
 
 It should look like this:
 

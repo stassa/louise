@@ -13,35 +13,25 @@
 This experiment file shows how to learn "even" by inventing "odd" from a
 single positive and a single negative example of "even".
 
-1. Known good configuration:
+__1. Known good configuration__
 
-To run this experiment, make sure that configuration options are as
-listed below. Important options are marked with "*".
+To run this experiment, make sure that configuration options include the
+ones listed below:
 
 ==
-?- list_config.
-* clause_limit(3)
-example_clauses(call)
-* experiment_file(data/examples/even_odd.pl,even_odd)
-fold_recursive(false)
-generalise_learned_metarules(false)
-learner(louise)
-listing_limit(10)
-* max_error(0,0)
-* max_invented(1)
-metarule_formatting(quantified)
-metarule_learning_limits(none)
-minimal_program_size(2,inf)
-recursive_reduction(false)
-reduce_learned_metarules(false)
-* reduction(plotkins)
-* resolutions(5000)
-theorem_prover(resolution)
-unfold_invented(false)
+?- _Options = [experiment_file/2, clause_limit/1, fetch_clauses/1, max_invented/1, max_error/2, reduction/1, resolutions/1], nl, list_options(_Options).
+
+experiment_file(data/examples/even_odd.pl,even_odd)
+clause_limit(3)
+fetch_clauses(all)
+max_invented(1)
+max_error(0,0)
+reduction(plotkins)
+resolutions(5000)
 true.
 ==
 
-2. Elements of the MIL problem.
+__2. Elements of the MIL problem__
 
 Make sure that the MIL problem elements defined in this file match the
 ones listed below:
@@ -76,7 +66,7 @@ true.
 ==
 
 
-3. Make a learning query:
+__3. Make a learning query__
 
 ==
 ?- learn(even/1).

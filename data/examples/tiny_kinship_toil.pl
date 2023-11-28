@@ -24,47 +24,46 @@ This is a variant of tiny_kinship.pl where we learn family relationships
 (how quaint) by learning the necessary metarules (wait, wat?) with
 Louise's subsystem TOIL.
 
-1. Known good configuration (salient options marked with an asterisk,
-"*"):
+__1. Known good configuration__
+
+Ensure the following configuration options are set in configuration.pl:
 
 ==
-?- list_config.
-* clause_limit(0)
-example_clauses(call)
-* experiment_file(data/examples/tiny_kinship_toil.pl,tiny_kinship_toil)
-fold_recursive(false)
-* generalise_learned_metarules(false)
-learner(louise)
-* learning_predicate(learn_meta/1)
-listing_limit(10)
-* max_error(0,0)
-* max_invented(0)
-* metarule_formatting(quantified)
-* metarule_learning_limits(none)
-minimal_program_size(2,inf)
-recursive_reduction(false)
-* reduce_learned_metarules(false)
-* reduction(plotkins)
-* resolutions(5000)
-theorem_prover(resolution)
-unfold_invented(false)
+?- _Options = [experiment_file/2, learning_predicate/1, clause_limit/1, fetch_clauses/1, max_error/2, max_invented/1, reduction/1, resolutions/1, generalise_learned_metarules/1, metarule_formatting/1, metarule_learning_limits/1, reduce_learned_metarules/1], nl, list_options(_Options).
+
+experiment_file(data/examples/tiny_kinship_toil.pl,tiny_kinship_toil)
+learning_predicate(learn_metarules/1)
+clause_limit(0)
+fetch_clauses(all)
+max_error(0,0)
+max_invented(0)
+reduction(plotkins)
+resolutions(5000)
+generalise_learned_metarules(false)
+metarule_formatting(quantified)
+metarule_learning_limits(none)
+reduce_learned_metarules(false)
 true.
 ==
 
 Notice in particular the metarule-learning specific configuration
 options:
 ==
+learning_predicate(learn_metarules/1)
 generalise_learned_metarules(false)
-learning_predicate(learn_meta/1)
 metarule_formatting(quantified)
 metarule_learning_limits(none)
 reduce_learned_metarules(false)
 ==
 
-These are the default options for TOIL, and for this experiment file.
+These are the default ish options for TOIL, and for this experiment
+file.
 
-2. List results of learning the target predicates in this example file
-with TOIL:
+__2. List learning results__
+
+List results of learning the target predicates in this example file with
+TOIL:
+
 ==
 ?- list_learning_results.
 (Meta-dyadic-1) ∃.P,P,P ∀.x,y,z: P(x,y)← P(x,z),P(z,y)
@@ -119,8 +118,11 @@ with TOIL:
 true.
 ==
 
-3. That's a lot of metarules learned for ancestor/2! Let's reduce those
-a bit. Set the following options in the configuration:
+__3. Reconfigure TOIL__
+
+That's a lot of metarules learned for ancestor/2! Let's reduce those a
+bit. Set the following options in the configuration:
+
 ==
 generalise_learned_metarules(true)
 metarule_learning_limits(coverset)
@@ -163,15 +165,20 @@ Then call list_learning_results/0 again:
 
 Thaat's better.
 
-4. A known bug: the option reduce_learned_metarules/1 currently doesn't
+__4. Metarule reduction doesn't yet work__
+
+A known bug: the option reduce_learned_metarules/1 currently doesn't
 do anything:
+
 ==
 % These two are the same.
 reduce_learned_metarules(false)
 reduce_learned_metarules(true)
 ==
 
-5. You can use learn_metarules/[1,2,5] to suggest new metarules, or you
+__5. Learning a first-order program directly__
+
+You can use learn_metarules/[1,2,5] to suggest new metarules, or you
 can use learn_meta/[1,2,5] to automatically pass the learned metarules
 to the currently defined learning predicate. If that is
 learn_meta/[1,2,5] itself, learned metarules are passed to learn/5.
@@ -235,9 +242,12 @@ female(A,A):-female(A).
 true.
 ==
 
-6. TOIL can learn new metarules from examples, background knowledge and
+__6. Third order metarules__
+
+TOIL can learn new metarules from examples, background knowledge and
 one of two kinds of generalised metarules: maximally general
-second-order metarules, or third-order metarules.
+second-order metarules, or third-order metarules. In this section we
+show how third-order metarules can be used.
 
 In the source below, comment-out the maximally general second-order
 metaurles that look like this:

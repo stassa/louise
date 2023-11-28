@@ -11,31 +11,29 @@
 
 /** <module> Post-process an over-special hypothesis to introduce recursion.
 
-1. Known good configuration:
+__1. Known good configuration__
+
+Ensure your configuration options include the following settings:
+
 ==
-?- list_config.
-* clause_limit(0)
-example_clauses(call)
-* experiment_file(data/examples/recursive_folding.pl,recursive_folding)
-* fold_recursive(false)
-generalise_learned_metarules(false)
-learner(louise)
-listing_limit(10)
-* max_error(0,0)
-* max_invented(0)
-metarule_formatting(quantified)
-metarule_learning_limits(none)
-minimal_program_size(2,inf)
-recursive_reduction(false)
-reduce_learned_metarules(false)
-* reduction(plotkins)
-* resolutions(5000)
-theorem_prover(resolution)
-unfold_invented(false)
+?- _Options = [experiment_file/2, clause_limit/1, fetch_clauses/1, max_invented/1, max_error/2, reduction/1, resolutions/1, fold_recursive/1], nl, list_options(_Options).
+
+experiment_file(data/examples/recursive_folding.pl,recursive_folding)
+clause_limit(0)
+fetch_clauses(all)
+max_invented(0)
+max_error(0,0)
+reduction(plotkins)
+resolutions(5000)
+fold_recursive(false)
 true.
 ==
 
-2. MIL problem elements:
+__2. MIL problem elements__
+
+The elements of the learning problem defined in this experiment file
+should be as follows:
+
 ==
 ?- list_mil_problem(list_last/2).
 Positive examples
@@ -67,7 +65,10 @@ Metarules
 true.
 ==
 
-4. First learning attempt with fold_recursive/1 set to 'false':
+__3. Make a learning attempt__
+
+First learning attempt with fold_recursive/1 set to 'false'
+
 ==
 ?- learn(list_last/2), fold_recursive(F).
 list_last(A,B):-tail(A,C),empty(C),head(A,B).
@@ -76,11 +77,14 @@ list_last(A,B):-tail(A,C),tail(C,D),tail(D,E),empty(E),head(D,B).
 F = false.
 ==
 
-5. The elements of the MIL problem listed in step 3 above are designed
+__4. Fold the learned program to introduce recursion__
+
+The elements of the MIL problem listed in step 3 above are designed
 to lead to an over-specialised hypothesis as in step 4. Setting the
 configuration option fold_recursive/1 to 'true' will cause Louise to
 fold the recursive hypothesis at the end of learning to attempt to
 introduce recursion:
+
 ==
 ?- learn(list_last/2), fold_recursive(F).
 list_last(A,B):-tail(A,C),empty(C),head(A,B).
@@ -88,8 +92,11 @@ list_last(A,B):-tail(A,C),list_last(C,B).
 F = true.
 ==
 
-6. Add the recursive hypothesis to a source file and load it, then test
-it to verify it's a correct hypothesis:
+__5. Test the learned hypothesis__
+
+Add the recursive hypothesis to a source file and load it, then
+test it to verify it's a correct hypothesis:
+
 ==
 ?- _Ls = [1,2,3,4,5], recursive_folding:list_last(_Ls, L).
 L = 5 ;

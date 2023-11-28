@@ -27,7 +27,7 @@ definitions of father/2, mother/2 male/2 and female/2. It's a nuclear
 family.
 
 
-__Known good configuration__
+__1. Known good configuration__
 
 Make sure your configuration option are set as follows. Important
 options highlighted with an asterisk, "*":
@@ -35,27 +35,31 @@ options highlighted with an asterisk, "*":
 ==
 ?- list_config.
 * clause_limit(0)
+encapsulation_predicate(m)
 example_clauses(call)
 * experiment_file(data/examples/tiny_kinship.pl,tiny_kinship)
+* fetch_clauses(all)
 fold_recursive(false)
 generalise_learned_metarules(false)
+invented_symbol_prefix($)
 learner(louise)
 listing_limit(10)
 * max_error(0,0)
 * max_invented(0)
 metarule_formatting(quantified)
 metarule_learning_limits(none)
-minimal_program_size(2,inf)
 recursive_reduction(false)
 reduce_learned_metarules(false)
 * reduction(plotkins)
 * resolutions(5000)
+*table_meta_interpreter(true)
 theorem_prover(resolution)
 unfold_invented(false)
+*untable_meta_interpreter(true)
 true.
 ==
 
-__List learning results__
+__2. List learning results__
 
 Call list_learning_results/0 to show the results of learning all
 learning targets defined in this experiment file. It should look like

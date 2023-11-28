@@ -73,29 +73,17 @@ pre-terminals a and b.
 __2. Known good configuration.__
 
 The results listed below were obtained with the following configuration
-options defined in configuration.pl. Required options are marked with
-"*":
+options set in configuration.pl:
 
 ==
-?- list_config.
-* clause_limit(3)
-example_clauses(call)
-* experiment_file(data/examples/anbn.pl,anbn)
-* fold_recursive(false)
-generalise_learned_metarules(false)
-learner(louise)
-listing_limit(10)
-max_error(0,0)
-* max_invented(1)
-metarule_formatting(quantified)
-metarule_learning_limits(none)
-minimal_program_size(2,inf)
-recursive_reduction(false)
-reduce_learned_metarules(false)
-* reduction(plotkins)
-* resolutions(5000)
-theorem_prover(resolution)
-unfold_invented(false)
+?- _Options = [experiment_file/2, clause_limit/1, max_invented/1, fetch_clauses/1, table_meta_interpreter/1, untable_meta_interpreter/1], nl, list_options(_Options).
+
+experiment_file(data/examples/anbn.pl,anbn)
+clause_limit(3)
+max_invented(1)
+fetch_clauses(all)
+table_meta_interpreter(true)
+untable_meta_interpreter(true)
 true.
 ==
 
