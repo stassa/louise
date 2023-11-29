@@ -990,6 +990,149 @@ true.
 
 This is possible because of the generality of metarules, even sort metarules.
 
+Pretty-printing metarules
+-------------------------
+
+In a previous section we have used Louise's pretty-printer for metarules,
+`print_metarules/1` to print metarules in an easy-to-read format.
+
+Louise can pretty-print metarules in three formats: quantified, user-friendly,
+or expanded.
+
+### Quantified metarules
+
+The _quantified_ metarule format is identical to the formal notation of
+metarules that can be found in the MIL literature. Quantified metarules are
+preceded by an identifying name and have their variables quantified by
+existential and universal quantifiers. 
+
+We repeat the example from the previous section but this time we use the
+two-arity `print_metarules/2` to specify the metarule printing format:
+
+```Prolog
+?- print_metarules(quantified, [abduce,chain,identity,inverse,precon,postcon]).
+(Abduce) ∃.P,X,Y: P(X,Y)←
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+true.
+```
+
+The first argument of `print_metarules/2` is used to choose the printing format
+and can be one of: `quantified, user_friendly`, or `expanded`. We describe the
+latter two formats below.
+
+### User-friendly metarules
+
+The _user-friendly_ metarule format is used to manually define metarules for
+learning problems. User-friendly metarules can be defined in experiment files,
+or in the main configuration file, `configuration.pl`. In either case, metarules
+always belong to the configuration module, so when they are defined outside
+`configuration.pl`, they must be preceded by the module identifier
+`configuration`. `print_metarules/2` automatically adds the configuration
+identifier in front of metarules it prints in user-friendly format:
+
+```Prolog
+?- print_metarules(user_friendly, [abduce,chain,identity,inverse,precon,postcon]).
+configuration:abduce metarule 'P(X,Y)'.
+configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
+configuration:identity metarule 'P(x,y):- Q(x,y)'.
+configuration:inverse metarule 'P(x,y):- Q(y,x)'.
+configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
+configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
+true.
+```
+
+This is particularly useful when learning new metarules, as described in a later
+section.
+
+### Expanded metarules
+
+The _expanded_ metarule format is Louise's internal representation of metarules,
+in a form that is more convenient for meta-interpretation. Expanded metarules
+are _encapsulated_ and have an _encapsulation atom_ in their head, holding the
+metarule identifier and the existentially quantified variables in the metarule.
+
+The following is an example of pretty-printing the `H22` metarules from the
+previous examples in Louise's internal, expanded representation:
+
+```Prolog
+?- print_metarules(expanded, [abduce,chain,identity,inverse,precon,postcon]).
+m(abduce,P,X,Y):-m(P,X,Y)
+m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
+m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
+m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
+m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
+true.
+```
+
+Metarules printed in expanded format are useful when debugging a learning
+attempt, at which point it is more informative to inspect Louise's internal
+representation of a metarule to make sure it matches the user's expectation.
+
+### Debugging metarules
+
+Louise can also pretty-print metarules to a debug stream. In SWI-Prolog, debug
+streams are associated with debug _subjects_ and so the `debug_metarules` family
+of predicates takes an additional argument to determine the debug subject.
+
+In the following example we show how to debug metarules in quantified format to
+a debug subject named `pretty`:
+
+```Prolog
+?- debug(pretty), debug_metarules(quantified, pretty, [abduce,chain,identity,inverse,precon,postcon]).
+% (Abduce) ∃.P,X,Y: P(X,Y)←
+% (Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+% (Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+% (Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+% (Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+% (Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+true.
+```
+
+In the output above, the lines preceded by Prolog's comment character, `%`, are
+printed by SWI-Prolog's debugging predicates. Debugging output can be directed
+to a file to keep a log of a learning attempt. This is described in a later
+section.
+
+### Configuring a metarule format
+
+The preferred metarule pretty-printing format for both top-level output and
+debugging output can be specified in the configuration, by setting the option
+`metarule_formatting/1` to one of the three metarule formats recognised by
+`print_metarules` and `debug_metarules`. We show how this works below:
+
+```Prolog
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+(Abduce) ∃.P,X,Y: P(X,Y)←
+(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
+(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
+(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
+(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
+(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
+F = quantified.
+
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+configuration:abduce metarule 'P(X,Y)'.
+configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
+configuration:identity metarule 'P(x,y):- Q(x,y)'.
+configuration:inverse metarule 'P(x,y):- Q(y,x)'.
+configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
+configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
+F = user_friendly.
+
+?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
+m(abduce,P,X,Y):-m(P,X,Y)
+m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
+m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
+m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
+m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
+m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
+F = expanded.
+```
 
 Controlling the Vanilla meta-interpreter
 ----------------------------------------
@@ -1595,150 +1738,6 @@ termination, having enough RAM, and impose strict resolution depth limits.
 These trade-offs are managed by setting appropriate values for the configuration
 options `clause_limit/1` and `fetch_clauses/1`, that control the behaviour of
 the Vanilla meta-intepreter (metarule constraints can also be used).
-
-Pretty-printing metarules
--------------------------
-
-In a previous section we have used Louise's pretty-printer for metarules,
-`print_metarules/1` to print metarules in an easy-to-read format.
-
-Louise can pretty-print metarules in three formats: quantified, user-friendly,
-or expanded.
-
-### Quantified metarules
-
-The _quantified_ metarule format is identical to the formal notation of
-metarules that can be found in the MIL literature. Quantified metarules are
-preceded by an identifying name and have their variables quantified by
-existential and universal quantifiers. 
-
-We repeat the example from the previous section but this time we use the
-two-arity `print_metarules/2` to specify the metarule printing format:
-
-```Prolog
-?- print_metarules(quantified, [abduce,chain,identity,inverse,precon,postcon]).
-(Abduce) ∃.P,X,Y: P(X,Y)←
-(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
-(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
-(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
-(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
-(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
-true.
-```
-
-The first argument of `print_metarules/2` is used to choose the printing format
-and can be one of: `quantified, user_friendly`, or `expanded`. We describe the
-latter two formats below.
-
-### User-friendly metarules
-
-The _user-friendly_ metarule format is used to manually define metarules for
-learning problems. User-friendly metarules can be defined in experiment files,
-or in the main configuration file, `configuration.pl`. In either case, metarules
-always belong to the configuration module, so when they are defined outside
-`configuration.pl`, they must be preceded by the module identifier
-`configuration`. `print_metarules/2` automatically adds the configuration
-identifier in front of metarules it prints in user-friendly format:
-
-```Prolog
-?- print_metarules(user_friendly, [abduce,chain,identity,inverse,precon,postcon]).
-configuration:abduce metarule 'P(X,Y)'.
-configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
-configuration:identity metarule 'P(x,y):- Q(x,y)'.
-configuration:inverse metarule 'P(x,y):- Q(y,x)'.
-configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
-configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
-true.
-```
-
-This is particularly useful when learning new metarules, as described in a later
-section.
-
-### Expanded metarules
-
-The _expanded_ metarule format is Louise's internal representation of metarules,
-in a form that is more convenient for meta-interpretation. Expanded metarules
-are _encapsulated_ and have an _encapsulation atom_ in their head, holding the
-metarule identifier and the existentially quantified variables in the metarule.
-
-The following is an example of pretty-printing the `H22` metarules from the
-previous examples in Louise's internal, expanded representation:
-
-```Prolog
-?- print_metarules(expanded, [abduce,chain,identity,inverse,precon,postcon]).
-m(abduce,P,X,Y):-m(P,X,Y)
-m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
-m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
-m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
-m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
-m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
-true.
-```
-
-Metarules printed in expanded format are useful when debugging a learning
-attempt, at which point it is more informative to inspect Louise's internal
-representation of a metarule to make sure it matches the user's expectation.
-
-### Debugging metarules
-
-Louise can also pretty-print metarules to a debug stream. In SWI-Prolog, debug
-streams are associated with debug _subjects_ and so the `debug_metarules` family
-of predicates takes an additional argument to determine the debug subject.
-
-In the following example we show how to debug metarules in quantified format to
-a debug subject named `pretty`:
-
-```Prolog
-?- debug(pretty), debug_metarules(quantified, pretty, [abduce,chain,identity,inverse,precon,postcon]).
-% (Abduce) ∃.P,X,Y: P(X,Y)←
-% (Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
-% (Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
-% (Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
-% (Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
-% (Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
-true.
-```
-
-In the output above, the lines preceded by Prolog's comment character, `%`, are
-printed by SWI-Prolog's debugging predicates. Debugging output can be directed
-to a file to keep a log of a learning attempt. This is described in a later
-section.
-
-### Configuring a metarule format
-
-The preferred metarule pretty-printing format for both top-level output and
-debugging output can be specified in the configuration, by setting the option
-`metarule_formatting/1` to one of the three metarule formats recognised by
-`print_metarules` and `debug_metarules`. We show how this works below:
-
-```Prolog
-?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
-(Abduce) ∃.P,X,Y: P(X,Y)←
-(Chain) ∃.P,Q,R ∀.x,y,z: P(x,y)← Q(x,z),R(z,y)
-(Identity) ∃.P,Q ∀.x,y: P(x,y)← Q(x,y)
-(Inverse) ∃.P,Q ∀.x,y: P(x,y)← Q(y,x)
-(Precon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x),R(x,y)
-(Postcon) ∃.P,Q,R ∀.x,y: P(x,y)← Q(x,y),R(y)
-F = quantified.
-
-?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
-configuration:abduce metarule 'P(X,Y)'.
-configuration:chain metarule 'P(x,y):- Q(x,z),R(z,y)'.
-configuration:identity metarule 'P(x,y):- Q(x,y)'.
-configuration:inverse metarule 'P(x,y):- Q(y,x)'.
-configuration:precon metarule 'P(x,y):- Q(x),R(x,y)'.
-configuration:postcon metarule 'P(x,y):- Q(x,y),R(y)'.
-F = user_friendly.
-
-?- print_metarules([abduce,chain,identity,inverse,precon,postcon]), metarule_formatting(F).
-m(abduce,P,X,Y):-m(P,X,Y)
-m(chain,P,Q,R):-m(P,X,Y),m(Q,X,Z),m(R,Z,Y)
-m(identity,P,Q):-m(P,X,Y),m(Q,X,Y)
-m(inverse,P,Q):-m(P,X,Y),m(Q,Y,X)
-m(precon,P,Q,R):-m(P,X,Y),m(Q,X),m(R,X,Y)
-m(postcon,P,Q,R):-m(P,X,Y),m(Q,X,Y),m(R,Y)
-F = expanded.
-```
 
 Debugging training data
 -----------------------
