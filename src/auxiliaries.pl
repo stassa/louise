@@ -1312,7 +1312,7 @@ list_top_program(T):-
 %	list_top_program(Target,true,true).
 %
 list_top_program(T,U,E):-
-	configuration:clause_limit(1)
+	configuration:clause_limit(0)
 	,!
 	,experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
@@ -1325,7 +1325,7 @@ list_top_program(T,U,E):-
 	,write_and_count(T,'Specialisation:',MS,Ss_Neg,U,E).
 list_top_program(T,U,E):-
 	configuration:clause_limit(K)
-	,K > 1
+	,K > 0
 	,experiment_data(T,Pos,Neg,BK,MS)
 	,encapsulated_problem(Pos,Neg,BK,MS,[Pos_,Neg_,BK_,MS_])
 	,S = (write_problem(user,[BK_],Refs)
