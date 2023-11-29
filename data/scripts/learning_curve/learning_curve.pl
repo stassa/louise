@@ -414,7 +414,15 @@ print_r_vectors(T,M,Ss,Ms,SDs):-
 	% Create R vectors of results and sampling rates
 	,Ms_v =.. [c|Ms]
 	,SDs_v =.. [c|SDs]
-	,Ss_v =.. [c|Ss]
+	% If sampling rates are pairs P/N, drop the /N
+	% TODO: improve this.
+	,(   Ss = [_/_|_]
+	 ->  findall(S_Pos
+		    ,member(S_Pos/_S_Neg,Ss)
+		    ,Ss_)
+	 ;   Ss = Ss_
+	 )
+	,Ss_v =.. [c|Ss_]
 	% Format data as atoms for easier printing
 	,format(atom(Ms_A),'~w.eval.mean <- ~w',[L,Ms_v])
 	,format(atom(SDs_A),'~w.eval.sd <- ~w',[L,SDs_v])
