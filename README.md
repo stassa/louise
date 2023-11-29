@@ -21,6 +21,7 @@ Table of contents
 [Learning logic programs with Louise](#learning-logic-programs-with-louise)  
 [Learning with metarules](#learning-with-metarules)  
 [Learning metarules with TOIL](#learning-metarules-with-toil)  
+[Controlling the Vanilla meta-interpreter](#controlling-the-vanilla-meta-interpreter)  
 [Pretty-printing metarules](#pretty-printing-metarules)  
 [Debugging training data](#debugging-training-data)  
 [Debugging learning attempts](#debugging-learning-attempts)  
@@ -499,10 +500,10 @@ below.
 Learning with metarules
 -----------------------
 
-Metarules are used in MIL as inductive bias, to determine the structure of
-clauses in learned hypotheses. Metarules are second-order logic clauses, that
-resemble first-order Horn clauses, but have second-order variables existentially
-quantified over the set of predicate symbols.
+Metarules are used in MIL as second-order background knowledge. Metarules are
+second-order definite clauses, similar to first-order definite clauses, but have
+second-order variables existentially quantified over the set of predicate
+symbols.
 
 Below are some examples of metarules in the `H22` language of metarules, with at
 most three literals of arity at most 2 (as output by Louise's metarule
@@ -988,6 +989,614 @@ true.
 ```
 
 This is possible because of the generality of metarules, even sort metarules.
+
+
+Controlling the Vanilla meta-interpreter
+----------------------------------------
+
+At the heart of Louise is a MIL meta-interpeter called "Vanilla", found in the
+file `<louise root>/src/vanilla.pl`. This section describes Vanilla and the
+configuration options used to control its behaviour in Louise.
+
+### A vanilla Prolog meta-interpreter
+
+The name Vanilla is a reference to the "vanilla" Prolog meta-interpreter. A
+Prolog meta-interpreter is a Prolog interpreter written in Prolog and a
+"vanilla" Prolog meta-interpreter is a Prolog meta-interpreter that does only
+that, implement Prolog in Prolog. Prolog meta-interpreters that are not vanilla
+include ones that change the depth-first search execution order to a
+breadth-first search, that keep a trace of goal execution, impose a depth limit
+to resolution, etc. A vanilla Prolog meta-interpreter looks like this:
+
+```prolog
+prove(true).
+prove((L,Ls)):-
+    prove(L)
+    ,prove(ls).
+prove(L):-
+    clause(L,Bs)
+    ,prove(Bs).
+```
+
+The first clause in the Vanilla Prolog meta-interpreter stops
+meta-interpretation when the leaf of a proof tree is found, signalled by the
+atom `true`. The second clause splits the proof in two branches, one for the top
+literal, `L`, on the proof-stack, `(L,Ls)`, and one for the remaining literals,
+`Ls`. The last clause calls the built-in `clause/2` to "fetch" clauses from the
+Prolog program database whose heads match the last literal popped from the proof
+stack, `L`. Then the body literals of that clause are placed on the stack and
+the proof goes on its merry way, until there are no more literals to prove. If
+the literal, `L`, in the third clause is a "fact" (a definite clause with a head
+but no body, very Halloween) then `clause/2` returns the atom `true` as its
+body, which will then stop the proof at the leaf-handling first clause. 
+
+The use of a stack of goals makes the meta-interpretation into a depth-first
+search of a tree where the nodes are goals (literals) and the edges are
+resolution steps, with unification and backtracking handled by the Prolog
+engine. Prolog execution by depth-first search ("top-down") may cause the proof
+to go into an infinite recursion when trying to prove a left-recursive
+predicate. If meta-interpretation terminates and the atom `true` is the last
+atom that remains to be proved, the proof succeeds, refuting the initial goal
+literal given at the start of the proof, the so-called "top goal". Backtracking
+then returns each set of bindings of the variables in the top-goal that make the
+proof succeed: these are called "answers" in logic programming parlance.
+
+In short, a vanilla Prolog meta-interpreter is an implementation of Prolog's
+SLD-Resolution in Prolog; and a successful proof by a vanilla Prolog
+meta-interpreter is a proof by SLD-Refutation of the top-goal. 
+
+SLD-Resolution is sound and complete; meaning that each answer found by
+SLD-Resolution is correct, and that if any correct answer exists it is returned
+by SLD-Resolution. The implementation of SLD-Resolution by depth-first search,
+as in Prolog, however, is not complete: because it can get stuck into infinite
+left-recursions, it can fail to find a proof when one exists. On the other hand,
+depthf-rist search is computationally cheap.
+
+### An Inductive Prolog meta-interpreter
+
+Though it's named Vanilla, the meta-interpreter in Louise is not really a
+vanilla Prolog meta-interpreter: it is capable of not only deduction, as
+ordinary Prolog, but also induction and abduction. Here's what those arcane
+terms mean in the context of the definite clauses used in Prolog:
+
+Given a definite clause `C` with head literal `H` and body literals `B_1, ...,
+B_n`:
+
+1. Deduction is the derivation of an atom `A` with the same predicate symbol and
+   arity as `H`, the head of `C`.
+
+2. Induction is the derivation of a clause `D` with a head literal `H_1` with
+   the same predicate symbol and arity as `H`.
+
+3. Abduction is the derivation of an atom `A` with the same predicate symbol and
+   arity as one of `B_1, ..., B_n`, the body literals of `C`
+
+Seen another way, given a clause `C` representing an implication, deduction is
+the derivation of new consequents of the implication, induction is the
+derivation of new implications, and abduction is the derivation of new
+antecendents (conditions) of the implication.
+
+Ordinary Logic Programming is, of course, deductive, so a successful proof by a
+vanilla Prolog meta-interpreter is a deductive proof. Inductive Logic
+Programming studies the use of logic programming for induction and MIL, in
+particular, is a form of ILP that performs induction by SLD-Resolution. This is
+achieved by what is essentially an inductive Prolog meta-interpreter. In Louise,
+this inductive Prolog meta-interpreter is Vanilla.
+
+"Vanilla" is named so because its structure is the same as that of the vanilla
+Prolog meta-interpreter. There are only two differences between Vanilla and a
+vanilla Prolog meta-interpreter: 
+
+1. the vanilla Prolog meta-interpreter only has one argument, for a stack of
+   goals to be proved, whereas Vanilla has additional arguments for bookkeeping
+   and depth limiting. 
+
+2. Vanilla has a special implementation of a clause-fetching predicate, to
+   replace `clause/2` in the vanilla Prolog meta-interpreter. This one fetches
+   clauses not only from the Prolog program database but also a) from the set of
+   second-order definite clauses we call "metarules" and b) from the clauses of
+   a hypothesis learned so-far.
+
+The inclusion of second-order definite clauses in the background knowledge is
+what makes Vanilla an inductive meta-interpreter. With Vanilla, learning
+begins with an SLD-Refutation proof of the positive examples. During the proof,
+by unification, the second-order variables in the metarules, become bound to
+predicate symbols thus producing the clauses of a first-order hypothesis.
+
+It is worth noting that the proof only searches for substitutions of the
+variables in the background knowledge, including the second-order variables in
+the metarules. That means there is no need to search for a first-order program.
+A first-order program naturally "falls off" the proof, when the second-order
+variables in the metarules are substituted for predicate symbols.
+
+### Controlling Vanilla's clause-fetching
+
+We will not go through all the extra arguments in Vanilla, but it is useful to
+understand the options to control its clause-fetching predicate. We will call
+this predicate "the clause-fetch" for simplicity. 
+
+The clause fetch is controlled with a configuration option, `fetch_clauses/1`.
+This takes as argument either the atom `all`, or a list of clause-fetching
+options, as follows:
+
+```
+fetch_clauses(all).
+fetch_clauses([builtins,bk,hypothesis,metarules]).
+```
+
+Below we attempt to elucidate the use of the `fetch_clauses/1` options to
+control inductive meta-interpretation in Vanilla.
+
+1. Option "all".
+
+   The option "all" is equivalent to [builtins,bk,hypothesis,metarules]. It
+   means that clauses will be fetched during meta-interpretation from all
+   possible sources: the Prolog progam database, including builtins and library
+   predicates, and first-order background knowledge, the set of clauses in the
+   hypothesis learned so-far, and the metarules in the second-order background
+   knowledge.
+
+2. Option "builtins".
+
+   This option means that Prolog builtins and library predicates will be called
+   during meta-interpretation. The call of such predicates is handed off to the
+   Prolog engine. In general, you want to always set this option to avoid errors
+   about missing predicates during meta-interpretation, but it may be useful in
+   debugging and experimentation.
+
+3. Option "bk".
+
+   This option means that all the predicates declared as first-order background
+   knowledge for a learning target will be used in resolution by
+   meta-interpretation. Again, you probably want to always set this option.
+
+4. Option "hypothesis".
+
+   This option means that the set of clauses in the hypothesis so-far will be
+   used in resolution by meta-interpretation. This setting allows learning
+   arbitrary recursive hypotheses, with clauses that resolve with each other.
+   Without this setting, only recursive clauses that resolve with the positive
+   examples can be derived.
+
+5. Option "metarules".
+
+   This option means that the definite clauses in the second-order background
+   knowledge, the "metarules", will be used in resolution. Resolution with the
+   metarules is how Vanilla constructs new clauses in a hypothesis, so leaving
+   this settnig out essentially turns Vanilla into a deductive meta-interpreter.
+
+Below we discuss some subtleties of this set of options, and their combinations.
+
+### Arbitrary recursion
+
+Including "hypothesis" in the `fetch_clauses/1` option allows Vanilla to resolve
+the clauses of a hypothesis derived so-far with each other (and each clause with
+itself) in a recursive call. The depth of recursion between the clauses of the
+hypothesis so-far is not limited in any way. This makes it possible to learn
+recursive hypotheses of arbitrary structure (given the right first- and
+second-order background knowledge) but it also makes it possible to enter an
+infinite recursion.
+
+This is particularly the case under two conditions:
+
+1. A left-recursive clause is added to the current hypothesis.
+
+2. A recursive hypothesis does not exist that entails all the positive examples,
+   with respect to the background knowledge.
+
+When the first condition, left-recursion, obtains, the depth-first search in
+Vanilla will enter an infinite left-recursion. The result is an ugly error
+informing the user that the Prolog engine's call-stack has been blown up.
+
+When the second condition obtains, Church and Turing wag their finger at the
+user and admonish: "didn't we tell you there are logical statements whose truth
+cannot be decided in finite time?". Sadly, if a recursive program that covers
+our training example does not exist, the only way to find that out is to try and
+prove one anyway, resulting in an infinite recursion.
+
+These two problems are addressed in Louise by, respectively: tabling (a.k.a.
+SLG-Resolution); and constraints on the substituions of variables in metarules
+during resolution (we call those "meta-substitutions").
+
+### Controlling recursion with tabling
+
+Tabling is an alternative model of execution for Prolog programs that a)
+replaces depth-first search with breadth-first search, and b) stores interediate
+goals of a proof in a table so they don't have to be re-derived (a process also
+known as "memoization"). The combination of memoization and breadth-first search
+makes it possible for left-recursive Prolog programs to terminate (unless they
+can't termiante because of right-recursion, that is). 
+
+[XSB Prolog](https://xsb.com/xsb-prolog/) is best known for its tabling
+facilities, but SWI-Prolog (used to implement Louise) has included tabling for a
+while now, thanks to the indefatigable work of Jan Wielemaker (one of my
+personal all-time programming heroes). Vanilla can take advantage of
+SWI-Prolog's tabling to avoid going into infintie left-recursions during
+learning.
+
+Tabiling Vanilla is managed by two configuration options, shown here with their
+default settings:
+
+```prolog
+table_meta_interpreter(true).
+untable_meta_interpreter(true).
+```
+
+The first option `table_meta_interpreter/1`, causes Vanilla to be tabled before
+execution. The second option, `untable_meta_interpreter/1` removes Vanilla from
+tabling after execution.
+
+When `table_meta_interpreter/1` is set to `true`, the entire meta-interpreter is
+tabled. This is a bit of a hack to allow tabling's defense against
+left-recursion to be extended to the predicates in the background knowledge
+(which would otherwise have to be tabled individually).
+
+The option `untable_meta_interpreter/1` is useful because it is possible, when
+an experiment file is updated, that the definition of examples and background
+knowledge in it is not correctly updated in the Prolog database. This seems to
+be a bit of a bug in the way Louise handles experiment files as Prolog modules.
+
+Setting both options to `true` has the effect of making learning queries, after
+the first, run considerably faster for some problems.
+
+Tabling itself comes at a cost: breadth first search has exponential
+(asymptotic) space complexity. In real terms this means that, for hard learning
+problems, where the proof tree built by Vanilla during Resolution grows too
+large, Prolog will run out of RAM for tabling. This can be addressed, partly, by
+increasing the tabling space, e.g. as follows:
+
+```prolog
+:-set_prolog_flag(table_space, 34_359_738_368). % 32 GB
+```
+
+You will find a few of those directives in `load_project.pl` and
+`load_headless.pl` at the root of Louise's installation directory.
+
+Unfortunately, there are learning problems for which you'll never have enough
+RAM.
+
+### Controlling recursion with constraints
+
+The aletarnative to tabling is imposing constraints on the set of clauses that
+can be constructed during a proof with Vanilla; in other words, blocking some
+clauses from being learned in the first place.
+
+Such constraints are currently implemented in Louise using the predicate
+`metarule_constraints/2`. This is declared as a multifile and dynamic predicate
+in the configuration option, and so its clauses can be declared by each
+individual experiment file that needs it. You can find examples of metarule
+constraints in the configuration module, in `configuration.pl` (in Louise's
+project root directory).
+
+The perceptive reader will note that imposing constraints on the clauses that
+can be constructed during an inductive proof makes the process _incomplete_
+meaning that not all programs are possible to learn anymore. Still, there may be
+an acceptable trade-off in being able to learn some programs, while ensuring
+termination. Metarule constraints offer this trade-off.
+
+The use of constraints to avoid constructing left-recursive clauses during
+Resolution is explained in the following example:
+
+```
+<louise root>/data/examples/constraints.pl
+```
+
+Constraints can also be used to shape a hypothesis to make it shorter, easier to
+learn and easier to read. An example of this can be found in:
+
+```
+<louise root>/data/examples/recipes.pl
+```
+
+### Depth-limited recursion
+
+There is a third way in which Vanilla can be made to learn recursive predicates
+of arbitrary structure, but without tabling or constraints. This way is to avoid
+resolving the clauses in the hypothesis learned so-far with each other (and each
+clause with itself). This is done by leaving `hypothesis` out of the list of
+options in `fetch_clauses/1`:
+
+```
+% All sets of clauses, except "hypothesis"
+
+fetch_clauses([builtins,bk,metarules]).
+```
+
+With the `hypothesis` option left out, Vanilla can still learn recursive
+hypotheses, in two ways: 
+
+1. By recursion with positive examples
+
+2. By recursion with the metarules
+
+#### Recursion with the positive examples
+
+The first option only allows a limited form of recursive hypotheses to be
+learned, specifically, hypotheses whose clauses resolve with the positive
+examples, in a single step of recursion. This kind of recursion is enabled when
+the setting `clause_limit(0)` is set in the configuration. This setting will
+cause the positive examples to be added to the Prolog database, and restrict
+resolution between metarules and examples to a single resolution step. 
+
+Recursive clauses learned in this way can still be resolved, recursively, with
+other clauses in the _completed_ hypothesis, so they are not as limited as it
+may initially appear. For example, the experiment files `hello_world.pl` and
+`tiny_kinship.pl` show how a recursive theory of the `ancestor` family relation
+can be learned with `clause_limit(0)`.
+
+#### Recursion with the metarules
+
+Recursion with the metarules is enabled by adding the option `metarules` to the
+list of options in `fetch_clauses/1`. Unlike recursion with the positive
+examples, resolving with the metarules allows for arbitrary recursion to be
+learned, but there is a catch (other than getting stuck into infinite
+left-recursions, that is). 
+
+The catch is that a metarules can infinitely resolve with itself, thus entering
+an infinite self-recursion. That happens if any of the metarule's body literals
+has the same arity as its head literal. Now, for the tricky bit.
+
+As long as clauses in a hypothesis are allowed to resolve with each other and
+themselves, the configuration option `clause_limit/1` controls _the cardinality
+of the set of program clauses participating in any refutation sequence of a
+positive example_. 
+
+This occult mumbo jumbo means that, given a `clause_limit/1` setting of `k > 0`,
+Vanilla will only be allowed to derive up to k clauses during a
+Resolution-refutation proof of a positive example. This in turn means that up to
+k clauses will be derived from any one example at a time (multiple sets of
+up-to-k clauses may still be derived on backtracking, and then from multiple
+examples).
+
+With the option `hypothesis` included in the options for `fetch_clauses/1`, each
+of those k clauses will be allowed to recurse with each other, and with itself,
+an arbitrary number of times as discussed earlier.
+
+The flip side of that is that leaving `hypothesis` out will effectively restrict
+the number of times any clause in the hypothesis so-far can resolve with other
+clauses in the hypothesis, including itself, _to 0_.
+
+In turn, the value of `k` in `clause_limit(k)` will now effectively become _the
+total number of program clauses included in any one refutation sequence_. If
+some of those clauses are recursive, multiple instances of those clauses will
+be included in a refutation sequence: one for each step of recursion.
+
+What this means is that in order for a recursive program to be learned without
+`hypothesis` the value of k in `clause_limit(k)` must be large enough for
+sufficient recursive steps to be taken, to successfully complete a proof.
+
+In a sense, keeping the clauses in the hypothesis so far from participating in
+resolution turns the clause limit into a resolution depth limit.
+
+This is best explained with an example. 
+
+#### An example of clause limits as resolution depth limits
+
+Consider the following learning
+problem, defined in `data/examples/findlast.pl`:
+
+```prolog
+?- list_mil_problem(list_last/2).
+Positive examples
+-----------------
+list_last([a,b,c,d,e,f,g,h,i],i).
+
+Negative examples
+-----------------
+
+Background knowledge
+--------------------
+tail/2:
+tail([A|B],B).
+
+head/2:
+head([A|B],A).
+
+empty/1:
+empty([]).
+
+Metarules
+---------
+(Tailrec) ∃.P,Q ∀.x,y,z: P(x,y)← Q(x,z),P(z,y)
+(Midcon) ∃.P,Q,R,S ∀.x,y,z: P(x,y)← Q(x,z),R(z),S(x,y)
+
+true.
+```
+
+Louise can learn the target predicate for this learning problem with the
+following configuration options:
+
+```prolog
+?- _Options = [clause_limit/1, fetch_clauses/1, table_meta_interpreter/1, untable_meta_interpreter/1], nl, list_options(_Options).
+
+clause_limit(2)
+fetch_clauses([builtins,bk,hypothesis,metarules])
+table_meta_interpreter(true)
+untable_meta_interpreter(true)
+true.
+
+?- learn(list_last/2).
+list_last(A,B):-tail(A,C),list_last(C,B).
+list_last(A,B):-tail(A,C),empty(C),head(A,B).
+true.
+```
+
+The target theory for this problem consists of two clauses, one recursive and
+one the base-case, so the clause limit must be set to 2. These clauses obviously
+have to be able to resolve with each other so the option `hypothesis` is added
+to the list of options in `fetch_clauses/1`. Unconstraint resolution between the
+clauses of the hypothesis might well lead to an infinite recursion, especially
+as left-recursive clauses are tried during the proof, so
+`table_meta_interpreter/1` is set to `true`.
+
+Now, suppose we remove tabling by setting `table_meta_interpreter(false)`. If
+you try to run the learning query above, now, the proof will go into an infinite
+recursion and eventually blow the call stack:
+
+```
+?- learn(list_last/2).
+Failed to print resource exception due to lack of space
+error(resource_error(stack),stack_overflow{choicepoints:4087498,depth:2725024,environments:2725012,globalused:958022,localused:1085743,non_terminating:[frame(2725008,vanilla:prove(m/3,2,[2],[1],[4],[2],_245253924),[]),frame(2725007,vanilla:prove((',')/2,2,[2],[1],[4],[2],_245253984),[])],stack_limit:2097152,trailused:53223})
+ERROR: Stack limit (2.0Gb) exceeded
+ERROR:   Stack sizes: local: 1.0Gb, global: 0.9Gb, trail: 52.0Mb
+ERROR:   Stack depth: 2,725,024, last-call: 0%, Choice points: 4,087,498
+ERROR:   Possible non-terminating recursion:
+ERROR:     [2,725,008] vanilla:prove(<compound m/3>, 2, [length:2], [length:1], [length:4], [length:2], _245253924)
+ERROR:     [2,725,007] vanilla:prove(<compound (',')/2>, 2, [length:2], [length:1], [length:4], [length:2], _245253984)
+   Exception: (2,723,523) vanilla:prove((m(list_last, [], _245120092), m(list_last, _245120092, _245119912)), 2, [(m(tailrec, _3182, _3184):-m(_3182, _3196, _3198), m(_3184, _3196, _3212), m(_3182, _3212, _3198)), (m(midcon, _3110, _3112, _3114, _3116):-m(_3110, _3128, _3130), m(_3112, _3128, _3144), m(_3114, _3144), m(_3116, _3128, _3130))], [list_last], [bk, builtins, hypothesis, metarules], [m(tailrec, list_last, list_last), m(tailrec, list_last, tail)], _245119982) ? abort
+% Execution Aborted
+```
+
+The infinite recursion is happening during resolution of the clauses in the
+hypothesis with each other, and each clause with itself, so let's remove
+`hypothesis` from the list of options in `fetch_clauses/1` and see what happens;
+note that we keep not-tabling the meta-interpreter:
+
+```
+?- _Options = [clause_limit/1, fetch_clauses/1, table_meta_interpreter/1, untable_meta_interpreter/1], nl, list_options(_Options).
+
+clause_limit(2)
+fetch_clauses([builtins,bk,metarules])
+table_meta_interpreter(false)
+untable_meta_interpreter(true)
+true.
+
+?- learn(list_last/2).
+[]
+true.
+```
+
+This time learning terminates, but no clauses are learned (the empty list
+printed at the end of the learning query is the empty hypothesis). That happens
+because Vanilla cannot prove the target theory without resolving its recursive
+clause with itself, and finally with the base-case clause.
+
+More precisely, in order to compute the necessary recursion in the target
+theory, Vanilla must resolve the recursive clause in it once for each element in
+the list given as an example, the list [a,b,c,d,e,f,g,h,i]. This list has nine
+elements, so the recursive clause in the target theory must resolve eight times
+with itself, and one final time with the base-case clause, before it can
+refute (and prove) the example.
+
+Suppose then that we set clause-limit to 9:
+
+```prolog
+
+?- _Options = [clause_limit/1, fetch_clauses/1, table_meta_interpreter/1, untable_meta_interpreter/1], nl, list_options(_Options).
+
+clause_limit(9)
+fetch_clauses([builtins,bk,metarules])
+table_meta_interpreter(false)
+untable_meta_interpreter(true)
+true.
+
+?- learn(list_last/2).
+list_last(A,B):-tail(A,C),list_last(C,B).
+list_last(A,B):-tail(A,C),empty(C),head(A,B).
+true.
+```
+
+Note we change nothing else- no `hypothesis` in the `fetch_clauses/1` options
+and no tabling. And yet, the proof terminates and the target theory is learned.
+Why is this?
+
+That's because even without allowing the clauses in the hypothesis to resolve
+with each other, and themselves, the same result can be obtained by allowing the
+_metarules_ to resolve with each other. After all, the clauses in the hypothesis
+are specialisations of the metarules with respect to the background knowledge.
+More to the point, each of thos clauses is derived by resolution between the
+metarules, and the first-order background knowledge, in the first place. Thus,
+we don't need to store those clauses in the hypothesis so-far and reuse them, we
+can just derive them "on the fly" from the metarules at each step of the proof
+as needed.
+
+Unfortunately, each such clause needs to be derived "on the fly" a sufficient
+number of times to complete the proof. Hence the need for a sufficiently high
+clause limit: the clause limit is now the total number of clauses that will be
+constructed during resolution. Or, in other words, it is an absolute limit on
+the number of resolution steps from the start to the end of a proof.
+
+Here are some further learning queries to help clarify the semantics of
+`clause_limit/1`, when `hypothesis` is excluded from the list of options in
+`fetch_clauses/1`:
+
+```prolog
+?- _Options = [clause_limit/1, fetch_clauses/1, table_meta_interpreter/1, untable_meta_interpreter/1], nl, list_options(_Options).
+
+clause_limit(8)
+fetch_clauses([builtins,bk,metarules])
+table_meta_interpreter(false)
+untable_meta_interpreter(true)
+true.
+
+?- learn(list_last/2).
+[]
+true.
+```
+
+Above, the clause limit of 8 is not sufficient for the proof in Vanilla to "walk
+over" all the nine elements in the list [a,b,c,d,e,f,g,h,i]. Suppose we were to
+remove one element from the list:
+
+```prolog
+% First element removed from the list
+
+?- findlast:positive_example(list_last/2, E).
+E = list_last([b, c, d, e, f, g, h, i], i).
+
+?- _Options = [clause_limit/1, fetch_clauses/1, table_meta_interpreter/1, untable_meta_interpreter/1], nl, list_options(_Options).
+
+clause_limit(8)
+fetch_clauses([builtins,bk,metarules])
+table_meta_interpreter(false)
+untable_meta_interpreter(true)
+true.
+
+?- learn(list_last/2).
+list_last(A,B):-tail(A,C),list_last(C,B).
+list_last(A,B):-tail(A,C),empty(C),head(A,B).
+true.
+```
+
+With one element removed, only eight steps of resolution are needed to "walk
+over" the entire list, so `clause_limit(8)` now suffices to learn the target
+theory.
+
+Suppose we put back the missing element and set the clause limit to 10. That is,
+we will allow one more resolution step to be taken, beyond what is sufficient to
+walk over the entire list. What will happen now?
+
+```prolog
+?- findlast:positive_example(list_last/2, E).E = list_last([a, b, c, d, e, f, g, h|...], i).
+
+?- _Options = [clause_limit/1, fetch_clauses/1, table_meta_interpreter/1, untable_meta_interpreter/1], nl, list_options(_Options).
+
+clause_limit(10)
+fetch_clauses([builtins,bk,metarules])
+table_meta_interpreter(false)
+untable_meta_interpreter(true)
+true.
+
+?- learn(list_last/2).list_last(A,B):-tail(A,C),list_last(C,B).
+list_last(A,B):-list_last(A,C),empty(C),head(A,B).
+list_last(A,B):-tail(A,C),empty(C),head(A,B).
+list_last(A,B):-tail(A,C),empty(C),list_last(A,B).
+list_last(A,B):-tail(A,C),empty(C),tail(A,B).
+true.
+```
+
+This time resolution goes on for too long and the result is a hypothesis with
+over-general clauses.
+
+#### Conclusions
+
+As can be seen from the discussion and examples in the previous sections, there
+are several trade-offs to be made between allowing arbitrary recursion, ensuring
+termination, having enough RAM, and impose strict resolution depth limits.
+
+These trade-offs are managed by setting appropriate values for the configuration
+options `clause_limit/1` and `fetch_clauses/1`, that control the behaviour of
+the Vanilla meta-intepreter (metarule constraints can also be used).
 
 Pretty-printing metarules
 -------------------------
@@ -1564,7 +2173,7 @@ In the example below we show the logging outputs for the debug subjects `learn`,
 
 ```prolog
 ?- debug(learn), debug(top_program), debug(reduction), learn(grandfather/2).
-% Encapsulating problem
+% Encapsulating problem...
 % Constructing Top program...
 % Constructing Top program...
 % Generalised Top program
@@ -1588,16 +2197,16 @@ In the example below we show the logging outputs for the debug subjects `learn`,
 % m(father,stefanos,dora)
 % m(father,kostas,stassa)
 % m(parent,A,B):-m(father,A,B)
-% m(parent,A,B):-p(mother,A,B)
-% m(husband,A,B):-m(father,A,C),p(mother,B,C)
-% m(grandmother,A,B):-p(mother,A,C),m(parent,C,B)
-% p(mother,alexandra,kostas)
-% p(mother,paraskevi,dora)
-% p(mother,dora,stassa)
+% m(parent,A,B):-mother(A,B)
+% m(husband,A,B):-m(father,A,C),mother(B,C)
+% m(grandmother,A,B):-mother(A,C),m(parent,C,B)
+% mother(alexandra,kostas)
+% mother(paraskevi,dora)
+% mother(dora,stassa)
 % m(grandfather,A,B):-m(father,A,C),m(parent,C,B)
 % m(grandfather,A,B):-m(husband,A,C),m(grandmother,C,B)
 % m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)
-% Excapsulating hypothesis
+% Excapsulating hypothesis...
 grandfather(A,B):-father(A,C),parent(C,B).
 grandfather(A,B):-husband(A,C),grandmother(C,B).
 true.
@@ -1641,7 +2250,7 @@ previous example to disk at the top-directory of the Louise installation:
 
 ```PowerShell
 PS C:\...\louise> cat .\log_file.log
-% Encapsulating problem
+% Encapsulating problem...
 % Constructing Top program...
 % Constructing Top program...
 % Generalised Top program
@@ -1665,16 +2274,16 @@ PS C:\...\louise> cat .\log_file.log
 % m(father,stefanos,dora)
 % m(father,kostas,stassa)
 % m(parent,A,B):-m(father,A,B)
-% m(parent,A,B):-p(mother,A,B)
-% m(husband,A,B):-m(father,A,C),p(mother,B,C)
-% m(grandmother,A,B):-p(mother,A,C),m(parent,C,B)
-% p(mother,alexandra,kostas)
-% p(mother,paraskevi,dora)
-% p(mother,dora,stassa)
+% m(parent,A,B):-mother(A,B)
+% m(husband,A,B):-m(father,A,C),mother(B,C)
+% m(grandmother,A,B):-mother(A,C),m(parent,C,B)
+% mother(alexandra,kostas)
+% mother(paraskevi,dora)
+% mother(dora,stassa)
 % m(grandfather,A,B):-m(father,A,C),m(parent,C,B)
 % m(grandfather,A,B):-m(husband,A,C),m(grandmother,C,B)
 % m(chain,A,B,C):-m(A,D,E),m(B,D,F),m(C,F,E)
-% Excapsulating hypothesis
+% Excapsulating hypothesis...
 ```
 
 Note that in the examples above, the logging output for the specified debug
@@ -1780,8 +2389,22 @@ results:
     experiment_file('data/examples/mtg_fragment.pl',mtg_fragment).
     ```
 
- 3. Edit the learning curve script's configuration file to select necessary
-    options and output directories:
+ 3. The learning curve script is not normally loaded with the rest of the
+    project. Load it with the following query at the SWI-Prolog command line:
+
+    ```prolog
+    ?- use_module(data(scripts/learning_curve/learning_curve)).
+    true.
+    ```
+
+ 4. Edit the learning curve script's configuration file to select necessary
+    options and output directories. The script is in the following file:
+
+    ```
+    <louise project root>/data/scripts/learning_curve/learning_curve_configuration.pl
+    ```
+
+    In that file, set the following options:
 
     ```prolog
     copy_plotting_scripts(scripts(learning_curve/plotting)).
@@ -1815,7 +2438,7 @@ results:
     successfully until this limit has expired, the accurracy (or error etc) of
     the empty hypothesis is measured instead.
 
- 4. Reload all configuration files to pick up the new options.
+ 5. Reload all configuration files to pick up the new options.
 
     ```prolog
     ?- make.
@@ -1825,7 +2448,7 @@ results:
     console. The next step directs you to turn it back on again so you can watch
     the experiment's progress.
 
- 5. Enter the following queries to ensure logging to console is turned on.
+ 6. Enter the following queries to ensure logging to console is turned on.
 
     The  console output will log the steps of the experiment so that you can
     keep track of the experiment's progress (and know that it's running):
@@ -1842,17 +2465,29 @@ results:
     if you reloaded the main configuration file (because it includes the
     directive `nodebug(_)`). The two queries above turn it back on.
 
-  6. Enter the following query to run the experiment script:
+  7. Enter the following query to run the experiment script:
 
      ```prolog
-     _T = ability/2, _M = acc, _K = 100, float_interval(1,9,1,_Ss), learning_curve(_T,_M,_K,_Ss,_Ms,_SDs), writeln(_Ms), writeln(_SDs).
+     _T = ability/2, _M = acc, _K = 100, float_interval(1,9,1,_Ss), findall(S/0.0,member(S,_Ss),_Ss_Zs), learning_curve(_T,_M,_K,_Ss_Zs,_Ms,_SDs), writeln(_Ms), writeln(_SDs).
      ```
 
      `_M = acc` tells the experiment code to measure accuracy. You can also
      measure error, the reate of false positives, precision or recall, etc. `_K
      = 100` runs the experiment for 100 steps. `float_interval(1,9,1,_Ss)`
      generates a list of floating-point values used as sampling rates in each
-     step of the experiment: `[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]`.
+     step of the experiment: `[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]`. 
+
+     The`mtg_framework.pl` dataset has no negative examples so the list is
+     zipped with a list of `0.0`'s in a `findall/3` call. The sampling library
+     in `lib/sampling` that is used by the learning curve script can accept a
+     sampling rate in two different formats: as a single number used as the
+     sampling rate for both positive and negative examples, or as a pair, P/N,
+     where P is the sampling rate for the positive examples and N the sampling
+     rate for the negative examples. However, when there are no negative
+     examples, passing a single number as a sampling rate will cause the
+     sampling library code to raise an error. One way to avoid this error is to
+     pass the sampling rate as a pair with the negative sampling rate set to 0,
+     which is what the zipping with `0.0` in the query above does.
 
      The experiment code averages the accuracy of hypotheses learned with each
      sampling rate for all steps and also calculates the standard deviations.
@@ -1866,7 +2501,8 @@ results:
      (by copying the R data from a log file to an R data script and sourcing the
      plotting script).
 
- 7. Source the plotting script in the console R to generate an image:
+ 8. Start R and source the plotting script in the R console to generate an
+    image:
 
     ```R
     source("<path_to_louise>\\louise\\output\\learning_curve\\plot_learning_curve_results.r")
