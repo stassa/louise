@@ -1328,33 +1328,30 @@ can be learned with `clause_limit(0)`.
 
 Recursion with the metarules is enabled by adding the option `metarules` to the
 list of options in `fetch_clauses/1`. Unlike recursion with the positive
-examples, resolving with the metarules allows for arbitrary recursion to be
-learned, but there is a catch (other than getting stuck into infinite
-left-recursions, that is). 
+examples, resolving the metarules with each other and the first-order background
+knowledge allows for arbitrary recursion to be learned, but there is a catch: a
+metarule can infinitely resolve with itself as long as it has any body literals
+that have the same arity, and therefore, can unify, with its head literal.
 
-The catch is that a metarules can infinitely resolve with itself, thus entering
-an infinite self-recursion. That happens if any of the metarule's body literals
-has the same arity as its head literal. Now, for the tricky bit.
+To avoid this infinite recursion, louise imposes a limit on the number of times
+that a metarule can resolve with itself. This limit is set in the configuration
+option `clause_limit/1`.
 
-As long as clauses in a hypothesis are allowed to resolve with each other and
-themselves, the configuration option `clause_limit/1` controls _the cardinality
-of the set of program clauses participating in any refutation sequence of a
-positive example_. 
+When metarules resolve with each other and the first-order backrgound knowledge,
+the instances of metarules derived become clauses in the hypothesis so-far.
+Including the option `hypothesis` to the options for `fetch_clauses/1` allows
+those clauses to resolve with each other, as discussed earlier. Each of those
+clauses needs to be derived once, then can resolve an arbitrary number of times
+with itself or other clauses.
 
-This occult mumbo jumbo means that, given a `clause_limit/1` setting of `k > 0`,
-Vanilla will only be allowed to derive up to k clauses during a
-Resolution-refutation proof of a positive example. This in turn means that up to
-k clauses will be derived from any one example at a time (multiple sets of
-up-to-k clauses may still be derived on backtracking, and then from multiple
-examples).
+Thus, as long as the option `hypothesis` is included in the options for
+`fetch_clauses/1`, the value of `clause_limit/1` controls _the cardinality of
+the set of program clauses participating in any refutation sequence of a
+positive example_.
 
-With the option `hypothesis` included in the options for `fetch_clauses/1`, each
-of those k clauses will be allowed to recurse with each other, and with itself,
-an arbitrary number of times as discussed earlier.
-
-The flip side of that is that leaving `hypothesis` out will effectively restrict
-the number of times any clause in the hypothesis so-far can resolve with other
-clauses in the hypothesis, including itself, _to 0_.
+The flip side of that is that leaving `hypothesis` out of the options for
+`fetch_clauses/1` will effectively restrict the number of times clauses in
+the hypothesis so-far can resolve with themselves, _to 0_.
 
 In turn, the value of `k` in `clause_limit(k)` will now effectively become _the
 total number of program clauses included in any one refutation sequence_. If
@@ -1362,8 +1359,9 @@ some of those clauses are recursive, multiple instances of those clauses will
 be included in a refutation sequence: one for each step of recursion.
 
 What this means is that in order for a recursive program to be learned without
-`hypothesis` the value of k in `clause_limit(k)` must be large enough for
-sufficient recursive steps to be taken, to successfully complete a proof.
+`hypothesis` included in the options for `fetch_clauses/1` the value of
+`clause_limit/1` must be large enough for sufficient recursive steps to be
+taken, to successfully complete a proof.
 
 In a sense, keeping the clauses in the hypothesis so far from participating in
 resolution turns the clause limit into a resolution depth limit.
