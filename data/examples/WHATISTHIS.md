@@ -12,27 +12,24 @@ Table of Contents
 The following is a listing of all experiment files in this directory, in
 alphabetical order:
 
-  `abduced.pl`
-  `ackermann.pl`
-  `anbn.pl`
-  `constraints.pl`
-  `dummy.pl`
-  `even_odd.pl`
-  `example_invention.pl`
-  `findlast.pl`
-  `hello_world.pl`
-  `list_processing.pl`
-  `lsystem.pl`
-  `mtg_fragment.pl`
-  `multi_pred.pl`
-  `recipes.pl`
-  `recursive_folding.pl`
-  `tiny_kinship.pl`
-  `tiny_kinship_meta.pl`
-  `tiny_kinship_toil.pl`
-  `user_metarules.pl`
-  `yamamoto.pl`
-
+[`abduced.pl`](#abducedpl)  
+[`ackermann.pl`](#ackermannpl)  
+[`anbn.pl`](#anbnpl)  
+[`constraints.pl`](#constraintspl)  
+[`dummy.pl`](#dummypl)  
+[`even_odd.pl`](#even-oddpl)  
+[`example_invention.pl`](#example-inventionpl)  
+[`findlast.pl`](#findlastpl)  
+[`hello_world.pl`](#hello-worldpl)  
+[`list_processing.pl`](#list-processingpl)  
+[`mtg_fragment.pl`](#mtg-fragmentpl)  
+[`multi_pred.pl`](#multi-predpl)  
+[`recipes.pl`](#recipespl)  
+[`recursive_folding.pl`](#recursive-foldingpl)  
+[`tiny_kinship.pl`](#tiny-kinshippl)  
+[`tiny_kinship_toil.pl`](#tiny-kinship-toilpl)  
+[`user_metarules.pl`](#user-metarulespl)  
+[`yamamoto.pl`](#yamamotopl)  
 
 Files in this folder
 ====================
