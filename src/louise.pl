@@ -392,8 +392,13 @@ metasubstitution(E,M,Sub):-
 %	clause_limit/1.
 %
 metasubstitutions(:-En,K,MS,Subs):-
-	!
-        ,prove(En,K,MS,[],Subs,Subs)
+	 !
+	,signature(En,Ss)
+	,debug(signature,'Signature: ~w',[Ss])
+	,S = setup_negatives(Fs,T,U)
+	,G = prove(En,K,MS,Ss,Subs,Subs)
+	,C = cleanup_negatives(Fs,T,U)
+	,setup_call_cleanup(S,G,C)
 	,debug(metasubstitutions,'Proved Example: ~w',[:-En])
 	,debug_clauses(metasubstitutions,'With Metasubs:',[Subs]).
 metasubstitutions(Ep,K,MS,Subs):-
@@ -410,6 +415,63 @@ metasubstitutions(Ep,K,MS,Subs):-
 		 )
 		,Subs).
 
+
+%!	setup_negatives(-Fetch,-Table,-Untable) is det.
+%
+%       Setup tabling to test a hypothesis with negative examples.
+%
+%	Fetch, Table and Untable are the current values of the
+%	configuration options fetch_clauses/1, table_meta_interpreter/1
+%	and untable_meta_interpreter/1, respectively.
+%
+%	This predicate ensures tabling is set for prove/7 in vanilla.pl
+%	before testing a (sub) hypothesis against the negative examples.
+%
+%	When we test with the negative examples, prove/7 needs to
+%	resolve with clauses in the hypothesis (otherwise it can't test
+%	the hypothesis, duh) but not in the second-order background
+%	knowledge. That means that fetch_clauses/1 must be set to
+%	[builtins, bk, metarules].
+%
+%	Resolving with the hypothesis allows unconstrained recursion and
+%	this may cause it to go into an infinite recursion. This is
+%	particularly the case if the hypothesis was learned _without_
+%	'hypothesis' in the list of fetch_clause/1 options.
+%
+%	To avoid such infinite recursions we must set
+%	table_meta_interpreter/1 and untable_meta_interpreter/1 so as to
+%	turn tabling on through the interface of refresh_tables/1. Then
+%	we can test the hypothesis in relative certainty it won't just
+%	"go infinite".
+%
+%	The current values of all three configuration options are bound
+%	to the output so they can be re-set after testing with the
+%	negative examples.
+%
+setup_negatives(Fs,T,U):-
+	configuration:fetch_clauses(Fs)
+	,configuration:table_meta_interpreter(T)
+	,configuration:untable_meta_interpreter(U)
+	,set_configuration_option(fetch_clauses, [[builtins,bk,hypothesis]])
+	,set_configuration_option(table_meta_interpreter, [true])
+	,refresh_tables(untable)
+	,refresh_tables(table).
+
+
+%!	cleanup_negatives(+Fetch,+Table,+Untable) is det.
+%
+%	Reset tabling options after testing with negative examples.
+%
+%	Sets the three configuration options manipulated by
+%	setup_negatives/3 to their original values, as read from the
+%	configuration. See setup_negatives/3 for details.
+%
+cleanup_negatives(Fs,T,U):-
+	set_configuration_option(fetch_clauses, [[Fs]])
+	,set_configuration_option(table_meta_interpreter, [T])
+	,set_configuration_option(untable_meta_interpreter, [U])
+	,refresh_tables(untable)
+	,refresh_tables(table).
 
 
 %!	signature(+Example,-Signature) is det.
