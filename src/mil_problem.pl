@@ -357,6 +357,20 @@ encapsulated_clause((L,Ls),Ss,Acc,C_):-
 	!
         ,encapsulated_literal(L,Ss,L_)
 	,encapsulated_clause(Ls,Ss,[L_|Acc],C_).
+encapsulated_clause((L;Ls),Ss,Acc,C_):-
+% A literal of the meta-predicate ;/2.
+	!
+        ,encapsulated_literal(L,Ss,L_)
+	,encapsulated_clause(Ls,Ss,[L_|Acc],C_).
+encapsulated_clause((L->Ls),Ss,Acc,C_):-
+% A literal of the meta-predicate ->/2.
+	!
+        ,encapsulated_literal(L,Ss,L_)
+	,encapsulated_clause(Ls,Ss,[L_|Acc],C_).
+encapsulated_clause(not(L),Ss,Acc,[not(L_)|Acc]):-
+% A literal of the meta-predicate not/1.
+	!
+        ,encapsulated_literal(L,Ss,L_).
 encapsulated_clause(L,Ss,[],L_):-
 % Last literal: the accumulator is empty; probably a single atom.
 	!
