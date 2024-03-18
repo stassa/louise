@@ -1013,7 +1013,6 @@ list_encapsulated_problem(Ts):-
 		,nl
 		)
 	       )
-	,nl
 	,expanded_metarules(MS,MS_)
 	,format_underlined('Background knowledge (Second Order)')
 	,print_metarules(expanded,MS_).
