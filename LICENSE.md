@@ -10,7 +10,7 @@ the military of such a nation.
 2. Military application.
 
 "Military application" is hereby defined to include use of this work for any
-task desired or needed by a nation's military including, but not restricted to,
+task desired or needed by a nation's military, including, but not restricted to,
 the following: just testing; planning; reconnaissance; intelligence (ha ha)
 gathering; identification or behaviour prediction of civilians, combatants or
 non-combatants; autonomous navigation of weapon systems; target selection by
@@ -27,8 +27,7 @@ scientists and researchers funded by the military of any nation specifically in
 the time period that covers the use of this work. Scientists and researchers
 receiving military funding in time periods other than the period that covers the
 use of this work may use this work, although they are not strictly speaking
-welcome to do so and the authors of the license wish their projects to crash and
-burn and take their funding with them.
+welcome to do so.
 
 4. Plain English.
 
@@ -36,12 +35,11 @@ To make it plain: do not use this work in anything that has anything to do with
 armies, war, weapons, death, destruction, fire, bombs, killing, guns, soldiers,
 refugees, and so on, unless it's a video game and even then, better don't.
 
-5. Clowns.
+5. Exception regarding removal ov mines and unexploded ordnance.
 
-A sole exception shall be made for clowns (actual clowns) and only so far as the
-purpose of using this work is to entertain the children of military personnel.
-Think of the children! In particular, think how the experience will scar them
-for life.
+The use of this software to enable the removal of mines, unexploded ordnance and
+any other dangers to civilian life caused by military activity is exceptionally
+permitted by this license.
 
 6. Future terms.
 
