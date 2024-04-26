@@ -31,6 +31,7 @@
 		      ,list_mil_problem/1
 		      ,list_mil_problem_thelma/1
 		      ,list_problem_statistics/1
+		      ,list_resources/0
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
 		      ,list_top_program/3
@@ -146,6 +147,7 @@ Table of Contents
    * list_mil_problem/1
    * list_mil_problem_thelma/1
    * list_problem_statistics/1
+   * list_resources/0
    * list_top_program_reduction/1
    * list_top_program/1
    * list_top_program/3
@@ -1264,6 +1266,18 @@ list_problem_statistics(T):-
 	,format('Negative examples:    ~w~n', [J])
 	,format('Background knowledge: ~w ~w~n', [K,BK])
 	,format('Metarules:            ~w ~w ~n', [N,MS]).
+
+
+
+%!	list_resources is det.
+%
+%	List RAM limits for stacks and tabling.
+%
+list_resources:-
+	current_prolog_flag(stack_limit, S)
+	,current_prolog_flag(table_space, T)
+	,format('Global stack limit ~D~n',[S])
+	,format('Table space ~D~n',[T]).
 
 
 
