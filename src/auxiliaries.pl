@@ -30,6 +30,7 @@
 		      ,list_learning_results/0
 		      ,list_mil_problem/1
 		      ,list_mil_problem_thelma/1
+	              ,list_problem_element/2
 		      ,list_problem_statistics/1
 		      ,list_resources/0
 		      ,list_top_program_reduction/1
@@ -146,6 +147,7 @@ Table of Contents
    * list_learning_results/0
    * list_mil_problem/1
    * list_mil_problem_thelma/1
+   * list_problem_element/2
    * list_problem_statistics/1
    * list_resources/0
    * list_top_program_reduction/1
@@ -1247,6 +1249,65 @@ prettify_vars(Vs,T,Ps):-
 		 ,nth1(I,Ps,'$VAR'(P))
 		 )
 		,Ps).
+
+
+
+%!	list_problem_element(+Target,+What) is det.
+%
+%	List a named element of a MIL problem for a learning Target.
+%
+%	What is a costant denoting the MIL problem element to be
+%	printed. The printed element is as declared in the experiment
+%	file interface predicates, e.g. BK is printed as symbols and
+%	names or metarule ids.
+%
+%	Recognised values for What are as follows:
+%	* Positive examples: pos, positives, positive_examples
+%	* Negative examples: neg, negatives, negative_examples
+%	* First-Order BK: bk, background_knowledge, first_order_theory,
+%	first_order_bk
+%	* Second-Order BK: ms, metarules, second_order_theory, second_order_bk
+%
+%	Output is limited by the value of configuration option
+%	listing_limit/1.
+%
+%	Example query:
+%	==
+%	?- auxiliaries:list_problem_element(hall_a/2,first_order_bk).
+%	t0/2.
+%	t1/2.
+%	t2/2.
+%	t3/2.
+%	t4/2.
+%	t5/2.
+%	t6/2.
+%	t7/2.
+%	t8/2.
+%	t9/2.
+%	% ... 390 more clauses.
+%	true.
+%	==
+%
+list_problem_element(Ts,W):-
+	configuration:listing_limit(L)
+	,experiment_data(Ts,Pos,Neg,BK,MS)
+	,Ls = [pos-Pos
+	      ,positives-Pos
+	      ,positive_examples-Pos
+	      ,neg-Neg
+	      ,negatives-Neg
+	      ,negative_examples-Neg
+	      ,bk-BK
+	      ,background_knowledge-BK
+	      ,first_order_theory-BK
+	      ,first_order_bk-BK
+	      ,ms-MS
+	      ,metarules-MS
+	      ,second_order_theory-MS
+	      ,second_order_bk-MS
+	      ]
+	,selectchk(W-Xs,Ls,_)
+	,print_limited(L,Xs).
 
 
 
