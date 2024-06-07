@@ -60,6 +60,7 @@
 		      ,program_symbols/2
 		      ,debug_clauses/3
 		      ,debug_clauses/2
+		      ,debug_length/3
 		      ,print_clauses/2
 		      ,print_clauses/1
 		      ,program/3
@@ -1459,7 +1460,7 @@ write_and_count(T,Msg,MS,Cs,U,E):-
 
 
 
-%!	debug_clauses(+Topic,+Message,-Clauses) is det.
+%!	debug_clauses(+Topic,+Message,+Clauses) is det.
 %
 %	Log a Message followed by a set of Clauses.
 %
@@ -1490,7 +1491,17 @@ debug_clauses(T,Cs):-
 
 
 
-%!	print_clauses(+Message,-Clauses) is det.
+%!	debug_length(+Topic,+Message,+List) is det.
+%
+%	Log a Message about the length of a List.
+%
+debug_length(T,M,Ls):-
+	length(Ls,N)
+	,debug(T,M,[N]).
+
+
+
+%!	print_clauses(+Message,+Clauses) is det.
 %
 %	Print a Message followed by a set of Clauses.
 %
