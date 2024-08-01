@@ -90,9 +90,9 @@ environment(lib/grid_master/data/environments/basic_environment/'basic_environme
 %       * backtracking: magickally teleport back in time.
 %       * reversing: painstakingly reverse course.
 %
-executor(reversing).
+%executor(reversing).
 %executor(backtracking).
-%executor(reversing_slam).
+executor(reversing_slam).
 %executor(backtracking_slam).
 
 

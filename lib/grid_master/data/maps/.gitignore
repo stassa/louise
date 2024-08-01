@@ -1,0 +1,14 @@
+# Place output files in this directory.
+# Ignore all but this file.
+*
+!.gitignore
+!big_room.map
+!hall_a.map
+!hall_a_small.map
+!room.map
+!tessera_1.map
+!tessera_2.map
+!tessera_3.map
+!tessera_4.map
+!test_1.map
+!zero.map
