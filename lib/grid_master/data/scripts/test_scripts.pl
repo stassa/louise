@@ -5,10 +5,9 @@
    ,ensure_loaded(lib/grid_master/src/action_generator)
    ,ensure_loaded(lib/grid_master/src/map)
    ,ensure_loaded(lib/controller_freak/executors)
-   ,ensure_loaded(lib/grid_master/data/environments/basic_environment/basic_environment)
-   % Make sure this is the grid_solver.pl experiment file.
-   ,configuration:experiment_file(P,_M)
-   ,ensure_loaded(P).
+   ,ensure_loaded(lib/grid_master/data/environments/basic_environment/basic_environment).
+
+:- load_map_files.
 
 /*
 :-edit(test_scripts).
