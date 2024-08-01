@@ -247,10 +247,11 @@ generalise(Pos,MS,Ss_Pos):-
 		 ,forall(member(Sub-_M,Subs)
 			,constraints(Sub)
 			)
-		 ,debug_clauses(metasubstitutions,'Passed metasub constraints:',[Subs])
+		 ,debug_clauses(generalise,'Passed metasub constraints:',[Subs])
 		 )
 		,Ss_Pos_)
-	,predsort(unifiable_compare,Ss_Pos_,Ss_Pos).
+	,predsort(unifiable_compare,Ss_Pos_,Ss_Pos)
+	,debug_length(generalise,'Derived ~w sub-hypotheses (sorted)',Ss_Pos).
 
 
 
