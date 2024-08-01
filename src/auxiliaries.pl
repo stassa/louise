@@ -78,7 +78,7 @@
 :-user:use_module(lib(term_utilities/term_utilities)).
 :-user:use_module(lib(program_reduction/program_reduction)).
 :-user:use_module(lib(mathemancy/mathemancy)).
-:-use_module(src/load_experiment_file).
+:-use_module(src(load_experiment_file)).
 :-use_module(src(mil_problem)).
 :-use_module(src(defaults)).
 :-use_module(src(louise)).
