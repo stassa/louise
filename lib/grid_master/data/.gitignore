@@ -2,7 +2,7 @@
 # Ignore all but this file.
 *
 !.gitignore
-!environments/
+!environments/**
 !maps/
 !solvers/
 !scripts/
