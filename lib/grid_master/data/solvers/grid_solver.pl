@@ -15,7 +15,7 @@
                       ,learn_with_primitives/2
                       ]).
 
-:-ensure_loaded('lib/grid_master/load_headless.pl').
+:-user:ensure_loaded(lib(grid_master/load_headless)).
 :-use_module(grid_master_src(action_generator)).
 :-ensure_loaded(grid_master_src(map_display)).
 :-ensure_loaded(grid_master_src(map)).
