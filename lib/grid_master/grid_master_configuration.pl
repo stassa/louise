@@ -33,6 +33,14 @@ action(step_up).
 action(step_right).
 action(step_down).
 action(step_left).
+%action(look_up).
+%action(look_up_right).
+%action(look_right).
+%action(look_down_right).
+%action(look_down).
+%action(look_down_left).
+%action(look_left).
+%action(look_up_left).
 
 
 %!      action_representation(?Representation) is semidet.
