@@ -4,6 +4,7 @@
                           ,write_primitives/0
                           ,generate_actions/2
                           ,step/6
+                          ,peek/7
                           ,passable_tiles/3
                           ,passable_tile/3
                           ,unpassable_tiles/3
