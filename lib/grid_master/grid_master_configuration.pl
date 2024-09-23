@@ -30,9 +30,13 @@ TODO: copied from fsc_mazes and other sources. Ensure stand-alone.
 %       to generate.
 %
 action(step_up).
+%action(step_up_right).
 action(step_right).
+%action(step_down_right).
 action(step_down).
+%action(step_down_left).
 action(step_left).
+%action(step_up_left).
 %action(look_up).
 %action(look_up_right).
 %action(look_right).

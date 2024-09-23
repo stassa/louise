@@ -1,7 +1,11 @@
 :-module(actions, [step_up/3
+                  ,step_up_right/3
                   ,step_right/3
+                  ,step_down_right/3
                   ,step_down/3
+                  ,step_down_left/3
                   ,step_left/3
+                  ,step_up_left/3
                   ,look_up/3
                   ,look_up_right/3
                   ,look_right/3
@@ -23,197 +27,253 @@
 */
 
 
-%!      step_up(+Representation,+Start,-Step) is det.
+%!      step_up(+Representation,+Parameters,-Step) is det.
 %
-%       Generate a Step up from a Start location.
+%       Generate clauses of an action to Step up.
 %
 %       Representation is the current value of grid_master_configuration
-%       option action_representation/1: one of [stack_less, stack_based,
-%       lookaround, controller_sequences].
+%       option action_representation/1.
 %
-%       Start is a list [Map,Coordinates] where Map is a map/3 term and
-%       Coordinates is a pair X/Y, the coordinates of the start location
-%       of the move to be generated. See the start of the file for more
-%       on map/3 terms.
+%       Parameters is a list [Map,Coordinates] where Map is a map/3 term
+%       and Coordinates is a pair X/Y, the coordinates of the start
+%       location of the step action to be generated.
 %
-%       Step is an atom of the step_up/2 primitive move action. The form
-%       of Step depends on the value of action_representation/1.
+%       Step is an atom of the step_up/2 primitive move action. The
+%       form of Step depends on the value of action_representation/1.
 %
 %       step_up/2 generates steps with a rotation applied to coordinates
 %       to transform them into Cartesian coordinates, with the origin
 %       at the lower-left corner.
 %
-step_up(stack_based,[map(Id,Dims,Ms),X/Y]
-       ,step_up([Id,X/Y,T,[T|Os],[up|As]],[Id,X_/Y_,T_,Os,As])):-
-        step(X/Y,+,0/1,Ms,Dims,X_/Y_)
+step_up(R,Ps,At):-
+        step_action(step_up,R,Ps,At).
+
+
+%!      step_up_right(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to step up and to the right.
+%
+%       As step_up/3 but steps up and to the right, diagonally.
+%
+step_up_right(R,Ps,At):-
+        step_action(step_up_right,R,Ps,At).
+
+
+%!      step_right(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to step to the right.
+%
+%       As step_up/3 but steps to the right.
+%
+step_right(R,Ps,At):-
+        step_action(step_right,R,Ps,At).
+
+
+%!      step_down_right(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to step down and to the right.
+%
+%       As step_up/3 but steps down and to the right, diagonally.
+%
+step_down_right(R,Ps,At):-
+        step_action(step_down_right,R,Ps,At).
+
+
+%!      step_down(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to step down.
+%
+%       As step_up/3 but steps down.
+%
+step_down(R,Ps,At):-
+        step_action(step_down,R,Ps,At).
+
+
+%!      step_down_left(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to step down and to the left.
+%
+%       As step_up/3 but steps down and to the left, diagonally.
+%
+step_down_left(R,Ps,At):-
+        step_action(step_down_left,R,Ps,At).
+
+
+%!      step_left(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to step to the left.
+%
+%       As step_up/3 but steps to the left.
+%
+step_left(R,Ps,At):-
+        step_action(step_left,R,Ps,At).
+
+
+%!      step_up_left(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to step up and to the left.
+%
+%       As step_up/3 but steps up and to the left, diagonally.
+%
+step_up_left(R,Ps,At):-
+        step_action(step_up_left,R,Ps,At).
+
+
+%!      step_action(+Name,+Representation,+Params,-Action) is nondet.
+%
+%       Generate clauses of one step Action.
+%
+%       Name is the atomic name of the action.
+%
+%       Representation is the action representation as defined in the
+%       grid_master_configuration option action_representation/1.
+%
+%       Params are the parameters of the step action, currently a map/3
+%       term and a pair of X/Y coordinates from which to look in one
+%       direction.
+%
+%       Action is one clause of the named step action with fluents
+%       defined according to one of the predicates step_up/5,
+%       step_up_right/5, step_right/5, etc.
+%
+step_action(A,list_based,[map(Id,Dims,Ms),X/Y],At):-
+        SA =.. [A,X/Y,Ms,Dims,X_/Y_]
+        ,call(SA)
         ,map_location(X/Y,T,Ms,Dims,true)
         ,map_location(X_/Y_,T_,Ms,Dims,true)
+        ,At =.. [A,[Id,X/Y,T,Vs],[Id,X_/Y_,T_,[A|Vs]]]
+        ,Vs = '$VAR'('Vs').
+
+step_action(A,stack_based,[map(Id,Dims,Ms),X/Y],At):-
+        SA =.. [A,X/Y,Ms,Dims,X_/Y_]
+        ,call(SA)
+        ,map_location(X/Y,T,Ms,Dims,true)
+        ,map_location(X_/Y_,T_,Ms,Dims,true)
+        ,At =.. [A,[Id,X/Y,T,[T|Os],[A|As]],[Id,X_/Y_,T_,Os,As]]
         ,As = '$VAR'('As')
         ,Os = '$VAR'('Os').
-step_up(stack_less,[map(Id,Dims,Ms),X/Y],step_up([Id,X/Y,T],[Id,X_/Y_,T_])):-
-        step(X/Y,+,0/1,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true).
-step_up(lookaround,[map(Id,Dims,Ms),X/Y]
-       ,step_up([Id,X/Y,T,[O|Os],[up|As]],[Id,X_/Y_,T_,Os,As])):-
-        step(X/Y,+,0/1,Ms,Dims,X_/Y_)
+
+step_action(A,stack_less,[map(Id,Dims,Ms),X/Y],At):-
+        SA =.. [A,X/Y,Ms,Dims,X_/Y_]
+        ,call(SA)
         ,map_location(X/Y,T,Ms,Dims,true)
         ,map_location(X_/Y_,T_,Ms,Dims,true)
+        ,At =.. [A,[Id,X/Y,T],[Id,X_/Y_,T_]].
+
+step_action(A,lookaround,[map(Id,Dims,Ms),X/Y],At):-
+        SA =.. [A,X/Y,Ms,Dims,X_/Y_]
+        ,call(SA)
+        ,map_location(X/Y,T,Ms,Dims,true)
+        ,map_location(X_/Y_,T_,Ms,Dims,true)
+        ,At =.. [A,[Id,X/Y,T,[O|Os],[A|As]],[Id,X_/Y_,T_,Os,As]]
         ,look_around(X/Y,Ms,Dims,O)
         ,As = '$VAR'('As')
         ,Os = '$VAR'('Os').
-step_up(controller_sequences,[map(Id,Dims,Ms),X/Y]
-       ,step_up([Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[up|As],[q0|Qs_]]
-               ,[Id,X_/Y_,T_,q0,Qs,Os,As,Qs_])):-
-        step(X/Y,+,0/1,Ms,Dims,X_/Y_)
+
+step_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
+        SA =.. [A,X/Y,Ms,Dims,X_/Y_]
+        ,call(SA)
         ,map_location(X/Y,T,Ms,Dims,true)
         ,map_location(X_/Y_,T_,Ms,Dims,true)
+        ,state_mapping(A,Q1)
+        ,At =.. [A,[Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[A|As],[Q1|Qs_]]
+               ,[Id,X_/Y_,T_,Q1,Qs,Os,As,Qs_]]
         ,look_around(X/Y,Ms,Dims,O)
         ,Q0 = '$VAR'('Q0')
         ,Qs = '$VAR'('Qs')
         ,Os = '$VAR'('Os')
         ,As = '$VAR'('As')
         ,Qs_ = '$VAR'('Qs_').
-step_up(list_based,[map(Id,Dims,Ms),X/Y],step_up([Id,X/Y,T,Vs],[Id,X_/Y_,T_,[up|Vs]])):-
-        step(X/Y,+,0/1,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,Vs = '$VAR'('Vs').
 
 
-%!      step_right(+Representation,+Start,-Step) is det.
+%!      step_up(+Coordinates,+Map,+Dimensions) is det.
 %
-%       Generate a Step tot he right of a Start location.
+%       Step up from a pair of Coordinates in a Map.
 %
-%       As step_up/2 but moves right.
+%       If the location at Coordinates is outside the map, this
+%       predicate fails silently.
 %
-step_right(stack_based,[map(Id,Dims,Ms),X/Y]
-          ,step_right([Id,X/Y,T,[T|Os],[right|As]],[Id,X_/Y_,T_,Os,As])):-
-        step(X/Y,+,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,As = '$VAR'('As')
-        ,Os = '$VAR'('Os').
-step_right(stack_less,[map(Id,Dims,Ms),X/Y],step_right([Id,X/Y,T],[Id,X_/Y_,T_])):-
-        step(X/Y,+,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true).
-step_right(lookaround,[map(Id,Dims,Ms),X/Y]
-       ,step_right([Id,X/Y,T,[O|Os],[right|As]],[Id,X_/Y_,T_,Os,As])):-
-        step(X/Y,+,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,look_around(X/Y,Ms,Dims,O)
-        ,As = '$VAR'('As')
-        ,Os = '$VAR'('Os').
-step_right(controller_sequences,[map(Id,Dims,Ms),X/Y]
-       ,step_right([Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[right|As],[q1|Qs_]]
-                  ,[Id,X_/Y_,T_,q1,Qs,Os,As,Qs_])):-
-        step(X/Y,+,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,look_around(X/Y,Ms,Dims,O)
-        ,Q0 = '$VAR'('Q0')
-        ,Qs = '$VAR'('Qs')
-        ,Os = '$VAR'('Os')
-        ,As = '$VAR'('As')
-        ,Qs_ = '$VAR'('Qs_').
-step_right(list_based,[map(Id,Dims,Ms),X/Y]
-          ,step_right([Id,X/Y,T,Vs],[Id,X_/Y_,T_,[right|Vs]])):-
-        step(X/Y,+,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,Vs = '$VAR'('Vs').
+step_up(X/Y,Ms,Dims,X_/Y_):-
+        step(X/Y,+,0/1,Ms,Dims,X_/Y_).
 
 
-%!      step_down(+Representation,+Start,-Step) is det.
+%!      step_up_right(+Coordinates,+Map,+Dimensions) is det.
 %
-%       Generate a Step down from a Start location.
+%       Step up and to the right from a pair of Coordinates in a Map.
 %
-%       As step_up/2 but moves down.
+%       If the location at Coordinates is outside the map, this
+%       predicate fails silently.
 %
-step_down(stack_based,[map(Id,Dims,Ms),X/Y]
-         ,step_down([Id,X/Y,T,[T|Os],[down|As]],[Id,X_/Y_,T_,Os,As])):-
-        step(X/Y,-,0/1,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,As = '$VAR'('As')
-        ,Os = '$VAR'('Os').
-step_down(stack_less,[map(Id,Dims,Ms),X/Y],step_down([Id,X/Y,T],[Id,X_/Y_,T_])):-
-        step(X/Y,-,0/1,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true).
-step_down(lookaround,[map(Id,Dims,Ms),X/Y]
-       ,step_down([Id,X/Y,T,[O|Os],[down|As]],[Id,X_/Y_,T_,Os,As])):-
-        step(X/Y,-,0/1,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,look_around(X/Y,Ms,Dims,O)
-        ,As = '$VAR'('As')
-        ,Os = '$VAR'('Os').
-step_down(controller_sequences,[map(Id,Dims,Ms),X/Y]
-         ,step_down([Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[down|As],[q2|Qs_]]
-                   ,[Id,X_/Y_,T_,q2,Qs,Os,As,Qs_])):-
-        step(X/Y,-,0/1,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,look_around(X/Y,Ms,Dims,O)
-        ,Q0 = '$VAR'('Q0')
-        ,Qs = '$VAR'('Qs')
-        ,Os = '$VAR'('Os')
-        ,As = '$VAR'('As')
-        ,Qs_ = '$VAR'('Qs_').
-step_down(list_based,[map(Id,Dims,Ms),X/Y]
-         ,step_down([Id,X/Y,T,Vs],[Id,X_/Y_,T_,[down|Vs]])):-
-        step(X/Y,-,0/1,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,Vs = '$VAR'('Vs').
+step_up_right(X/Y,Ms,Dims,X_/Y_):-
+        step(X/Y,+,1/1,Ms,Dims,X_/Y_).
 
 
-%!      step_left(+Representation,+Start,-Step) is det.
+%!      step_right(+Coordinates,+Map,+Dimensions) is det.
 %
-%       Generate a Step to the left of a Start location.
+%       Step to the right from a pair of Coordinates in a Map.
 %
-%       As step_up/2 but moves left.
+%       If the location at Coordinates is outside the map, this
+%       predicate fails silently.
 %
-step_left(stack_based,[map(Id,Dims,Ms),X/Y]
-         ,step_left([Id,X/Y,T,[T|Os],[left|As]],[Id,X_/Y_,T_,Os,As])):-
-        step(X/Y,-,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,As = '$VAR'('As')
-        ,Os = '$VAR'('Os').
-step_left(stack_less,[map(Id,Dims,Ms),X/Y],step_left([Id,X/Y,T],[Id,X_/Y_,T_])):-
-        step(X/Y,-,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true).
-step_left(lookaround,[map(Id,Dims,Ms),X/Y]
-       ,step_left([Id,X/Y,T,[O|Os],[left|As]],[Id,X_/Y_,T_,Os,As])):-
-        step(X/Y,-,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,look_around(X/Y,Ms,Dims,O)
-        ,As = '$VAR'('As')
-        ,Os = '$VAR'('Os').
-step_left(controller_sequences,[map(Id,Dims,Ms),X/Y]
-       ,step_left([Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[left|As],[q3|Qs_]]
-                 ,[Id,X_/Y_,T_,q3,Qs,Os,As,Qs_])):-
-        step(X/Y,-,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,look_around(X/Y,Ms,Dims,O)
-        ,Q0 = '$VAR'('Q0')
-        ,Qs = '$VAR'('Qs')
-        ,Os = '$VAR'('Os')
-        ,As = '$VAR'('As')
-        ,Qs_ = '$VAR'('Qs_').
-step_left(list_based,[map(Id,Dims,Ms),X/Y]
-         ,step_left([Id,X/Y,T,Vs],[Id,X_/Y_,T_,[left|Vs]])):-
-        step(X/Y,-,1/0,Ms,Dims,X_/Y_)
-        ,map_location(X/Y,T,Ms,Dims,true)
-        ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,Vs = '$VAR'('Vs').
+step_right(X/Y,Ms,Dims,X_/Y_):-
+        step(X/Y,+,1/0,Ms,Dims,X_/Y_).
+
+
+%!      step_down_right(+Coordinates,+Map,+Dimensions) is det.
+%
+%       Step down and to the right from a pair of Coordinates in a Map.
+%
+%       If the location at Coordinates is outside the map, this
+%       predicate fails silently.
+%
+step_down_right(X/Y,Ms,Dims,X_/Y_):-
+        step_down(X/Y,Ms,Dims,Xr/Yr)
+        ,step_right(Xr/Yr,Ms,Dims,X_/Y_).
+
+
+%!      step_down(+Coordinates,+Map,+Dimensions) is det.
+%
+%       Step down from a pair of Coordinates in a Map.
+%
+%       If the location at Coordinates is outside the map, this
+%       predicate fails silently.
+%
+step_down(X/Y,Ms,Dims,X_/Y_):-
+        step(X/Y,-,0/1,Ms,Dims,X_/Y_).
+
+
+%!      step_down_left(+Coordinates,+Map,+Dimensions) is det.
+%
+%       Step down and to the left from a pair of Coordinates in a Map.
+%
+%       If the location at Coordinates is outside the map, this
+%       predicate fails silently.
+%
+step_down_left(X/Y,Ms,Dims,X_/Y_):-
+        step(X/Y,-,1/1,Ms,Dims,X_/Y_).
+
+
+%!      step_left(+Coordinates,+Map,+Dimensions) is det.
+%
+%       Step left from a pair of Coordinates in a Map.
+%
+%       If the location at Coordinates is outside the map, this
+%       predicate fails silently.
+%
+step_left(X/Y,Ms,Dims,X_/Y_):-
+        step(X/Y,-,1/0,Ms,Dims,X_/Y_).
+
+
+%!      step_up_left(+Coordinates,+Map,+Dimensions) is det.
+%
+%       Step up and to the left of a pair of Coordinates in a Map.
+%
+%       If the location at Coordinates is outside the map, this
+%       predicate fails silently.
+%
+step_up_left(X/Y,Ms,Dims,X_/Y_):-
+        step_up(X/Y,Ms,Dims,Xu/Yu)
+        ,step_left(Xu/Yu,Ms,Dims,X_/Y_).
 
 
 
@@ -362,6 +422,16 @@ look_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
 %       @tbd Maybe leave as a configurable option? Also, maybe also
 %       allow mapping of State label to Observation label?
 %
+% Step actions:
+state_mapping(step_up,q1).
+state_mapping(step_up_right,q12).
+state_mapping(step_right,q2).
+state_mapping(step_down_right,q32).
+state_mapping(step_down,q3).
+state_mapping(step_down_left,q34).
+state_mapping(step_left,q4).
+state_mapping(step_up_left,q14).
+% Look actions:
 state_mapping(look_up,q1).
 state_mapping(look_up_right,q12).
 state_mapping(look_right,q2).
