@@ -1,4 +1,5 @@
-:-module(grid_master_configuration, [action_representation/1
+:-module(grid_master_configuration, [action/1
+                                    ,action_representation/1
                                     ,display_engine/1
                                     ,maps_module/1
                                     ,map_file/1
@@ -15,9 +16,23 @@
 TODO: copied from fsc_mazes and other sources. Ensure stand-alone.
 
 */
-:-dynamic action_representation/1
+:-dynamic action/1
+         ,action_representation/1
          ,primitives_file/2
          ,theme/1.
+
+
+%!      action(?Name) is semidet.
+%
+%       The Name of an action to generate a definition for.
+%
+%       Used by action_generator module to choose what actions
+%       to generate.
+%
+action(step_up).
+action(step_right).
+action(step_down).
+action(step_left).
 
 
 %!      action_representation(?Representation) is semidet.
