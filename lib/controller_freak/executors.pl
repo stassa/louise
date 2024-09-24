@@ -8,6 +8,7 @@
 
 :-use_module(controller_freak_configuration).
 :-use_module(lib(grid_master/src/action_generator)).
+:-use_module(lib(grid_master/src/actions),[]).
 :-use_module(lib(grid_master/src/map)).
 :-use_module(lib(grid_master/src/map_display)).
 :-use_module(lib(grid_master/data/environments/basic_environment/maze_observations)).
@@ -1157,7 +1158,8 @@ step_action(A,X0/Y0,M,X1/Y1):-
         debug(step_action,'step_action/4 (any: ~w)',[A]),
         grid_master_configuration:action_representation(R)
         %,M = map(_Id,Ds,Ms) ,map_display:print_map(both,Ds,Ms), nl
-        ,action_generator:step(R,M,X0/Y0,S)
+        %,action_generator:step(R,M,X0/Y0,S)
+        ,action_generator:action(R,[M,X0/Y0],S)
         ,S =.. [_S,S1,S2]
         ,fluents_actions(R,S1,[A|_As])
         ,S1 = [Id,X0/Y0|_]
@@ -1181,7 +1183,7 @@ step_action(A,X0/Y0,M,X1/Y1):-
 %
 element_origin(X/Y,Mt,Xo/Yo):-
         map_term(_Id,Ds,M,Mt)
-        ,action_generator:look_down_left(X/Y,M,Ds,Xo/Yo,T)
+        ,actions:look_down_left(X/Y,M,Ds,Xo/Yo,T)
         ,T \== o
         ,!.
 element_origin(_XY,_Mt,0/0).

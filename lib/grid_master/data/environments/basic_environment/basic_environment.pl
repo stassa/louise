@@ -6,6 +6,7 @@
                             ]).
 
 :-use_module(grid_master_src(action_generator)).
+:-use_module(grid_master_src(actions)).
 :-use_module(grid_master_src(map_display)).
 %:-use_module(maze_generator).
 
@@ -258,11 +259,11 @@ new_observation(Fs,O):-
 % Desplays the environment by printing in the Prolog terminal.
         fluents(_,print,map(_Id,Ds,M),X/Y,_T,nil,Fs)
         ,!
-        ,action_generator:look_around(X/Y,M,Ds,O).
+        ,actions:look_around(X/Y,M,Ds,O).
 new_observation(Fs,O):-
 % Displays the environment by printing with a blessed Terminal() object.
         fluents(_,blessed,map(_Id,Ds,M),X/Y,_T,Term,Fs)
-        ,action_generator:look_around(X/Y,M,Ds,O)
+        ,actions:look_around(X/Y,M,Ds,O)
         ,py_call(Term:clear,C)
         % New line needed to collocate map with print_map/3.
         % Otherwise, leave end='' and no flush= at all.
@@ -317,25 +318,25 @@ action(up,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
         action_generator:step(X/Y,+,0/1,Ms,Dims,X_/Y_)
         ,action_generator:map_location(X/Y,T,Ms,Dims,true)
         ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
-        ,action_generator:look_around(X_/Y_,Ms,Dims,O).
+        ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 action(down,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
         action_generator:step(X/Y,-,0/1,Ms,Dims,X_/Y_)
         ,action_generator:map_location(X/Y,T,Ms,Dims,true)
         ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
-        ,action_generator:look_around(X_/Y_,Ms,Dims,O).
+        ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 action(left,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
         action_generator:step(X/Y,-,1/0,Ms,Dims,X_/Y_)
         ,action_generator:map_location(X/Y,T,Ms,Dims,true)
         ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
-        ,action_generator:look_around(X_/Y_,Ms,Dims,O).
+        ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 action(right,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
         action_generator:step(X/Y,+,1/0,Ms,Dims,X_/Y_)
         ,action_generator:map_location(X/Y,T,Ms,Dims,true)
         ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
-        ,action_generator:look_around(X_/Y_,Ms,Dims,O).
+        ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 
 %!      action_display(+Dims,+Map,+XY0,+XY1,+S,+A,+Term) is det.

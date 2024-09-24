@@ -11,6 +11,7 @@
 %:-use_module(lib/controller_freak/controller_freak).
 %:-use_module(grid_master_src(map_display)).
 :-use_module(grid_master_src(action_generator)).
+:-use_module(grid_master_src(actions)).
 :-use_module(maze_generator_configuration).
 
 /** <module> Use a maze-solving controller to generate a maze.
@@ -332,19 +333,19 @@ new_cell([Ds,M,XY,f],A,[Ds,M,XY_,f]):-
 %
 generator_action(up,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,+,0/1,Ms,Dims,X_/Y_,T_)
-        ,action_generator:look_around(X_/Y_,Ms,Dims,O).
+        ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 generator_action(down,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,-,0/1,Ms,Dims,X_/Y_,T_)
-        ,action_generator:look_around(X_/Y_,Ms,Dims,O).
+        ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 generator_action(left,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,-,1/0,Ms,Dims,X_/Y_,T_)
-        ,action_generator:look_around(X_/Y_,Ms,Dims,O).
+        ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 generator_action(right,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,+,1/0,Ms,Dims,X_/Y_,T_)
-        ,action_generator:look_around(X_/Y_,Ms,Dims,O).
+        ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 
 %!      cell_constraints_diag(+Loc,+Map,+Dims,+Tile) is det.

@@ -13,8 +13,6 @@
 
 /** <module> Configuration options for Grid Master.
 
-TODO: copied from fsc_mazes and other sources. Ensure stand-alone.
-
 */
 :-dynamic action/1
          ,action_representation/1
