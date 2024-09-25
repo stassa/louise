@@ -423,23 +423,23 @@ look_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
 %       allow mapping of State label to Observation label?
 %
 % Step actions:
-state_mapping(step_up,q1).
-state_mapping(step_up_right,q12).
-state_mapping(step_right,q2).
-state_mapping(step_down_right,q32).
-state_mapping(step_down,q3).
-state_mapping(step_down_left,q34).
-state_mapping(step_left,q4).
-state_mapping(step_up_left,q14).
+state_mapping(step_up,q0).
+state_mapping(step_up_right,q01).
+state_mapping(step_right,q1).
+state_mapping(step_down_right,q12).
+state_mapping(step_down,q2).
+state_mapping(step_down_left,q23).
+state_mapping(step_left,q3).
+state_mapping(step_up_left,q30).
 % Look actions:
-state_mapping(look_up,q1).
-state_mapping(look_up_right,q12).
-state_mapping(look_right,q2).
-state_mapping(look_down_right,q32).
-state_mapping(look_down,q3).
-state_mapping(look_down_left,q34).
-state_mapping(look_left,q4).
-state_mapping(look_up_left,q14).
+state_mapping(look_up,q0).
+state_mapping(look_up_right,q01).
+state_mapping(look_right,q1).
+state_mapping(look_down_right,q12).
+state_mapping(look_down,q2).
+state_mapping(look_down_left,q23).
+state_mapping(look_left,q3).
+state_mapping(look_up_left,q30).
 
 
 
