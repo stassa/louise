@@ -698,7 +698,7 @@ tuple(T,Q0,O,A,Q1):-
 %       tuple will be popped as a trv:T tuple, whereas a rev:T tuple
 %       will always be popped as a rev:T tuple.
 %
-%pop_tuple([trv:T1|Ss],trv:T1,Ss). %Not?
+%pop_tuple([trv:T1|Ss],trv:T1,Ss). % Not?
 pop_tuple([alt:T1|Ss],trv:T1,Ss):-
         !.
 pop_tuple([rev:T1|Ss],rev:T1,Ss):-
@@ -1071,7 +1071,8 @@ grid_slam(M0,X0/Y0,O,A,R,X1/Y1,M1):-
             ,M1 = M0
         ->  true
         ;   controller_freak_configuration:overlay_precedence(extended_map,Ps_ex)
-           ,extended_map(A,M0,Ps_ex,Me)
+           ,grid_master_configuration:action_symbol(_,D,A,_)
+           ,extended_map(D,M0,Ps_ex,Me)
             %,print_map(coordinates,Me),nl
             ,M1 = Me
         )
@@ -1105,18 +1106,21 @@ grid_slam(M0,X0/Y0,O,A,R,X1/Y1,M1):-
 %
 action_look(A,Mt,X0/Y0,X1/Y1):-
         map_term(_Id,Ds,M,Mt)
-        ,action_look(A,S)
+        ,step_action_look_action(A,S)
         ,L =.. [S,X0/Y0,M,Ds,X1/Y1,_T]
-        ,call(action_generator:L).
+        ,call(actions:L).
 
-%!      action_look(?Action,?Symbols) is semidet.
+
+%!      step_action_look_action(?Step,?Look) is semidet.
 %
-%       Mapping between an Action label and a look predicate Symbol.
+%       Mapping between a Step and Look Action label.
 %
-action_look(up,look_up).
-action_look(right,look_right).
-action_look(down,look_down).
-action_look(left,look_left).
+%       Used to find the direction to look-to during grid SLAM.
+%
+step_action_look_action(A,L):-
+        grid_master_configuration:action_symbol(step,D,A,_SA)
+        ,grid_master_configuration:action_symbol(look,D,L,_SL).
+
 
 
 %!      map_edge(+Map,+Coordinates) is det.
@@ -1148,10 +1152,17 @@ map_edge(Mt,X/Y):-
 %       Start and End are pairs X/Y, the start and end location of
 %       Action.
 %
-step_action(down,X0/Y0,_M,X0/Y0):-
+%       @tbd This refers to step actions by name, specifically step_down
+%       and step_left, because those are the directions we use to extend
+%       the SLAMming map. These action names should not be hard-coded
+%       but taken from the configuration instead. In fact, there should
+%       probably be a uniform representation throughout this module to
+%       avoid hard-coding anything, action names or directions.
+%
+step_action(step_down,X0/Y0,_M,X0/Y0):-
         debug(step_action,'step_action/4 (down)',[]),
         !.
-step_action(left,X0/Y0,_M,X0/Y0):-
+step_action(step_left,X0/Y0,_M,X0/Y0):-
         debug(step_action,'step_action/4 (left)',[]),
         !.
 step_action(A,X0/Y0,M,X1/Y1):-

@@ -1,5 +1,6 @@
 :-module(grid_master_configuration, [action/1
                                     ,action_representation/1
+                                    ,action_symbol/4
                                     ,display_engine/1
                                     ,maps_module/1
                                     ,map_file/1
@@ -59,6 +60,44 @@ action(step_left).
 %action_representation(stack_based).
 %action_representation(lookaround).
 action_representation(controller_sequences).
+
+
+%!      action_symbol(?Type,?Direction,?Action,?Symbol) is semidet.
+%
+%       Mapping between directional actions and symbols.
+%
+%       Type is the type of directional action, one of: [step, look].
+%
+%       Direction is one of the eight grid world directions: [up,
+%       up_right, right, down_right, down, down_left, left, up_left].
+%
+%       Action is the name of the action that corresponds to Type and
+%       Direction defined either as a dyadic Solver action predicate, or
+%       a Controller action label.
+%
+%       Symbol is an atomic, single-character symbol used to represent
+%       the action graphically as a cell on a grid.
+%
+%       The motivation for this setting is to allow a uniform
+%       representation of actions and their names and grid symbols
+%       throughout the grid_master library.
+%
+action_symbol(step,up,step_up,u).
+action_symbol(step,up_right,step_up_right,e).
+action_symbol(step,right,step_right,r).
+action_symbol(step,down_right,step_down_right,c).
+action_symbol(step,down,step_down,d).
+action_symbol(step,down_left,step_down_left,z).
+action_symbol(step,left,step_left,l).
+action_symbol(step,up_left,step_up_left,q).
+action_symbol(look,up,look_up,8).
+action_symbol(look,up_right,look_up_right,9).
+action_symbol(look,right,look_right,6).
+action_symbol(look,down_right,look_down_right,3).
+action_symbol(look,down,look_down,2).
+action_symbol(look,down_left,look_down_left,1).
+action_symbol(look,left,look_left,4).
+action_symbol(look,up_left,look_up_left,7).
 
 
 %!      display_engine(?Engine) is semidet.

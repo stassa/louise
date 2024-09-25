@@ -216,26 +216,10 @@ actions_path(Type,Disp,Fs,As,Ps):-
 actions_path([],_Type,_Disp,_Fs,Ps,Ps):-
         !.
 actions_path([A|As],Type,Disp,Fs,[X/Y:D|Acc],Ps):-
-        action_direction(A,D)
+        grid_master_configuration:action_symbol(_,_,A,D)
         ,fluents(Type,Disp,_M,X/Y,_S,_Term,Fs)
         ,environment(Fs,A,_O,Fs_)
         ,actions_path(As,Type,Disp,Fs_,Acc,Ps).
-
-
-%!      action_direction(?Action,?Direction) is semidet.
-%
-%       Mapping between an Action label and a Direction symbol.
-%
-%       Used to map between action labels returned by a controller and
-%       the direction symbols expected by print_path/3 in
-%       map_display.pl.
-%
-%       @tbd This needs to be in some kind of configuration.
-%
-action_direction(up,u).
-action_direction(right,r).
-action_direction(left,l).
-action_direction(down,d).
 
 
 
@@ -309,30 +293,29 @@ environment(Fs,A,O,Fs_):-
         ,action_display(Ds,M,XY,XY_,T,A,Term).
 
 
-
 %!      action(+A,+Map,+Dims,+XY1,+T1,XY2,T2,-Observation) is nondet.
 %
 %       Perform action A and return a new Observation label.
 %
-action(up,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
+action(step_up,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
         action_generator:step(X/Y,+,0/1,Ms,Dims,X_/Y_)
         ,action_generator:map_location(X/Y,T,Ms,Dims,true)
         ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-action(down,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
+action(step_down,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
         action_generator:step(X/Y,-,0/1,Ms,Dims,X_/Y_)
         ,action_generator:map_location(X/Y,T,Ms,Dims,true)
         ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-action(left,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
+action(step_left,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
         action_generator:step(X/Y,-,1/0,Ms,Dims,X_/Y_)
         ,action_generator:map_location(X/Y,T,Ms,Dims,true)
         ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-action(right,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
+action(step_right,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
         action_generator:step(X/Y,+,1/0,Ms,Dims,X_/Y_)
         ,action_generator:map_location(X/Y,T,Ms,Dims,true)
         ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
@@ -350,12 +333,11 @@ action(right,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
 %       suitable display symbol.
 %
 action_display(Ds,M,_XY0,X1/Y1,_T,A,Term):-
-        action_direction(A,D)
-        ,map_display:display_tile(tiles,X1/Y1,D,Ds,M,[Term])
+        action_symbol(_,_,A,S)
+        ,map_display:display_tile(tiles,X1/Y1,S,Ds,M,[Term])
         %,sleep(0.3)
         %,py_call(Term:inkey())
         .
-
 
 
 %!      bread_crumb(+Map,+Dimensions,+Coords,+Crumb) is det.

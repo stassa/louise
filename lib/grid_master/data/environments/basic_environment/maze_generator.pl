@@ -331,19 +331,19 @@ new_cell([Ds,M,XY,f],A,[Ds,M,XY_,f]):-
 %
 %       Perform action A and return a new Observation label.
 %
-generator_action(up,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
+generator_action(step_up,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,+,0/1,Ms,Dims,X_/Y_,T_)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-generator_action(down,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
+generator_action(step_down,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,-,0/1,Ms,Dims,X_/Y_,T_)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-generator_action(left,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
+generator_action(step_left,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,-,1/0,Ms,Dims,X_/Y_,T_)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-generator_action(right,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
+generator_action(step_right,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,+,1/0,Ms,Dims,X_/Y_,T_)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
@@ -496,22 +496,22 @@ closed_cell(X/Y,D,Ds,M):-
 %       account the observations towards the origin of the _origin_
 %       cell. Which can get a bit complicated.
 %
-closed_cell(up,uuuupuuu).
-closed_cell(up,uuuppuuu).
-closed_cell(up,uuuuppuu).
-%closed_cell(up,uuupppuu).
-closed_cell(down,puuuuuuu).
-closed_cell(down,puuuuuup).
-closed_cell(down,ppuuuuuu).
-%closed_cell(down,ppuuuuup).
-closed_cell(left,uupuuuuu).
-closed_cell(left,uppuuuuu).
-closed_cell(left,uuppuuuu).
-%closed_cell(left,upppuuuu).
-closed_cell(right,uuuuuupu).
-closed_cell(right,uuuuuupp).
-closed_cell(right,uuuuuppu).
-%closed_cell(right,uuuuuppp).
+closed_cell(step_up,uuuupuuu).
+closed_cell(step_up,uuuppuuu).
+closed_cell(step_up,uuuuppuu).
+%closed_cell(step_up,uuupppuu).
+closed_cell(step_down,puuuuuuu).
+closed_cell(step_down,puuuuuup).
+closed_cell(step_down,ppuuuuuu).
+%closed_cell(step_down,ppuuuuup).
+closed_cell(step_left,uupuuuuu).
+closed_cell(step_left,uppuuuuu).
+closed_cell(step_left,uuppuuuu).
+%closed_cell(step_left,upppuuuu).
+closed_cell(step_right,uuuuuupu).
+closed_cell(step_right,uuuuuupp).
+closed_cell(step_right,uuuuuppu).
+%closed_cell(step_right,uuuuuppp).
 
 
 %!      generate_observation(+Determinism,-Label) is nondet.
