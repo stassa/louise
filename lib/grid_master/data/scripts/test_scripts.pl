@@ -7,7 +7,8 @@
    ,ensure_loaded(lib(controller_freak/executors))
    ,ensure_loaded(lib(grid_master/data/environments/basic_environment/basic_environment)).
 
-:- load_map_files.
+% Only if not already loaded, e.g. by Solver experiment file.
+%:- load_map_files.
 
 /*
 :-edit(test_scripts).
@@ -515,7 +516,8 @@ solver(s/2,[(s(A1,B1):-step_down(A1,B1))
 %       Calls solve_environment/5.
 %
 solve_map(Map,Ds,Disp):-
-        (   Map = id(Id)
+        solver(s/2,Ss)
+        ,(   Map = id(Id)
          ->  map_term(Id,Ds,_,M)
          ;   Map = mage(Id)
          ->  mage(Ds,Mz)
@@ -524,15 +526,6 @@ solve_map(Map,Ds,Disp):-
          ->  map_term(Id,Ds,Mz,M)
             ,maze_generator:write_start_exit(random_nondet,Ds,Mz)
          )
-        ,Ss = [(s(A1,B1):-step_down(A1,B1))
-              ,(s(A2,B2):-step_left(A2,B2))
-              ,(s(A3,B3):-step_right(A3,B3))
-              ,(s(A4,B4):-step_up(A4,B4))
-              ,(s(A5,B5):-step_down(A5,C5),s(C5,B5))
-              ,(s(A6,B6):-step_left(A6,C6),s(C6,B6))
-              ,(s(A7,B7):-step_right(A7,C7),s(C7,B7))
-              ,(s(A8,B8):-step_up(A8,C8),s(C8,B8))
-             ]
         ,Ds = W-H
         ,N is W * H
         ,solve_environment(Ss,M,0,N,As_s)
@@ -558,7 +551,8 @@ solve_map(Map,Ds,Disp):-
 %       @tbd Can be basd on solve_map/3 (copied from this one).
 %
 solver_vs_controller(Map,Ds,Disp):-
-        (   Map = id(Id)
+        solver(s/2,Ss)
+        ,(   Map = id(Id)
          ->  map_term(Id,Ds,_,M)
          ;   Map = mage(Id)
          ->  mage(Ds,Mz)
@@ -567,15 +561,6 @@ solver_vs_controller(Map,Ds,Disp):-
          ->  map_term(Id,Ds,Mz,M)
             ,maze_generator:write_start_exit(random_nondet,Ds,Mz)
          )
-        ,Ss = [(s(A1,B1):-step_down(A1,B1))
-              ,(s(A2,B2):-step_left(A2,B2))
-              ,(s(A3,B3):-step_right(A3,B3))
-              ,(s(A4,B4):-step_up(A4,B4))
-              ,(s(A5,B5):-step_down(A5,C5),s(C5,B5))
-              ,(s(A6,B6):-step_left(A6,C6),s(C6,B6))
-              ,(s(A7,B7):-step_right(A7,C7),s(C7,B7))
-              ,(s(A8,B8):-step_up(A8,C8),s(C8,B8))
-             ]
         ,Ds = W-H
         ,N is W * H
         ,solve_environment(Ss,M,0,N,As_s)
@@ -595,15 +580,7 @@ solver_vs_controller(Map,Ds,Disp):-
 %       Calls solver_executor/4.
 %
 solve_exec_map(Type,Disp,Ds):-
-        Ps = [(s(A1,B1):-step_down(A1,B1))
-             ,(s(A2,B2):-step_left(A2,B2))
-             ,(s(A3,B3):-step_right(A3,B3))
-             ,(s(A4,B4):-step_up(A4,B4))
-             ,(s(A5,B5):-step_down(A5,C5),s(C5,B5))
-             ,(s(A6,B6):-step_left(A6,C6),s(C6,B6))
-             ,(s(A7,B7):-step_right(A7,C7),s(C7,B7))
-             ,(s(A8,B8):-step_up(A8,C8),s(C8,B8))
-             ]
+        solver(s/2,Ps)
         ,(   Type = id(Id)
          ->  map_term(Id,Ds,_,Map)
          ;   Type = mage(Id)
