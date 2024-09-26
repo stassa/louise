@@ -23,7 +23,7 @@
 :-use_module(grid_master_src(action_generator)).
 :-ensure_loaded(grid_master_src(map_display)).
 :-ensure_loaded(grid_master_src(map)).
-:-use_module(grid_master_data(environments/basic_environment/maze_observations),[]).
+:-use_module(grid_master_data(environments/basic_environment/observation_matrices),[]).
 :-use_module(lib(controller_freak/controller_freak),[]).
 
 %/* Uncomment to hard-load primitives from file.

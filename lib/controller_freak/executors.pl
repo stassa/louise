@@ -11,7 +11,7 @@
 :-use_module(lib(grid_master/src/actions),[]).
 :-use_module(lib(grid_master/src/map)).
 :-use_module(lib(grid_master/src/map_display)).
-:-use_module(lib(grid_master/data/environments/basic_environment/maze_observations)).
+:-use_module(lib(grid_master/data/environments/basic_environment/observation_matrices),[]).
 
 :- controller_freak_configuration:controller(P1,_,_)
    ,controller_freak_configuration:environment(P2,_)
@@ -1241,8 +1241,8 @@ element_origin(_XY,_Mt,0/0).
 observation_element(O,R,E):-
         atom_chars(O,Cs)
         ,radius_dimensions(R,Ds)
-        ,maze_observations:observations_grid(Cs,Ds,Gs)
-        ,maze_observations:lists_to_arrays([Gs],[E]).
+        ,observation_matrices:observations_grid(Cs,Ds,Gs)
+        ,observation_matrices:lists_to_arrays([Gs],[E]).
 
 
 %!      radius_dimensions(+Radius,-Dimensions) is det.

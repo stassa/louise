@@ -7,6 +7,9 @@
               ,read_map_file/3
               ]).
 
+:-use_module(grid_master_root(grid_master_configuration)).
+:-use_module(grid_master_data(environments/basic_environment/observation_matrices)).
+
 /** <module> Predicates to read and write and store maps.
 
 */
@@ -43,7 +46,7 @@ new_map(W-H,T,M):-
                 ,filled_path(W,T,Rs)
                 )
                ,Ms_)
-        ,maze_observations:lists_to_arrays([Ms_],[M]).
+        ,observation_matrices:lists_to_arrays([Ms_],[M]).
 
 
 %!      filled_path(+Length,+Tile,-Path) is det.

@@ -864,12 +864,12 @@ generate_observation_matrices:-
 
 
 observation_matrices(Ds,Is,As):-
-        maze_observations:observations(Os)
+        observation_matrices:observations(Os)
         ,findall(O-Ls
                 ,(member(Os_i,Os)
-                 ,maze_observations:observations_grid(Os_i,Ds,Ls)
+                 ,observation_matrices:observations_grid(Os_i,Ds,Ls)
                  ,atomic_list_concat(Os_i,'',O)
                  )
                 ,I_Ls)
         ,pairs_keys_values(I_Ls,Is,Ls)
-        ,maze_observations:lists_to_arrays(Ls,As).
+        ,observation_matrices:lists_to_arrays(Ls,As).

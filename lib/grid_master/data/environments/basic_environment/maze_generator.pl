@@ -5,7 +5,7 @@
                          ,inverted_maze/2
                          ]).
 
-:-use_module(maze_observations).
+:-use_module(observation_matrices).
 :-use_module(mage_controller,[]).
 %:-use_module(maze_environment_grid_master).
 %:-use_module(lib/controller_freak/controller_freak).

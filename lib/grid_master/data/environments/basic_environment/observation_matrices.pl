@@ -1,16 +1,16 @@
-:-module(maze_observations,[observation_labels/1
-                           ,observations/1
-                           ,lookaround/1
-                           ,passability/2
-                           ,observable_locations/2
-                           ,lists_to_arrays/2
-                           ,write_maze_files/2
-                           ,controller_examples/2
-                           ]).
+:-module(observation_matrices,[observation_labels/1
+                              ,observations/1
+                              ,lookaround/1
+                              ,passability/2
+                              ,observable_locations/2
+                              ,lists_to_arrays/2
+                              ,write_maze_files/2
+                              ,controller_examples/2
+                              ]).
 
 :-use_module(lib(grid_master/src/map_display)).
 
-/** <module> Analyse observations in a maze map.
+/** <module> Generate observation matrices for a grid navigation agent.
 
 */
 
@@ -443,7 +443,7 @@ write_maze_files(N,Dir):-
 controller_examples(N,Es):-
         configuration:experiment_file(_,M)
         ,findall(Id
-               ,(between(1,15,I)
+               ,(between(1,255,I)
                 ,atomic_list_concat([N,I],'_',Id)
                 )
                ,Ids)
