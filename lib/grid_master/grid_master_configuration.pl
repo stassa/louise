@@ -4,6 +4,7 @@
                                     ,display_engine/1
                                     ,maps_module/1
                                     ,map_file/1
+                                    ,observation_matrices/1
                                     ,passable/1
                                     ,primitives_file/2
                                     ,test_primitives_file/2
@@ -153,6 +154,17 @@ map_file(grid_master_data(dungeons/'dungeon_8.map')).
 map_file(grid_master_data(dungeons/'dungeon_9.map')).
 map_file(grid_master_data(dungeons/'dungeon_10.map')).
 map_file(grid_master_data(dungeons/'dungeon_small.map')).
+
+
+%!      observation_matrices(?Type) is semidet.
+%
+%       The Type of observation matrices to generate.
+%
+%       One of: four_way, eight_way, denoting the number of directions
+%       to look-to when generating observation matrices.
+%
+observation_matrices(four_way).
+%observation_matrices(eight_way).
 
 
 %!      passable(?Symbol) is semidet.

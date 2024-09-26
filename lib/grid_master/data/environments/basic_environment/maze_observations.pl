@@ -71,20 +71,43 @@ observations(Ls):-
 %       Generate all possible look-around lists of tiles in a maze.
 %
 %       Looks is a list of lists where each sublist is of the form
-%       [U,R,D,L], standing for Up, Right, Down and Left, each of which
-%       is a constant denoting a tile type, typically [s,e,f,w] for
-%       start, end, floor and wall tiles, respectively.
+%       [U,R,D,L], standing for Up, Right, Down and Left, or
+%       [U,UR,R,RD,D,DL,L,LU], standing for Up, Up-Right, Right,
+%       Right-Down, Down, Down-Left, Left and Left-Up, respectively,
+%       depending on whether we're generating four-way or eight-way
+%       observations. Each element of a sub-list is a constant denoting
+%       a tile type, typically [s,e,f,w] for start, end, floor and wall
+%       tiles, respectively.
 %
 %       Looks models the observations of tile types of an agent standing
-%       in some cell in a maze map and "looking" in each of the four
-%       directions, observing the tile types in each direction.
+%       in some cell in a maze map and "looking" in each of the four, or
+%       eight, directions, observing the tile types in each direction.
 %
 lookaround(Os):-
-        setof([O1,O2,O3,O4]
+        grid_master_configuration:observation_matrices(four_way)
+        ,!
+        ,setof([O1,O2,O3,O4]
              ,O1^O2^O3^O4^
               (maplist(member
                       ,[O1,O2,O3,O4]
                       ,[[s,f,w,e],[s,f,w,e],[s,f,w,e],[s,f,w,e]])
+              )
+             ,Os).
+lookaround(Os):-
+        grid_master_configuration:observation_matrices(eight_way)
+        ,setof([O1,O2,O3,O4,O5,O6,O7,O8]
+             ,O1^O2^O3^O4^O5^O6^O7^O8^
+              (maplist(member
+                      ,[O1,O2,O3,O4,O5,O6,O7,O8]
+                      ,[[s,f,w,e]
+                       ,[s,f,w,e]
+                       ,[s,f,w,e]
+                       ,[s,f,w,e]
+                       ,[s,f,w,e]
+                       ,[s,f,w,e]
+                       ,[s,f,w,e]
+                       ,[s,f,w,e]
+                       ])
               )
              ,Os).
 
@@ -97,17 +120,23 @@ lookaround(Os):-
 %       returned by lookaround/1.
 %
 %       Passability is a list of lists, where each sublist is of the
-%       form [U,R,D,L], standing for Up, Right, Down, and Left, each of
-%       which is either "p" or "u". Passability is formed such
-%       that for each i'th observations list in Observations,
-%       the k'th element in that list is p if the tile in the k'th
-%       element of the i'th sublist of Observations is a passable tile,
-%       and u if that tile is an unpassable tile.
+%       form [U,R,D,L], standing for Up, Right, Down, and Left or
+%       [U,UR,R,RD,D,DL,L,LU], standing for Up, Up-Right, Right,
+%       Right-Down, Down, Down-Left, Left and Left-Up, respectively,
+%       depending on whether we're generating four-way or eight-way
+%       observations. Each element of each sublist is either "p"
+%       or "u", denoting passability.
+%
+%       Passability is formed such that for each i'th observations list
+%       in Observations, the k'th element in that list is p if the tile
+%       in the k'th element of the i'th sublist of Observations is a
+%       passable tile, and u if that tile is an unpassable tile.
 %
 %       In other words, this predicate maps observations of tile types,
 %       to lists of observations of passability, all from the
 %       view-point of an agent "standing" in some location in a maze and
-%       "looking" around in the four cardinal directions.
+%       "looking" around in the four cardinal, or eight compass
+%       directions.
 %
 passability(Os,Ps):-
         findall(P
@@ -129,20 +158,25 @@ passable(_O,u).
 
 %!      legal(+Observations) is det.
 %
-%       True if a four-tuple of observed tiles is legal.
+%       True if a four- or eight-tuple of observed tiles is legal.
 %
-legal([O1,O2,O3,O4]):-
-        \+ blocked([O1,O2,O3,O4])
-        ,\+ multiple_starts([O1,O2,O3,O4])
-        ,\+ multiple_exits([O1,O2,O3,O4]).
+legal(Os):-
+        \+ blocked(Os)
+        ,\+ multiple_starts(Os)
+        ,\+ multiple_exits(Os).
 
 %!      blocked(?Observations) is semidet.
 %
 %       A four-tuple of Observations indicating a blocked tile.
 %
-%       Blocked as in there are unpassable tiles all around it.
+%       Blocked as in there are unpassable tiles all around the tile,
+%       which is meant to be the tile on which the agent is standing.
 %
-blocked([O,O,O,O]).
+blocked([O,O,O,O]):-
+        !
+        ,\+ grid_master_configuration:passable(O).
+blocked([O,O,O,O,O,O,O,O]):-
+        \+ grid_master_configuration:passable(O).
 
 %!      multiple_starts(+Observations) is det.
 %
@@ -162,12 +196,12 @@ multiple_exits(Os):-
 %
 %       True when an Observation is not unique in Observations.
 %
-%       @tbd Is this right? What if Observations is not in Observations
+%       @tbd Is this right? What if Observation is not in Observations
 %       at all?
 %
-multiples(O,[O1,O2,O3,O4]):-
+multiples(O,Os):-
         findall(O
-               ,member(O,[O1,O2,O3,O4])
+               ,member(O,Os)
                ,Ts)
         ,length(Ts,N)
         ,N > 1.
@@ -298,21 +332,33 @@ dec(X,X_):- X_ is X - 1.
 %       denoted by Coords and their meaning. The coordinates of the
 %       central location, >1/1< are the coordinates of the assumed
 %       position of an agent observing surrounding locations.
-%       Coordinates of bservable locations are marked with [X/Y].
-%       Unobservable locations are not marked. The agent's location is
-%       always observable and passable. Coordinates in the diagonals are
-%       not, currently, observable.
+%       Coordinates of locations observable when generating four-way
+%       observations are marked with [X/Y]. Coordinates unobservable
+%       when generating four-way observations but observable when
+%       generating eight-way observations are marked with (X/Y). The
+%       agent's location in the center of the observation matrix is
+%       always observable and passable.
 %
-%        0/0  [1/0]  2/0
+%       (0/0) [1/0] (2/0)
 %       [0/1] >1/1< [2/1]
-%        0/2  [1/2]  2/2
+%       (0/2) [1/2] (2/2)
 %
-cell([O1,_O2,_O3,_O4],1/0,O1):- !.
-cell([_O1,O2,_O3,_O4],2/1,O2):- !.
-cell([_O1,_O2,O3,_O4],1/2,O3):- !.
-cell([_O1,_O2,_O3,O4],0/1,O4):- !.
-cell([_O1,_O2,_O3,_O4],1/1,p):- !.
+cell([O1,_O2,_O3,_O4],1/0,O1):- !. % Right
+cell([_O1,O2,_O3,_O4],2/1,O2):- !. % DOwn
+cell([_O1,_O2,O3,_O4],1/2,O3):- !. % Left
+cell([_O1,_O2,_O3,O4],0/1,O4):- !. % Center
+cell([_O1,_O2,_O3,_O4],1/1,p):- !. % Unobservable
 cell([_O1,_O2,_O3,_O4],_X/_Y,x).
+% Eight-way matrices.
+cell([O1,_O2,_O3,_O4,_O5,_O6,_O7,_O8],0/0,O1):- !. % Up-left
+cell([_O1,O2,_O3,_O4,_O5,_O6,_O7,_O8],1/0,O2):- !. % Up
+cell([_O1,_O2,O3,_O4,_O5,_O6,_O7,_O8],2/0,O3):- !. % Up-right
+cell([_O1,_O2,_O3,O4,_O5,_O6,_O7,_O8],2/1,O4):- !. % right
+cell([_O1,_O2,_O3,_O4,O5,_O6,_O7,_O8],2/2,O5):- !. % down-right
+cell([_O1,_O2,_O3,_O4,_O5,O6,_O7,_O8],1/2,O6):- !. % down
+cell([_O1,_O2,_O3,_O4,_O5,_O6,O7,_O8],0/2,O7):- !. % down-left
+cell([_O1,_O2,_O3,_O4,_O5,_O6,_O7,O8],0/1,O8):- !. % left
+cell([_O1,_O2,_O3,_O4,_O5,_O6,_O7,_O8],1/1,p):- !. % Center
 
 
 %!      cell_tile(?Observable,?Tile) is semidet.
