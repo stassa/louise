@@ -116,24 +116,24 @@ write_primitives:-
 %
 write_primitives(F):-
         grid_master_configuration:maps_module(Maps)
+        ,findall(A/2
+                ,grid_master_configuration:action(A)
+                ,Prims)
         ,S = (expand_file_search_path(F,F_)
              ,open(F_,write,Stm,[alias(primitives_file)
                                 ,close_on_abort(true)
                                 ])
              )
-        ,G = (H = (:-module(primitives,[step_down/2
-                                       ,step_left/2
-                                       ,step_right/2
-                                       ,step_up/2
-                                       ])
+        ,G = (H = (:-module(primitives,Prims
+                                       )
                   )
              ,portray_clause(Stm,H)
              ,nl(Stm)
+             ,findall(:-discontiguous(A/2)
+                     ,grid_master_configuration:action(A)
+                     ,Discs)
              ,Ds = [:-discontiguous(Maps:map/3)
-                   ,:-discontiguous(step_down/2)
-                   ,:-discontiguous(step_up/2)
-                   ,:-discontiguous(step_left/2)
-                   ,:-discontiguous(step_right/2)
+                   |Discs
                    ]
              ,maplist(portray_clause(Stm),Ds)
              ,nl(Stm)

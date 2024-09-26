@@ -297,28 +297,14 @@ environment(Fs,A,O,Fs_):-
 %
 %       Perform action A and return a new Observation label.
 %
-action(step_up,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
-        action_generator:step(X/Y,+,0/1,Ms,Dims,X_/Y_)
-        ,action_generator:map_location(X/Y,T,Ms,Dims,true)
-        ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
-        ,actions:look_around(X_/Y_,Ms,Dims,O).
-
-action(step_down,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
-        action_generator:step(X/Y,-,0/1,Ms,Dims,X_/Y_)
-        ,action_generator:map_location(X/Y,T,Ms,Dims,true)
-        ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
-        ,actions:look_around(X_/Y_,Ms,Dims,O).
-
-action(step_left,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
-        action_generator:step(X/Y,-,1/0,Ms,Dims,X_/Y_)
-        ,action_generator:map_location(X/Y,T,Ms,Dims,true)
-        ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
-        ,actions:look_around(X_/Y_,Ms,Dims,O).
-
-action(step_right,Ms,Dims,X/Y,T,X_/Y_,T_,O):-
-        action_generator:step(X/Y,+,1/0,Ms,Dims,X_/Y_)
-        ,action_generator:map_location(X/Y,T,Ms,Dims,true)
-        ,action_generator:map_location(X_/Y_,T_,Ms,Dims,true)
+%       Actions are performed by calling an eponymous action in
+%       actions.pl.
+%
+action(A,Ms,Dims,X/Y,T0,X_/Y_,T1,O):-
+        SA =.. [A,X/Y,Ms,Dims,X_/Y_]
+        ,call(actions:SA)
+        ,map_location(X/Y,T0,Ms,Dims,true)
+        ,map_location(X_/Y_,T1,Ms,Dims,true)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
 

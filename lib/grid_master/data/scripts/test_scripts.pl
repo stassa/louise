@@ -498,7 +498,7 @@ solver_controller_usual_suspects:-
 %       Convenience predicate to avoid re-learning a solver for each
 %       experiment.
 %
-solver(s/2,[(s(A1,B1):-step_down(A1,B1))
+solver_(s/2,[(s(A1,B1):-step_down(A1,B1))
            ,(s(A2,B2):-step_left(A2,B2))
            ,(s(A3,B3):-step_right(A3,B3))
            ,(s(A4,B4):-step_up(A4,B4))
@@ -507,6 +507,24 @@ solver(s/2,[(s(A1,B1):-step_down(A1,B1))
            ,(s(A7,B7):-step_right(A7,C7),s(C7,B7))
            ,(s(A8,B8):-step_up(A8,C8),s(C8,B8))
            ]).
+
+solver(s/2, [(s(A_1,B_1):-step_down(A_1,B_1))
+            ,(s(A_2,B_2):-step_down_left(A_2,B_2))
+            ,(s(A_3,B_3):-step_down_right(A_3,B_3))
+            ,(s(A_4,B_4):-step_left(A_4,B_4))
+            ,(s(A_5,B_5):-step_right(A_5,B_5))
+            ,(s(A_6,B_6):-step_up(A_6,B_6))
+            ,(s(A_7,B_7):-step_up_left(A_7,B_7))
+            ,(s(A_8,B_8):-step_up_right(A_8,B_8))
+            ,(s(A_9,B_9):-step_down(A_9,C_9),s(C_9,B_9))
+            ,(s(A_10,B_10):-step_down_left(A_10,C_10),s(C_10,B_10))
+            ,(s(A_11,B_11):-step_down_right(A_11,C_11),s(C_11,B_11))
+            ,(s(A_12,B_12):-step_left(A_12,C_12),s(C_12,B_12))
+            ,(s(A_13,B_13):-step_right(A_13,C_13),s(C_13,B_13))
+            ,(s(A_14,B_14):-step_up(A_14,C_14),s(C_14,B_14))
+            ,(s(A_15,B_15):-step_up_left(A_15,C_15),s(C_15,B_15))
+            ,(s(A_16,B_16):-step_up_right(A_16,C_16),s(C_16,B_16))
+            ]).
 
 
 %!      solve_map(+Tpe,+Display,+Dimensions) is det.

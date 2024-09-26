@@ -29,13 +29,13 @@
 %       to generate.
 %
 action(step_up).
-%action(step_up_right).
+action(step_up_right).
 action(step_right).
-%action(step_down_right).
+action(step_down_right).
 action(step_down).
-%action(step_down_left).
+action(step_down_left).
 action(step_left).
-%action(step_up_left).
+action(step_up_left).
 %action(look_up).
 %action(look_up_right).
 %action(look_right).
@@ -83,13 +83,14 @@ action_representation(controller_sequences).
 %       throughout the grid_master library.
 %
 action_symbol(step,up,step_up,u).
-action_symbol(step,up_right,step_up_right,e).
+action_symbol(step,up_right,step_up_right,t).
 action_symbol(step,right,step_right,r).
-action_symbol(step,down_right,step_down_right,c).
+action_symbol(step,down_right,step_down_right,n).
 action_symbol(step,down,step_down,d).
 action_symbol(step,down_left,step_down_left,z).
 action_symbol(step,left,step_left,l).
 action_symbol(step,up_left,step_up_left,q).
+% Look actions.
 action_symbol(look,up,look_up,8).
 action_symbol(look,up_right,look_up_right,9).
 action_symbol(look,right,look_right,6).
@@ -140,6 +141,18 @@ map_file(grid_master_data(maps/'room.map')).
 map_file(grid_master_data(maps/'big_room.map')).
 map_file(grid_master_data(maps/'hall_a.map')).
 map_file(grid_master_data(maps/'hall_a_small.map')).
+% Dungeon maps
+map_file(grid_master_data(dungeons/'dungeon_1.map')).
+map_file(grid_master_data(dungeons/'dungeon_2.map')).
+map_file(grid_master_data(dungeons/'dungeon_3.map')).
+map_file(grid_master_data(dungeons/'dungeon_4.map')).
+map_file(grid_master_data(dungeons/'dungeon_5.map')).
+map_file(grid_master_data(dungeons/'dungeon_6.map')).
+map_file(grid_master_data(dungeons/'dungeon_7.map')).
+map_file(grid_master_data(dungeons/'dungeon_8.map')).
+map_file(grid_master_data(dungeons/'dungeon_9.map')).
+map_file(grid_master_data(dungeons/'dungeon_10.map')).
+map_file(grid_master_data(dungeons/'dungeon_small.map')).
 
 
 %!      passable(?Symbol) is semidet.
@@ -174,6 +187,7 @@ passable(g). % Patrolling landmark D
 %primitives_file(grid_master_data('primitives_lookaround.pl'),primitives).
 primitives_file(grid_master_data('primitives_controller_sequences.pl'),primitives).
 %primitives_file(grid_master_data('primitives_list_based.pl'),primitives).
+%primitives_file(grid_master_data('primitives_observation_matrices.pl'),primitives).
 
 
 %!      test_primitives_file(?Path,?Module) is semidet.
@@ -254,6 +268,7 @@ tile(u,text,[fg(yellow)],˄).
 tile(d,text,[fg(yellow)],˅).
 tile(r,text,[fg(yellow)],˃).
 tile(l,text,[fg(yellow)],˂).
+% Missing diagonal moves.
 tile(x,text,[fg('#808080')],x).
 tile(a,text,[bold,fg(yellow)],'A'). % Patrolling landmark
 tile(b,text,[bold,fg(yellow)],'B'). % Patrolling landmark
@@ -272,6 +287,11 @@ tile(u,boxes,[bold,fg(yellow)],▲).
 tile(d,boxes,[bold,fg(yellow)],▼).
 tile(r,boxes,[bold,fg(yellow)],►).
 tile(l,boxes,[bold,fg(yellow)],◄).
+% Diagonal move actions. Need right font, e.g. DejaVu Mono.
+tile(t,boxes,[bold,fg(yellow)],◥). % up-right
+tile(n,boxes,[bold,fg(yellow)],◢). % down-right
+tile(z,boxes,[bold,fg(yellow)],◣). % down-left
+tile(q,boxes,[bold,fg(yellow)],◤). % up-left
 tile(x,boxes,[bold,fg('#808080')],.).
 tile(a,boxes,[bold,fg(yellow)],'A'). % Patrolling landmark
 tile(b,boxes,[bold,fg(yellow)],'B'). % Patrolling landmark
