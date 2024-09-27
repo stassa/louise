@@ -119,6 +119,8 @@ display_engine(prolog).
 maps_module(maps).
 
 
+:-multifile(map_file/1).
+
 %!      map_file(?Path) is semidet.
 %
 %       Path loading generated maze maps.
@@ -200,6 +202,7 @@ passable(g). % Patrolling landmark D
 primitives_file(grid_master_data('primitives_controller_sequences.pl'),primitives).
 %primitives_file(grid_master_data('primitives_list_based.pl'),primitives).
 %primitives_file(grid_master_data('primitives_observation_matrices.pl'),primitives).
+%primitives_file(grid_master_data('primitives_8w_observation_matrices.pl'),primitives).
 
 
 %!      test_primitives_file(?Path,?Module) is semidet.
