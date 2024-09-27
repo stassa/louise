@@ -1152,18 +1152,21 @@ map_edge(Mt,X/Y):-
 %       Start and End are pairs X/Y, the start and end location of
 %       Action.
 %
-%       @tbd This refers to step actions by name, specifically step_down
-%       and step_left, because those are the directions we use to extend
-%       the SLAMming map. These action names should not be hard-coded
-%       but taken from the configuration instead. In fact, there should
-%       probably be a uniform representation throughout this module to
-%       avoid hard-coding anything, action names or directions.
+%       @tbd This refers to step actions by name, specifically those
+%       that move the controller down, or left (including diagonally),
+%       because those are the directions we use to extend the SLAMming
+%       map. These action names should not be hard-coded but taken from
+%       the configuration instead. In fact, there should probably be a
+%       uniform representation throughout this module to avoid
+%       hard-coding anything, action names or directions.
 %
-step_action(step_down,X0/Y0,_M,X0/Y0):-
-        debug(step_action,'step_action/4 (down)',[]),
-        !.
-step_action(step_left,X0/Y0,_M,X0/Y0):-
-        debug(step_action,'step_action/4 (left)',[]),
+step_action(A,X0/Y0,_M,X0/Y0):-
+        memberchk(A,[step_down
+                    ,step_down_left
+                    ,step_down_right
+                    ,step_left
+                    ,step_up_left])
+        ,debug(step_action,'step_action/4 (~w)',[A]),
         !.
 step_action(A,X0/Y0,M,X1/Y1):-
         debug(step_action,'step_action/4 (any: ~w)',[A]),
@@ -1271,8 +1274,9 @@ radius_dimensions(R,D-D):-
 %
 %       Extended a Map towards the given Direction.
 %
-%       Direction is one of: [up, right, left, down], denoting the
-%       direction towards which the map is to be extended.
+%       Direction is one of: [up, up_right, right, down_right, down,
+%       down_left, left, up_left], denoting the direction towards which
+%       the map is to be extended.
 %
 %       Map is a map/3 term, the map to be extended.
 %
@@ -1288,21 +1292,36 @@ extended_map(up,Mt,Ps,M_e):-
         ,extended_dimensions(up,Ds,Ds_e)
         ,new_map_term(Id,Ds_e,x,M_e)
         ,overlay_map(Mt,0/0,M_e,Ps).
+extended_map(up_right,Mt,Ps,M_e):-
+        !
+        ,extended_map(up,Mt,Ps,M_e1)
+        ,extended_map(right,M_e1,Ps,M_e).
 extended_map(right,Mt,Ps,M_e):-
         map_term(Id,Ds,_M,Mt)
         ,extended_dimensions(right,Ds,Ds_e)
         ,new_map_term(Id,Ds_e,x,M_e)
         ,overlay_map(Mt,0/0,M_e,Ps).
+extended_map(down_right,Mt,Ps,M_e):-
+        !
+        ,extended_map(down,Mt,Ps,M_e1)
+        ,extended_map(right,M_e1,Ps,M_e).
 extended_map(down,Mt,Ps,M_e):-
         map_term(Id,Ds,_M,Mt)
         ,extended_dimensions(down,Ds,Ds_e)
         ,new_map_term(Id,Ds_e,x,M_e)
         ,offset_map(Mt,0/0,0/1,M_e,Ps).
+extended_map(down_left,Mt,Ps,M_e):-
+        !
+        ,extended_map(down,Mt,Ps,M_e1)
+        ,extended_map(left,M_e1,Ps,M_e).
 extended_map(left,Mt,Ps,M_e):-
         map_term(Id,Ds,_M,Mt)
         ,extended_dimensions(left,Ds,Ds_e)
         ,new_map_term(Id,Ds_e,x,M_e)
         ,offset_map(Mt,0/0,1/0,M_e,Ps).
+extended_map(up_left,Mt,Ps,M_e):-
+        extended_map(up,Mt,Ps,M_e1)
+        ,extended_map(left,M_e1,Ps,M_e).
 
 
 %!      extended_dimensions(+Direction,+Dimensions,-Extended) is det.

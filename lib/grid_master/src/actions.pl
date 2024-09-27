@@ -14,6 +14,7 @@
                   ,look_down_left/3
                   ,look_left/3
                   ,look_up_left/3
+                  ,observation_label/4
                   ,look_around/4
                   ,look_around_8/4
                   ,surrounding_locations/4
@@ -166,7 +167,7 @@ step_action(A,lookaround,[map(Id,Dims,Ms),X/Y],At):-
         ,map_location(X/Y,T,Ms,Dims,true)
         ,map_location(X_/Y_,T_,Ms,Dims,true)
         ,At =.. [A,[Id,X/Y,T,[O|Os],[A|As]],[Id,X_/Y_,T_,Os,As]]
-        ,look_around(X/Y,Ms,Dims,O)
+        ,observation_label(X/Y,Ms,Dims,O)
         ,As = '$VAR'('As')
         ,Os = '$VAR'('Os').
 
@@ -178,7 +179,7 @@ step_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
         ,state_mapping(A,Q1)
         ,At =.. [A,[Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[A|As],[Q1|Qs_]]
                ,[Id,X_/Y_,T_,Q1,Qs,Os,As,Qs_]]
-        ,look_around(X/Y,Ms,Dims,O)
+        ,observation_label(X/Y,Ms,Dims,O)
         ,Q0 = '$VAR'('Q0')
         ,Qs = '$VAR'('Qs')
         ,Os = '$VAR'('Os')
@@ -227,8 +228,9 @@ step_right(X/Y,Ms,Dims,X_/Y_):-
 %       predicate fails silently.
 %
 step_down_right(X/Y,Ms,Dims,X_/Y_):-
-        step_down(X/Y,Ms,Dims,Xr/Yr)
-        ,step_right(Xr/Yr,Ms,Dims,X_/Y_).
+        passable_tile(X/Y,Ms,Dims)
+        ,look_down_right(X/Y,Ms,Dims,X_/Y_,T)
+        ,passable(T).
 
 
 %!      step_down(+Coordinates,+Map,+Dimensions) is det.
@@ -272,8 +274,9 @@ step_left(X/Y,Ms,Dims,X_/Y_):-
 %       predicate fails silently.
 %
 step_up_left(X/Y,Ms,Dims,X_/Y_):-
-        step_up(X/Y,Ms,Dims,Xu/Yu)
-        ,step_left(Xu/Yu,Ms,Dims,X_/Y_).
+        passable_tile(X/Y,Ms,Dims)
+        ,look_up_left(X/Y,Ms,Dims,X_/Y_,T)
+        ,passable(T).
 
 
 
@@ -393,7 +396,7 @@ look_action(A,lookaround,[map(Id,Dims,Ms),X/Y],At):-
         LA =.. [A,X/Y,Ms,Dims,X_/Y_,T_]
         ,call(LA)
         ,peek(X/Y,+,0/0,Ms,Dims,X/Y,T)
-        ,look_around(X/Y,Ms,Dims,O)
+        ,observation_label(X/Y,Ms,Dims,O)
         ,At =.. [A,[Id,X/Y,T,[O|Os],[A|As]],[Id,X_/Y_,T_,Os,As]]
         ,As = '$VAR'('As')
         ,Os = '$VAR'('Os').
@@ -402,7 +405,7 @@ look_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
         LA =.. [A,X/Y,Ms,Dims,X_/Y_,T_]
         ,call(LA)
         ,peek(X/Y,+,0/0,Ms,Dims,X/Y,T)
-        ,look_around(X/Y,Ms,Dims,O)
+        ,observation_label(X/Y,Ms,Dims,O)
         ,state_mapping(A,Q1)
         ,At =.. [A,[Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[A|As],[Q1|Qs_]]
                    ,[Id,X_/Y_,T_,Q1,Qs,Os,As,Qs_]]
@@ -424,23 +427,43 @@ look_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
 %
 % Step actions:
 state_mapping(step_up,q0).
-state_mapping(step_up_right,q01).
-state_mapping(step_right,q1).
-state_mapping(step_down_right,q12).
-state_mapping(step_down,q2).
-state_mapping(step_down_left,q23).
-state_mapping(step_left,q3).
-state_mapping(step_up_left,q30).
+state_mapping(step_up_right,q1).
+state_mapping(step_right,q2).
+state_mapping(step_down_right,q3).
+state_mapping(step_down,q4).
+state_mapping(step_down_left,q5).
+state_mapping(step_left,q6).
+state_mapping(step_up_left,q7).
 % Look actions:
 state_mapping(look_up,q0).
-state_mapping(look_up_right,q01).
-state_mapping(look_right,q1).
-state_mapping(look_down_right,q12).
-state_mapping(look_down,q2).
-state_mapping(look_down_left,q23).
-state_mapping(look_left,q3).
-state_mapping(look_up_left,q30).
+state_mapping(look_up_right,q1).
+state_mapping(look_right,q2).
+state_mapping(look_down_right,q3).
+state_mapping(look_down,q4).
+state_mapping(look_down_left,q5).
+state_mapping(look_left,q6).
+state_mapping(look_up_left,q7).
 
+
+%!      observation_label(?Coordinates,?Map,?Dims,-Label) is det.
+%
+%       Generate an observation Label for an action clause.
+%
+%       Clauses of this predicate are selected according to the value of
+%       the grid_master_configuration option observation_matrices/1,
+%       that determines whether we're moving, and looking, in four or
+%       eight directions.
+%
+%       That option name is very likely to change soon.
+%
+observation_label(X/Y,Ms,Dims,O):-
+        grid_master_configuration:observation_matrices(four_way)
+        ,!
+        ,look_around(X/Y,Ms,Dims,O).
+observation_label(X/Y,Ms,Dims,O):-
+        grid_master_configuration:observation_matrices(eight_way)
+        ,!
+        ,look_around_8(X/Y,Ms,Dims,O).
 
 
 %!      look_around(+Coordinates,+Map,+Dimensions,-Observation) is det.
