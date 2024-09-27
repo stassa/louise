@@ -108,6 +108,9 @@ print_seek_mage_15:-
 print_seek_mage_20:-
         seek_map_terminal(id(mageid),print,20-20,tiles).
 
+print_seek_dungeon_1:-
+        seek_map_terminal(dungeon(dungeon_1),print,_,tiles).
+
 
 /* ================================================================================
  * Seek a target on an empty map.
