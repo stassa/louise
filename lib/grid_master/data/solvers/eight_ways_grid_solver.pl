@@ -3,6 +3,7 @@
                       ,positive_example/2
                       ,negative_example/2
                        % Uncomment to hard-load primitives from file.
+                       %/*
                       ,step_up/2
                       ,step_down/2
                       ,step_left/2
@@ -11,6 +12,7 @@
                       ,step_down_right/2
                       ,step_down_left/2
                       ,step_up_left/2
+                       %*/
                       ,solver_test_instance/3
                       ,test_initialisation/4
                       ,list_with_primitives/1
@@ -163,7 +165,7 @@ Useful test queries:
 %:-debug(fetch_length).
 
 %/*
-% Target theory, for testing.
+% Target theory, for testing and training controllers.
 :- table(s/2).
 s(A,B):-step_down(A,B).
 s(A,B):-step_down_left(A,B).
