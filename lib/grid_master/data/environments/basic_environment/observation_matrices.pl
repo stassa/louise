@@ -4,8 +4,8 @@
                               ,passability/2
                               ,observable_locations/2
                               ,lists_to_arrays/2
-                              ,write_maze_files/2
-                              ,controller_examples/2
+                              ,write_observation_map_files/2
+                              ,controller_examples/4
                               ]).
 
 :-use_module(lib(grid_master/src/map_display)).
@@ -350,14 +350,14 @@ cell([_O1,_O2,_O3,O4],0/1,O4):- !. % Center
 cell([_O1,_O2,_O3,_O4],1/1,p):- !. % Unobservable
 cell([_O1,_O2,_O3,_O4],_X/_Y,x).
 % Eight-way matrices.
-cell([O1,_O2,_O3,_O4,_O5,_O6,_O7,_O8],0/0,O1):- !. % Up-left
-cell([_O1,O2,_O3,_O4,_O5,_O6,_O7,_O8],1/0,O2):- !. % Up
-cell([_O1,_O2,O3,_O4,_O5,_O6,_O7,_O8],2/0,O3):- !. % Up-right
-cell([_O1,_O2,_O3,O4,_O5,_O6,_O7,_O8],2/1,O4):- !. % right
-cell([_O1,_O2,_O3,_O4,O5,_O6,_O7,_O8],2/2,O5):- !. % down-right
-cell([_O1,_O2,_O3,_O4,_O5,O6,_O7,_O8],1/2,O6):- !. % down
-cell([_O1,_O2,_O3,_O4,_O5,_O6,O7,_O8],0/2,O7):- !. % down-left
-cell([_O1,_O2,_O3,_O4,_O5,_O6,_O7,O8],0/1,O8):- !. % left
+cell([O1,_O2,_O3,_O4,_O5,_O6,_O7,_O8],1/0,O1):- !. % Up
+cell([_O1,O2,_O3,_O4,_O5,_O6,_O7,_O8],2/0,O2):- !. % Up-right
+cell([_O1,_O2,O3,_O4,_O5,_O6,_O7,_O8],2/1,O3):- !. % right
+cell([_O1,_O2,_O3,O4,_O5,_O6,_O7,_O8],2/2,O4):- !. % down-right
+cell([_O1,_O2,_O3,_O4,O5,_O6,_O7,_O8],1/2,O5):- !. % down
+cell([_O1,_O2,_O3,_O4,_O5,O6,_O7,_O8],0/2,O6):- !. % down-left
+cell([_O1,_O2,_O3,_O4,_O5,_O6,O7,_O8],0/1,O7):- !. % left
+cell([_O1,_O2,_O3,_O4,_O5,_O6,_O7,O8],0/0,O8):- !. % Up-left
 cell([_O1,_O2,_O3,_O4,_O5,_O6,_O7,_O8],1/1,p):- !. % Center
 
 
@@ -398,9 +398,9 @@ lists_to_array(Ls,A):-
 
 
 
-%!      write_maze_files(+Name,+Directory) is det.
+%!      write_observation_map_files(+Name,+Directory) is det.
 %
-%       Write maze files to a Directory.
+%       Write Observation Matrix map files to a Directory.
 %
 %       Name is an atom, the base name of each file to be printed. An
 %       indexing suffix will be addded to that.
@@ -414,11 +414,11 @@ lists_to_array(Ls,A):-
 %       Example query:
 %       ==
 %       _Name = pge
-%       ,_Dir = data(drafts/grid_master/data/maps)
-%       ,maze_observations:write_maze_files(_Name,_Dir).
+%       ,_Dir = lib(grid_master/data/maps)
+%       ,observation_matrices:write_observation_map_files(_Name,_Dir).
 %       ==
 %
-write_maze_files(N,Dir):-
+write_observation_map_files(N,Dir):-
         Ds = 3-3
         ,observable_locations(Ds,Ls)
         ,lists_to_arrays(Ls,As)
@@ -433,24 +433,56 @@ write_maze_files(N,Dir):-
 
 
 
-%!      controller_examples(+Name,-Examples) is det.
+%!      controller_examples(+Prefix,+Maps,+States,-Examples) is det.
 %
 %       Generate Examples to learn a controller.
 %
-%       Needs the mazes generated with observable_locations/2 to be
-%       loaded as primitives (i.e. with maps and actions and all).
+%       This predicate needs the model of each Observation Matrix,
+%       consisting of a map array and a set of action clauses, to be
+%       loaded into memory. Observation Matrix grids can be written out
+%       to a file as maps with write_observation_map_files/2 and their
+%       models generated with action_geneartor.pl predicates.
 %
-controller_examples(N,Es):-
-        configuration:experiment_file(_,M)
+%       The first two arguments, Prefix and Maps are used to reconstruct
+%       atomic identifiers of map files to be used as fluents
+%       identifying a map, in examples.
+%
+%       Prefix is an atomic prefix used to generate map ids for
+%       examples. This should be the same as the name given to maps
+%       written with write_observation_map_files/2.
+%
+%       Maps is the highest number indexing map files. Map file names
+%       are of the form Prefix_Index, where Index is 1 to Limit.
+%       Ensuring that Limit is the same as the highest index of a map
+%       file written with write_observation_map_files/2 is left to the
+%       user. That's you, mate.
+%
+%       States is the highest number indexing state labels in generated
+%       examples. State labels are a concatenation of the atom 'Q' and a
+%       state index, where state indices range from 0 to States.
+%
+%       Examples is a list of clauses each a ground atomic example
+%       consisting of a planning problem in one observation matrix.
+%       Examples are generated with a call to solver_test_instance/3 and
+%       grounded by solving the generated test instance with a Solver,
+%       which must be in the current experiment file, maybe.
+%
+controller_examples(N,K,Q,Es):-
+        configuration:experiment_file(_,_M)
         ,findall(Id
-               ,(between(1,255,I)
+               ,(between(1,K,I)
                 ,atomic_list_concat([N,I],'_',Id)
                 )
                ,Ids)
+        ,findall(Qj
+                ,(between(0,Q,J)
+                 ,atom_concat('q',J,Qj)
+                 )
+                ,Qs)
         ,findall(E
                ,(member(Id,Ids)
-                ,member(Q0,[q0,q1,q2,q3])
-                ,M:solver_test_instance(s/2,E,[Id,1,1,1/1,_,_,_,Q0|_Ss])
-                ,call(M:E)
+                ,member(Q0,Qs)
+                ,experiment_file:solver_test_instance(s/2,E,[Id,1,1,1/1,_,_,_,Q0|_Ss])
+                ,call(experiment_file:E)
                 )
                 ,Es).
