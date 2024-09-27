@@ -23,6 +23,7 @@
 %       Used to find a controller for executor/5.
 %
 controller(controllers/'grid_navigation_controller.pl',grid_navigation_controller,t).
+%controller(controllers/'8w_grid_navigation_controller.pl',grid_navigation_controller,t).
 
 
 %!      debug_map(?Subject,?How) is semidet.
