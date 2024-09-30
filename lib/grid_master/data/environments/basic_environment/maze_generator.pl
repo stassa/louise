@@ -7,9 +7,6 @@
 
 :-use_module(observation_matrices).
 :-use_module(mage_controller,[]).
-%:-use_module(maze_environment_grid_master).
-%:-use_module(lib/controller_freak/controller_freak).
-%:-use_module(grid_master_src(map_display)).
 :-use_module(grid_master_src(action_generator)).
 :-use_module(grid_master_src(actions)).
 :-use_module(maze_generator_configuration).
