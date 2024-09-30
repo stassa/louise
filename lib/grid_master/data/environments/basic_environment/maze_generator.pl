@@ -54,15 +54,29 @@
 %       can visit every floor tile in the maze and so the maze can
 %       always be "solved".
 %
+%       @tbd This predicate sets grid_master_configuration option
+%       observation_matrices/1 to "four_way" to control the generation
+%       of observation matrices, used to build a maze. This is clearly a
+%       bit of a hack and should instead be replaced with new code in
+%       observation_matrices module to allow parameterised generation of
+%       observation matrices.
+%
 mage(Ds,M):-
         maze_generator_configuration:directions(Det)
         ,maze_generator_configuration:targets(T)
         ,maze_generator_configuration:path_origins(O)
+        ,grid_master_configuration:observation_matrices(OM)
         ,filled_maze(Ds,w,M)
         ,once( starting_location(O,Ds,X0/Y0) )
-        ,mage_loop(Det,[],[Ds,M,X0/Y0,_T0])
+        ,S = (retract(grid_master_configuration:observation_matrices(OM))
+             ,assert(grid_master_configuration:observation_matrices(four_way))
+             )
+        ,G = mage_loop(Det,[],[Ds,M,X0/Y0,_T0])
+        ,C = (retract(grid_master_configuration:observation_matrices(four_way))
+             ,assert(grid_master_configuration:observation_matrices(OM))
+             )
+        ,setup_call_cleanup(S,G,C)
         ,write_start_exit(T,Ds,M).
-
 
 
 %!      filled_maze(+Dimensions,+Tile,-Maze) is det.
@@ -293,10 +307,8 @@ path_generator(_D,Fs,_Q0,_O,As,Fs,As).
 %       Mapping between states, observations and actions.
 %
 controller_tuple(Q0,O,A,Q1):-
-        controller_freak_configuration:controller(_,M,S)
-        ,T =.. [S,Q0,O,A,Q1]
-        ,call(M:T).
-
+        T =.. [t,Q0,O,A,Q1]
+        ,call(mage_controller:T).
 
 
 %!      new_cell(+Fluents,+Action,-New) is nondet.
@@ -331,19 +343,19 @@ new_cell([Ds,M,XY,f],A,[Ds,M,XY_,f]):-
 %
 %       Perform action A and return a new Observation label.
 %
-generator_action(step_up,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
+generator_action(up,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,+,0/1,Ms,Dims,X_/Y_,T_)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-generator_action(step_down,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
+generator_action(down,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,-,0/1,Ms,Dims,X_/Y_,T_)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-generator_action(step_left,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
+generator_action(left,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,-,1/0,Ms,Dims,X_/Y_,T_)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
-generator_action(step_right,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
+generator_action(right,Ms,Dims,X/Y,_T,X_/Y_,T_,O):-
         action_generator:peek(X/Y,+,1/0,Ms,Dims,X_/Y_,T_)
         ,actions:look_around(X_/Y_,Ms,Dims,O).
 
@@ -496,22 +508,22 @@ closed_cell(X/Y,D,Ds,M):-
 %       account the observations towards the origin of the _origin_
 %       cell. Which can get a bit complicated.
 %
-closed_cell(step_up,uuuupuuu).
-closed_cell(step_up,uuuppuuu).
-closed_cell(step_up,uuuuppuu).
-%closed_cell(step_up,uuupppuu).
-closed_cell(step_down,puuuuuuu).
-closed_cell(step_down,puuuuuup).
-closed_cell(step_down,ppuuuuuu).
-%closed_cell(step_down,ppuuuuup).
-closed_cell(step_left,uupuuuuu).
-closed_cell(step_left,uppuuuuu).
-closed_cell(step_left,uuppuuuu).
-%closed_cell(step_left,upppuuuu).
-closed_cell(step_right,uuuuuupu).
-closed_cell(step_right,uuuuuupp).
-closed_cell(step_right,uuuuuppu).
-%closed_cell(step_right,uuuuuppp).
+closed_cell(up,uuuupuuu).
+closed_cell(up,uuuppuuu).
+closed_cell(up,uuuuppuu).
+%closed_cell(up,uuupppuu).
+closed_cell(down,puuuuuuu).
+closed_cell(down,puuuuuup).
+closed_cell(down,ppuuuuuu).
+%closed_cell(down,ppuuuuup).
+closed_cell(left,uupuuuuu).
+closed_cell(left,uppuuuuu).
+closed_cell(left,uuppuuuu).
+%closed_cell(left,upppuuuu).
+closed_cell(right,uuuuuupu).
+closed_cell(right,uuuuuupp).
+closed_cell(right,uuuuuppu).
+%closed_cell(right,uuuuuppp).
 
 
 %!      generate_observation(+Determinism,-Label) is nondet.

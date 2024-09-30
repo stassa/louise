@@ -1,4 +1,4 @@
-:-module(mage_controller, [t/4]).
+:-module(mage_controller, []).
 
 opposite_actions(up-q0,down-q2).
 opposite_actions(down-q2,up-q0).
