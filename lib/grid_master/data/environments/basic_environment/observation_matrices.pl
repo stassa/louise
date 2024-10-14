@@ -468,8 +468,7 @@ write_observation_map_files(N,Dir):-
 %       which must be in the current experiment file, maybe.
 %
 controller_examples(N,K,Q,Es):-
-        configuration:experiment_file(_,_M)
-        ,findall(Id
+        findall(Id
                ,(between(1,K,I)
                 ,atomic_list_concat([N,I],'_',Id)
                 )
@@ -479,10 +478,40 @@ controller_examples(N,K,Q,Es):-
                  ,atom_concat('q',J,Qj)
                  )
                 ,Qs)
+        ,definition_module(solver_test_instance(_,_,_),M)
         ,findall(E
                ,(member(Id,Ids)
                 ,member(Q0,Qs)
-                ,experiment_file:solver_test_instance(s/2,E,[Id,1,1,1/1,_,_,_,Q0|_Ss])
-                ,call(experiment_file:E)
+                ,M:solver_test_instance(s/2,E,[Id,1,1,1/1,_,_,_,Q0|_Ss])
+                ,call(M:E)
                 )
                 ,Es).
+
+
+%!      definition_module(+Term,-Module) is det.
+%
+%       Definition Module of a predicate.
+%
+%       Term is an atom of the predicate to locate in a module.
+%
+%       Module is the definition module of the predicate of Term. This
+%       is used to locate the definition of the predicate so that it can
+%       be called in the right module.
+%
+%       The experiment file setup seems to change the module where a
+%       predicate is defined everytime the experiment file is loaded.
+%
+%       Fails silently if the predicate of Term is not defined.
+%
+%       @tbd Used here to locate the definition of
+%       solver_test_instance/3 but there are multiple copies all around.
+%       Maybe consolidate them in an auxiliary predicate?
+%
+definition_module(T,experiment_file):-
+        functor(T,F,A)
+        ,current_predicate(experiment_file:F/A)
+        ,!.
+definition_module(T,M):-
+        configuration:experiment_file(_P,M)
+        ,functor(T,F,A)
+        ,current_predicate(M:F/A).
