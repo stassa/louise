@@ -1108,7 +1108,7 @@ action_look(A,Mt,X0/Y0,X1/Y1):-
         map_term(_Id,Ds,M,Mt)
         ,step_action_look_action(A,S)
         ,L =.. [S,X0/Y0,M,Ds,X1/Y1,_T]
-        ,call(actions:L).
+        ,call(generator_actions:L).
 
 
 %!      step_action_look_action(?Step,?Look) is semidet.
@@ -1197,7 +1197,7 @@ step_action(A,X0/Y0,M,X1/Y1):-
 %
 element_origin(X/Y,Mt,Xo/Yo):-
         map_term(_Id,Ds,M,Mt)
-        ,actions:look_down_left(X/Y,M,Ds,Xo/Yo,T)
+        ,generator_actions:look_down_left(X/Y,M,Ds,Xo/Yo,T)
         ,T \== o
         ,!.
 element_origin(_XY,_Mt,0/0).

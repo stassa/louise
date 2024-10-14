@@ -243,11 +243,11 @@ new_observation(Fs,O):-
 % Desplays the environment by printing in the Prolog terminal.
         fluents(_,print,map(_Id,Ds,M),X/Y,_T,nil,Fs)
         ,!
-        ,actions:observation_label(X/Y,M,Ds,O).
+        ,generator_actions:observation_label(X/Y,M,Ds,O).
 new_observation(Fs,O):-
 % Displays the environment by printing with a blessed Terminal() object.
         fluents(_,blessed,map(_Id,Ds,M),X/Y,_T,Term,Fs)
-        ,actions:observation_label(X/Y,M,Ds,O)
+        ,generator_actions:observation_label(X/Y,M,Ds,O)
         ,py_call(Term:clear,C)
         % New line needed to collocate map with print_map/3.
         % Otherwise, leave end='' and no flush= at all.
@@ -306,10 +306,10 @@ environment(Fs,A,O,Fs_):-
 %
 action(A,Ms,Dims,X/Y,T0,X_/Y_,T1,O):-
         SA =.. [A,X/Y,Ms,Dims,X_/Y_]
-        ,call(actions:SA)
+        ,call(generator_actions:SA)
         ,map_location(X/Y,T0,Ms,Dims,true)
         ,map_location(X_/Y_,T1,Ms,Dims,true)
-        ,actions:observation_label(X_/Y_,Ms,Dims,O).
+        ,generator_actions:observation_label(X_/Y_,Ms,Dims,O).
 
 
 %!      action_display(+Dims,+Map,+XY0,+XY1,+S,+A,+Term) is det.

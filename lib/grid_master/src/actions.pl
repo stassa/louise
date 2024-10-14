@@ -1,26 +1,27 @@
-:-module(actions, [step_up/3
-                  ,step_up_right/3
-                  ,step_right/3
-                  ,step_down_right/3
-                  ,step_down/3
-                  ,step_down_left/3
-                  ,step_left/3
-                  ,step_up_left/3
-                  ,look_up/3
-                  ,look_up_right/3
-                  ,look_right/3
-                  ,look_down_right/3
-                  ,look_down/3
-                  ,look_down_left/3
-                  ,look_left/3
-                  ,look_up_left/3
-                  ,observation_label/4
-                  ,look_around/4
-                  ,look_around_8/4
-                  ,surrounding_locations/4
-                  ,surrounding_locations_8/4
-                  ]).
+:-module(generator_actions, [step_up/3
+                            ,step_up_right/3
+                            ,step_right/3
+                            ,step_down_right/3
+                            ,step_down/3
+                            ,step_down_left/3
+                            ,step_left/3
+                            ,step_up_left/3
+                            ,look_up/3
+                            ,look_up_right/3
+                            ,look_right/3
+                            ,look_down_right/3
+                            ,look_down/3
+                            ,look_down_left/3
+                            ,look_left/3
+                            ,look_up_left/3
+                            ,observation_label/4
+                            ,look_around/4
+                            ,look_around_8/4
+                            ,surrounding_locations/4
+                            ,surrounding_locations_8/4
+                            ]).
 
+:-use_module(grid_master_root(grid_master_configuration)).
 :-use_module(grid_master_src(action_generator)).
 
 /** <module> Action definitions for action generator.

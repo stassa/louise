@@ -232,7 +232,7 @@ action(R,Ps,Ad):-
 %
 action(R,A,Ps,Ad):-
         At =.. [A,R,Ps,Ad]
-        ,call(actions:At).
+        ,call(generator_actions:At).
 
 
 
