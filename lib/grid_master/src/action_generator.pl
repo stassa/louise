@@ -1,7 +1,7 @@
 :-module(action_generator,[with_primitives/3
                           ,assert_primitives/3
                           ,erase_primitives/1
-                          ,write_primitives/0
+                          ,write_actions/0
                           ,generate_actions/2
                           ,step/6
                           ,peek/7
@@ -47,6 +47,8 @@
 %       and loading them from, a file, because this seems to cause some
 %       trouble when trying to create dynamic primitives.
 %
+%       @tbd Rename to with_actions/3.
+%
 with_primitives(Map,M,G):-
         S = assert_primitives(Map,M,Rs)
         ,C = call(M:G)
@@ -68,6 +70,8 @@ with_primitives(Map,M,G):-
 %       Refs is a list of references of the generated primitives, which
 %       can be used to clean them up later.
 %
+%       %tbd Rename to assert_actions/3.
+%
 assert_primitives(Map,M,Rs):-
         generate_actions(Map,As)
         ,maplist(varnumbers_names,As,As_,_Ns)
@@ -78,20 +82,22 @@ assert_primitives(Map,M,Rs):-
 %
 %       Erase a set of primitives, using their Refs.
 %
+%       @tbd Rename to erase_actions/1.
+%
 erase_primitives(Rs):-
         erase_program_clauses(Rs).
 
 
 
-%!      write_primitives is det.
+%!      write_actions is det.
 %
-%       Write primitive actions to a file.
+%       Write agent actions to a file.
 %
 %       The path of the primitives file is determined by the
 %       configuration option primitives_file in
 %       generator_configuration.pl.
 %
-write_primitives:-
+write_actions:-
         grid_master_configuration:primitives_file(P,_)
         ,S = load_map_files
         ,G = write_primitives(P)
@@ -113,6 +119,8 @@ write_primitives:-
 %
 %       The generated file can then be imported into an experiment file
 %       in Louise to run grid world experiments.
+%
+%       @tbd Rename to write_primitives/1.
 %
 write_primitives(F):-
         grid_master_configuration:maps_module(Maps)
