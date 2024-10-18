@@ -19,6 +19,7 @@
                             ,look_around_8/4
                             ,surrounding_locations/4
                             ,surrounding_locations_8/4
+                            ,cast_ray/6
                             ]).
 
 :-use_module(grid_master_root(grid_master_configuration)).
@@ -683,3 +684,118 @@ look_up_left(X/Y,Ms,Dims,X_/Y_,T):-
         ,look_left(Xu/Yu,Ms,Dims,X_/Y_,T)
         ,!.
 look_up_left(_XY,_Ms,_Dims,nil/nil,o).
+
+
+
+%!      cast_ray(+Start,+Direction,+Map,+Dims,+Target,-N) is det.
+%
+%       Cast a ray along a Direction and report its length.
+%
+%       Start is a term X/Y, the coordinates on a map on which to start
+%       casting a ray.
+%
+%       Direction is the predicate symbol of a look action: look_right,
+%       look_up_right, etc. This predicate will be called recursively
+%       until it reaches the coordinates of a tile matching the Target
+%       tile.
+%
+%       Map and Dims are the grid and dimensions of a map.
+%
+%       Target is the symbol of a tile where the ray-casting will stop;
+%       the target of the ray casting.
+%
+%       N is the number of cells on the Map from Start to Target,
+%       exclusive. So, for example, if a ray is cast looking right in a
+%       map [f,f,f,f,f,w] with "w" as the Target, N is bound to 5.
+%
+%       This predicate can be used to measure the distance in tiles on a
+%       grid from Start to the first cell whose tile type matches Target
+%       in the indicated Direction, in a straight or diagonal line.
+%
+%       Note that since this predicate calls a look action it can start
+%       and end, and look through, unpassable terrrain.
+%
+%       When X/Y is the location on Map of a tile of the type matching
+%       Target, N is bound to 0.
+%
+%       When a tile of the type matching Target is not found before the
+%       edge of the Map is reached, N is bound to the number of cells on
+%       the Map from Start to the last tile on the grid before that
+%       edge. This means that this predicate can be used to measure the
+%       distance between two map edges, or to a map edge from any
+%       location, by setting T to either 'o' (the symbol generally used
+%       to mean "outside the map") or some symbol that does not match
+%       any tile on the map.
+%
+cast_ray(X/Y,_D,Ms,Dims,T,0):-
+% You're standing on it!
+        map_location(X/Y,T,Ms,Dims,true)
+        ,!.
+cast_ray(X/Y,D,Ms,Dims,T,N):-
+% Longest path to the target.
+        cast_ray(1,N,D,X/Y,Ms,Dims,T).
+
+%!      cast_ray(+I,-N,+Direction,+Coords,+Map,+Dims,+Target) is det.
+%
+%       Business end of cast_ray/7.
+%
+%       I is the accumulator of the number of tiles from the initial
+%       pair of coordinates to the Target.
+%
+%       Coords is a term X/Y, the current coordinate of the position of
+%       the "ray" on the grid.
+%
+%       When Target is hit (or the map ends) N is bound to the number of
+%       tiles from the starting pair of Coords, to the Target (or the
+%       edge of the grid).
+%
+cast_ray(I,N,D,X/Y,Ms,Dims,Tt):-
+        ray_step(D,X/Y,Ms,Dims,A)
+        ,call(A)
+        ,contact(A,Tc,X_/Y_)
+        ,writeln(next:X_/Y_)
+        ,\+ target_or_outside(Tt,Tc)
+        ,!
+        ,succ(I,J)
+        ,cast_ray(J,N,D,X_/Y_,Ms,Dims,Tt).
+cast_ray(N,N,_D,XY,_Ms,_Dims,_Tt):-
+        writeln(end:XY).
+
+%!      ray_step(+Direction,+Coords,+Map,+Dims,-Action) is det.
+%
+%       Construct an Action term to take a look towards a Direction.
+%
+ray_step(D,X/Y,Ms,Dims,A):-
+        A =.. [D,X/Y,Ms,Dims,_XY,_T].
+
+
+%!      contact(+Action,-Tile,-Coordinates) is det.
+%
+%       The Coordinates of a Tile reached with a look Action.
+%
+%       Action is a look action.
+%
+%       Tile and Coordinates are the tile and destination coordinate
+%       terms of that look action.
+%
+%       Used to analyse an Action term to extract the Tile and
+%       Coordinates, for comparison with a target tile when casting a
+%       ray. The Coordinates term is used as the start of the next look
+%       action in the ray, if one is taken.
+%
+contact(A,o,nil/nil):-
+        A =.. [_D,_XY,_Ms,_Dims,nil/nil,o]
+        ,!.
+contact(A,Tt,XY_):-
+        A =.. [_D,_XY,_Ms,_Dims,XY_,Tt].
+
+
+%!      target_or_outside(+Target,+Current) is det.
+%
+%       True when Current matches Target or is 'o' for "outside".
+%
+%       Where "outside" means "outside the map".
+%
+target_or_outside(T,T):-
+        !.
+target_or_outside(_T,o).
