@@ -6,7 +6,7 @@
                       ,parent/2
                       ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 /** <module> A simple introduction to learning logic programs with Louise
 
