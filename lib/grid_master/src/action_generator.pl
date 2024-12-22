@@ -124,8 +124,15 @@ write_actions:-
 %
 write_primitives(F):-
         grid_master_configuration:maps_module(Maps)
-        ,findall(A/2
-                ,grid_master_configuration:action(A)
+        % TODO: this cries out "split me out to my own predicate"
+        % I can hear it in the night. Heed it. Save it. Only you can.
+        ,findall(An/2
+                ,(grid_master_configuration:action(A)
+                 ,(   atom_concat(set_course_,D,A)
+                  ->  grid_master_configuration:action_symbol(step,D,An,_)
+                  ;   An = A
+                  )
+                 )
                 ,Prims)
         ,S = (expand_file_search_path(F,F_)
              ,open(F_,write,Stm,[alias(primitives_file)
@@ -137,8 +144,8 @@ write_primitives(F):-
                   )
              ,portray_clause(Stm,H)
              ,nl(Stm)
-             ,findall(:-discontiguous(A/2)
-                     ,grid_master_configuration:action(A)
+             ,findall(:-discontiguous(A)
+                     ,member(A,Prims)
                      ,Discs)
              ,Ds = [:-discontiguous(Maps:map/3)
                    |Discs
@@ -190,13 +197,19 @@ generate_actions(Id,Vs):-
         ,generate_actions(map(Id,Dims,Ms),Vs).
 generate_actions(map(Id,Dims,Ms),Vs):-
         grid_master_configuration:action_representation(R)
+        ,grid_master_configuration:action_order(O)
         ,passable_tiles(Ms,Dims,Ts)
         ,findall(M
                 ,(member(X/Y,Ts)
                  ,action(R,[map(Id,Dims,Ms),X/Y],M)
                  )
                 ,Vs_)
-        ,sort(Vs_,Vs).
+        ,(   O == unsorted
+         ->  Vs = Vs_
+         ;   O == sorted
+         ->  sort(Vs_,Vs)
+         ;   throw('Unknown action_order':O)
+         ).
 
 
 %!      action(+Representation,+Parameters,-Action) is nondet.

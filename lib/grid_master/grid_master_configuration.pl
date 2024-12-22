@@ -1,5 +1,6 @@
 :-module(grid_master_configuration, [action/1
                                     ,action_representation/1
+                                    ,action_order/1
                                     ,action_symbol/4
                                     ,display_engine/1
                                     ,maps_module/1
@@ -7,6 +8,7 @@
                                     ,observation_matrices/1
                                     ,passable/1
                                     ,primitives_file/2
+                                    ,state_mapping/2
                                     ,test_primitives_file/2
                                     ,theme/1
                                     ,tile/4
@@ -18,6 +20,7 @@
 */
 :-dynamic action/1
          ,action_representation/1
+         ,observation_matrices/1
          ,primitives_file/2
          ,theme/1.
 
@@ -29,6 +32,14 @@
 %       Used by action_generator module to choose what actions
 %       to generate.
 %
+%action(set_course_up).
+%action(set_course_up_right).
+%action(set_course_right).
+%action(set_course_down_right).
+%action(set_course_down).
+%action(set_course_down_left).
+%action(set_course_left).
+%action(set_course_up_left).
 action(step_up).
 action(step_up_right).
 action(step_right).
@@ -45,6 +56,20 @@ action(step_up_left).
 %action(look_down_left).
 %action(look_left).
 %action(look_up_left).
+
+
+%!      action_order(?Order) is semidet.
+%
+%       The order in which action predicates are generated.
+%
+%       Order is one of:
+%       * unsorted: actions are generated according to the order of
+%         action/1 clauses.
+%       * sorted: actions are generated in lexicographic order (i.e.
+%         sorted in the standard order of terms).
+%
+action_order(unsorted).
+%action_order(sorted).
 
 
 %!      action_representation(?Representation) is semidet.
@@ -183,7 +208,7 @@ passable(u).
 passable(r).
 passable(d).
 passable(l).
-passable(x).
+%passable(x).
 passable(@). % Traversing
 passable(a). % Patrolling landmark A
 passable(b). % Patrolling landmark B
@@ -203,6 +228,42 @@ primitives_file(grid_master_data('primitives_controller_sequences.pl'),primitive
 %primitives_file(grid_master_data('primitives_list_based.pl'),primitives).
 %primitives_file(grid_master_data('primitives_observation_matrices.pl'),primitives).
 %primitives_file(grid_master_data('primitives_8w_observation_matrices.pl'),primitives).
+%primitives_file(grid_master_data('primitives_ordered.pl'),primitives).
+%primitives_file(grid_master_data('observation_matrices_ordered.pl'),primitives).
+
+
+%!      state_mapping(?Action,?State) is semidet.
+%
+%       Mapping between Action and State labels.
+%
+%       Completely arbitrary and set according to application needs.
+%
+%       @tbd Maybe also allow mapping of State label to Observation
+%       label?
+%
+% Step actions (4-way controller):
+state_mapping(step_up,q0).
+state_mapping(step_right,q1).
+state_mapping(step_down,q2).
+state_mapping(step_left,q3).
+% Step actions (8-way controller)
+%state_mapping(step_up,q0).
+%state_mapping(step_up_right,q1).
+%state_mapping(step_right,q2).
+%state_mapping(step_down_right,q3).
+%state_mapping(step_down,q4).
+%state_mapping(step_down_left,q5).
+%state_mapping(step_left,q6).
+%state_mapping(step_up_left,q7).
+% Look actions:
+state_mapping(look_up,q0).
+state_mapping(look_up_right,q1).
+state_mapping(look_right,q2).
+state_mapping(look_down_right,q3).
+state_mapping(look_down,q4).
+state_mapping(look_down_left,q5).
+state_mapping(look_left,q6).
+state_mapping(look_up_left,q7).
 
 
 %!      test_primitives_file(?Path,?Module) is semidet.

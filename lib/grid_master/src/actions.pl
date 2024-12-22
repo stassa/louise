@@ -1,4 +1,14 @@
-:-module(generator_actions, [step_up/3
+:-module(generator_actions, [set_course_up/3
+                            ,set_course_up_right/3
+                            ,set_course_right/3
+                            ,set_course_down_right/3
+                            ,set_course_down/3
+                            ,set_course_down_left/3
+                            ,set_course_left/3
+                            ,set_course_up_left/3
+                            ,look_up/3
+                            ,look_up_right/3
+                            ,step_up/3
                             ,step_up_right/3
                             ,step_right/3
                             ,step_down_right/3
@@ -28,6 +38,100 @@
 /** <module> Action definitions for action generator.
 
 */
+
+
+%!      set_course_up(+Representation,+Parameters,-Step) is det.
+%
+%       Generate clauses of an action to set a course going up.
+%
+%       This and the accompanying set of set-course actions are similar
+%       to step actions, like step_up/3, etc, but generate ground action
+%       predicates ordered so that the current direction of movement
+%       (the current course) is kept, if possible.
+%
+%       This is achieved by taking into account the current input
+%       controller state, and first generating a clause with the same
+%       output state, which, when executed, will take a step in the same
+%       direction as the last action.
+%
+%       Clauses for all other steps possible from the current position
+%       of the agent on the map are also generated so it is always
+%       possible to step in an alternative direction if the current
+%       course cannot be kept, which is the case when the next tile in
+%       the current direction is unpassable.
+%
+set_course_up(R,Ps,At):-
+        set_course_action(step_up,R,Ps,At).
+
+
+%!      set_course_up_right(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to set_course up and to the right.
+%
+%       As set_course_up/3 but set_courses up and to the right, diagonally.
+%
+set_course_up_right(R,Ps,At):-
+        set_course_action(step_up_right,R,Ps,At).
+
+
+%!      set_course_right(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to set_course to the right.
+%
+%       As set_course_up/3 but set_courses to the right.
+%
+set_course_right(R,Ps,At):-
+        set_course_action(step_right,R,Ps,At).
+
+
+%!      set_course_down_right(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to set_course down and to the right.
+%
+%       As set_course_up/3 but set_courses down and to the right, diagonally.
+%
+set_course_down_right(R,Ps,At):-
+        set_course_action(step_down_right,R,Ps,At).
+
+
+%!      set_course_down(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to set_course down.
+%
+%       As set_course_up/3 but set_courses down.
+%
+set_course_down(R,Ps,At):-
+        set_course_action(step_down,R,Ps,At).
+
+
+%!      set_course_down_left(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to set_course down and to the left.
+%
+%       As set_course_up/3 but set_courses down and to the left, diagonally.
+%
+set_course_down_left(R,Ps,At):-
+        set_course_action(step_down_left,R,Ps,At).
+
+
+%!      set_course_left(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to set_course to the left.
+%
+%       As set_course_up/3 but set_courses to the left.
+%
+set_course_left(R,Ps,At):-
+        set_course_action(step_left,R,Ps,At).
+
+
+%!      set_course_up_left(+Representation,+Parameters,-Action) is nondet.
+%
+%       Generate clauses of an Action to set_course up and to the left.
+%
+%       As set_course_up/3 but set_courses up and to the left, diagonally.
+%
+set_course_up_left(R,Ps,At):-
+        set_course_action(step_up_left,R,Ps,At).
 
 
 %!      step_up(+Representation,+Parameters,-Step) is det.
@@ -178,7 +282,7 @@ step_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
         ,call(SA)
         ,map_location(X/Y,T,Ms,Dims,true)
         ,map_location(X_/Y_,T_,Ms,Dims,true)
-        ,state_mapping(A,Q1)
+        ,grid_master_configuration:state_mapping(A,Q1)
         ,At =.. [A,[Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[A|As],[Q1|Qs_]]
                ,[Id,X_/Y_,T_,Q1,Qs,Os,As,Qs_]]
         ,observation_label(X/Y,Ms,Dims,O)
@@ -187,6 +291,30 @@ step_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
         ,Os = '$VAR'('Os')
         ,As = '$VAR'('As')
         ,Qs_ = '$VAR'('Qs_').
+
+set_course_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
+        SA =.. [A,X/Y,Ms,Dims,X_/Y_]
+        ,call(SA)
+        ,map_location(X/Y,T,Ms,Dims,true)
+        ,map_location(X_/Y_,T_,Ms,Dims,true)
+        ,grid_master_configuration:state_mapping(A,Q1)
+        ,findall(Qi
+                ,(grid_master_configuration:action(Ai)
+                 ,atom_concat(set_course_,D,Ai)
+                 ,grid_master_configuration:action_symbol(step,D,AN,_)
+                 ,AN \== A
+                 ,grid_master_configuration:state_mapping(AN,Qi)
+                 )
+                ,Qs_alt)
+        ,member(Q0,[Q1|Qs_alt])
+        ,At =.. [A,[Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[A|As],[Q1|Qs_]]
+               ,[Id,X_/Y_,T_,Q1,Qs,Os,As,Qs_]]
+        ,observation_label(X/Y,Ms,Dims,O)
+        ,Qs = '$VAR'('Qs')
+        ,Os = '$VAR'('Os')
+        ,As = '$VAR'('As')
+        ,Qs_ = '$VAR'('Qs_').
+
 
 
 %!      step_up(+Coordinates,+Map,+Dimensions) is det.
@@ -408,7 +536,7 @@ look_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
         ,call(LA)
         ,peek(X/Y,+,0/0,Ms,Dims,X/Y,T)
         ,observation_label(X/Y,Ms,Dims,O)
-        ,state_mapping(A,Q1)
+        ,grid_master_configuration:state_mapping(A,Q1)
         ,At =.. [A,[Id,X/Y,T,Q0,[Q0|Qs],[O|Os],[A|As],[Q1|Qs_]]
                    ,[Id,X_/Y_,T_,Q1,Qs,Os,As,Qs_]]
         ,Q0 = '$VAR'('Q0')
@@ -417,34 +545,6 @@ look_action(A,controller_sequences,[map(Id,Dims,Ms),X/Y],At):-
         ,As = '$VAR'('As')
         ,Qs_ = '$VAR'('Qs_').
 
-
-%!      state_mapping(?Action,?State) is semidet.
-%
-%       Mapping between Action and State labels.
-%
-%       Completely arbitrary but set in stone here.
-%
-%       @tbd Maybe leave as a configurable option? Also, maybe also
-%       allow mapping of State label to Observation label?
-%
-% Step actions:
-state_mapping(step_up,q0).
-state_mapping(step_up_right,q1).
-state_mapping(step_right,q2).
-state_mapping(step_down_right,q3).
-state_mapping(step_down,q4).
-state_mapping(step_down_left,q5).
-state_mapping(step_left,q6).
-state_mapping(step_up_left,q7).
-% Look actions:
-state_mapping(look_up,q0).
-state_mapping(look_up_right,q1).
-state_mapping(look_right,q2).
-state_mapping(look_down_right,q3).
-state_mapping(look_down,q4).
-state_mapping(look_down_left,q5).
-state_mapping(look_left,q6).
-state_mapping(look_up_left,q7).
 
 
 %!      observation_label(?Coordinates,?Map,?Dims,-Label) is det.
