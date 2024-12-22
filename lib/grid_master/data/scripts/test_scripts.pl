@@ -344,6 +344,12 @@ solve_exec_mage_20:-
  * Display in SWI IDE.
 ================================================================================ */
 
+print_solve_exec_room:-
+        solve_exec_map(id(room),print,_).
+
+print_solve_exec_bigroom:-
+        solve_exec_map(id(big_room),print,_).
+
 print_solve_exec_usual_suspects:-
         member(Id,[tessera_1
                   ,tessera_2
