@@ -13,10 +13,12 @@
 :-use_module(lib(grid_master/src/map_display)).
 :-use_module(lib(grid_master/data/environments/basic_environment/observation_matrices),[]).
 
-:- controller_freak_configuration:controller(P1,_,_)
-   ,controller_freak_configuration:environment(P2,_)
+:- controller_freak_configuration:controller(P1,C,_)
+   ,controller_freak_configuration:environment(P2,E)
    ,use_module(P1)
-   ,use_module(P2).
+   ,use_module(P2)
+   ,format('Loaded controller ~w~n', [C])
+   ,format('Loaded environment ~w~n', [E]).
 
 /** <module> Execution predicates for Solvers and Finite State Controllers.
 
