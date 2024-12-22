@@ -6,6 +6,7 @@
                                          ,mark_slamming_map/1
                                          ,overlay_precedence/2
                                          ,output_actions/1
+                                         ,sorted_tuples/2
                                          ,table_executor/1
                                          ]).
 
@@ -171,6 +172,56 @@ overlay_precedence(survey_mission,[s>_,e>_,'@'>f,'@'>x,w>x,f>x]).
 output_actions(labels).
 %output_actions(tuples).
 %output_actions(executor_states).
+
+
+%!      sort_tuples(-Delta,+Tuple1,+Tuple2) is det.
+%
+%       Sorting helper for solver_controller/5.
+%
+%       Allows the set of tuples returned by solver_controller/5 to be
+%       sorted in a custom order.
+%
+%       Two sorting predicates are provided below: one that sorts by the
+%       standard order of terms, removing duplicates; and one that sorts
+%       so that tuples with the same input and output states are placed
+%       placed above others in the output. The latter can be used to
+%       geneate controllers with a bias towards staying on their current
+%       course, rather than nondeterministically switching directions.
+%
+%       Uncomment the sortin predicate you prefer, or define your own as
+%       needed
+%
+%       The standard order of terms should be considered the default-ish
+%       sorting method.
+%
+%/*
+sorted_tuples(Ts,Ts_s):-
+% Sort in the standard order of terms, removing duplicates.
+        sort(Ts,Ts_s).
+%*/
+/*
+sorted_tuples(Ts,Ts_s):-
+% Place tuples with the same input/output states first.
+        sort(1,@=<,Ts,Ts_)
+        ,predsort(sort_tuples,Ts_,Ts_s).
+
+sort_tuples(<,T1,T2):-
+        T1 =.. [_S1,Q0,_O1,_A1,Q0]
+        ,T2 =.. [_S2,Q0,_O2,_A2,Q0]
+        ,!.
+sort_tuples(<,T1,T2):-
+        T1 =.. [_S1,Q0,_O1,_A1,Q0]
+        ,T2 =.. [_S2,Q0_2,_O2,_A2,Q1_2]
+        ,Q0_2 \== Q1_2
+        ,!.
+sort_tuples(>,T1,T2):-
+        T1 =.. [_S1,Q0_1,_O1,_A1,Q1_1]
+        ,T2 =.. [_S2,Q0,_O2,_A2,Q0]
+        ,Q0_1 \== Q1_1
+        ,!.
+% Preserver current sort order otherwise.
+sort_tuples(<,_T1,_T2).
+*/
 
 
 %!      table_executor(?Bool) is semidet.

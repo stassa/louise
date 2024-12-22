@@ -13,6 +13,8 @@
 
 :-use_module(src(auxiliaries)).
 :-use_module(src(mil_problem)).
+:-use_module(controller_freak_configuration).
+
 
 /** <module> Learn a Finite State Controller from examples of its behaviour.
 
@@ -94,6 +96,11 @@ TODO: add terminal state to learned controllers.
 %       predicate, by whatever process creates the controller file.
 %       Like, I dunno, copy-pasting into vim and back?
 %
+%       @tbd Controller tuples returned by this predicate can be sorted
+%       according to the controller_freak_configuration option
+%       sorted_tuples/2. The default-ish is to sort them in the standard
+%       order of terms, removing duplicates (i.e. as sort/2).
+%
 solver_controller(S,Es,[C_t|Cs],[A_t|Bs],Ts):-
         configuration:clause_limit(L)
 	,configuration:fetch_clauses(F)
@@ -105,7 +112,8 @@ solver_controller(S,Es,[C_t|Cs],[A_t|Bs],Ts):-
               ,set_configs(K)
               )
         ,Gl = (learning_query(Is,[],Ss,[identity,tailrec],Cs)
-              ,controller_actions_tuples(user,Cs,Bs,Ts)
+              ,controller_actions_tuples(user,Cs,Bs,Ts_)
+              ,controller_freak_configuration:sorted_tuples(Ts_,Ts)
               )
         ,Cl = (erase_program_clauses(Rs)
               ,reset_configs(L,F,B,U)
@@ -268,7 +276,6 @@ fsc_instances_tuples(Is,Ts):-
         ,maplist(flatten,[Qs,Os,As],[Qs_f,Os_f,As_f])
         ,maplist(sort,[Qs_f,Os_f,As_f],[Qs_s,Os_s,As_s])
         ,generate_tuples(Qs_s,Os_s,As_s,Ts).
-
 
 
 %!      fsc_instance_tuples(+Instance,-Tuples) is det.
