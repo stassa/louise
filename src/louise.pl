@@ -342,20 +342,23 @@ specialise(Ss_Pos,_MS,[],Ss_Pos):-
 specialise(Ss_Pos,MS,Neg,Ss_Neg):-
 	configuration:clause_limit(K)
 	,K > 0
-	,findall(Subs
-	       ,(member(Subs,Ss_Pos)
-		,findall(Sub
-			,member(Sub-_M,Subs)
-			,Subs_)
-		,debug_clauses(metasubstitutions,'Ground metasubstitutions:',[Subs_])
-		,\+((member(En,Neg)
-		    ,debug_clauses(examples,'Negative example:',En)
-		    ,once(metasubstitutions(En,K,MS,Subs_))
-		    ,debug_clauses(examples,'Proved negative example:',En)
-		    )
-		   )
-		)
-	       ,Ss_Neg).
+	,S = setup_negatives(Fs,T,U)
+	,G = findall(Subs
+		    ,(member(Subs,Ss_Pos)
+		     ,findall(Sub
+			     ,member(Sub-_M,Subs)
+			     ,Subs_)
+		     ,debug_clauses(metasubstitutions,'Ground metasubstitutions:',[Subs_])
+		     ,\+((member(En,Neg)
+			 ,debug_clauses(examples,'Negative example:',En)
+			 ,once(metasubstitutions(En,K,MS,Subs_))
+			 ,debug_clauses(examples,'Proved negative example:',En)
+			 )
+			)
+		     )
+		    ,Ss_Neg)
+	,C = cleanup_negatives(Fs,T,U)
+	,setup_call_cleanup(S,G,C).
 
 
 
@@ -396,10 +399,7 @@ metasubstitutions(:-En,K,MS,Subs):-
 	 !
 	,signature(En,Ss)
 	,debug(signature,'Signature: ~w',[Ss])
-	,S = setup_negatives(Fs,T,U)
-	,G = prove(En,K,MS,Ss,Subs,Subs)
-	,C = cleanup_negatives(Fs,T,U)
-	,setup_call_cleanup(S,G,C)
+	,prove(En,K,MS,Ss,Subs,Subs)
 	,debug(metasubstitutions,'Proved Example: ~w',[:-En])
 	,debug_clauses(metasubstitutions,'With Metasubs:',[Subs]).
 metasubstitutions(Ep,K,MS,Subs):-
