@@ -36,6 +36,13 @@
 		      ,list_top_program_reduction/1
 		      ,list_top_program/1
 		      ,list_top_program/3
+		      ,debug_clauses/3
+		      ,debug_clauses/2
+		      ,debug_length/3
+		      ,debug_clauses_length/3
+		      ,debug_metasubs/5
+		      ,print_clauses/2
+		      ,print_clauses/1
 		      ,print_metarules/1
 		      ,print_metarules/2
 		      ,debug_metarules/2
@@ -58,11 +65,6 @@
 		      ,built_in_or_library_predicate/1
 		      ,closure/3
 		      ,program_symbols/2
-		      ,debug_clauses/3
-		      ,debug_clauses/2
-		      ,debug_length/3
-		      ,print_clauses/2
-		      ,print_clauses/1
 		      ,program/3
 		      ,unifiable_compare/3
 		      ,table_program/1
@@ -156,6 +158,9 @@ Table of Contents
    * list_top_program/3
    * debug_clauses/3
    * debug_clauses/2
+   * debug_length/3
+   * debug_clauses_length/3
+   * debug_metasubs/5
    * print_clauses/2
    * print_clauses/1
    * print_metarules/1
@@ -1498,6 +1503,40 @@ debug_clauses(T,Cs):-
 debug_length(T,M,Ls):-
 	length(Ls,N)
 	,debug(T,M,[N]).
+
+
+
+%!	debug_clauses_length(+Topic,+Message,+List) is det.
+%
+%	Log a Message and the length of a List.
+%
+%	Like debug_length/3 but also calls debug_clauses/3 on List.
+%
+debug_clauses_length(T,M,Ls):-
+	length(Ls,N)
+	,format(atom(A),M,[N])
+	,debug_clauses(T,A,Ls).
+
+
+
+%!	debug_metasubs(+Topic,+Message,+Subs,+Examples,+Metarules) is
+%!      det.
+%
+%	Log a list of metasubstitutions, applied to their Metarules.
+%
+%	Subs should be a list of metasubstitutions.
+%
+%	Applies the given meta Subs to their Metarules, excapsulates
+%	them and logs the given Message for the given Topic.
+%
+%	Examples are used to extract learning targets for the
+%	excapsulation.
+%
+debug_metasubs(T,M,Subs,Es,MS):-
+	applied_metarules(Subs,MS,Cs)
+	,examples_targets(Es,Ss)
+	,excapsulated_clauses(Ss,Cs,Cs_e)
+	,debug_clauses(T,M,Cs_e).
 
 
 

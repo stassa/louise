@@ -247,7 +247,7 @@ generalise(Pos,MS,Ss_Pos):-
 		 ,forall(member(Sub-_M,Subs)
 			,constraints(Sub)
 			)
-		 ,debug_clauses(generalise,'Passed metasub constraints:',[Subs])
+		 ,debug_metasubs(generalise_full,'Passed metasub constraints:',Subs,Pos,MS)
 		 )
 		,Ss_Pos_)
 	,abolish_all_tables
