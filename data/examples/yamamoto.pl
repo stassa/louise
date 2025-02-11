@@ -7,7 +7,7 @@
                    ,odd/1
                    ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 /** <module> Yamamoto's incompleteness result for Inverse Entailment.
 

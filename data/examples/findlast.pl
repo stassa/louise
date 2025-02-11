@@ -7,7 +7,7 @@
                    ,tail/2
                    ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 /** <module> One-shot learning of a recursive theory.
 

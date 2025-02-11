@@ -18,6 +18,8 @@
 			    ,female/1
 			    ]).
 
+:-use_module(project_root(configuration)).
+
 /** <module> Examples of learning metarules with TOIL.
 
 This is a variant of tiny_kinship.pl where we learn family relationships
@@ -377,8 +379,6 @@ inspect the metarules learned by TOIL and use human intuition to select
 a good subset.
 */
 
-
-:-use_module(configuration).
 
 % It's possible to learn metarules from not-fully-generalised second
 % order metarules, for example try this one out;

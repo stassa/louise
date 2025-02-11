@@ -7,7 +7,7 @@
                             ,empty/1
                             ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 /** <module> Post-process an over-special hypothesis to introduce recursion.
 

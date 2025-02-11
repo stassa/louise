@@ -9,7 +9,7 @@
                     ,p/2
                     ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 /** <module> Example of learning from non-datalog examples.
 

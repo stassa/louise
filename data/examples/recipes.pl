@@ -11,7 +11,7 @@
 		  ,replace/4
 		  ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 /** <module> Learn how to make an omelette with predicate invention.
 

@@ -8,7 +8,7 @@
                    ,peano/2
                    ]).
 
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 /** <module> Learning the Ackermann function with Top Program Construction.
 

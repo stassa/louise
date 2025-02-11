@@ -92,7 +92,7 @@ this experiment file.
 % metarule/2 is declared as an operator in the configuration module.
 % Hence, we must load the configuration module to avoid existence
 % errors.
-:-use_module(configuration).
+:-use_module(project_root(configuration)).
 
 % Each metarule defined in an experiment file must have a module
 % qualifier "configuration:", to make them part of the configuration
