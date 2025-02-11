@@ -468,7 +468,7 @@ setup_negatives(Fs,T,U):-
 %	configuration. See setup_negatives/3 for details.
 %
 cleanup_negatives(Fs,T,U):-
-	set_configuration_option(fetch_clauses, [[Fs]])
+	set_configuration_option(fetch_clauses, [Fs])
 	,set_configuration_option(table_meta_interpreter, [T])
 	,set_configuration_option(untable_meta_interpreter, [U])
 	,refresh_tables(untable)
