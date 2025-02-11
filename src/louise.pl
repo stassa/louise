@@ -250,6 +250,7 @@ generalise(Pos,MS,Ss_Pos):-
 		 ,debug_clauses(generalise,'Passed metasub constraints:',[Subs])
 		 )
 		,Ss_Pos_)
+	,abolish_all_tables
 	,predsort(unifiable_compare,Ss_Pos_,Ss_Pos)
 	,debug_length(generalise,'Derived ~w sub-hypotheses (sorted)',Ss_Pos).
 
